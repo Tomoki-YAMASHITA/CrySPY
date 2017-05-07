@@ -87,3 +87,12 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# find_wy
+src/find_wy/*
+!.gitkeep
+
+# f-fingerprint
+*.mod
+*.o
+cal_fingerprint

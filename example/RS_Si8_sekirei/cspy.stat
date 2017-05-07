@@ -1,0 +1,37 @@
+[input]
+algo = RS
+calc_code = VASP
+tot_struc = 100
+natot = 8
+atype = Si
+nat = 8
+nstage = 3
+njob = 10
+jobcmd = qsub
+jobfile = job_cspy
+minlen = 5.0
+maxlen = 10.0
+dangle = 20.0
+mindist = 1.8
+kmesh = 40.0 100.0 100.0
+maxcnt = 500
+stop_chkpt = 0
+symtolei = 0.001
+symtoler = 0.1
+spgnum = all
+load_init_struc = 0
+stop_next_struc = 0
+
+[status]
+next_id = 100
+work0000 = 
+work0001 = 
+work0002 = 
+work0003 = 
+work0004 = 
+work0005 = 
+work0006 = 
+work0007 = 
+work0008 = 
+work0009 = 
+

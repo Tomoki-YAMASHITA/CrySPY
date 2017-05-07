@@ -1,0 +1,102 @@
+# for configparser.ConfigParser class in python
+#
+# Use "#" or ";" for comments
+# Use "=" or ":" for separator between key and value
+# Section names are case sensitive but keys are not
+#
+#---------- format
+#
+# [section]
+# key1 = value1
+# key2 = value2
+#
+#-----------------------------------------------------------
+#
+#
+#----- Algo
+# (case sensitive)
+# RS: Rondom Search
+# BO: Bayesian Optimization
+#
+#----- calc_code
+# (case sensitive)
+# VASP: VASP
+# QE: Quantum ESPRESSO
+#
+#----- etc
+# tot_struc: Total number of structures
+# interval: interval
+# natot: Number of atoms in each unit cell
+# atype: Atom type. (separator: space)
+# nat: Number of atoms in atom type1, type2, type3 ... (separator: space)
+# nstage: Number of stage
+# njob: Number of simultaneously submitted jobs
+# jobcmd: e.g. qsub
+# jobfile: file name to submit your job
+[basic]
+algo = RS
+calc_code = VASP
+tot_struc = 100
+natot = 8
+atype = Si
+nat = 8
+nstage = 3
+njob = 10
+jobcmd = qsub
+jobfile = job_cspy
+
+
+#------ score for BO
+# TS
+# EI
+# PI
+
+[BO]
+interval = 10
+score = TS
+dscrpt = FP
+#fp_rmin = 0.5
+#fp_rmax = 5.0
+#fp_npoints = 50
+#fp_sigma = 0.2
+
+# minlen: minimum length of lattice vector
+# maxlen: maximum length of lattice vector
+# dangle: delta angle for alpha, beta, and gamma [degree]
+#         e.g. 90 <= beta <= (90 + dangle) in monoclinic
+# mindist: minimum interatomic distance
+[lattice]
+minlen = 5
+maxlen = 10
+dangle = 20
+mindist = 1.8
+
+# VASP
+[VASP]
+kmesh = 40 100 100
+
+# You don't have to specify values in [option] section.
+# maxcnt: maximum number of trials for generating atom positions
+#         (default) maxcnt = 500
+# stop_chkpt: program stops at check point
+#             0: not stop
+#             1: only generate initial structures
+#             2: 1 + prepare files
+# symtoleI: Tolerance for symmetry finding in pymatgen for "I"nitil structures
+# symtoleR: Tolerance for symmetry finding in pymatgen for "R"elaxed structures
+#           (default) symtoleI = 0.001
+#                     symtoleR = 0.1
+# spgnum: Space group number you use in generating structures
+#          (separator: space)
+#          (default) spgnum = 1-230
+#          (e.g.) spgnum = 1-3 55 210
+#                 --> [1, 2, 3, 55, 210]
+#
+# load_init_struc: not generate structures from scratch, but load structures which you prepared
+#                  0: off (default)
+#                  1: on
+# stop_next_struc: not submit next structures (but submit next stages). collect results.
+#                  0: off (default)
+#                  1: on
+[option]
+#stop_chkpt = 1

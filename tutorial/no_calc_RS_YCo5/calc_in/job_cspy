@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cp POSCAR CONTCAR
+touch OSZICAR
+touch OUTCAR
+
+
+#sed -i -e '3d' stat_job
+sed -e '3d' stat_job > tmpstat
+mv tmpstat stat_job
+echo 'done' >> stat_job
