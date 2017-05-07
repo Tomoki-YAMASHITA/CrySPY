@@ -303,7 +303,7 @@ class Ctrl_job(object):
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
             pkl_data.save_rslt(self.rslt_data)
-            out_results.write_rslt_BO(self.rslt_data)
+            out_results.write_rslt(self.rslt_data)
 
             #------ index
             neid_index = np.where(self.non_error_id == current_id)[0]    # np.where returns tuple
