@@ -15,6 +15,7 @@ def readin():
     global interval, score, dscrpt, fp_rmin, fp_rmax, fp_npoints, fp_sigma
     global minlen, maxlen, dangle, mindist
     global kmesh
+    global infile, outfile, pseudopots
     global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum, load_init_struc, stop_next_struc
 
     #---------- read input file
@@ -109,8 +110,18 @@ def readin():
         kmesh = [float(x) for x in kmesh.split()]    # character --> float
         if not len(kmesh) == nstage:
             raise ValueError('not len(kmesh) == nstage, check kmesh and nstage')
+    #----- QE
+    elif calc_code == 'QE':
+        infile = config.get('QE', 'infile')
+        outfile = config.get('QE', 'outfile')
+        pseudopots = config.get('QE', 'pseudopots')
+        pseudopots = [f for f in pseudopots.split()]
+        kmesh = config.get('QE', 'kmesh')
+        kmesh = [float(x) for x in kmesh.split()]    # character --> float
+        if not len(kmesh) == nstage:
+            raise ValueError('not len(kmesh) == nstage, check kmesh and nstage')
     else:
-        raise ValueError('calc_code should be VASP for now')
+        raise ValueError('calc_code should be VASP or QE for now')
 
     #----- option
     try:
@@ -161,12 +172,10 @@ def check_algo(algo):
 
 
 def check_calc_code(calc_code):
-    if calc_code == 'VASP':
+    if calc_code in ['VASP', 'QE']:
         pass
-    elif calc_code == 'QE':
-        raise ValueError('QE: under construction')
     else:
-        raise ValueError('calc_code should be VASP for now')
+        raise ValueError('calc_code should be VASP or QE for now')
 
 
 def spglist(spgnum):
