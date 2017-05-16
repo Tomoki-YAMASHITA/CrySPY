@@ -12,6 +12,7 @@ import pandas as pd
 from ..interface import select_code
 from ..IO import read_input as rin
 from ..IO import pkl_data
+from ..IO import out_struc
 from ..IO import out_results
 from ..BO import combo_cspy
 from ..BO import select_descriptor
@@ -35,6 +36,7 @@ class Ctrl_job(object):
         self.gen, self.next_BO_id, self.non_error_id, self.id_to_calc, self.id_done = BO_id_data
         self.descriptors, self.targets = BO_data
         self.logic_next_gen = False
+
 
     def check_job(self):
         id_stat = []
@@ -119,7 +121,7 @@ class Ctrl_job(object):
         print('    collect results: E = {0}'.format(energy))
 
         #---------- check error
-        fail = energy == np.nan or opt_struc == 'error'
+        fail = np.isnan(energy) or opt_struc is None
 
         #---------- get initial spg info
         spg_sym, spg_num = self.init_struc_data[current_id].get_space_group_info(symprec=rin.symtoleI)
@@ -128,14 +130,16 @@ class Ctrl_job(object):
         if not fail:
             #------ get opt spg info
             spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(symprec=rin.symtoleR)
-
             #------ register opt_struc
             self.opt_struc_data.append(opt_struc)
             pkl_data.save_opt_struc(self.opt_struc_data)
+            #------ out opt_struc
+            out_struc.out_opt_struc(opt_struc, current_id)
+            out_struc.out_opt_cif(opt_struc, current_id, self.work_path)
         #---------- error
         else:
-            spg_num_opt = 0
-            spg_sym_opt = 'error'
+            spg_num_opt = np.nan
+            spg_sym_opt = None
 
         #---------- RS
         if rin.algo == 'RS':
@@ -143,7 +147,6 @@ class Ctrl_job(object):
             tmp_series = pd.Series([current_id, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
-
             #------ success
             if not fail:
                 #------ register id_done
@@ -152,7 +155,6 @@ class Ctrl_job(object):
                 #------ save
                 RS_id_data = (self.next_id, self.id_done)
                 pkl_data.save_RS_id(RS_id_data)
-
 
         #---------- BO
         if rin.algo == 'BO':
