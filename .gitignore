@@ -96,3 +96,6 @@ src/find_wy/*
 *.mod
 *.o
 cal_fingerprint
+
+# Mac
+.DS_Store

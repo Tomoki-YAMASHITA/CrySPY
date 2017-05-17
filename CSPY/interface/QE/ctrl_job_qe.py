@@ -11,6 +11,9 @@ from ...IO import read_input as rin
 
 
 def next_stage_qe(stage, work_path):
+    #---------- skip_flag
+    skip_flag = False
+
     #---------- prepare QE files
     qe_files = [rin.qe_infile, rin.qe_outfile]
     for f in qe_files:
@@ -28,7 +31,9 @@ def next_stage_qe(stage, work_path):
             lines_atom = qe_structure.extract_atomic_positions(work_path+'prev_'+rin.qe_infile)
         structure = qe_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
-        raise ValueError('Error in QE. Check '+work_path+'. If you skip this structure, write "skip" in stat_job line 3.')
+        skip_flag = True
+        print('    error in QE,  skip this structure')
+        return skip_flag
 
     #---------- copy the input file from ./calc_in
     finput = './calc_in/'+rin.qe_infile+'_{}'.format(stage)
@@ -46,6 +51,9 @@ def next_stage_qe(stage, work_path):
         f.write('\n')
         f.write('K_POINTS automatic\n')
         f.write(' '.join(str(x) for x in kpoints.kpts[0]) + '  0 0 0\n')
+
+    #---------- return
+    return skip_flag
 
 
 def next_struc_qe(init_struc_data, next_id, work_path):

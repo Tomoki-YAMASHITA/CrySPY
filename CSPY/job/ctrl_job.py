@@ -81,14 +81,17 @@ class Ctrl_job(object):
         elif self.stage_stat[self.work_id] == rin.nstage:
             self.ctrl_collect()
             self.ctrl_next_struc()
+
+        #---------- error
         else:
             raise ValueError('Wrong stage in '+self.work_path+'stat_job')
 
 
     def ctrl_next_stage(self):
-        print('    submit job, structure ID {0} Stage {1}'.format(
-            self.id_stat[self.work_id], self.stage_stat[self.work_id] + 1))
-        select_code.next_stage(self.stage_stat[self.work_id] + 1, self.work_path)
+        skip_flag = select_code.next_stage(self.stage_stat[self.work_id] + 1, self.work_path)
+        if skip_flag:
+            self.ctrl_skip()
+            return
         self.submit_next_stage()
 
 
@@ -109,6 +112,9 @@ class Ctrl_job(object):
                                                     self.stage_stat[self.work_id] + 1))
         with open('cspy.stat', 'w') as fstat:
             self.stat.write(fstat)
+
+        print('    submit job, structure ID {0} Stage {1}'.format(
+            self.id_stat[self.work_id], self.stage_stat[self.work_id] + 1))
 
 
     def ctrl_collect(self):
@@ -283,8 +289,8 @@ class Ctrl_job(object):
         spg_sym, spg_num = self.init_struc_data[current_id].get_space_group_info(symprec=rin.symtoleI)
 
         #---------- 'skip' for rslt
-        spg_num_opt = 0
-        spg_sym_opt = 'skip'
+        spg_num_opt = np.nan
+        spg_sym_opt = None
         energy = np.nan
         magmom = np.nan
         check_opt = 'skip'

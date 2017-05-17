@@ -17,12 +17,12 @@ def check_calc_files():
 
 def next_stage(stage, work_path):
     if rin.calc_code == 'VASP':
-        VASP.ctrl_job_vasp.next_stage_vasp(stage, work_path)
+        skip_flag = VASP.ctrl_job_vasp.next_stage_vasp(stage, work_path)
     elif rin.calc_code == 'QE':
-        QE.ctrl_job_qe.next_stage_qe(stage, work_path)
+        skip_flag = QE.ctrl_job_qe.next_stage_qe(stage, work_path)
     else:
         raise SystemExit('now only VASP or QE')
-
+    return skip_flag
 
 def collect(current_id, work_path):
     if rin.calc_code == 'VASP':
