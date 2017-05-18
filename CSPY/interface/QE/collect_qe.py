@@ -6,7 +6,7 @@ from __future__ import print_function
 import os
 
 import numpy as np
-from pymatgen.io.cif import CifWriter
+from pymatgen.core.units import Energy
 
 from . import structure as qe_structure
 from ...IO import read_input as rin
@@ -32,6 +32,7 @@ def collect_qe(current_id, work_path):
         for line in reversed(lines):
             if line.startswith('!'):
                 energy = float(line.split()[-2])    # in Ry
+                energy = float(Energy(energy, 'Ry').to('eV'))    # Ry --> eV
                 break
         magmom = np.nan    # not implemented yet...
     except:

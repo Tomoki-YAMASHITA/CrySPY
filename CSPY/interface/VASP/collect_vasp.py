@@ -7,7 +7,6 @@ import os
 
 import numpy as np
 from pymatgen import Structure
-from pymatgen.io.cif import CifWriter
 
 from ...IO import read_input as rin
 
@@ -46,35 +45,8 @@ def collect_vasp(current_id, work_path):
     #---------- collect CONTCAR
     try:
         opt_struc = Structure.from_file(work_path+'CONTCAR')
-
-#        #----- opt_POSCARS
-#        with open(work_path+'CONTCAR', 'r') as ft:
-#            lines = ft.readlines()
-#        with open('./data/opt_POSCARS', 'a') as fopt:
-#            for line in lines:
-#                if len(line) == 2:    # only '\n'
-#                    break
-#                else:
-#                    fopt.write(line)
     except:
         opt_struc = None
-
-#    #---------- opt_CIFS
-#    if is not None:
-#        cif = CifWriter(opt_struc, symprec=rin.symtoleR)
-#        cif.write_file(work_path+'tmp.cif')
-#        #----- correct title (need to delete '_chemical_formula_sum')
-#        with open(work_path+'tmp.cif', 'r') as fcif:
-#            ciflines = fcif.readlines()
-#        ciflines[1] = 'data_ID_{}\n'.format(current_id)
-#        if ciflines[11][:21] == '_chemical_formula_sum':
-#            ciflines.pop(11)
-#        else:
-#            raise ValueError('ciflines[11] is not _chemical_formula_sum, have to fix bag')
-#        #----- cif --> opt_cifs
-#        with open('./data/opt_CIFS.cif', 'a') as foptcif:
-#            for line in ciflines:
-#                foptcif.write(line)
 
     #---------- mv xxxxx fin_xxxxx
     vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR', 'WAVECAR', 'CHGCAR']
