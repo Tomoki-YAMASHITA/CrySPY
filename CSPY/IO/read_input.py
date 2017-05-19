@@ -16,6 +16,7 @@ def readin():
     global minlen, maxlen, dangle, mindist
     global kmesh
     global qe_infile, qe_outfile
+    global opt_cl2_infile, opt_cl2_outfile, opt_cl2_cif
     global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum, load_init_struc, stop_next_struc
 
     #---------- read input file
@@ -118,8 +119,13 @@ def readin():
         kmesh = [float(x) for x in kmesh.split()]    # character --> float
         if not len(kmesh) == nstage:
             raise ValueError('not len(kmesh) == nstage, check kmesh and nstage')
+    #----- opt_cl2
+    elif calc_code == 'opt_cl2':
+        opt_cl2_infile = config.get('opt_cl2', 'opt_cl2_infile')
+        opt_cl2_outfile = config.get('opt_cl2', 'opt_cl2_outfile')
+        opt_cl2_cif = config.get('opt_cl2', 'opt_cl2_cif')
     else:
-        raise ValueError('calc_code should be VASP or QE for now')
+        raise ValueError('calc_code should be VASP, QE, or opt_cl2 for now')
 
     #----- option
     try:
@@ -168,10 +174,10 @@ def check_algo(algo):
 
 
 def check_calc_code(calc_code):
-    if calc_code in ['VASP', 'QE']:
+    if calc_code in ['VASP', 'QE', 'opt_cl2']:
         pass
     else:
-        raise ValueError('calc_code should be VASP or QE for now')
+        raise ValueError('calc_code should be VASP, QE, or opt_cl2 for now')
 
 
 def spglist(spgnum):
@@ -242,6 +248,13 @@ def writeout():
             fout.write('qe_outfile = {}\n'.format(qe_outfile))
             fout.write('kmesh = {}\n'.format(' '.join(str(c) for c in kmesh)))
 
+        #----- opt_cl2
+        if calc_code == 'opt_cl2':
+            fout.write('#----- opt_cl2 section\n')
+            fout.write('opt_cl2_infile = {}\n'.format(opt_cl2_infile))
+            fout.write('opt_cl2_outfile = {}\n'.format(opt_cl2_outfile))
+            fout.write('opt_cl2_cif = {}\n'.format(opt_cl2_cif))
+
         #----- option
         fout.write('#----- option section\n')
         fout.write('maxcnt = {}\n'.format(maxcnt))
@@ -295,6 +308,12 @@ def save_stat(stat):
         stat.set('input', 'qe_infile', '{}'.format(qe_infile))
         stat.set('input', 'qe_outfile', '{}'.format(qe_outfile))
         stat.set('input', 'kmesh', '{}'.format(' '.join(str(c) for c in kmesh)))
+
+    #---------- opt_cl2
+    if calc_code == 'opt_cl2':
+        stat.set('input', 'opt_cl2_infile', '{}'.format(opt_cl2_infile))
+        stat.set('input', 'opt_cl2_outfile', '{}'.format(opt_cl2_outfile))
+        stat.set('input', 'opt_cl2_cif', '{}'.format(opt_cl2_cif))
 
     #---------- option
     stat.set('input', 'maxcnt', '{}'.format(maxcnt))
@@ -357,6 +376,12 @@ def diffinstat(stat):
         old_qe_outfile = stat.get('input', 'qe_outfile')
         old_kmesh = stat.get('input', 'kmesh')
         old_kmesh = [float(x) for x in old_kmesh.split()]    # character --> float
+
+    #----- opt_cl2
+    if old_calc_code == 'opt_cl2':
+        old_opt_cl2_infile = stat.get('input', 'opt_cl2_infile')
+        old_opt_cl2_outfile = stat.get('input', 'opt_cl2_outfile')
+        old_opt_cl2_cif = stat.get('input', 'opt_cl2_cif')
 
     #----- option
     old_maxcnt = stat.getint('input', 'maxcnt')
@@ -488,6 +513,15 @@ def diffinstat(stat):
             with open('cspy.out', 'a') as fout:
                 fout.write('\n#### Changed kmesh from {0} to {1}\n'.format(old_kmesh, kmesh))
             logic_change = True
+
+    #----- opt_cl2
+    if calc_code == 'opt_cl2':
+        if not old_opt_cl2_infile == opt_cl2_infile:
+            raise ValueError('Do not change opt_cl2_infile')
+        if not old_opt_cl2_outfile == opt_cl2_outfile:
+            raise ValueError('Do not change opt_cl2_outfile')
+        if not old_opt_cl2_cif == opt_cl2_cif:
+            raise ValueError('Do not change opt_cl2_cif')
 
     #----- option
     if not old_maxcnt == maxcnt:
