@@ -11,8 +11,11 @@ from ...IO import read_input as rin
 
 
 def next_stage_qe(stage, work_path):
+    #---------- skip_flag
+    skip_flag = False
+
     #---------- prepare QE files
-    qe_files = [rin.infile, rin.outfile]
+    qe_files = [rin.qe_infile, rin.qe_outfile]
     for f in qe_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)
@@ -20,39 +23,44 @@ def next_stage_qe(stage, work_path):
 
     #---------- next structure
     try:
-        lines_cell = qe_structure.extract_cell_parameters(work_path+'prev_'+rin.outfile)
+        lines_cell = qe_structure.extract_cell_parameters(work_path+'prev_'+rin.qe_outfile)
         if lines_cell is None:
-            lines_cell = qe_structure.extract_cell_parameters(work_path+'prev_'+rin.infile)
-        lines_atom = qe_structure.extract_atomic_positions(work_path+'prev_'+rin.outfile)
+            lines_cell = qe_structure.extract_cell_parameters(work_path+'prev_'+rin.qe_infile)
+        lines_atom = qe_structure.extract_atomic_positions(work_path+'prev_'+rin.qe_outfile)
         if lines_atom is None:
-            lines_atom = qe_structure.extract_atomic_positions(work_path+'prev_'+rin.infile)
+            lines_atom = qe_structure.extract_atomic_positions(work_path+'prev_'+rin.qe_infile)
         structure = qe_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
-        raise ValueError('Error in QE. Check '+work_path+'. If you skip this structure, write "skip" in stat_job line 3.')
+        skip_flag = True
+        print('    error in QE,  skip this structure')
+        return skip_flag
 
     #---------- copy the input file from ./calc_in
-    finput = './calc_in/'+rin.infile+'_{}'.format(stage)
-    shutil.copyfile(finput, work_path+rin.infile)
+    finput = './calc_in/'+rin.qe_infile+'_{}'.format(stage)
+    shutil.copyfile(finput, work_path+rin.qe_infile)
 
     #---------- append structure info.
-    with open(work_path+rin.infile, 'a') as fin:
+    with open(work_path+rin.qe_infile, 'a') as fin:
         fin.write('\n')
-    qe_structure.write(structure, work_path+rin.infile, mode='a')
+    qe_structure.write(structure, work_path+rin.qe_infile, mode='a')
 
     #---------- K_POINTS
     mitparamset = MITRelaxSet(structure)
     kpoints = mitparamset.kpoints.automatic_density_by_vol(structure, rin.kmesh[stage-1])
-    with open(work_path+rin.infile, 'a') as f:
+    with open(work_path+rin.qe_infile, 'a') as f:
         f.write('\n')
         f.write('K_POINTS automatic\n')
         f.write(' '.join(str(x) for x in kpoints.kpts[0]) + '  0 0 0\n')
 
+    #---------- return
+    return skip_flag
+
 
 def next_struc_qe(init_struc_data, next_id, work_path):
     #---------- copy files
-    calc_inputs = [rin.infile] + rin.pseudopots
+    calc_inputs = [rin.qe_infile]
     for f in calc_inputs:
-        if f == rin.infile:
+        if f == rin.qe_infile:
             ff = f+'_1'
         else:
             ff = f
@@ -63,14 +71,14 @@ def next_struc_qe(init_struc_data, next_id, work_path):
 
     #---------- append structure info. to the input file
     structure = init_struc_data[next_id]
-    with open(work_path+rin.infile, 'a') as fin:
+    with open(work_path+rin.qe_infile, 'a') as fin:
         fin.write('\n')
-    qe_structure.write(structure, work_path+rin.infile, mode='a')
+    qe_structure.write(structure, work_path+rin.qe_infile, mode='a')
 
     #---------- K_POINTS
     mitparamset = MITRelaxSet(structure)
     kpoints = mitparamset.kpoints.automatic_density_by_vol(structure, rin.kmesh[0])
-    with open(work_path+rin.infile, 'a') as f:
+    with open(work_path+rin.qe_infile, 'a') as f:
         f.write('\n')
         f.write('K_POINTS automatic\n')
         f.write(' '.join(str(x) for x in kpoints.kpts[0]) + '  0 0 0\n')

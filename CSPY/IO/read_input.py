@@ -15,7 +15,7 @@ def readin():
     global interval, score, dscrpt, fp_rmin, fp_rmax, fp_npoints, fp_sigma
     global minlen, maxlen, dangle, mindist
     global kmesh
-    global infile, outfile, pseudopots
+    global qe_infile, qe_outfile
     global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum, load_init_struc, stop_next_struc
 
     #---------- read input file
@@ -112,10 +112,8 @@ def readin():
             raise ValueError('not len(kmesh) == nstage, check kmesh and nstage')
     #----- QE
     elif calc_code == 'QE':
-        infile = config.get('QE', 'infile')
-        outfile = config.get('QE', 'outfile')
-        pseudopots = config.get('QE', 'pseudopots')
-        pseudopots = [f for f in pseudopots.split()]
+        qe_infile = config.get('QE', 'qe_infile')
+        qe_outfile = config.get('QE', 'qe_outfile')
         kmesh = config.get('QE', 'kmesh')
         kmesh = [float(x) for x in kmesh.split()]    # character --> float
         if not len(kmesh) == nstage:
@@ -163,9 +161,7 @@ def readin():
 
 
 def check_algo(algo):
-    if algo == 'RS':
-        pass
-    elif algo == 'BO':
+    if algo in ['RS', 'BO']:
         pass
     else:
         raise ValueError('algo should be RS or BO')
@@ -239,6 +235,13 @@ def writeout():
             fout.write('#----- VASP section\n')
             fout.write('kmesh = {}\n'.format(' '.join(str(c) for c in kmesh)))
 
+        #------ QE
+        if calc_code == 'QE':
+            fout.write('#----- QE section\n')
+            fout.write('qe_infile = {}\n'.format(qe_infile))
+            fout.write('qe_outfile = {}\n'.format(qe_outfile))
+            fout.write('kmesh = {}\n'.format(' '.join(str(c) for c in kmesh)))
+
         #----- option
         fout.write('#----- option section\n')
         fout.write('maxcnt = {}\n'.format(maxcnt))
@@ -285,6 +288,12 @@ def save_stat(stat):
 
     #---------- VASP
     if calc_code == 'VASP':
+        stat.set('input', 'kmesh', '{}'.format(' '.join(str(c) for c in kmesh)))
+
+    #---------- QE
+    if calc_code == 'QE':
+        stat.set('input', 'qe_infile', '{}'.format(qe_infile))
+        stat.set('input', 'qe_outfile', '{}'.format(qe_outfile))
         stat.set('input', 'kmesh', '{}'.format(' '.join(str(c) for c in kmesh)))
 
     #---------- option
@@ -339,6 +348,13 @@ def diffinstat(stat):
 
     #----- VASP
     if old_calc_code == 'VASP':
+        old_kmesh = stat.get('input', 'kmesh')
+        old_kmesh = [float(x) for x in old_kmesh.split()]    # character --> float
+
+    #----- QE
+    if old_calc_code == 'QE':
+        old_qe_infile = stat.get('input', 'qe_infile')
+        old_qe_outfile = stat.get('input', 'qe_outfile')
         old_kmesh = stat.get('input', 'kmesh')
         old_kmesh = [float(x) for x in old_kmesh.split()]    # character --> float
 
@@ -455,6 +471,18 @@ def diffinstat(stat):
 
     #----- VASP
     if calc_code == 'VASP':
+        if not old_kmesh == kmesh:
+            print('Changed kmesh from {0} to {1}'.format(old_kmesh, kmesh))
+            with open('cspy.out', 'a') as fout:
+                fout.write('\n#### Changed kmesh from {0} to {1}\n'.format(old_kmesh, kmesh))
+            logic_change = True
+
+    #----- QE
+    if calc_code == 'QE':
+        if not old_qe_infile == qe_infile:
+            raise ValueError('Do not change qe_infile')
+        if not old_qe_outfile == qe_outfile:
+            raise ValueError('Do not change qe_outfile')
         if not old_kmesh == kmesh:
             print('Changed kmesh from {0} to {1}'.format(old_kmesh, kmesh))
             with open('cspy.out', 'a') as fout:

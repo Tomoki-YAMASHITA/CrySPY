@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -58,12 +57,6 @@ if rin.stop_chkpt == 1:
 #---------- check calc files in ./calc_in
 CSPY.interface.select_code.check_calc_files()
 
-#---------- make working directory
-if not os.path.isdir('work{:04d}'.format(rin.njob - 1)):
-    for i in range(rin.njob):
-        if not os.path.isdir('work{:04d}'.format(i)):
-            os.mkdir('work{:04d}'.format(i))
-
 
 
 
@@ -74,6 +67,12 @@ if rin.stop_chkpt == 2:
 
 
 
+
+#---------- make working directory
+if not os.path.isdir('work{:04d}'.format(rin.njob - 1)):
+    for i in range(rin.njob):
+        if not os.path.isdir('work{:04d}'.format(i)):
+            os.mkdir('work{:04d}'.format(i))
 
 #---------- instantiate Ctrl_job class
 jobs = CSPY.job.ctrl_job.Ctrl_job(stat, init_struc_data, opt_struc_data, rslt_data)

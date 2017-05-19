@@ -11,6 +11,9 @@ from ...IO import read_input as rin
 
 
 def next_stage_vasp(stage, work_path):
+    #---------- skip_flag
+    skip_flag = False
+
     #---------- prepare vasp files
     vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR']
     for f in vasp_files:
@@ -23,7 +26,9 @@ def next_stage_vasp(stage, work_path):
     try:
         structure = Structure.from_file(work_path+'POSCAR')
     except ValueError:
-        raise ValueError('Error in VASP. Check '+work_path+'. If you skip this structure, write "skip" in stat_job line 3.')
+        skip_flag = True
+        print('    error in VASP,  skip this structure')
+        return skip_flag
     mitparamset = MITRelaxSet(structure)
     kpoints = mitparamset.kpoints.automatic_density_by_vol(structure, rin.kmesh[stage-1])
     kpoints.write_file(work_path+'KPOINTS')
@@ -31,6 +36,9 @@ def next_stage_vasp(stage, work_path):
     #---------- cp INCAR_? from ./calc_in
     fincar = './calc_in/INCAR_{}'.format(stage)
     shutil.copyfile(fincar, work_path+'INCAR')
+
+    #---------- return
+    return skip_flag
 
 
 def next_struc_vasp(init_struc_data, next_id, work_path):

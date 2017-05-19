@@ -1,0 +1,227 @@
+2017/05/18 11:20:06
+CSPY 0.2.0
+Start cspy.py
+
+Read input file, cspy.in
+Write input data in cspy.out
+Save input data in cspy.stat
+Make data directory
+
+#--------- Generate initial structures
+Structure ID        0 was generated. Space group: 199 --> 199 I2_13
+Structure ID        1 was generated. Space group:  83 -->  83 P4/m
+Structure ID        2 was generated. Space group: 168 --> 183 P6mm
+Structure ID        3 was generated. Space group:  63 -->  69 Fmmm
+Structure ID        4 was generated. Space group: 213 --> 213 P4_132
+Structure ID        5 was generated. Space group:  19 -->  19 P2_12_12_1
+Structure ID        6 was generated. Space group:   3 -->   3 P2
+Structure ID        7 was generated. Space group: 183 --> 183 P6mm
+Structure ID        8 was generated. Space group: 124 --> 123 P4/mmm
+Structure ID        9 was generated. Space group: 164 --> 164 P-3m1
+Structure ID       10 was generated. Space group: 110 --> 110 I4_1cd
+Structure ID       11 was generated. Space group: 217 --> 217 I-43m
+Structure ID       12 was generated. Space group:   7 -->   7 Pc
+Structure ID       13 was generated. Space group:  29 -->  29 Pca2_1
+Structure ID       14 was generated. Space group:  65 -->  69 Fmmm
+Structure ID       15 was generated. Space group:  81 -->  81 P-4
+Structure ID       16 was generated. Space group:  21 -->  69 Fmmm
+Structure ID       17 was generated. Space group: 117 --> 127 P4/mbm
+Structure ID       18 was generated. Space group:  48 -->  48 Pnnn
+Structure ID       19 was generated. Space group:  18 -->  59 Pmmn
+
+#---------- job status
+work0000: submit job, structure ID 0 Stage 1
+work0001: submit job, structure ID 1 Stage 1
+work0002: submit job, structure ID 2 Stage 1
+work0003: submit job, structure ID 3 Stage 1
+work0004: submit job, structure ID 4 Stage 1
+work0005: submit job, structure ID 5 Stage 1
+work0006: submit job, structure ID 6 Stage 1
+work0007: submit job, structure ID 7 Stage 1
+work0008: submit job, structure ID 8 Stage 1
+work0009: submit job, structure ID 9 Stage 1
+
+
+
+2017/05/18 11:41:37
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 0 Stage 1 Done!
+    submit job, structure ID 0 Stage 2
+work0001: Structure ID 1 Stage 1 Done!
+    submit job, structure ID 1 Stage 2
+work0002: still queuing or runnning
+work0003: still queuing or runnning
+work0004: still queuing or runnning
+work0005: still queuing or runnning
+work0006: still queuing or runnning
+work0007: still queuing or runnning
+work0008: still queuing or runnning
+work0009: still queuing or runnning
+
+
+
+2017/05/18 11:59:33
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: still queuing or runnning
+work0001: still queuing or runnning
+work0002: Structure ID 2 Stage 1 Done!
+    submit job, structure ID 2 Stage 2
+work0003: Structure ID 3 Stage 1 Done!
+    submit job, structure ID 3 Stage 2
+work0004: Structure ID 4 Stage 1 Done!
+    submit job, structure ID 4 Stage 2
+work0005: Structure ID 5 Stage 1 Done!
+    submit job, structure ID 5 Stage 2
+work0006: still queuing or runnning
+work0007: Structure ID 7 Stage 1 Done!
+    submit job, structure ID 7 Stage 2
+work0008: Structure ID 8 Stage 1 Done!
+    submit job, structure ID 8 Stage 2
+work0009: still queuing or runnning
+
+
+
+2017/05/18 12:05:21
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 0 Stage 2 Done!
+    collect results: E = -5083.7117384
+work0000: submit job, structure ID 10 Stage 1
+work0001: still queuing or runnning
+work0002: still queuing or runnning
+work0003: still queuing or runnning
+work0004: still queuing or runnning
+work0005: still queuing or runnning
+work0006: still queuing or runnning
+work0007: still queuing or runnning
+work0008: still queuing or runnning
+work0009: Structure ID 9 Stage 1 Done!
+    submit job, structure ID 9 Stage 2
+
+
+
+2017/05/18 12:46:13
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 10 Stage 1 Done!
+    submit job, structure ID 10 Stage 2
+work0001: Structure ID 1 Stage 2 Done!
+    collect results: E = -5082.17868824
+work0001: submit job, structure ID 11 Stage 1
+work0002: Structure ID 2 Stage 2 Done!
+    collect results: E = -5067.52702547
+work0002: submit job, structure ID 12 Stage 1
+work0003: still queuing or runnning
+work0004: Structure ID 4 Stage 2 Done!
+    collect results: E = -5085.9760143
+work0004: submit job, structure ID 13 Stage 1
+work0005: Structure ID 5 Stage 2 Done!
+    collect results: E = -5082.42487604
+work0005: submit job, structure ID 14 Stage 1
+work0006: Structure ID 6 Stage 1 Done!
+    submit job, structure ID 6 Stage 2
+work0007: Structure ID 7 Stage 2 Done!
+    collect results: E = -5079.32951639
+work0007: submit job, structure ID 15 Stage 1
+work0008: Structure ID 8 Stage 2 Done!
+    collect results: E = -5069.86081842
+work0008: submit job, structure ID 16 Stage 1
+work0009: Structure ID 9 Stage 2 Done!
+    collect results: E = -5081.59689003
+work0009: submit job, structure ID 17 Stage 1
+
+
+
+2017/05/18 13:58:54
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 10 Stage 2 Done!
+    collect results: E = -5084.68639406
+work0000: submit job, structure ID 18 Stage 1
+work0001: Structure ID 11 Stage 1 Done!
+    submit job, structure ID 11 Stage 2
+work0002: Structure ID 12 Stage 1 Done!
+    submit job, structure ID 12 Stage 2
+work0003: Structure ID 3 Stage 2 Done!
+    collect results: E = -5083.62186056
+work0003: submit job, structure ID 19 Stage 1
+work0004: Structure ID 13 Stage 1 Done!
+    submit job, structure ID 13 Stage 2
+work0005: Structure ID 14 Stage 1 Done!
+    submit job, structure ID 14 Stage 2
+work0006: Structure ID 6 Stage 2 Done!
+    collect results: E = -5079.43387913
+work0007: Structure ID 15 Stage 1 Done!
+    submit job, structure ID 15 Stage 2
+work0008: Structure ID 16 Stage 1 Done!
+    submit job, structure ID 16 Stage 2
+work0009: Structure ID 17 Stage 1 Done!
+    submit job, structure ID 17 Stage 2
+
+
+
+2017/05/18 14:30:27
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 18 Stage 1 Done!
+    submit job, structure ID 18 Stage 2
+work0001: Structure ID 11 Stage 2 Done!
+    collect results: E = -5083.42021085
+work0002: Structure ID 12 Stage 2 Done!
+    collect results: E = -5084.84641769
+work0003: Structure ID 19 Stage 1 Done!
+    submit job, structure ID 19 Stage 2
+work0004: still queuing or runnning
+work0005: Structure ID 14 Stage 2 Done!
+    collect results: E = -5083.20613888
+work0007: still queuing or runnning
+work0008: still queuing or runnning
+work0009: still queuing or runnning
+
+
+
+2017/05/18 15:06:36
+CSPY 0.2.0
+Restart cspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 18 Stage 2 Done!
+    collect results: E = -5073.98500425
+work0003: Structure ID 19 Stage 2 Done!
+    collect results: E = -5081.55873028
+work0004: Structure ID 13 Stage 2 Done!
+    collect results: E = -5080.69401202
+work0007: Structure ID 15 Stage 2 Done!
+    collect results: E = -5078.64086111
+work0008: Structure ID 16 Stage 2 Done!
+    collect results: E = -5081.11301757
+work0009: Structure ID 17 Stage 2 Done!
+    collect results: E = -5081.98186556
