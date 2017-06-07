@@ -1,5 +1,5 @@
-# CSPY
-CSPY is a crystal structure prediction tool written in Python.
+# CrySPY
+CrySPY is a crystal structure prediction tool written in Python.
 
 ## System requirements
 ### Python

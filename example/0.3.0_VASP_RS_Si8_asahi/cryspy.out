@@ -1,0 +1,57 @@
+2017/06/06 10:04:42
+CrySPY 0.3.0
+Start cryspy.py
+
+#---------- Read cryspy.in (at 1st run)
+#----- basic section
+algo = RS
+calc_code = VASP
+tot_struc = 20
+natot = 8
+atype = Si
+nat = 8
+nstage = 4
+njob = 20
+jobcmd = qsub2
+jobfile = job_cryspy
+#----- lattice section
+minlen = 5.0
+maxlen = 10.0
+dangle = 20.0
+mindist = 1.8
+#----- VASP section
+kppvol = 40 100 100 100
+force_gamma = False
+#----- option section
+maxcnt = 500
+stop_chkpt = 0
+symtoleI = 0.001
+symtoleR = 0.1
+spgnum = all
+load_struc_flag = False
+stop_next_struc = False
+
+
+#---------- Generate initial structures
+Generated structures up to ID 19
+
+work0007: Skip Structure ID 7
+work0009: Skip Structure ID 9
+work0011: Skip Structure ID 11
+Done! Structure ID        0: E = -39.374773
+Done! Structure ID        1: E = -34.593054
+Done! Structure ID        2: E = -39.364139
+Done! Structure ID        3: E = -43.340212
+Done! Structure ID        4: E = -40.663423
+Done! Structure ID        5: E = -40.657588
+Done! Structure ID        6: E = -35.500516
+Done! Structure ID        8: E = -40.564101
+Done! Structure ID       10: E = -39.539089
+Done! Structure ID       12: E = -38.329267
+Done! Structure ID       13: E = -43.371357
+Done! Structure ID       14: E = -40.794201
+Done! Structure ID       15: E = -40.459278
+Done! Structure ID       16: E = -39.849656
+Done! Structure ID       17: E = -40.711879
+Done! Structure ID       18: E = -36.397796
+Done! Structure ID       19: E = -30.499055

@@ -1,0 +1,40 @@
+[input]
+algo = RS
+calc_code = QE
+tot_struc = 20
+natot = 8
+atype = Si
+nat = 8
+nstage = 3
+njob = 10
+jobcmd = qsub2
+jobfile = job_cryspy
+minlen = 5.0
+maxlen = 10.0
+dangle = 20.0
+mindist = 1.8
+qe_infile = pwscf.in
+qe_outfile = pwscf.out
+kppvol = 40 100 100
+force_gamma = False
+maxcnt = 500
+stop_chkpt = 0
+symtolei = 0.001
+symtoler = 0.1
+spgnum = all
+load_struc_flag = True
+stop_next_struc = False
+
+[status]
+next_id = 20
+work0000 = 
+work0001 = 
+work0002 = 
+work0003 = 
+work0004 = 
+work0005 = 
+work0006 = 
+work0007 = 
+work0008 = 
+work0009 = 
+

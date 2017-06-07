@@ -1,0 +1,59 @@
+2017/06/07 16:38:00
+CrySPY 0.3.0
+Start cryspy.py
+
+#---------- Read cryspy.in (at 1st run)
+#----- basic section
+algo = RS
+calc_code = QE
+tot_struc = 20
+natot = 8
+atype = Si
+nat = 8
+nstage = 3
+njob = 10
+jobcmd = qsub2
+jobfile = job_cryspy
+#----- lattice section
+minlen = 5.0
+maxlen = 10.0
+dangle = 20.0
+mindist = 1.8
+#----- QE section
+qe_infile = pwscf.in
+qe_outfile = pwscf.out
+kppvol = 40 100 100
+force_gamma = False
+#----- option section
+maxcnt = 500
+stop_chkpt = 0
+symtoleI = 0.001
+symtoleR = 0.1
+spgnum = all
+load_struc_flag = True
+stop_next_struc = False
+
+
+#---------- Load initial structure data
+Load ./data/pkl_data/init_struc_data.pkl
+
+Done! Structure ID        0: E = -5082.01938244
+Done! Structure ID        2: E = -5082.05736491
+Done! Structure ID        3: E = -5085.96043279
+Done! Structure ID        5: E = -5083.12677578
+Done! Structure ID        6: E = -5078.14565606
+Done! Structure ID        4: E = -5083.15016111
+Done! Structure ID        8: E = -5083.23957229
+Done! Structure ID        9: E = -5082.04973688
+Done! Structure ID        1: E = -5077.30628412
+Done! Structure ID       10: E = -5082.08775744
+Done! Structure ID       12: E = -5080.91468725
+Done! Structure ID       13: E = -5085.99690475
+Done! Structure ID       14: E = -5083.4210672
+Done! Structure ID       11: E = -5082.12759042
+Done! Structure ID       15: E = -5083.34594744
+Done! Structure ID        7: E = -5083.19718905
+Done! Structure ID       17: E = -5083.34586118
+Done! Structure ID       16: E = -5084.71923249
+Done! Structure ID       19: E = -5073.15052152
+Done! Structure ID       18: E = -5080.69567668
