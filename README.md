@@ -11,3 +11,6 @@ CrySPY is a crystal structure prediction tool written in Python.
 
 ### Others
 - [find_wy](https://github.com/nim-hrkn/find_wy "find_wy")
+
+## Document
+[CrySPY document](https://tomoki-yamashita.github.io/CrySPY "CrySPY documment")
