@@ -1,0 +1,168 @@
+.. index::
+   single: cryspy.in
+
+===========================
+Input file: ``cryspy.in``
+===========================
+
+.. contents:: Contents
+
+
+
+
+File format
+=================
+
+CrySPY uses the `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_ module to read input file, ``cryspy.in`` .
+``cryspy.in``  consists of sections, led by a ``[section]`` header and followed by ``name = value`` or ``name : value`` entries.
+Lines beginning with ``#`` or ``;`` are ignored and may be used to provide comments.
+
+.. seealso:: `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_
+.. attention:: Section names and values are case sensitive, but names are not.
+
+
+
+
+Example
+=================
+``cryspy.in`` for YCo `5`:sub: by random search::
+
+   [basic]
+   algo = RS
+   calc_code = VASP
+   tot_struc = 10
+   natot = 6
+   atype = Y Co
+   nat = 1  5
+   nstage = 4
+   njob = 5
+   jobcmd = qsub
+   jobfile = job_cryspy
+   
+   [lattice]
+   minlen = 4
+   maxlen = 8
+   dangle = 20
+   mindist = 1.8
+   
+   [VASP]
+   kppvol = 40 100 100 100
+
+
+
+
+.. index::
+   single: [basic]
+
+[basic] section
+==================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``algo``, "``RS`` , ``BO``",  ,  Algorithm
+   ``calc_code``, "``VASP``, ``QE``",  , Caluculation code for structure optimization
+   ``tot_struc``, integer,  , Total number of structures
+   ``natot``, integer,  , Total number of atoms in unit cell
+   ``atype``, "atomic symbol [, atomic symbol ...]",  , Atom type
+   ``nat``, "integer [, integer ...]",  , "Number of atoms in atom type1 [,type2 ...]"
+   ``nstage``, integer,  , Number of calculation stages
+   ``njob``, integer,  , Number simultaneously submitted jobs
+   ``jobcmd``,  ,  , "Specify a command to submit jobs, such as qsub"
+   ``jobfile``,  ,  , "Specify a jobfile to submit jobs for VASP, QE, and so on"
+
+
+
+
+.. index::
+   single: [lattice]
+
+[lattice] section
+==================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``minlen``, float,  ,  Minimum length of lattce vector
+   ``maxlen``, float,  ,  Maximum length of lattce vector
+   ``dangle``, float,  ,  "Delta angle for alpha, beta, and gamma in degree unit"
+   ``mindist``, float, ,  Constraint on minimum interatomic distance
+
+
+
+
+.. index::
+   single: [VASP]
+
+[VASP] section
+==================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``kppvol``, integer,  ,  Grid density per Angstrom `-3`:sup: of  reciprocal cell
+   ``force_gamma``, boolean,  ,  "If True, force gammma-centered mesh"
+
+
+
+
+.. index::
+   single: [QE]
+
+[QE] section
+==================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``kppvol``, integer,  ,  Grid density per Angstrom `-3`:sup: of  reciprocal cell
+   ``qe_infile``,  ,  ,  Specify your QE input file name
+   ``qe_outfile``,  ,  ,  Specify your QE output file name
+
+
+
+
+.. index::
+   single: [BO]
+
+[BO] section
+=================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``interval``, integer,  ,  Number of structures to calculate between learning data
+   ``score``, "``TS``, ``EI``, ``PI``",  ,  Acquisition function
+   ``dscrpt``, ``FP`` ,  , Descriptor for structure
+   ``fp_rmin``, float, 0.5, Minimum cutoff of *r* in *fingerprint*
+   ``fp_rmax``, float, 5.0, Maximum cutoff of *r* in *fingerprint*
+   ``fp_npoints``, integer, 50, Number of discretized *r* points in *fingerprint*
+   ``fp_sigma``, float, 0.2, Sigma parameter in Gaussian smearing function in Angstrom unit
+
+
+
+
+.. index::
+   single: [option]
+
+[option] section
+===================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``maxcnt``, integer,  500,  Maximum number of trials to determine atom positions
+   ``stop_chkpt``, integer , 0,  Program stops at a specified check point
+   ``symtoleI``, float , 0.001 , Tolerance for symmetry finding for Initial structures
+   ``symtoleR``, float , 0.1   , Tolerance for symmetry finding for Relaxed structures
+   ``spgnum``, "``all``, space group number", ``all`` , Constraint on space group
+   ``load_struc_flag``, boolean , False , "If True, not generte structures from scratch, but load ``./data/pkl_data/init_struc_data.pkl``"
+   ``stop_next_struc``, boolean , False , "If True, not submit next structures, but submit next stage and collect results"
+
+
