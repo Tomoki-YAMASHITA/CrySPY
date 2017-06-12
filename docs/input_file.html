@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Input file: cryspy.in &mdash; CrySPY Updata: 2017/06/08 documentation</title>
+  <title>Input file: cryspy.in &mdash; CrySPY Updata: 2017/06/11 documentation</title>
   
 
   
@@ -32,10 +32,12 @@
   
 
   
+        <link rel="author" title="About these documents"
+              href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2017/06/08 documentation" href="index.html"/>
+    <link rel="top" title="CrySPY Updata: 2017/06/11 documentation" href="index.html"/>
         <link rel="next" title="Utility" href="utility.html"/>
         <link rel="prev" title="Tutorial" href="tutorial.html"/> 
 
@@ -66,7 +68,7 @@
             
             
               <div class="version">
-                Update: 2017/06/08
+                Update: 2017/06/11
               </div>
             
           
@@ -90,15 +92,27 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents</span></p>
-<ul class="current">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#file-format">File format</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#basic-section">[basic] section</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#lattice-section">[lattice] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-section">[basic] section</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#algo"><code class="docutils literal"><span class="pre">algo</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calc-code"><code class="docutils literal"><span class="pre">calc_code</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#lattice-section">[lattice] section</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dangle"><code class="docutils literal"><span class="pre">dangle</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#triclinic-system">Triclinic system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#monoclinic-system">Monoclinic system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rhombohedral-system">Rhombohedral system</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#vasp-section">[VASP] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#qe-section">[QE] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bo-section">[BO] section</a></li>
@@ -179,12 +193,24 @@
 <li><a class="reference internal" href="#input-file-cryspy-in" id="id2">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a><ul>
 <li><a class="reference internal" href="#file-format" id="id3">File format</a></li>
 <li><a class="reference internal" href="#example" id="id4">Example</a></li>
-<li><a class="reference internal" href="#basic-section" id="id5">[basic] section</a></li>
-<li><a class="reference internal" href="#lattice-section" id="id6">[lattice] section</a></li>
-<li><a class="reference internal" href="#vasp-section" id="id7">[VASP] section</a></li>
-<li><a class="reference internal" href="#qe-section" id="id8">[QE] section</a></li>
-<li><a class="reference internal" href="#bo-section" id="id9">[BO] section</a></li>
-<li><a class="reference internal" href="#option-section" id="id10">[option] section</a></li>
+<li><a class="reference internal" href="#basic-section" id="id5">[basic] section</a><ul>
+<li><a class="reference internal" href="#algo" id="id6"><code class="docutils literal"><span class="pre">algo</span></code></a></li>
+<li><a class="reference internal" href="#calc-code" id="id7"><code class="docutils literal"><span class="pre">calc_code</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lattice-section" id="id8">[lattice] section</a><ul>
+<li><a class="reference internal" href="#dangle" id="id9"><code class="docutils literal"><span class="pre">dangle</span></code></a><ul>
+<li><a class="reference internal" href="#triclinic-system" id="id10">Triclinic system</a></li>
+<li><a class="reference internal" href="#monoclinic-system" id="id11">Monoclinic system</a></li>
+<li><a class="reference internal" href="#rhombohedral-system" id="id12">Rhombohedral system</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#vasp-section" id="id13">[VASP] section</a></li>
+<li><a class="reference internal" href="#qe-section" id="id14">[QE] section</a></li>
+<li><a class="reference internal" href="#bo-section" id="id15">[BO] section</a></li>
+<li><a class="reference internal" href="#option-section" id="id16">[option] section</a></li>
 </ul>
 </li>
 </ul>
@@ -193,19 +219,26 @@
 <h2><a class="toc-backref" href="#id3">File format</a><a class="headerlink" href="#file-format" title="Permalink to this headline">¶</a></h2>
 <p>CrySPY uses the <a class="reference external" href="https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser">ConfigParser</a> module to read input file, <code class="docutils literal"><span class="pre">cryspy.in</span></code> .
 <code class="docutils literal"><span class="pre">cryspy.in</span></code>  consists of sections, led by a <code class="docutils literal"><span class="pre">[section]</span></code> header and followed by <code class="docutils literal"><span class="pre">name</span> <span class="pre">=</span> <span class="pre">value</span></code> or <code class="docutils literal"><span class="pre">name</span> <span class="pre">:</span> <span class="pre">value</span></code> entries.
-Lines beginning with <code class="docutils literal"><span class="pre">#</span></code> or <code class="docutils literal"><span class="pre">;</span></code> are ignored and may be used to provide comments.</p>
+Section names and values are case sensitive, but names are not.
+Lines beginning with <code class="docutils literal"><span class="pre">#</span></code> or <code class="docutils literal"><span class="pre">;</span></code> are ignored and may be used to provide comments.
+Accepted Boolean values are <code class="docutils literal"><span class="pre">1</span></code>, <code class="docutils literal"><span class="pre">yes</span></code>, <code class="docutils literal"><span class="pre">true</span></code>, and <code class="docutils literal"><span class="pre">on</span></code>, which cause this method to return <code class="docutils literal"><span class="pre">True</span></code>, and <code class="docutils literal"><span class="pre">0</span></code>, <code class="docutils literal"><span class="pre">no</span></code>, <code class="docutils literal"><span class="pre">false</span></code>, and <code class="docutils literal"><span class="pre">off</span></code>, which cause it to return False. These string values for Boolean are checked in a case-insensitive manner.
+Some values are given in a space-separated manner.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference external" href="https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser">ConfigParser</a></p>
 </div>
 <div class="admonition attention">
 <p class="first admonition-title">Attention</p>
-<p class="last">Section names and values are case sensitive, but names are not.</p>
+<div class="last line-block">
+<div class="line">section name: case sensitive</div>
+<div class="line">name: case insensitive</div>
+<div class="line">value: case sensitive except for Boolean</div>
+</div>
 </div>
 </div>
 <div class="section" id="example">
 <h2><a class="toc-backref" href="#id4">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">cryspy.in</span></code> for YCo <sub>5</sub> by random search:</p>
+<p><code class="docutils literal"><span class="pre">cryspy.in</span></code> for YCo<sub>5</sub> by random search:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">basic</span><span class="p">]</span>
 <span class="n">algo</span> <span class="o">=</span> <span class="n">RS</span>
 <span class="n">calc_code</span> <span class="o">=</span> <span class="n">VASP</span>
@@ -264,17 +297,17 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">natot</span></code></td>
 <td>integer</td>
 <td>&#160;</td>
-<td>Total number of atoms in unit cell</td>
+<td>Total number of atoms in a unit cell</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">atype</span></code></td>
-<td>atomic symbol [, atomic symbol ...]</td>
+<td>atomic symbol [atomic symbol ...]</td>
 <td>&#160;</td>
 <td>Atom type</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">nat</span></code></td>
-<td>integer [, integer ...]</td>
+<td>integer [integer ...]</td>
 <td>&#160;</td>
-<td>Number of atoms in atom type1 [,type2 ...]</td>
+<td>Number of atoms in atom type1 [type2 ...]</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">nstage</span></code></td>
 <td>integer</td>
@@ -298,9 +331,25 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </tr>
 </tbody>
 </table>
+<div class="section" id="algo">
+<span id="index-2"></span><h3><a class="toc-backref" href="#id6"><code class="docutils literal"><span class="pre">algo</span></code></a><a class="headerlink" href="#algo" title="Permalink to this headline">¶</a></h3>
+<p>Available algorithms for crystal structure prediction are:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">RS</span></code>: <strong>R</strong>andom <strong>S</strong>earch</li>
+<li><code class="docutils literal"><span class="pre">BO</span></code>: <strong>B</strong>ayesian <strong>O</strong>ptimization</li>
+</ul>
+</div>
+<div class="section" id="calc-code">
+<span id="index-3"></span><h3><a class="toc-backref" href="#id7"><code class="docutils literal"><span class="pre">calc_code</span></code></a><a class="headerlink" href="#calc-code" title="Permalink to this headline">¶</a></h3>
+<p>CrySPY is interfaced with:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">VASP</span></code>: <strong>VASP</strong> (<a class="reference external" href="https://www.vasp.at">https://www.vasp.at</a>)</li>
+<li><code class="docutils literal"><span class="pre">QE</span></code>: <strong>Q</strong>uantum <strong>E</strong>spresso (<a class="reference external" href="http://www.quantum-espresso.org">http://www.quantum-espresso.org</a>)</li>
+</ul>
+</div>
 </div>
 <div class="section" id="lattice-section">
-<span id="index-2"></span><h2><a class="toc-backref" href="#id6">[lattice] section</a><a class="headerlink" href="#lattice-section" title="Permalink to this headline">¶</a></h2>
+<span id="index-4"></span><h2><a class="toc-backref" href="#id8">[lattice] section</a><a class="headerlink" href="#lattice-section" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="colwidths-auto docutils">
 <colgroup>
 <col width="25%" />
@@ -338,9 +387,29 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </tr>
 </tbody>
 </table>
+<div class="section" id="dangle">
+<span id="index-5"></span><h3><a class="toc-backref" href="#id9"><code class="docutils literal"><span class="pre">dangle</span></code></a><a class="headerlink" href="#dangle" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">dangle</span></code>, <img class="math" src="_images/math/3be04d4207434584251f6921820c24ac9fa8c6f1.png" alt="\theta"/>, places constranits on the lattice parameters <img class="math" src="_images/math/37acf9e10a0085893a9f79eb7d96ea78e5cf6f28.png" alt="\alpha, \beta"/>, and <img class="math" src="_images/math/3666981dc77862de77b6ecfcb64aad59b425cbaf.png" alt="\gamma"/> as follows:</p>
+<div class="section" id="triclinic-system">
+<h4><a class="toc-backref" href="#id10">Triclinic system</a><a class="headerlink" href="#triclinic-system" title="Permalink to this headline">¶</a></h4>
+<div class="math">
+<p><img src="_images/math/3d296adaa116a55f99f95e95575d4a6b4ca03b95.png" alt="\mathrm{(Type\; 1)} \;\;\; 90^\circ - \theta \leq \alpha, \beta, \gamma &lt; 90^\circ \\
+\mathrm{(Type\; 2)} \;\;\; 90^\circ \leq \alpha, \beta, \gamma \leq 90^\circ + \theta"/></p>
+</div></div>
+<div class="section" id="monoclinic-system">
+<h4><a class="toc-backref" href="#id11">Monoclinic system</a><a class="headerlink" href="#monoclinic-system" title="Permalink to this headline">¶</a></h4>
+<div class="math">
+<p><img src="_images/math/104884c19b7cc45d0852f58e92d23d634d632a8c.png" alt="90^\circ \leq \beta \leq 90^\circ + \theta"/></p>
+</div></div>
+<div class="section" id="rhombohedral-system">
+<h4><a class="toc-backref" href="#id12">Rhombohedral system</a><a class="headerlink" href="#rhombohedral-system" title="Permalink to this headline">¶</a></h4>
+<div class="math">
+<p><img src="_images/math/6f1e3cbb4c9fdb0b702b2258db925fc9cc9902a9.png" alt="90^\circ - \theta \leq \alpha \leq 90^\circ + \theta"/></p>
+</div></div>
+</div>
 </div>
 <div class="section" id="vasp-section">
-<span id="index-3"></span><h2><a class="toc-backref" href="#id7">[VASP] section</a><a class="headerlink" href="#vasp-section" title="Permalink to this headline">¶</a></h2>
+<span id="index-6"></span><h2><a class="toc-backref" href="#id13">[VASP] section</a><a class="headerlink" href="#vasp-section" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="colwidths-auto docutils">
 <colgroup>
 <col width="25%" />
@@ -357,20 +426,20 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">kppvol</span></code></td>
-<td>integer</td>
+<td>integer [integer]</td>
 <td>&#160;</td>
-<td>Grid density per Angstrom <sup>-3</sup> of  reciprocal cell</td>
+<td>Grid density per Angstrom<sup>-3</sup> of  reciprocal cell in each stage</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">force_gamma</span></code></td>
 <td>boolean</td>
-<td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
 <td>If True, force gammma-centered mesh</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="qe-section">
-<span id="index-4"></span><h2><a class="toc-backref" href="#id8">[QE] section</a><a class="headerlink" href="#qe-section" title="Permalink to this headline">¶</a></h2>
+<span id="index-7"></span><h2><a class="toc-backref" href="#id14">[QE] section</a><a class="headerlink" href="#qe-section" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="colwidths-auto docutils">
 <colgroup>
 <col width="25%" />
@@ -387,9 +456,9 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">kppvol</span></code></td>
-<td>integer</td>
+<td>integer [integer ...]</td>
 <td>&#160;</td>
-<td>Grid density per Angstrom <sup>-3</sup> of  reciprocal cell</td>
+<td>Grid density per Angstrom<sup>-3</sup> of  reciprocal cell in each stage</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">qe_infile</span></code></td>
 <td>&#160;</td>
@@ -405,7 +474,7 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </table>
 </div>
 <div class="section" id="bo-section">
-<span id="index-5"></span><h2><a class="toc-backref" href="#id9">[BO] section</a><a class="headerlink" href="#bo-section" title="Permalink to this headline">¶</a></h2>
+<span id="index-8"></span><h2><a class="toc-backref" href="#id15">[BO] section</a><a class="headerlink" href="#bo-section" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="colwidths-auto docutils">
 <colgroup>
 <col width="25%" />
@@ -460,7 +529,7 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </table>
 </div>
 <div class="section" id="option-section">
-<span id="index-6"></span><h2><a class="toc-backref" href="#id10">[option] section</a><a class="headerlink" href="#option-section" title="Permalink to this headline">¶</a></h2>
+<span id="index-9"></span><h2><a class="toc-backref" href="#id16">[option] section</a><a class="headerlink" href="#option-section" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="colwidths-auto docutils">
 <colgroup>
 <col width="25%" />
@@ -503,12 +572,12 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">load_struc_flag</span></code></td>
 <td>boolean</td>
-<td>False</td>
-<td>If True, not generte structures from scratch, but load <code class="docutils literal"><span class="pre">./data/pkl_data/init_struc_data.pkl</span></code></td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
+<td>If True, load initial structures from <code class="docutils literal"><span class="pre">./data/pkl_data/init_struc_data.pkl</span></code></td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">stop_next_struc</span></code></td>
 <td>boolean</td>
-<td>False</td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
 <td>If True, not submit next structures, but submit next stage and collect results</td>
 </tr>
 </tbody>
@@ -560,7 +629,7 @@ Lines beginning with <code class="docutils literal"><span class="pre">#</span></
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'Updata: 2017/06/08',
+            VERSION:'Updata: 2017/06/11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

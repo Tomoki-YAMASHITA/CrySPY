@@ -15,17 +15,23 @@ File format
 
 CrySPY uses the `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_ module to read input file, ``cryspy.in`` .
 ``cryspy.in``  consists of sections, led by a ``[section]`` header and followed by ``name = value`` or ``name : value`` entries.
+Section names and values are case sensitive, but names are not.
 Lines beginning with ``#`` or ``;`` are ignored and may be used to provide comments.
+Accepted Boolean values are ``1``, ``yes``, ``true``, and ``on``, which cause this method to return ``True``, and ``0``, ``no``, ``false``, and ``off``, which cause it to return False. These string values for Boolean are checked in a case-insensitive manner.
+Some values are given in a space-separated manner.
 
 .. seealso:: `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_
-.. attention:: Section names and values are case sensitive, but names are not.
+.. attention::
+   | section name: case sensitive
+   | name: case insensitive
+   | value: case sensitive except for Boolean
 
 
 
 
 Example
 =================
-``cryspy.in`` for YCo `5`:sub: by random search::
+``cryspy.in`` for YCo\ `5`:sub: by random search::
 
    [basic]
    algo = RS
@@ -64,19 +70,46 @@ Example
    ``algo``, "``RS`` , ``BO``",  ,  Algorithm
    ``calc_code``, "``VASP``, ``QE``",  , Caluculation code for structure optimization
    ``tot_struc``, integer,  , Total number of structures
-   ``natot``, integer,  , Total number of atoms in unit cell
-   ``atype``, "atomic symbol [, atomic symbol ...]",  , Atom type
-   ``nat``, "integer [, integer ...]",  , "Number of atoms in atom type1 [,type2 ...]"
+   ``natot``, integer,  , Total number of atoms in a unit cell
+   ``atype``, "atomic symbol [atomic symbol ...]",  , Atom type
+   ``nat``, "integer [integer ...]",  , "Number of atoms in atom type1 [type2 ...]"
    ``nstage``, integer,  , Number of calculation stages
    ``njob``, integer,  , Number simultaneously submitted jobs
    ``jobcmd``,  ,  , "Specify a command to submit jobs, such as qsub"
    ``jobfile``,  ,  , "Specify a jobfile to submit jobs for VASP, QE, and so on"
 
 
+.. index::
+   single: algo
+
+``algo``
+----------
+
+Available algorithms for crystal structure prediction are:
+
+- ``RS``: **R**\ andom **S**\ earch
+- ``BO``: **B**\ ayesian **O**\ ptimization
+
+
+.. index::
+   single: calc_code
+
+``calc_code``
+---------------
+
+CrySPY is interfaced with:
+
+- ``VASP``: **VASP** (https://www.vasp.at)
+- ``QE``: **Q**\ uantum **E**\ spresso (http://www.quantum-espresso.org)
+
+
 
 
 .. index::
    single: [lattice]
+   single: minlen
+   single: maxlen
+   single: mindist
 
 [lattice] section
 ==================
@@ -91,6 +124,38 @@ Example
    ``mindist``, float, ,  Constraint on minimum interatomic distance
 
 
+.. index::
+   single: dangle
+
+``dangle``
+------------
+
+``dangle``, :math:`\theta`, places constranits on the lattice parameters :math:`\alpha, \beta`, and :math:`\gamma` as follows:
+
+
+Triclinic system
+^^^^^^^^^^^^^^^^^^
+
+.. math::
+   \mathrm{(Type\; 1)} \;\;\; 90^\circ - \theta \leq \alpha, \beta, \gamma < 90^\circ \\
+   \mathrm{(Type\; 2)} \;\;\; 90^\circ \leq \alpha, \beta, \gamma \leq 90^\circ + \theta
+
+
+
+Monoclinic system
+^^^^^^^^^^^^^^^^^^^
+
+.. math::
+   90^\circ \leq \beta \leq 90^\circ + \theta
+
+
+Rhombohedral system
+^^^^^^^^^^^^^^^^^^^^^
+
+.. math::
+   90^\circ - \theta \leq \alpha \leq 90^\circ + \theta
+
+
 
 
 .. index::
@@ -103,8 +168,8 @@ Example
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``kppvol``, integer,  ,  Grid density per Angstrom `-3`:sup: of  reciprocal cell
-   ``force_gamma``, boolean,  ,  "If True, force gammma-centered mesh"
+   ``kppvol``, integer [integer],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
+   ``force_gamma``, boolean, ``False`` ,  "If True, force gammma-centered mesh"
 
 
 
@@ -119,7 +184,7 @@ Example
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``kppvol``, integer,  ,  Grid density per Angstrom `-3`:sup: of  reciprocal cell
+   ``kppvol``, integer [integer ...],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
    ``qe_infile``,  ,  ,  Specify your QE input file name
    ``qe_outfile``,  ,  ,  Specify your QE output file name
 
@@ -162,7 +227,7 @@ Example
    ``symtoleI``, float , 0.001 , Tolerance for symmetry finding for Initial structures
    ``symtoleR``, float , 0.1   , Tolerance for symmetry finding for Relaxed structures
    ``spgnum``, "``all``, space group number", ``all`` , Constraint on space group
-   ``load_struc_flag``, boolean , False , "If True, not generte structures from scratch, but load ``./data/pkl_data/init_struc_data.pkl``"
-   ``stop_next_struc``, boolean , False , "If True, not submit next structures, but submit next stage and collect results"
+   ``load_struc_flag``, boolean, ``False``, "If True, load initial structures from ``./data/pkl_data/init_struc_data.pkl``"
+   ``stop_next_struc``, boolean, ``False``, "If True, not submit next structures, but submit next stage and collect results"
 
 

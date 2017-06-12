@@ -3,3 +3,29 @@ Installation
 =================
 
 .. contents:: Contents
+
+
+System requirements
+====================
+
+
+.. index::
+   single: COMBO
+
+Python
+--------
+
+- Python 2.7.x
+- `COMBO <https://github.com/tsudalab/combo>`_
+- numpy
+- pandas
+- `pymatgen <http://pymatgen.org>`_
+
+
+.. index::
+   single: find_wy
+
+Others
+--------
+
+- `find_wy <https://github.com/nim-hrkn/find_wy>`_
