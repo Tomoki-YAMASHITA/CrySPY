@@ -97,13 +97,24 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0, minlen=4, maxlen=
                 break
             wyflag, tmp_struc = with_spg.fw.gen_wypos(mindist, maxcnt)
             if wyflag == False:    # Failure
+                os.remove('POS_WY_SKEL_ALL.json')
                 cnt += 1
                 continue
             else:    # Success
-                break    # break fw_input loop
+                #----- clean
+                for rfile in ['input', 'POS_WY_SKEL_ALL.json']:
+                    if os.path.isfile(rfile):
+                        os.remove(rfile)
+                #------ # break fw_input loop
+                break
 
         if wyflag == False:    # maximum trial or no POS_WY_SKEL_ALL.json file
-            continue    # for new fw_input
+            #----- clean
+            for rfile in ['input', 'POS_WY_SKEL_ALL.json']:
+                if os.path.isfile(rfile):
+                    os.remove(rfile)
+            #----- to new fw_input
+            continue
 
         #----- check actual space group using pymatgen
         spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=symtoleI)
@@ -116,6 +127,10 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0, minlen=4, maxlen=
         #----- save poscar
         save_init_poscar(tmp_struc, len(init_struc_data) - 1 + cID, '../data/init_POSCARS')
 
+        #----- clean
+        for rfile in ['input', 'POS_WY_SKEL_ALL.json']:
+            if os.path.isfile(rfile):
+                os.remove(rfile)
 
     #---------- go back to ..
     os.chdir('../')
