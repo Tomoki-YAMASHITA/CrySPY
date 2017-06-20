@@ -1,0 +1,20 @@
+[basic]
+algo = RS
+calc_code = VASP
+tot_struc = 10
+natot = 6
+atype = Y Co
+nat = 1  5
+nstage = 3
+njob = 5
+jobcmd = bash
+jobfile = job_cryspy
+
+[lattice]
+minlen = 4
+maxlen = 8
+dangle = 20
+mindist = 1.5
+
+[VASP]
+kppvol = 20 60 60

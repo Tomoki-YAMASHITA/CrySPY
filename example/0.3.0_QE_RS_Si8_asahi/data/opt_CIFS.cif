@@ -1,0 +1,1452 @@
+# generated using pymatgen
+data_ID_0
+_symmetry_space_group_name_H-M   Ibam
+_cell_length_a   5.36495600
+_cell_length_b   5.71062100
+_cell_length_c   10.35986800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   72
+_chemical_formula_structural   Si
+_cell_volume   317.397662823
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+1/2, -y+1/2, -z+1/2'
+  3  '-x, -y, z'
+  4  'x+1/2, y+1/2, -z+1/2'
+  5  'x, -y, -z+1/2'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x, y, -z+1/2'
+  8  'x+1/2, -y+1/2, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-x, -y, -z'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  'x, y, -z'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x, y, z+1/2'
+  15  '-x+1/2, y+1/2, -z'
+  16  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  8  0.000000  0.500000  0.135441  1
+  Si  Si2  8  0.156655  0.846603  0.500000  1
+# generated using pymatgen
+data_ID_2
+_symmetry_space_group_name_H-M   Fm-3m
+_cell_length_a   8.58633800
+_cell_length_b   8.58633800
+_cell_length_c   8.58633800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   225
+_chemical_formula_structural   Si
+_cell_volume   633.029488466
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'z, y, -x'
+  4  '-z, -y, x'
+  5  '-x, y, -z'
+  6  'x, -y, z'
+  7  '-z, y, x'
+  8  'z, -y, -x'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  'z, -y, x'
+  12  '-z, y, -x'
+  13  '-x, -y, z'
+  14  'x, y, -z'
+  15  '-z, -y, -x'
+  16  'z, y, x'
+  17  'y, -z, -x'
+  18  '-y, z, x'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'y, z, x'
+  22  '-y, -z, -x'
+  23  'y, -x, z'
+  24  '-y, x, -z'
+  25  '-y, z, -x'
+  26  'y, -z, x'
+  27  '-y, -x, -z'
+  28  'y, x, z'
+  29  '-y, -z, x'
+  30  'y, z, -x'
+  31  '-y, x, z'
+  32  'y, -x, -z'
+  33  '-z, x, -y'
+  34  'z, -x, y'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  'z, -x, -y'
+  38  '-z, x, y'
+  39  '-x, -z, -y'
+  40  'x, z, y'
+  41  'z, x, y'
+  42  '-z, -x, -y'
+  43  '-x, z, y'
+  44  'x, -z, -y'
+  45  '-z, -x, y'
+  46  'z, x, -y'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+  49  'x+1/2, y+1/2, z'
+  50  '-x+1/2, -y+1/2, -z'
+  51  'z+1/2, y+1/2, -x'
+  52  '-z+1/2, -y+1/2, x'
+  53  '-x+1/2, y+1/2, -z'
+  54  'x+1/2, -y+1/2, z'
+  55  '-z+1/2, y+1/2, x'
+  56  'z+1/2, -y+1/2, -x'
+  57  'x+1/2, -y+1/2, -z'
+  58  '-x+1/2, y+1/2, z'
+  59  'z+1/2, -y+1/2, x'
+  60  '-z+1/2, y+1/2, -x'
+  61  '-x+1/2, -y+1/2, z'
+  62  'x+1/2, y+1/2, -z'
+  63  '-z+1/2, -y+1/2, -x'
+  64  'z+1/2, y+1/2, x'
+  65  'y+1/2, -z+1/2, -x'
+  66  '-y+1/2, z+1/2, x'
+  67  'y+1/2, x+1/2, -z'
+  68  '-y+1/2, -x+1/2, z'
+  69  'y+1/2, z+1/2, x'
+  70  '-y+1/2, -z+1/2, -x'
+  71  'y+1/2, -x+1/2, z'
+  72  '-y+1/2, x+1/2, -z'
+  73  '-y+1/2, z+1/2, -x'
+  74  'y+1/2, -z+1/2, x'
+  75  '-y+1/2, -x+1/2, -z'
+  76  'y+1/2, x+1/2, z'
+  77  '-y+1/2, -z+1/2, x'
+  78  'y+1/2, z+1/2, -x'
+  79  '-y+1/2, x+1/2, z'
+  80  'y+1/2, -x+1/2, -z'
+  81  '-z+1/2, x+1/2, -y'
+  82  'z+1/2, -x+1/2, y'
+  83  'x+1/2, z+1/2, -y'
+  84  '-x+1/2, -z+1/2, y'
+  85  'z+1/2, -x+1/2, -y'
+  86  '-z+1/2, x+1/2, y'
+  87  '-x+1/2, -z+1/2, -y'
+  88  'x+1/2, z+1/2, y'
+  89  'z+1/2, x+1/2, y'
+  90  '-z+1/2, -x+1/2, -y'
+  91  '-x+1/2, z+1/2, y'
+  92  'x+1/2, -z+1/2, -y'
+  93  '-z+1/2, -x+1/2, y'
+  94  'z+1/2, x+1/2, -y'
+  95  'x+1/2, -z+1/2, y'
+  96  '-x+1/2, z+1/2, -y'
+  97  'x+1/2, y, z+1/2'
+  98  '-x+1/2, -y, -z+1/2'
+  99  'z+1/2, y, -x+1/2'
+  100  '-z+1/2, -y, x+1/2'
+  101  '-x+1/2, y, -z+1/2'
+  102  'x+1/2, -y, z+1/2'
+  103  '-z+1/2, y, x+1/2'
+  104  'z+1/2, -y, -x+1/2'
+  105  'x+1/2, -y, -z+1/2'
+  106  '-x+1/2, y, z+1/2'
+  107  'z+1/2, -y, x+1/2'
+  108  '-z+1/2, y, -x+1/2'
+  109  '-x+1/2, -y, z+1/2'
+  110  'x+1/2, y, -z+1/2'
+  111  '-z+1/2, -y, -x+1/2'
+  112  'z+1/2, y, x+1/2'
+  113  'y+1/2, -z, -x+1/2'
+  114  '-y+1/2, z, x+1/2'
+  115  'y+1/2, x, -z+1/2'
+  116  '-y+1/2, -x, z+1/2'
+  117  'y+1/2, z, x+1/2'
+  118  '-y+1/2, -z, -x+1/2'
+  119  'y+1/2, -x, z+1/2'
+  120  '-y+1/2, x, -z+1/2'
+  121  '-y+1/2, z, -x+1/2'
+  122  'y+1/2, -z, x+1/2'
+  123  '-y+1/2, -x, -z+1/2'
+  124  'y+1/2, x, z+1/2'
+  125  '-y+1/2, -z, x+1/2'
+  126  'y+1/2, z, -x+1/2'
+  127  '-y+1/2, x, z+1/2'
+  128  'y+1/2, -x, -z+1/2'
+  129  '-z+1/2, x, -y+1/2'
+  130  'z+1/2, -x, y+1/2'
+  131  'x+1/2, z, -y+1/2'
+  132  '-x+1/2, -z, y+1/2'
+  133  'z+1/2, -x, -y+1/2'
+  134  '-z+1/2, x, y+1/2'
+  135  '-x+1/2, -z, -y+1/2'
+  136  'x+1/2, z, y+1/2'
+  137  'z+1/2, x, y+1/2'
+  138  '-z+1/2, -x, -y+1/2'
+  139  '-x+1/2, z, y+1/2'
+  140  'x+1/2, -z, -y+1/2'
+  141  '-z+1/2, -x, y+1/2'
+  142  'z+1/2, x, -y+1/2'
+  143  'x+1/2, -z, y+1/2'
+  144  '-x+1/2, z, -y+1/2'
+  145  'x, y+1/2, z+1/2'
+  146  '-x, -y+1/2, -z+1/2'
+  147  'z, y+1/2, -x+1/2'
+  148  '-z, -y+1/2, x+1/2'
+  149  '-x, y+1/2, -z+1/2'
+  150  'x, -y+1/2, z+1/2'
+  151  '-z, y+1/2, x+1/2'
+  152  'z, -y+1/2, -x+1/2'
+  153  'x, -y+1/2, -z+1/2'
+  154  '-x, y+1/2, z+1/2'
+  155  'z, -y+1/2, x+1/2'
+  156  '-z, y+1/2, -x+1/2'
+  157  '-x, -y+1/2, z+1/2'
+  158  'x, y+1/2, -z+1/2'
+  159  '-z, -y+1/2, -x+1/2'
+  160  'z, y+1/2, x+1/2'
+  161  'y, -z+1/2, -x+1/2'
+  162  '-y, z+1/2, x+1/2'
+  163  'y, x+1/2, -z+1/2'
+  164  '-y, -x+1/2, z+1/2'
+  165  'y, z+1/2, x+1/2'
+  166  '-y, -z+1/2, -x+1/2'
+  167  'y, -x+1/2, z+1/2'
+  168  '-y, x+1/2, -z+1/2'
+  169  '-y, z+1/2, -x+1/2'
+  170  'y, -z+1/2, x+1/2'
+  171  '-y, -x+1/2, -z+1/2'
+  172  'y, x+1/2, z+1/2'
+  173  '-y, -z+1/2, x+1/2'
+  174  'y, z+1/2, -x+1/2'
+  175  '-y, x+1/2, z+1/2'
+  176  'y, -x+1/2, -z+1/2'
+  177  '-z, x+1/2, -y+1/2'
+  178  'z, -x+1/2, y+1/2'
+  179  'x, z+1/2, -y+1/2'
+  180  '-x, -z+1/2, y+1/2'
+  181  'z, -x+1/2, -y+1/2'
+  182  '-z, x+1/2, y+1/2'
+  183  '-x, -z+1/2, -y+1/2'
+  184  'x, z+1/2, y+1/2'
+  185  'z, x+1/2, y+1/2'
+  186  '-z, -x+1/2, -y+1/2'
+  187  '-x, z+1/2, y+1/2'
+  188  'x, -z+1/2, -y+1/2'
+  189  '-z, -x+1/2, y+1/2'
+  190  'z, x+1/2, -y+1/2'
+  191  'x, -z+1/2, y+1/2'
+  192  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  32  0.145469  0.145469  0.145469  1
+# generated using pymatgen
+data_ID_3
+_symmetry_space_group_name_H-M   P6_3/mmc
+_cell_length_a   3.85891870
+_cell_length_b   3.85891870
+_cell_length_c   12.66844747
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   194
+_chemical_formula_structural   Si
+_cell_volume   163.374880935
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z+1/2'
+  4  '-x+y, -x, -z+1/2'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z+1/2'
+  8  'x, y, -z+1/2'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z+1/2'
+  12  '-y, x-y, -z+1/2'
+  13  '-y, -x, -z+1/2'
+  14  'y, x, z+1/2'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z+1/2'
+  18  'x-y, -y, z+1/2'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z+1/2'
+  22  '-x, -x+y, z+1/2'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  4  0.000000  0.000000  0.093285  1
+  Si  Si2  4  0.333333  0.666667  0.155907  1
+# generated using pymatgen
+data_ID_5
+_symmetry_space_group_name_H-M   Pm-3m
+_cell_length_a   2.52878475
+_cell_length_b   2.52878475
+_cell_length_c   2.52878475
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   221
+_chemical_formula_structural   Si
+_cell_volume   16.1709520878
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  1  0.500000  0.500000  0.500000  1
+# generated using pymatgen
+data_ID_6
+_symmetry_space_group_name_H-M   P6/mmm
+_cell_length_a   6.81315929
+_cell_length_b   6.81315929
+_cell_length_c   4.63661458
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   191
+_chemical_formula_structural   Si
+_cell_volume   186.392620459
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'y, -x+y, z'
+  4  '-y, x-y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+  7  '-x, -y, z'
+  8  'x, y, -z'
+  9  '-y, x-y, z'
+  10  'y, -x+y, -z'
+  11  'x-y, x, z'
+  12  '-x+y, -x, -z'
+  13  '-y, -x, -z'
+  14  'y, x, z'
+  15  'x-y, -y, -z'
+  16  '-x+y, y, z'
+  17  'x, x-y, -z'
+  18  '-x, -x+y, z'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  '-x+y, y, -z'
+  22  'x-y, -y, z'
+  23  '-x, -x+y, -z'
+  24  'x, x-y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  6  0.212388  0.424777  0.000000  1
+  Si  Si2  1  0.000000  0.000000  0.000000  1
+  Si  Si3  1  0.000000  0.000000  0.500000  1
+# generated using pymatgen
+data_ID_4
+_symmetry_space_group_name_H-M   Pm-3m
+_cell_length_a   2.52950973
+_cell_length_b   2.52950973
+_cell_length_c   2.52950973
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   221
+_chemical_formula_structural   Si
+_cell_volume   16.1848643773
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  1  0.500000  0.500000  0.500000  1
+# generated using pymatgen
+data_ID_8
+_symmetry_space_group_name_H-M   P4_2/mnm
+_cell_length_a   5.13910690
+_cell_length_b   5.13910690
+_cell_length_c   6.02920267
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   136
+_chemical_formula_structural   Si
+_cell_volume   159.233773242
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y+1/2, x+1/2, z+1/2'
+  4  'y+1/2, -x+1/2, -z+1/2'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y+1/2, -x+1/2, z+1/2'
+  8  '-y+1/2, x+1/2, -z+1/2'
+  9  'x+1/2, -y+1/2, -z+1/2'
+  10  '-x+1/2, y+1/2, z+1/2'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x+1/2, y+1/2, -z+1/2'
+  14  'x+1/2, -y+1/2, z+1/2'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  4  0.000000  0.500000  0.250000  1
+  Si  Si2  4  0.163443  0.836557  0.500000  1
+# generated using pymatgen
+data_ID_9
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   6.02789704
+_cell_length_b   6.03556225
+_cell_length_c   6.08316106
+_cell_angle_alpha   60.41963470
+_cell_angle_beta   60.44513969
+_cell_angle_gamma   89.92280972
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   Si
+_cell_volume   158.61857991
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  2  0.141590  0.437528  0.713477  1
+  Si  Si2  2  0.145876  0.854682  0.291051  1
+  Si  Si3  2  0.148373  0.852986  0.709949  1
+  Si  Si4  2  0.437561  0.145872  0.712132  1
+# generated using pymatgen
+data_ID_1
+_symmetry_space_group_name_H-M   P4_2/mmc
+_cell_length_a   4.52894198
+_cell_length_b   4.52894198
+_cell_length_c   9.33344699
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   131
+_chemical_formula_structural   Si
+_cell_volume   191.441275186
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z+1/2'
+  4  'y, -x, -z+1/2'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z+1/2'
+  8  '-y, x, -z+1/2'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z+1/2'
+  12  'y, x, z+1/2'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z+1/2'
+  16  '-y, -x, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  4  0.253260  0.500000  0.000000  1
+  Si  Si2  2  0.000000  0.000000  0.000000  1
+  Si  Si3  2  0.000000  0.000000  0.250000  1
+# generated using pymatgen
+data_ID_10
+_symmetry_space_group_name_H-M   I4/mmm
+_cell_length_a   3.32288100
+_cell_length_b   3.32288100
+_cell_length_c   2.63001900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   139
+_chemical_formula_structural   Si
+_cell_volume   29.0394550978
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'y, -x, z'
+  4  '-y, x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  '-y, x, z'
+  8  'y, -x, -z'
+  9  '-x, y, -z'
+  10  'x, -y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  'x, -y, -z'
+  14  '-x, y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'x+1/2, y+1/2, z+1/2'
+  18  '-x+1/2, -y+1/2, -z+1/2'
+  19  'y+1/2, -x+1/2, z+1/2'
+  20  '-y+1/2, x+1/2, -z+1/2'
+  21  '-x+1/2, -y+1/2, z+1/2'
+  22  'x+1/2, y+1/2, -z+1/2'
+  23  '-y+1/2, x+1/2, z+1/2'
+  24  'y+1/2, -x+1/2, -z+1/2'
+  25  '-x+1/2, y+1/2, -z+1/2'
+  26  'x+1/2, -y+1/2, z+1/2'
+  27  '-y+1/2, -x+1/2, -z+1/2'
+  28  'y+1/2, x+1/2, z+1/2'
+  29  'x+1/2, -y+1/2, -z+1/2'
+  30  '-x+1/2, y+1/2, z+1/2'
+  31  'y+1/2, x+1/2, -z+1/2'
+  32  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  2  0.000000  0.000000  0.500000  1
+# generated using pymatgen
+data_ID_12
+_symmetry_space_group_name_H-M   F-43m
+_cell_length_a   8.36565600
+_cell_length_b   8.36565600
+_cell_length_c   8.36565600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   216
+_chemical_formula_structural   Si
+_cell_volume   585.463745231
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-z, -y, x'
+  3  '-x, y, -z'
+  4  'z, -y, -x'
+  5  'x, -y, -z'
+  6  '-z, y, -x'
+  7  '-x, -y, z'
+  8  'z, y, x'
+  9  'y, -z, -x'
+  10  '-y, -x, z'
+  11  'y, z, x'
+  12  '-y, x, -z'
+  13  '-y, z, -x'
+  14  'y, x, z'
+  15  '-y, -z, x'
+  16  'y, -x, -z'
+  17  '-z, x, -y'
+  18  '-x, -z, y'
+  19  'z, -x, -y'
+  20  'x, z, y'
+  21  'z, x, y'
+  22  'x, -z, -y'
+  23  '-z, -x, y'
+  24  '-x, z, -y'
+  25  'x+1/2, y+1/2, z'
+  26  '-z+1/2, -y+1/2, x'
+  27  '-x+1/2, y+1/2, -z'
+  28  'z+1/2, -y+1/2, -x'
+  29  'x+1/2, -y+1/2, -z'
+  30  '-z+1/2, y+1/2, -x'
+  31  '-x+1/2, -y+1/2, z'
+  32  'z+1/2, y+1/2, x'
+  33  'y+1/2, -z+1/2, -x'
+  34  '-y+1/2, -x+1/2, z'
+  35  'y+1/2, z+1/2, x'
+  36  '-y+1/2, x+1/2, -z'
+  37  '-y+1/2, z+1/2, -x'
+  38  'y+1/2, x+1/2, z'
+  39  '-y+1/2, -z+1/2, x'
+  40  'y+1/2, -x+1/2, -z'
+  41  '-z+1/2, x+1/2, -y'
+  42  '-x+1/2, -z+1/2, y'
+  43  'z+1/2, -x+1/2, -y'
+  44  'x+1/2, z+1/2, y'
+  45  'z+1/2, x+1/2, y'
+  46  'x+1/2, -z+1/2, -y'
+  47  '-z+1/2, -x+1/2, y'
+  48  '-x+1/2, z+1/2, -y'
+  49  'x+1/2, y, z+1/2'
+  50  '-z+1/2, -y, x+1/2'
+  51  '-x+1/2, y, -z+1/2'
+  52  'z+1/2, -y, -x+1/2'
+  53  'x+1/2, -y, -z+1/2'
+  54  '-z+1/2, y, -x+1/2'
+  55  '-x+1/2, -y, z+1/2'
+  56  'z+1/2, y, x+1/2'
+  57  'y+1/2, -z, -x+1/2'
+  58  '-y+1/2, -x, z+1/2'
+  59  'y+1/2, z, x+1/2'
+  60  '-y+1/2, x, -z+1/2'
+  61  '-y+1/2, z, -x+1/2'
+  62  'y+1/2, x, z+1/2'
+  63  '-y+1/2, -z, x+1/2'
+  64  'y+1/2, -x, -z+1/2'
+  65  '-z+1/2, x, -y+1/2'
+  66  '-x+1/2, -z, y+1/2'
+  67  'z+1/2, -x, -y+1/2'
+  68  'x+1/2, z, y+1/2'
+  69  'z+1/2, x, y+1/2'
+  70  'x+1/2, -z, -y+1/2'
+  71  '-z+1/2, -x, y+1/2'
+  72  '-x+1/2, z, -y+1/2'
+  73  'x, y+1/2, z+1/2'
+  74  '-z, -y+1/2, x+1/2'
+  75  '-x, y+1/2, -z+1/2'
+  76  'z, -y+1/2, -x+1/2'
+  77  'x, -y+1/2, -z+1/2'
+  78  '-z, y+1/2, -x+1/2'
+  79  '-x, -y+1/2, z+1/2'
+  80  'z, y+1/2, x+1/2'
+  81  'y, -z+1/2, -x+1/2'
+  82  '-y, -x+1/2, z+1/2'
+  83  'y, z+1/2, x+1/2'
+  84  '-y, x+1/2, -z+1/2'
+  85  '-y, z+1/2, -x+1/2'
+  86  'y, x+1/2, z+1/2'
+  87  '-y, -z+1/2, x+1/2'
+  88  'y, -x+1/2, -z+1/2'
+  89  '-z, x+1/2, -y+1/2'
+  90  '-x, -z+1/2, y+1/2'
+  91  'z, -x+1/2, -y+1/2'
+  92  'x, z+1/2, y+1/2'
+  93  'z, x+1/2, y+1/2'
+  94  'x, -z+1/2, -y+1/2'
+  95  '-z, -x+1/2, y+1/2'
+  96  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  24  0.000000  0.000000  0.288080  1
+  Si  Si2  4  0.000000  0.000000  0.000000  1
+  Si  Si3  4  0.250000  0.250000  0.250000  1
+# generated using pymatgen
+data_ID_13
+_symmetry_space_group_name_H-M   Fd-3m
+_cell_length_a   5.46850133
+_cell_length_b   5.46850133
+_cell_length_c   5.46850133
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   227
+_chemical_formula_structural   Si
+_cell_volume   163.532835488
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'z+3/4, y+3/4, -x+1/4'
+  3  '-x+1/2, y, -z+1/2'
+  4  '-z+3/4, y+3/4, x+1/4'
+  5  'x, -y+1/2, -z+1/2'
+  6  'z+3/4, -y+3/4, x+1/4'
+  7  '-x+1/2, -y+1/2, z'
+  8  '-z+3/4, -y+3/4, -x+1/4'
+  9  '-y, z, -x'
+  10  '-y+3/4, -x+3/4, -z+1/4'
+  11  '-y, -z+1/2, x+1/2'
+  12  '-y+3/4, x+3/4, z+1/4'
+  13  'y+1/2, -z+1/2, -x'
+  14  'y+3/4, x+3/4, -z+1/4'
+  15  'y+1/2, z, x+1/2'
+  16  'y+3/4, -x+3/4, z+1/4'
+  17  '-z, -x, y'
+  18  'x+3/4, -z+3/4, y+1/4'
+  19  'z+1/2, x+1/2, y'
+  20  '-x+3/4, z+3/4, y+1/4'
+  21  'z+1/2, -x, -y+1/2'
+  22  '-x+3/4, -z+3/4, -y+1/4'
+  23  '-z, x+1/2, -y+1/2'
+  24  'x+3/4, z+3/4, -y+1/4'
+  25  '-x+3/4, -y+3/4, -z+1/4'
+  26  '-z, -y+1/2, x+1/2'
+  27  'x+3/4, -y+3/4, z+1/4'
+  28  'z+1/2, -y+1/2, -x'
+  29  '-x+3/4, y+3/4, z+1/4'
+  30  '-z, y, -x'
+  31  'x+3/4, y+3/4, -z+1/4'
+  32  'z+1/2, y, x+1/2'
+  33  'y+3/4, -z+3/4, x+1/4'
+  34  'y+1/2, x+1/2, z'
+  35  'y+3/4, z+3/4, -x+1/4'
+  36  'y+1/2, -x, -z+1/2'
+  37  '-y+3/4, z+3/4, x+1/4'
+  38  '-y, -x, z'
+  39  '-y+3/4, -z+3/4, -x+1/4'
+  40  '-y, x+1/2, -z+1/2'
+  41  'z+3/4, x+3/4, -y+1/4'
+  42  '-x+1/2, z, -y+1/2'
+  43  '-z+3/4, -x+3/4, -y+1/4'
+  44  'x, -z+1/2, -y+1/2'
+  45  '-z+3/4, x+3/4, y+1/4'
+  46  'x, z, y'
+  47  'z+3/4, -x+3/4, y+1/4'
+  48  '-x+1/2, -z+1/2, y'
+  49  'x+1/2, y+1/2, z'
+  50  'z+1/4, y+1/4, -x+1/4'
+  51  '-x, y+1/2, -z+1/2'
+  52  '-z+1/4, y+1/4, x+1/4'
+  53  'x+1/2, -y, -z+1/2'
+  54  'z+1/4, -y+1/4, x+1/4'
+  55  '-x, -y, z'
+  56  '-z+1/4, -y+1/4, -x+1/4'
+  57  '-y+1/2, z+1/2, -x'
+  58  '-y+1/4, -x+1/4, -z+1/4'
+  59  '-y+1/2, -z, x+1/2'
+  60  '-y+1/4, x+1/4, z+1/4'
+  61  'y, -z, -x'
+  62  'y+1/4, x+1/4, -z+1/4'
+  63  'y, z+1/2, x+1/2'
+  64  'y+1/4, -x+1/4, z+1/4'
+  65  '-z+1/2, -x+1/2, y'
+  66  'x+1/4, -z+1/4, y+1/4'
+  67  'z, x, y'
+  68  '-x+1/4, z+1/4, y+1/4'
+  69  'z, -x+1/2, -y+1/2'
+  70  '-x+1/4, -z+1/4, -y+1/4'
+  71  '-z+1/2, x, -y+1/2'
+  72  'x+1/4, z+1/4, -y+1/4'
+  73  '-x+1/4, -y+1/4, -z+1/4'
+  74  '-z+1/2, -y, x+1/2'
+  75  'x+1/4, -y+1/4, z+1/4'
+  76  'z, -y, -x'
+  77  '-x+1/4, y+1/4, z+1/4'
+  78  '-z+1/2, y+1/2, -x'
+  79  'x+1/4, y+1/4, -z+1/4'
+  80  'z, y+1/2, x+1/2'
+  81  'y+1/4, -z+1/4, x+1/4'
+  82  'y, x, z'
+  83  'y+1/4, z+1/4, -x+1/4'
+  84  'y, -x+1/2, -z+1/2'
+  85  '-y+1/4, z+1/4, x+1/4'
+  86  '-y+1/2, -x+1/2, z'
+  87  '-y+1/4, -z+1/4, -x+1/4'
+  88  '-y+1/2, x, -z+1/2'
+  89  'z+1/4, x+1/4, -y+1/4'
+  90  '-x, z+1/2, -y+1/2'
+  91  '-z+1/4, -x+1/4, -y+1/4'
+  92  'x+1/2, -z, -y+1/2'
+  93  '-z+1/4, x+1/4, y+1/4'
+  94  'x+1/2, z+1/2, y'
+  95  'z+1/4, -x+1/4, y+1/4'
+  96  '-x, -z, y'
+  97  'x+1/2, y, z+1/2'
+  98  'z+1/4, y+3/4, -x+3/4'
+  99  '-x, y, -z'
+  100  '-z+1/4, y+3/4, x+3/4'
+  101  'x+1/2, -y+1/2, -z'
+  102  'z+1/4, -y+3/4, x+3/4'
+  103  '-x, -y+1/2, z+1/2'
+  104  '-z+1/4, -y+3/4, -x+3/4'
+  105  '-y+1/2, z, -x+1/2'
+  106  '-y+1/4, -x+3/4, -z+3/4'
+  107  '-y+1/2, -z+1/2, x'
+  108  '-y+1/4, x+3/4, z+3/4'
+  109  'y, -z+1/2, -x+1/2'
+  110  'y+1/4, x+3/4, -z+3/4'
+  111  'y, z, x'
+  112  'y+1/4, -x+3/4, z+3/4'
+  113  '-z+1/2, -x, y+1/2'
+  114  'x+1/4, -z+3/4, y+3/4'
+  115  'z, x+1/2, y+1/2'
+  116  '-x+1/4, z+3/4, y+3/4'
+  117  'z, -x, -y'
+  118  '-x+1/4, -z+3/4, -y+3/4'
+  119  '-z+1/2, x+1/2, -y'
+  120  'x+1/4, z+3/4, -y+3/4'
+  121  '-x+1/4, -y+3/4, -z+3/4'
+  122  '-z+1/2, -y+1/2, x'
+  123  'x+1/4, -y+3/4, z+3/4'
+  124  'z, -y+1/2, -x+1/2'
+  125  '-x+1/4, y+3/4, z+3/4'
+  126  '-z+1/2, y, -x+1/2'
+  127  'x+1/4, y+3/4, -z+3/4'
+  128  'z, y, x'
+  129  'y+1/4, -z+3/4, x+3/4'
+  130  'y, x+1/2, z+1/2'
+  131  'y+1/4, z+3/4, -x+3/4'
+  132  'y, -x, -z'
+  133  '-y+1/4, z+3/4, x+3/4'
+  134  '-y+1/2, -x, z+1/2'
+  135  '-y+1/4, -z+3/4, -x+3/4'
+  136  '-y+1/2, x+1/2, -z'
+  137  'z+1/4, x+3/4, -y+3/4'
+  138  '-x, z, -y'
+  139  '-z+1/4, -x+3/4, -y+3/4'
+  140  'x+1/2, -z+1/2, -y'
+  141  '-z+1/4, x+3/4, y+3/4'
+  142  'x+1/2, z, y+1/2'
+  143  'z+1/4, -x+3/4, y+3/4'
+  144  '-x, -z+1/2, y+1/2'
+  145  'x, y+1/2, z+1/2'
+  146  'z+3/4, y+1/4, -x+3/4'
+  147  '-x+1/2, y+1/2, -z'
+  148  '-z+3/4, y+1/4, x+3/4'
+  149  'x, -y, -z'
+  150  'z+3/4, -y+1/4, x+3/4'
+  151  '-x+1/2, -y, z+1/2'
+  152  '-z+3/4, -y+1/4, -x+3/4'
+  153  '-y, z+1/2, -x+1/2'
+  154  '-y+3/4, -x+1/4, -z+3/4'
+  155  '-y, -z, x'
+  156  '-y+3/4, x+1/4, z+3/4'
+  157  'y+1/2, -z, -x+1/2'
+  158  'y+3/4, x+1/4, -z+3/4'
+  159  'y+1/2, z+1/2, x'
+  160  'y+3/4, -x+1/4, z+3/4'
+  161  '-z, -x+1/2, y+1/2'
+  162  'x+3/4, -z+1/4, y+3/4'
+  163  'z+1/2, x, y+1/2'
+  164  '-x+3/4, z+1/4, y+3/4'
+  165  'z+1/2, -x+1/2, -y'
+  166  '-x+3/4, -z+1/4, -y+3/4'
+  167  '-z, x, -y'
+  168  'x+3/4, z+1/4, -y+3/4'
+  169  '-x+3/4, -y+1/4, -z+3/4'
+  170  '-z, -y, x'
+  171  'x+3/4, -y+1/4, z+3/4'
+  172  'z+1/2, -y, -x+1/2'
+  173  '-x+3/4, y+1/4, z+3/4'
+  174  '-z, y+1/2, -x+1/2'
+  175  'x+3/4, y+1/4, -z+3/4'
+  176  'z+1/2, y+1/2, x'
+  177  'y+3/4, -z+1/4, x+3/4'
+  178  'y+1/2, x, z+1/2'
+  179  'y+3/4, z+1/4, -x+3/4'
+  180  'y+1/2, -x+1/2, -z'
+  181  '-y+3/4, z+1/4, x+3/4'
+  182  '-y, -x+1/2, z+1/2'
+  183  '-y+3/4, -z+1/4, -x+3/4'
+  184  '-y, x, -z'
+  185  'z+3/4, x+1/4, -y+3/4'
+  186  '-x+1/2, z+1/2, -y'
+  187  '-z+3/4, -x+1/4, -y+3/4'
+  188  'x, -z, -y'
+  189  '-z+3/4, x+1/4, y+3/4'
+  190  'x, z+1/2, y+1/2'
+  191  'z+3/4, -x+1/4, y+3/4'
+  192  '-x+1/2, -z, y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  8  0.000000  0.000000  0.500000  1
+# generated using pymatgen
+data_ID_14
+_symmetry_space_group_name_H-M   Im-3m
+_cell_length_a   7.49522200
+_cell_length_b   7.49522200
+_cell_length_c   7.49522200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   229
+_chemical_formula_structural   Si
+_cell_volume   421.06922605
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x, -z, y'
+  4  '-x, z, -y'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  'x, z, -y'
+  8  '-x, -z, y'
+  9  '-x, y, -z'
+  10  'x, -y, z'
+  11  '-x, -z, -y'
+  12  'x, z, y'
+  13  '-x, -y, z'
+  14  'x, y, -z'
+  15  '-x, z, y'
+  16  'x, -z, -y'
+  17  '-z, -x, y'
+  18  'z, x, -y'
+  19  '-y, -x, -z'
+  20  'y, x, z'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'y, -x, z'
+  24  '-y, x, -z'
+  25  'z, x, y'
+  26  '-z, -x, -y'
+  27  'y, x, -z'
+  28  '-y, -x, z'
+  29  '-z, x, -y'
+  30  'z, -x, y'
+  31  '-y, x, z'
+  32  'y, -x, -z'
+  33  '-y, z, -x'
+  34  'y, -z, x'
+  35  'z, y, -x'
+  36  '-z, -y, x'
+  37  'y, -z, -x'
+  38  '-y, z, x'
+  39  '-z, -y, -x'
+  40  'z, y, x'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  'z, -y, x'
+  44  '-z, y, -x'
+  45  'y, z, x'
+  46  '-y, -z, -x'
+  47  '-z, y, x'
+  48  'z, -y, -x'
+  49  'x+1/2, y+1/2, z+1/2'
+  50  '-x+1/2, -y+1/2, -z+1/2'
+  51  'x+1/2, -z+1/2, y+1/2'
+  52  '-x+1/2, z+1/2, -y+1/2'
+  53  'x+1/2, -y+1/2, -z+1/2'
+  54  '-x+1/2, y+1/2, z+1/2'
+  55  'x+1/2, z+1/2, -y+1/2'
+  56  '-x+1/2, -z+1/2, y+1/2'
+  57  '-x+1/2, y+1/2, -z+1/2'
+  58  'x+1/2, -y+1/2, z+1/2'
+  59  '-x+1/2, -z+1/2, -y+1/2'
+  60  'x+1/2, z+1/2, y+1/2'
+  61  '-x+1/2, -y+1/2, z+1/2'
+  62  'x+1/2, y+1/2, -z+1/2'
+  63  '-x+1/2, z+1/2, y+1/2'
+  64  'x+1/2, -z+1/2, -y+1/2'
+  65  '-z+1/2, -x+1/2, y+1/2'
+  66  'z+1/2, x+1/2, -y+1/2'
+  67  '-y+1/2, -x+1/2, -z+1/2'
+  68  'y+1/2, x+1/2, z+1/2'
+  69  'z+1/2, -x+1/2, -y+1/2'
+  70  '-z+1/2, x+1/2, y+1/2'
+  71  'y+1/2, -x+1/2, z+1/2'
+  72  '-y+1/2, x+1/2, -z+1/2'
+  73  'z+1/2, x+1/2, y+1/2'
+  74  '-z+1/2, -x+1/2, -y+1/2'
+  75  'y+1/2, x+1/2, -z+1/2'
+  76  '-y+1/2, -x+1/2, z+1/2'
+  77  '-z+1/2, x+1/2, -y+1/2'
+  78  'z+1/2, -x+1/2, y+1/2'
+  79  '-y+1/2, x+1/2, z+1/2'
+  80  'y+1/2, -x+1/2, -z+1/2'
+  81  '-y+1/2, z+1/2, -x+1/2'
+  82  'y+1/2, -z+1/2, x+1/2'
+  83  'z+1/2, y+1/2, -x+1/2'
+  84  '-z+1/2, -y+1/2, x+1/2'
+  85  'y+1/2, -z+1/2, -x+1/2'
+  86  '-y+1/2, z+1/2, x+1/2'
+  87  '-z+1/2, -y+1/2, -x+1/2'
+  88  'z+1/2, y+1/2, x+1/2'
+  89  '-y+1/2, -z+1/2, x+1/2'
+  90  'y+1/2, z+1/2, -x+1/2'
+  91  'z+1/2, -y+1/2, x+1/2'
+  92  '-z+1/2, y+1/2, -x+1/2'
+  93  'y+1/2, z+1/2, x+1/2'
+  94  '-y+1/2, -z+1/2, -x+1/2'
+  95  '-z+1/2, y+1/2, x+1/2'
+  96  'z+1/2, -y+1/2, -x+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  16  0.159967  0.840033  0.840033  1
+# generated using pymatgen
+data_ID_11
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   3.20718015
+_cell_length_b   9.81490672
+_cell_length_c   4.97081105
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   98.89085933
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Si
+_cell_volume   154.591970654
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  4  0.000000  0.149098  0.000000  1
+  Si  Si2  4  0.047527  0.500000  0.264397  1
+# generated using pymatgen
+data_ID_15
+_symmetry_space_group_name_H-M   I422
+_cell_length_a   6.58896831
+_cell_length_b   6.58896831
+_cell_length_c   6.78035900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   97
+_chemical_formula_structural   Si
+_cell_volume   294.365919223
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, z'
+  3  '-x, -y, z'
+  4  '-y, x, z'
+  5  '-x+1/2, y+1/2, -z+1/2'
+  6  '-y, -x, -z'
+  7  'x+1/2, -y+1/2, -z+1/2'
+  8  'y+1/2, x+1/2, -z+1/2'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  'y+1/2, -x+1/2, z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  '-y+1/2, x+1/2, z+1/2'
+  13  '-x, y, -z'
+  14  '-y+1/2, -x+1/2, -z+1/2'
+  15  'x, -y, -z'
+  16  'y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  8  0.179036  0.320964  0.750000  1
+  Si  Si2  4  0.000000  0.000000  0.322655  1
+  Si  Si3  4  0.000000  0.500000  0.000000  1
+# generated using pymatgen
+data_ID_7
+_symmetry_space_group_name_H-M   I4_1/amd
+_cell_length_a   7.49608542
+_cell_length_b   7.49608542
+_cell_length_c   7.77391307
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   141
+_chemical_formula_structural   Si
+_cell_volume   436.82625532
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y+1/2, -x, z+3/4'
+  3  '-x, -y, z'
+  4  '-y+1/2, x, z+3/4'
+  5  'x+1/2, -y, -z+3/4'
+  6  'y, x, -z'
+  7  '-x+1/2, y, -z+3/4'
+  8  '-y, -x, -z'
+  9  '-x+1/2, -y, -z+3/4'
+  10  '-y, x, -z'
+  11  'x+1/2, y, -z+3/4'
+  12  'y, -x, -z'
+  13  '-x, y, z'
+  14  '-y+1/2, -x, z+3/4'
+  15  'x, -y, z'
+  16  'y+1/2, x, z+3/4'
+  17  'x+1/2, y+1/2, z+1/2'
+  18  'y, -x+1/2, z+1/4'
+  19  '-x+1/2, -y+1/2, z+1/2'
+  20  '-y, x+1/2, z+1/4'
+  21  'x, -y+1/2, -z+1/4'
+  22  'y+1/2, x+1/2, -z+1/2'
+  23  '-x, y+1/2, -z+1/4'
+  24  '-y+1/2, -x+1/2, -z+1/2'
+  25  '-x, -y+1/2, -z+1/4'
+  26  '-y+1/2, x+1/2, -z+1/2'
+  27  'x, y+1/2, -z+1/4'
+  28  'y+1/2, -x+1/2, -z+1/2'
+  29  '-x+1/2, y+1/2, z+1/2'
+  30  '-y, -x+1/2, z+1/4'
+  31  'x+1/2, -y+1/2, z+1/2'
+  32  'y, x+1/2, z+1/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  16  0.160309  0.160309  0.000000  1
+# generated using pymatgen
+data_ID_17
+_symmetry_space_group_name_H-M   I422
+_cell_length_a   6.58883800
+_cell_length_b   6.58883800
+_cell_length_c   6.77938400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   97
+_chemical_formula_structural   Si
+_cell_volume   294.311948094
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y+1/2, -x+1/2, z+1/2'
+  3  '-x, -y, z'
+  4  '-y+1/2, x+1/2, z+1/2'
+  5  'x, -y, -z'
+  6  'y+1/2, x+1/2, -z+1/2'
+  7  '-x, y, -z'
+  8  '-y+1/2, -x+1/2, -z+1/2'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  'y, -x, z'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  '-y, x, z'
+  13  'x+1/2, -y+1/2, -z+1/2'
+  14  'y, x, -z'
+  15  '-x+1/2, y+1/2, -z+1/2'
+  16  '-y, -x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  8  0.179229  0.679230  0.250000  1
+  Si  Si2  4  0.000000  0.000000  0.177231  1
+  Si  Si3  4  0.000000  0.500000  0.000000  1
+# generated using pymatgen
+data_ID_16
+_symmetry_space_group_name_H-M   R-3
+_cell_length_a   9.43894102
+_cell_length_b   9.43894102
+_cell_length_c   5.66976292
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   148
+_chemical_formula_structural   Si
+_cell_volume   437.463754117
+_cell_formula_units_Z   24
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+  7  'x+1/3, y+2/3, z+2/3'
+  8  '-x+1/3, -y+2/3, -z+2/3'
+  9  '-y+1/3, x-y+2/3, z+2/3'
+  10  'y+1/3, -x+y+2/3, -z+2/3'
+  11  '-x+y+1/3, -x+2/3, z+2/3'
+  12  'x-y+1/3, x+2/3, -z+2/3'
+  13  'x+2/3, y+1/3, z+1/3'
+  14  '-x+2/3, -y+1/3, -z+1/3'
+  15  '-y+2/3, x-y+1/3, z+1/3'
+  16  'y+2/3, -x+y+1/3, -z+1/3'
+  17  '-x+y+2/3, -x+1/3, z+1/3'
+  18  'x-y+2/3, x+1/3, -z+1/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  18  0.035154  0.768126  0.247853  1
+  Si  Si2  6  0.000000  0.000000  0.286418  1
+# generated using pymatgen
+data_ID_19
+_symmetry_space_group_name_H-M   P4_2/mmc
+_cell_length_a   9.08302070
+_cell_length_b   9.08302070
+_cell_length_c   4.69870005
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   131
+_chemical_formula_structural   Si
+_cell_volume   387.648698309
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z+1/2'
+  4  'y, -x, -z+1/2'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z+1/2'
+  8  '-y, x, -z+1/2'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z+1/2'
+  12  'y, x, z+1/2'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z+1/2'
+  16  '-y, -x, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  4  0.000000  0.258094  0.500000  1
+  Si  Si2  2  0.000000  0.000000  0.000000  1
+  Si  Si3  2  0.000000  0.500000  0.500000  1
+# generated using pymatgen
+data_ID_18
+_symmetry_space_group_name_H-M   P6/mmm
+_cell_length_a   3.90209586
+_cell_length_b   3.90209586
+_cell_length_c   8.46579800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   191
+_chemical_formula_structural   Si
+_cell_volume   111.633463885
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z'
+  4  '-x+y, -x, -z'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z'
+  8  'x, y, -z'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z'
+  12  '-y, x-y, -z'
+  13  '-y, -x, -z'
+  14  'y, x, z'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z'
+  18  'x-y, -y, z'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z'
+  22  '-x, -x+y, z'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si1  2  0.333333  0.666667  0.500000  1

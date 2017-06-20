@@ -1,0 +1,255 @@
+2017/06/07 16:38:00
+CrySPY 0.3.0
+Start cryspy.py
+
+Read input file, cryspy.in
+Write input data in cryspy.out
+Save input data in cryspy.stat
+
+#--------- Load initial structure data
+Load ./data/pkl_data/init_struc_data.pkl
+
+
+#---------- job status
+work0000: submit job, structure ID 0 Stage 1
+work0001: submit job, structure ID 1 Stage 1
+work0002: submit job, structure ID 2 Stage 1
+work0003: submit job, structure ID 3 Stage 1
+work0004: submit job, structure ID 4 Stage 1
+work0005: submit job, structure ID 5 Stage 1
+work0006: submit job, structure ID 6 Stage 1
+work0007: submit job, structure ID 7 Stage 1
+work0008: submit job, structure ID 8 Stage 1
+work0009: submit job, structure ID 9 Stage 1
+
+
+
+2017/06/07 16:47:18
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 0 Stage 1 Done!
+    submit job, structure ID 0 Stage 2
+work0001: Structure ID 1 Stage 1 Done!
+    submit job, structure ID 1 Stage 2
+work0002: Structure ID 2 Stage 1 Done!
+    submit job, structure ID 2 Stage 2
+work0003: Structure ID 3 Stage 1 Done!
+    submit job, structure ID 3 Stage 2
+work0004: Structure ID 4 Stage 1 Done!
+    submit job, structure ID 4 Stage 2
+work0005: Structure ID 5 Stage 1 Done!
+    submit job, structure ID 5 Stage 2
+work0006: Structure ID 6 Stage 1 Done!
+    submit job, structure ID 6 Stage 2
+work0007: Structure ID 7 Stage 1 Done!
+    submit job, structure ID 7 Stage 2
+work0008: Structure ID 8 Stage 1 Done!
+    submit job, structure ID 8 Stage 2
+work0009: Structure ID 9 Stage 1 Done!
+    submit job, structure ID 9 Stage 2
+
+
+
+2017/06/07 16:59:07
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 0 Stage 2 Done!
+    submit job, structure ID 0 Stage 3
+work0001: still queuing or runnning
+work0002: Structure ID 2 Stage 2 Done!
+    submit job, structure ID 2 Stage 3
+work0003: Structure ID 3 Stage 2 Done!
+    submit job, structure ID 3 Stage 3
+work0004: still queuing or runnning
+work0005: Structure ID 5 Stage 2 Done!
+    submit job, structure ID 5 Stage 3
+work0006: Structure ID 6 Stage 2 Done!
+    submit job, structure ID 6 Stage 3
+work0007: still queuing or runnning
+work0008: still queuing or runnning
+work0009: still queuing or runnning
+
+
+
+2017/06/07 17:06:37
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 0 Stage 3 Done!
+    collect results: E = -5082.01938244
+work0000: submit job, structure ID 10 Stage 1
+work0001: still queuing or runnning
+work0002: Structure ID 2 Stage 3 Done!
+    collect results: E = -5082.05736491
+work0002: submit job, structure ID 11 Stage 1
+work0003: Structure ID 3 Stage 3 Done!
+    collect results: E = -5085.96043279
+work0003: submit job, structure ID 12 Stage 1
+work0004: Structure ID 4 Stage 2 Done!
+    submit job, structure ID 4 Stage 3
+work0005: Structure ID 5 Stage 3 Done!
+    collect results: E = -5083.12677578
+work0005: submit job, structure ID 13 Stage 1
+work0006: Structure ID 6 Stage 3 Done!
+    collect results: E = -5078.14565606
+work0006: submit job, structure ID 14 Stage 1
+work0007: still queuing or runnning
+work0008: Structure ID 8 Stage 2 Done!
+    submit job, structure ID 8 Stage 3
+work0009: Structure ID 9 Stage 2 Done!
+    submit job, structure ID 9 Stage 3
+
+
+
+2017/06/07 17:17:31
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 10 Stage 1 Done!
+    submit job, structure ID 10 Stage 2
+work0001: Structure ID 1 Stage 2 Done!
+    submit job, structure ID 1 Stage 3
+work0002: Structure ID 11 Stage 1 Done!
+    submit job, structure ID 11 Stage 2
+work0003: Structure ID 12 Stage 1 Done!
+    submit job, structure ID 12 Stage 2
+work0004: Structure ID 4 Stage 3 Done!
+    collect results: E = -5083.15016111
+work0004: submit job, structure ID 15 Stage 1
+work0005: Structure ID 13 Stage 1 Done!
+    submit job, structure ID 13 Stage 2
+work0006: Structure ID 14 Stage 1 Done!
+    submit job, structure ID 14 Stage 2
+work0007: still queuing or runnning
+work0008: Structure ID 8 Stage 3 Done!
+    collect results: E = -5083.23957229
+work0008: submit job, structure ID 16 Stage 1
+work0009: Structure ID 9 Stage 3 Done!
+    collect results: E = -5082.04973688
+work0009: submit job, structure ID 17 Stage 1
+
+
+
+2017/06/07 17:34:20
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 10 Stage 2 Done!
+    submit job, structure ID 10 Stage 3
+work0001: Structure ID 1 Stage 3 Done!
+    collect results: E = -5077.30628412
+work0001: submit job, structure ID 18 Stage 1
+work0002: Structure ID 11 Stage 2 Done!
+    submit job, structure ID 11 Stage 3
+work0003: Structure ID 12 Stage 2 Done!
+    submit job, structure ID 12 Stage 3
+work0004: Structure ID 15 Stage 1 Done!
+    submit job, structure ID 15 Stage 2
+work0005: Structure ID 13 Stage 2 Done!
+    submit job, structure ID 13 Stage 3
+work0006: Structure ID 14 Stage 2 Done!
+    submit job, structure ID 14 Stage 3
+work0007: still queuing or runnning
+work0008: Structure ID 16 Stage 1 Done!
+    submit job, structure ID 16 Stage 2
+work0009: Structure ID 17 Stage 1 Done!
+    submit job, structure ID 17 Stage 2
+
+
+
+2017/06/07 17:49:56
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 10 Stage 3 Done!
+    collect results: E = -5082.08775744
+work0000: submit job, structure ID 19 Stage 1
+work0001: Structure ID 18 Stage 1 Done!
+    submit job, structure ID 18 Stage 2
+work0002: still queuing or runnning
+work0003: Structure ID 12 Stage 3 Done!
+    collect results: E = -5080.91468725
+work0004: Structure ID 15 Stage 2 Done!
+    submit job, structure ID 15 Stage 3
+work0005: Structure ID 13 Stage 3 Done!
+    collect results: E = -5085.99690475
+work0006: Structure ID 14 Stage 3 Done!
+    collect results: E = -5083.4210672
+work0007: Structure ID 7 Stage 2 Done!
+    submit job, structure ID 7 Stage 3
+work0008: still queuing or runnning
+work0009: Structure ID 17 Stage 2 Done!
+    submit job, structure ID 17 Stage 3
+
+
+
+2017/06/07 17:56:11
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 19 Stage 1 Done!
+    submit job, structure ID 19 Stage 2
+work0001: still queuing or runnning
+work0002: Structure ID 11 Stage 3 Done!
+    collect results: E = -5082.12759042
+work0004: Structure ID 15 Stage 3 Done!
+    collect results: E = -5083.34594744
+work0007: Structure ID 7 Stage 3 Done!
+    collect results: E = -5083.19718905
+work0008: Structure ID 16 Stage 2 Done!
+    submit job, structure ID 16 Stage 3
+work0009: Structure ID 17 Stage 3 Done!
+    collect results: E = -5083.34586118
+
+
+
+2017/06/07 18:12:21
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 19 Stage 2 Done!
+    submit job, structure ID 19 Stage 3
+work0001: Structure ID 18 Stage 2 Done!
+    submit job, structure ID 18 Stage 3
+work0008: Structure ID 16 Stage 3 Done!
+    collect results: E = -5084.71923249
+
+
+
+2017/06/07 18:25:10
+CrySPY 0.3.0
+Restart cryspy.py
+
+
+
+#---------- job status
+work0000: Structure ID 19 Stage 3 Done!
+    collect results: E = -5073.15052152
+work0001: Structure ID 18 Stage 3 Done!
+    collect results: E = -5080.69567668

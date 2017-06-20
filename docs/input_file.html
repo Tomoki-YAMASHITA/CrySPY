@@ -1,0 +1,660 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Input file: cryspy.in &mdash; CrySPY Updata: 2017/06/16 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="CrySPY Updata: 2017/06/16 documentation" href="index.html"/>
+        <link rel="next" title="Utility" href="utility.html"/>
+        <link rel="prev" title="Tutorial" href="tutorial.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> CrySPY
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Update: 2017/06/16
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#file-format">File format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-section">[basic] section</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#algo"><code class="docutils literal"><span class="pre">algo</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calc-code"><code class="docutils literal"><span class="pre">calc_code</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#lattice-section">[lattice] section</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dangle"><code class="docutils literal"><span class="pre">dangle</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#triclinic-system">Triclinic system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#monoclinic-system">Monoclinic system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rhombohedral-system">Rhombohedral system</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#vasp-section">[VASP] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qe-section">[QE] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bo-section">[BO] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#option-section">[option] section</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CrySPY</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/input_file.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="input-file-cryspy-in">
+<span id="index-0"></span><h1><a class="toc-backref" href="#id2">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a><a class="headerlink" href="#input-file-cryspy-in" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#input-file-cryspy-in" id="id2">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a><ul>
+<li><a class="reference internal" href="#file-format" id="id3">File format</a></li>
+<li><a class="reference internal" href="#example" id="id4">Example</a></li>
+<li><a class="reference internal" href="#basic-section" id="id5">[basic] section</a><ul>
+<li><a class="reference internal" href="#algo" id="id6"><code class="docutils literal"><span class="pre">algo</span></code></a></li>
+<li><a class="reference internal" href="#calc-code" id="id7"><code class="docutils literal"><span class="pre">calc_code</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lattice-section" id="id8">[lattice] section</a><ul>
+<li><a class="reference internal" href="#dangle" id="id9"><code class="docutils literal"><span class="pre">dangle</span></code></a><ul>
+<li><a class="reference internal" href="#triclinic-system" id="id10">Triclinic system</a></li>
+<li><a class="reference internal" href="#monoclinic-system" id="id11">Monoclinic system</a></li>
+<li><a class="reference internal" href="#rhombohedral-system" id="id12">Rhombohedral system</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#vasp-section" id="id13">[VASP] section</a></li>
+<li><a class="reference internal" href="#qe-section" id="id14">[QE] section</a></li>
+<li><a class="reference internal" href="#bo-section" id="id15">[BO] section</a></li>
+<li><a class="reference internal" href="#option-section" id="id16">[option] section</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="file-format">
+<h2><a class="toc-backref" href="#id3">File format</a><a class="headerlink" href="#file-format" title="Permalink to this headline">¶</a></h2>
+<p>CrySPY uses the <a class="reference external" href="https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser">ConfigParser</a> module to read input file, <code class="docutils literal"><span class="pre">cryspy.in</span></code> .
+<code class="docutils literal"><span class="pre">cryspy.in</span></code>  consists of sections, led by a <code class="docutils literal"><span class="pre">[section]</span></code> header and followed by <code class="docutils literal"><span class="pre">name</span> <span class="pre">=</span> <span class="pre">value</span></code> or <code class="docutils literal"><span class="pre">name</span> <span class="pre">:</span> <span class="pre">value</span></code> entries.
+Section names and values are case sensitive, but names are not.
+Lines beginning with <code class="docutils literal"><span class="pre">#</span></code> or <code class="docutils literal"><span class="pre">;</span></code> are ignored and may be used to provide comments.
+Accepted Boolean values are <code class="docutils literal"><span class="pre">1</span></code>, <code class="docutils literal"><span class="pre">yes</span></code>, <code class="docutils literal"><span class="pre">true</span></code>, and <code class="docutils literal"><span class="pre">on</span></code>, which cause this method to return <code class="docutils literal"><span class="pre">True</span></code>, and <code class="docutils literal"><span class="pre">0</span></code>, <code class="docutils literal"><span class="pre">no</span></code>, <code class="docutils literal"><span class="pre">false</span></code>, and <code class="docutils literal"><span class="pre">off</span></code>, which cause it to return False. These string values for Boolean are checked in a case-insensitive manner.
+Some values are given in a space-separated manner.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference external" href="https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser">ConfigParser</a></p>
+</div>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<div class="last line-block">
+<div class="line">section name: case sensitive</div>
+<div class="line">name: case insensitive</div>
+<div class="line">value: case sensitive except for Boolean</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2><a class="toc-backref" href="#id4">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">cryspy.in</span></code> for YCo<sub>5</sub> by random search:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">basic</span><span class="p">]</span>
+<span class="n">algo</span> <span class="o">=</span> <span class="n">RS</span>
+<span class="n">calc_code</span> <span class="o">=</span> <span class="n">VASP</span>
+<span class="n">tot_struc</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">natot</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">atype</span> <span class="o">=</span> <span class="n">Y</span> <span class="n">Co</span>
+<span class="n">nat</span> <span class="o">=</span> <span class="mi">1</span>  <span class="mi">5</span>
+<span class="n">nstage</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">njob</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">jobcmd</span> <span class="o">=</span> <span class="n">qsub</span>
+<span class="n">jobfile</span> <span class="o">=</span> <span class="n">job_cryspy</span>
+
+<span class="p">[</span><span class="n">lattice</span><span class="p">]</span>
+<span class="n">minlen</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">maxlen</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">dangle</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">mindist</span> <span class="o">=</span> <span class="mf">1.8</span>
+
+<span class="p">[</span><span class="n">VASP</span><span class="p">]</span>
+<span class="n">kppvol</span> <span class="o">=</span> <span class="mi">40</span> <span class="mi">100</span> <span class="mi">100</span> <span class="mi">100</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="basic-section">
+<span id="index-1"></span><h2><a class="toc-backref" href="#id5">[basic] section</a><a class="headerlink" href="#basic-section" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="colwidths-auto docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Value</th>
+<th class="head">Default value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">algo</span></code></td>
+<td><code class="docutils literal"><span class="pre">RS</span></code> , <code class="docutils literal"><span class="pre">BO</span></code></td>
+<td>&#160;</td>
+<td>Algorithm</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">calc_code</span></code></td>
+<td><code class="docutils literal"><span class="pre">VASP</span></code>, <code class="docutils literal"><span class="pre">QE</span></code></td>
+<td>&#160;</td>
+<td>Caluculation code for structure optimization</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">tot_struc</span></code></td>
+<td>integer</td>
+<td>&#160;</td>
+<td>Total number of structures</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">natot</span></code></td>
+<td>integer</td>
+<td>&#160;</td>
+<td>Total number of atoms in a unit cell</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">atype</span></code></td>
+<td>atomic symbol [atomic symbol ...]</td>
+<td>&#160;</td>
+<td>Atom type</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">nat</span></code></td>
+<td>integer [integer ...]</td>
+<td>&#160;</td>
+<td>Number of atoms in atom type1 [type2 ...]</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">nstage</span></code></td>
+<td>integer</td>
+<td>&#160;</td>
+<td>Number of calculation stages</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">njob</span></code></td>
+<td>integer</td>
+<td>&#160;</td>
+<td>Number simultaneously submitted jobs</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">jobcmd</span></code></td>
+<td>&#160;</td>
+<td>&#160;</td>
+<td>Specify a command to submit jobs, such as qsub</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">jobfile</span></code></td>
+<td>&#160;</td>
+<td>&#160;</td>
+<td>Specify a jobfile to submit jobs for VASP, QE, and so on</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="algo">
+<span id="index-2"></span><h3><a class="toc-backref" href="#id6"><code class="docutils literal"><span class="pre">algo</span></code></a><a class="headerlink" href="#algo" title="Permalink to this headline">¶</a></h3>
+<p>Available algorithms for crystal structure prediction are:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">RS</span></code>: <strong>R</strong>andom <strong>S</strong>earch</li>
+<li><code class="docutils literal"><span class="pre">BO</span></code>: <strong>B</strong>ayesian <strong>O</strong>ptimization</li>
+</ul>
+</div>
+<div class="section" id="calc-code">
+<span id="index-3"></span><h3><a class="toc-backref" href="#id7"><code class="docutils literal"><span class="pre">calc_code</span></code></a><a class="headerlink" href="#calc-code" title="Permalink to this headline">¶</a></h3>
+<p>CrySPY is interfaced with:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">VASP</span></code>: <strong>VASP</strong> (<a class="reference external" href="https://www.vasp.at">https://www.vasp.at</a>)</li>
+<li><code class="docutils literal"><span class="pre">QE</span></code>: <strong>Q</strong>uantum <strong>E</strong>spresso (<a class="reference external" href="http://www.quantum-espresso.org">http://www.quantum-espresso.org</a>)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="lattice-section">
+<span id="index-4"></span><h2><a class="toc-backref" href="#id8">[lattice] section</a><a class="headerlink" href="#lattice-section" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="colwidths-auto docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Value</th>
+<th class="head">Default value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">minlen</span></code></td>
+<td>float</td>
+<td>&#160;</td>
+<td>Minimum length of lattce vector</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">maxlen</span></code></td>
+<td>float</td>
+<td>&#160;</td>
+<td>Maximum length of lattce vector</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">dangle</span></code></td>
+<td>float</td>
+<td>&#160;</td>
+<td>Delta angle for alpha, beta, and gamma in degree unit</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">mindist</span></code></td>
+<td>float</td>
+<td>&#160;</td>
+<td>Constraint on minimum interatomic distance</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="dangle">
+<span id="index-5"></span><h3><a class="toc-backref" href="#id9"><code class="docutils literal"><span class="pre">dangle</span></code></a><a class="headerlink" href="#dangle" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">dangle</span></code>, <img class="math" src="_images/math/3be04d4207434584251f6921820c24ac9fa8c6f1.png" alt="\theta"/>, places constranits on the lattice parameters <img class="math" src="_images/math/37acf9e10a0085893a9f79eb7d96ea78e5cf6f28.png" alt="\alpha, \beta"/>, and <img class="math" src="_images/math/3666981dc77862de77b6ecfcb64aad59b425cbaf.png" alt="\gamma"/> as follows:</p>
+<div class="section" id="triclinic-system">
+<h4><a class="toc-backref" href="#id10">Triclinic system</a><a class="headerlink" href="#triclinic-system" title="Permalink to this headline">¶</a></h4>
+<div class="math">
+<p><img src="_images/math/3d296adaa116a55f99f95e95575d4a6b4ca03b95.png" alt="\mathrm{(Type\; 1)} \;\;\; 90^\circ - \theta \leq \alpha, \beta, \gamma &lt; 90^\circ \\
+\mathrm{(Type\; 2)} \;\;\; 90^\circ \leq \alpha, \beta, \gamma \leq 90^\circ + \theta"/></p>
+</div></div>
+<div class="section" id="monoclinic-system">
+<h4><a class="toc-backref" href="#id11">Monoclinic system</a><a class="headerlink" href="#monoclinic-system" title="Permalink to this headline">¶</a></h4>
+<div class="math">
+<p><img src="_images/math/104884c19b7cc45d0852f58e92d23d634d632a8c.png" alt="90^\circ \leq \beta \leq 90^\circ + \theta"/></p>
+</div></div>
+<div class="section" id="rhombohedral-system">
+<h4><a class="toc-backref" href="#id12">Rhombohedral system</a><a class="headerlink" href="#rhombohedral-system" title="Permalink to this headline">¶</a></h4>
+<div class="math">
+<p><img src="_images/math/6f1e3cbb4c9fdb0b702b2258db925fc9cc9902a9.png" alt="90^\circ - \theta \leq \alpha \leq 90^\circ + \theta"/></p>
+</div></div>
+</div>
+</div>
+<div class="section" id="vasp-section">
+<span id="index-6"></span><h2><a class="toc-backref" href="#id13">[VASP] section</a><a class="headerlink" href="#vasp-section" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="colwidths-auto docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Value</th>
+<th class="head">Default value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">kppvol</span></code></td>
+<td>integer [integer]</td>
+<td>&#160;</td>
+<td>Grid density per Angstrom<sup>-3</sup> of  reciprocal cell in each stage</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">force_gamma</span></code></td>
+<td>boolean</td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
+<td>If True, force gammma-centered mesh</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="qe-section">
+<span id="index-7"></span><h2><a class="toc-backref" href="#id14">[QE] section</a><a class="headerlink" href="#qe-section" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="colwidths-auto docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Value</th>
+<th class="head">Default value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">kppvol</span></code></td>
+<td>integer [integer ...]</td>
+<td>&#160;</td>
+<td>Grid density per Angstrom<sup>-3</sup> of  reciprocal cell in each stage</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">qe_infile</span></code></td>
+<td>&#160;</td>
+<td>&#160;</td>
+<td>Specify your QE input file name</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">qe_outfile</span></code></td>
+<td>&#160;</td>
+<td>&#160;</td>
+<td>Specify your QE output file name</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="bo-section">
+<span id="index-8"></span><h2><a class="toc-backref" href="#id15">[BO] section</a><a class="headerlink" href="#bo-section" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="colwidths-auto docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Value</th>
+<th class="head">Default value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">interval</span></code></td>
+<td>integer</td>
+<td>&#160;</td>
+<td>Number of structures to calculate between learning data</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">score</span></code></td>
+<td><code class="docutils literal"><span class="pre">TS</span></code>, <code class="docutils literal"><span class="pre">EI</span></code>, <code class="docutils literal"><span class="pre">PI</span></code></td>
+<td>&#160;</td>
+<td>Acquisition function</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">dscrpt</span></code></td>
+<td><code class="docutils literal"><span class="pre">FP</span></code></td>
+<td>&#160;</td>
+<td>Descriptor for structure</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">fp_rmin</span></code></td>
+<td>float</td>
+<td>0.5</td>
+<td>Minimum cutoff of <em>r</em> in <em>fingerprint</em></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">fp_rmax</span></code></td>
+<td>float</td>
+<td>5.0</td>
+<td>Maximum cutoff of <em>r</em> in <em>fingerprint</em></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">fp_npoints</span></code></td>
+<td>integer</td>
+<td>50</td>
+<td>Number of discretized <em>r</em> points in <em>fingerprint</em></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">fp_sigma</span></code></td>
+<td>float</td>
+<td>0.2</td>
+<td>Sigma parameter in Gaussian smearing function in Angstrom unit</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="option-section">
+<span id="index-9"></span><h2><a class="toc-backref" href="#id16">[option] section</a><a class="headerlink" href="#option-section" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="colwidths-auto docutils">
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Value</th>
+<th class="head">Default value</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">maxcnt</span></code></td>
+<td>integer</td>
+<td>500</td>
+<td>Maximum number of trials to determine atom positions</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">stop_chkpt</span></code></td>
+<td>integer</td>
+<td>0</td>
+<td>Program stops at a specified check point</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">symtoleI</span></code></td>
+<td>float</td>
+<td>0.001</td>
+<td>Tolerance for symmetry finding for Initial structures</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">symtoleR</span></code></td>
+<td>float</td>
+<td>0.1</td>
+<td>Tolerance for symmetry finding for Relaxed structures</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">spgnum</span></code></td>
+<td><code class="docutils literal"><span class="pre">all</span></code>, space group number</td>
+<td><code class="docutils literal"><span class="pre">all</span></code></td>
+<td>Constraint on space group</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">load_struc_flag</span></code></td>
+<td>boolean</td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
+<td>If True, load initial structures from <code class="docutils literal"><span class="pre">./data/pkl_data/init_struc_data.pkl</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">stop_next_struc</span></code></td>
+<td>boolean</td>
+<td><code class="docutils literal"><span class="pre">False</span></code></td>
+<td>If True, not submit next structures, but submit next stage and collect results</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utility.html" class="btn btn-neutral float-right" title="Utility" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tutorial.html" class="btn btn-neutral" title="Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CrySPY Development Team.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'Updata: 2017/06/16',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
