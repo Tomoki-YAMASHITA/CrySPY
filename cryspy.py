@@ -119,7 +119,7 @@ if rin.algo == 'BO':
         #------ check job status
         jobs.check_job()
         #------ next generation
-        if not 'submitted' in jobs.job_stat:
+        if 'submitted' not in jobs.job_stat:
 
             #---------- check point 3
             if rin.stop_chkpt == 3:

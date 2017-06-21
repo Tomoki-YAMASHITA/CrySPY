@@ -31,4 +31,3 @@ def clean_calc_files_vasp(work_path):
 
     #---------- clear stat file
     os.remove(work_path+'stat_job')
-

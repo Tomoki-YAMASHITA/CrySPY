@@ -138,7 +138,7 @@ def readin():
     try:
         maxcnt = config.getint('option', 'maxcnt')
     except:
-        maxcnt = 500
+        maxcnt = 200
     try:
         stop_chkpt = config.getint('option', 'stop_chkpt')
     except:
@@ -451,7 +451,7 @@ def diffinstat(stat):
             raise ValueError('Do not change fp_rmax')
         if not old_fp_npoints == fp_npoints:
             raise ValueError('Do not change fp_npoints')
-        if not old_fp_rmin == fp_rmin:
+        if not old_fp_sigma == fp_sigma:
             raise ValueError('Do not change fp_sigma')
 
     #----- lattice
@@ -490,6 +490,7 @@ def diffinstat(stat):
             print('Changed kppvol from {0} to {1}'.format(old_kppvol, kppvol))
             with open('cryspy.out', 'a') as fout:
                 fout.write('\n#### Changed kppvol from {0} to {1}\n'.format(old_kppvol, kppvol))
+            logic_change = True
         if not old_force_gamma == force_gamma:
             print('Changed force_gamma from {0} to {1}'.format(old_force_gamma, force_gamma))
             with open('cryspy.out', 'a') as fout:
@@ -506,6 +507,7 @@ def diffinstat(stat):
             print('Changed kppvol from {0} to {1}'.format(old_kppvol, kppvol))
             with open('cryspy.out', 'a') as fout:
                 fout.write('\n#### Changed kppvol from {0} to {1}\n'.format(old_kppvol, kppvol))
+            logic_change = True
         if not old_force_gamma == force_gamma:
             print('Changed force_gamma from {0} to {1}'.format(old_force_gamma, force_gamma))
             with open('cryspy.out', 'a') as fout:

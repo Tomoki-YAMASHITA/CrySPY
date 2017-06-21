@@ -44,7 +44,7 @@ def collect_qe(current_id, work_path):
     try:
         lines_cell = qe_structure.extract_cell_parameters(work_path+rin.qe_outfile)
         if lines_cell is None:
-            lines_cell = qe_structure.extract_cell_parameters(work_path+qe_rin.qe_infile)
+            lines_cell = qe_structure.extract_cell_parameters(work_path+rin.qe_infile)
         lines_atom = qe_structure.extract_atomic_positions(work_path+rin.qe_outfile)
         if lines_atom is None:
             lines_atom = qe_structure.extract_atomic_positions(work_path+rin.qe_infile)

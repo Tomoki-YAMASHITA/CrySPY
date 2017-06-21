@@ -5,7 +5,6 @@ import numpy as np
 
 from . import select_descriptor
 from ..IO import pkl_data
-from ..IO import read_input as rin
 
 
 def restart(init_struc_data, BO_id_data, BO_data):

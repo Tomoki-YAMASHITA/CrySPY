@@ -19,9 +19,8 @@ from ..IO import read_input as rin
 #---------- inheritance
 class policy_cryspy(combo.search.discrete.policy):
 
-
     def specified_search(self, specified_actions, max_num_probes, num_search_each_probe=1,
-                          simulator=None, is_disp=True):
+                         simulator=None, is_disp=True):
 
         N = int(num_search_each_probe)
 

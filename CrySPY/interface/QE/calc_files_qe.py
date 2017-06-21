@@ -24,13 +24,13 @@ def check_input_qe():
 
 def clean_calc_files_qe(work_path):
     #---------- clean input files
-###
-### nothing to delete in QE
-###
-#    qe_files = []
-#    for f in qe_files:
-#        if os.path.isfile(work_path+f):
-#            os.remove(work_path+f)
+    ###
+    ### nothing to delete in QE
+    ###
+    #qe_files = []
+    #for f in qe_files:
+    #    if os.path.isfile(work_path+f):
+    #        os.remove(work_path+f)
 
     #---------- clear stat file
     os.remove(work_path+'stat_job')
