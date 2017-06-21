@@ -15,7 +15,7 @@ def next_stage_opt_cl2(stage, work_path):
     skip_flag = False
 
     #---------- prepare opt_cl2 files
-    opt_cl2_files = [rin.opt_cl2_infile, rin.opt_cl2_outfile, rin.opt_cl2_cif, 'log.struc', 'log.tote', 'log.strs']
+    opt_cl2_files = [rin.opt_cl2_infile, rin.opt_cl2_outfile, rin.opt_cl2_cif, 'log.struc', 'log.tote', 'log.frc', 'log.strs']
     for f in opt_cl2_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)

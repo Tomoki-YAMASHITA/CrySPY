@@ -44,7 +44,7 @@ def collect_opt_cl2(current_id, work_path):
         opt_struc = None
 
     #---------- mv xxxxx fin_xxxxx
-    opt_cl2_files = [rin.opt_cl2_infile, rin.opt_cl2_outfile, rin.opt_cl2_cif, 'log.struc', 'log.tote', 'log.strs']
+    opt_cl2_files = [rin.opt_cl2_infile, rin.opt_cl2_outfile, rin.opt_cl2_cif, 'log.struc', 'log.tote', 'log.frc', 'log.strs']
     for f in opt_cl2_files:
         if os.path.isfile(work_path+f):
             os.rename(work_path+f, work_path+'fin_'+f)
