@@ -48,7 +48,7 @@ def next_struc_opt_cl2(init_struc_data, next_id, work_path):
     #---------- copy files
     calc_inputs = [rin.opt_cl2_infile]
     for f in calc_inputs:
-        ff = f+'_1' if if f == rin.opt_cl2_infile else f
+        ff = f+'_1' if f == rin.opt_cl2_infile else f
         if not os.path.isfile('./calc_in/'+ff):
             raise IOError('Could not find ./calc_in/'+ff)
         #----- e.g. cp ./calc_in/xxxxx_1 work0001/xxxxx
