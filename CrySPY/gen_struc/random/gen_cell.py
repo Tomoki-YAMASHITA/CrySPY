@@ -4,6 +4,7 @@
 import random
 import math
 
+
 def rndgen_lattice(spgnum, minlen, maxlen, dangle):
     #---------- for spgnum = 0: no space group
     if spgnum == 0:
@@ -59,7 +60,7 @@ def rndgen_lattice(spgnum, minlen, maxlen, dangle):
         a = random.uniform(minlen, maxlen)
         b = random.uniform(minlen, maxlen)
         c = random.uniform(minlen, maxlen)
-        if  a > c:
+        if a > c:
             a, c = c, a
         alpha = gamma = 90.0
         beta = 90.0 + random.uniform(0, dangle)
@@ -111,7 +112,7 @@ def calc_latvec(a, b, c, alpha, beta, gamma):
     gamma_rad = math.radians(gamma)
 
     #---------- calculate components
-    bx  = b*math.cos(gamma_rad)
+    bx = b*math.cos(gamma_rad)
     by = b*math.sin(gamma_rad)
     cx = c*math.cos(beta_rad)
     cy = (c*math.cos(alpha_rad) - cx*math.cos(gamma_rad))/math.sin(gamma_rad)

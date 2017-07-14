@@ -43,11 +43,9 @@ def calc_atom_dist(va, vb, vc, incoordA, incoordB):
         din.append(dtmp)
 
     #---------- calculate distance
-    dx =   din[0]*va[0]  + din[1]*vb[0] + din[2]*vc[0]
-    dy =   din[0]*va[1]  + din[1]*vb[1] + din[2]*vc[1]
-    dz =   din[0]*va[2]  + din[1]*vb[2] + din[2]*vc[2]
+    dx = din[0]*va[0] + din[1]*vb[0] + din[2]*vc[0]
+    dy = din[0]*va[1] + din[1]*vb[1] + din[2]*vc[1]
+    dz = din[0]*va[2] + din[1]*vb[2] + din[2]*vc[2]
     dist = math.sqrt(dx*dx + dy*dy + dz*dz)
 
     return dist
-
-

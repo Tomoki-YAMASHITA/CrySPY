@@ -80,4 +80,3 @@ def save_BO_data(BO_data):
     with open('./data/pkl_data/BO_data.pkl', 'wb') as ddata:
         pickle.dump(BO_data, ddata)
 
-

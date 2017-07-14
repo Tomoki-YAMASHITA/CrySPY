@@ -6,9 +6,7 @@ from __future__ import print_function
 import os
 import subprocess
 
-import numpy as np
 from pymatgen import Structure
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from . import gen_cell
 from . import with_spg
@@ -64,8 +62,10 @@ def rndgen_wo_spg(nstruc, natot, atype, nat, cID=0, minlen=4, maxlen=10, dangle=
     return init_struc_data
 
 
-def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0, minlen=4, maxlen=10, dangle=20, mindist=1.5,
-                  maxcnt=500, symtoleI=0.001, init_pos_path='./init_POSCARS', fwpath='./find_wy'):
+def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
+               minlen=4, maxlen=10, dangle=20, mindist=1.5,
+               maxcnt=500, symtoleI=0.001,
+               init_pos_path='./init_POSCARS', fwpath='./find_wy'):
     '''
     Randomly generate structures with space group information
     '''
@@ -96,7 +96,7 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0, minlen=4, maxlen=
                 wyflag = False
                 break
             wyflag, tmp_struc = with_spg.fw.gen_wypos(mindist, maxcnt)
-            if wyflag == False:    # Failure
+            if wyflag is False:    # Failure
                 os.remove('POS_WY_SKEL_ALL.json')
                 cnt += 1
                 continue
@@ -108,7 +108,7 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0, minlen=4, maxlen=
                 #------ # break fw_input loop
                 break
 
-        if wyflag == False:    # maximum trial or no POS_WY_SKEL_ALL.json file
+        if wyflag is False:    # maximum trial or no POS_WY_SKEL_ALL.json file
             #----- clean
             for rfile in ['input', 'POS_WY_SKEL_ALL.json']:
                 if os.path.isfile(rfile):

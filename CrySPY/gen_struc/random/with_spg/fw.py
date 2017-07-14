@@ -64,7 +64,7 @@ def gen_wypos(mindist, maxcnt):
 
                 #----- Cartesian coordinate
                 #      platではなくclatを使って変換しないと上手くいかない
-                cart=[]
+                cart = []
                 for p in tmp_positions:
                     v = np.zeros(3)
                     for i in range(3):

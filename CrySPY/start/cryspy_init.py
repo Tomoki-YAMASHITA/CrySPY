@@ -83,7 +83,7 @@ def initialize():
 
     #---------- initialize rslt_data
     rslt_data = pd.DataFrame(columns=['Struc_ID', 'Spg_num', 'Spg_sym', 'Spg_num_opt', 'Spg_sym_opt',
-                                         'Energy', 'Magmom', 'Opt'])
+                                      'Energy', 'Magmom', 'Opt'])
     rslt_data[['Struc_ID', 'Spg_num', 'Spg_num_opt']] = rslt_data[
                                    ['Struc_ID', 'Spg_num', 'Spg_num_opt']].astype(int)
     pkl_data.save_rslt(rslt_data)

@@ -20,7 +20,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR']
     for f in vasp_files:
         if not os.path.isfile(work_path+f):
-            raise IOError('Not found ' +work_path+f)
+            raise IOError('Not found '+work_path+f)
         os.rename(work_path+f, work_path+'prev_'+f)
     shutil.copyfile(work_path+'prev_CONTCAR', work_path+'POSCAR')
 
@@ -39,7 +39,9 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
         print('    error in VASP,  skip this structure')
         return skip_flag, kpt_data
     mitparamset = MITRelaxSet(structure)
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure, rin.kppvol[stage-1], rin.force_gamma)
+    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
+                                                           rin.kppvol[stage-1],
+                                                           rin.force_gamma)
     kpoints.write_file(work_path+'KPOINTS')
 
     #---------- kpt_data
@@ -81,7 +83,9 @@ def next_struc_vasp(init_struc_data, next_id, work_path, kpt_data):
 
     #---------- generate KPOINTS using pymatgen
     mitparamset = MITRelaxSet(structure)
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure, rin.kppvol[0], rin.force_gamma)
+    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
+                                                           rin.kppvol[0],
+                                                           rin.force_gamma)
     kpoints.write_file(work_path+'KPOINTS')
 
     #---------- kpt_data

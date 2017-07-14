@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 def write_kpts(kpt_data):
     #---------- asc in ID
     with open('./data/kpts_rslt', 'w') as frslt:

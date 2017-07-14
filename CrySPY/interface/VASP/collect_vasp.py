@@ -8,8 +8,6 @@ import os
 import numpy as np
 from pymatgen import Structure
 
-from ...IO import read_input as rin
-
 
 def collect_vasp(current_id, work_path):
     #---------- check optimization in previous stage
@@ -63,4 +61,3 @@ def collect_vasp(current_id, work_path):
 
     #---------- return
     return opt_struc, energy, magmom, check_opt
-

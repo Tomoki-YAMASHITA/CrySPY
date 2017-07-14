@@ -54,4 +54,3 @@ def append_struc(init_struc_data):
     pkl_data.save_init_struc(init_struc_data)
 
     return init_struc_data
-

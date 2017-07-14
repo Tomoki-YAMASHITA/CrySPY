@@ -222,7 +222,7 @@ Rhombohedral system
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``maxcnt``, integer,  500,  Maximum number of trials to determine atom positions
+   ``maxcnt``, integer,  200,  Maximum number of trials to determine atom positions
    ``stop_chkpt``, integer , 0,  Program stops at a specified check point
    ``symtoleI``, float , 0.001 , Tolerance for symmetry finding for Initial structures
    ``symtoleR``, float , 0.1   , Tolerance for symmetry finding for Relaxed structures

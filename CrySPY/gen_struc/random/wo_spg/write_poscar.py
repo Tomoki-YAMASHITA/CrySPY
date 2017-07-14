@@ -26,5 +26,3 @@ def write_poscar(va, vb, vc, incoord, atype, nat):
             for i in j:
                 poscar.write('    {: .10f}'.format(i))
             poscar.write('\n')
-
-

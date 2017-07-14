@@ -14,15 +14,15 @@ def calc_X(strucs_list, fppath='./cal_fingerprint', fp_rmin=0.5, fp_rmax=5.0, fp
     os.chdir('calc_FP')
 
     #---------- calc fingerprint
+    descriptors = None
     for struc in strucs_list:
         #------ output POSCAR
         struc.to(fmt='poscar', filename='POSCAR')
         fp = calc_fingerprint(fppath, fp_rmin, fp_rmax, fp_npoints, fp_sigma)
-        try:
-            descriptors = np.vstack((descriptors, fp))
-        except:
-            #--  initalize
+        if descriptors is None:
             descriptors = fp
+        else:
+            descriptors = np.vstack((descriptors, fp))
 
     #---------- go back to ..
     os.chdir('../')
