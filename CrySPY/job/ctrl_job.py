@@ -353,9 +353,7 @@ class Ctrl_job(object):
     def ctrl_next_gen(self):
         #------ out and log
         with open('cryspy.out', 'a') as fout:
-            fout.write('\nDone generation {}\n\n'.format(self.gen))
             fout.write('#------ Bayesian optimization\n')
-        print('\nDone generation {}\n'.format(self.gen))
         print('#------ Bayesian optimization')
 
         #------ id_done --> sact

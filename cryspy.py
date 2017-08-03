@@ -116,8 +116,21 @@ for work_id, jstat in enumerate(jobs.job_stat):
 #---------- BO
 if rin.algo == 'BO':
     if jobs.logic_next_gen:
+        #------ log and out
+        with open('cryspy.out', 'a') as fout:
+            fout.write('\nDone generation {}\n\n'.format(jobs.gen))
+        print('\nDone generation {}\n'.format(jobs.gen))
+
+        #------ done all structures
+        if len(jobs.rslt_data) == rin.tot_struc:
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\nDone all structures!\n')
+            print('\nDone all structures!')
+            raise SystemExit()
+
         #------ check job status
         jobs.check_job()
+
         #------ next generation
         if 'submitted' not in jobs.job_stat:
 

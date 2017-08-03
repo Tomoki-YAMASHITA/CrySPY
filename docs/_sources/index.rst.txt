@@ -11,7 +11,7 @@ Source code: [github] https://github.com/Tomoki-YAMASHITA/CrySPY
 News
 ===========
 
-Latest version: 0.3.2
+Latest version: 0.3.3
 
 
 
