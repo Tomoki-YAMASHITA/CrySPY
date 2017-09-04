@@ -1,0 +1,6 @@
+#!/bin/bash
+
+opt_cl2_root=/path/to/opt_cl2
+
+$opt_cl2_root/src/opt2_o Si16.in 2>&1 > Si16.out
+sed -i -e '3 s/^.*$/done/' stat_job

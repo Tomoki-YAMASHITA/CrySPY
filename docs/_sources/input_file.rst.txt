@@ -68,7 +68,7 @@ Example
    :widths: auto
 
    ``algo``, "``RS`` , ``BO``",  ,  Algorithm
-   ``calc_code``, "``VASP``, ``QE``",  , Caluculation code for structure optimization
+   ``calc_code``, "``VASP``, ``QE``, ``opt_cl2``",  , Caluculation code for structure optimization
    ``tot_struc``, integer,  , Total number of structures
    ``natot``, integer,  , Total number of atoms in a unit cell
    ``atype``, "atomic symbol [atomic symbol ...]",  , Atom type
@@ -101,6 +101,7 @@ CrySPY is interfaced with:
 
 - ``VASP``: **VASP** (https://www.vasp.at)
 - ``QE``: **Q**\ uantum **E**\ spresso (http://www.quantum-espresso.org)
+- ``opt_cl2``: **opt_cl2**
 
 
 
@@ -187,6 +188,23 @@ Rhombohedral system
    ``kppvol``, integer [integer ...],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
    ``qe_infile``,  ,  ,  Specify your QE input file name
    ``qe_outfile``,  ,  ,  Specify your QE output file name
+
+
+
+
+.. index::
+   single: [opt_cl2]
+
+[opt_cl2] section
+==================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``opt_cl2_infile``,  ,  ,  Specify your opt_cl2 input file name
+   ``opt_cl2_outfile``,  ,  ,  Specify your opt_cl2 output file name
+   ``opt_cl2_cif``,  ,  ,  Specify your CIF-formatted opt_cl2 initial structure file name
 
 
 
