@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Input file: cryspy.in &mdash; CrySPY Updata: 2017/09/04 documentation</title>
+  <title>Input file: cryspy.in &mdash; CrySPY Updata: 2017/10/17 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2017/09/04 documentation" href="index.html"/>
+    <link rel="top" title="CrySPY Updata: 2017/10/17 documentation" href="index.html"/>
         <link rel="next" title="Utility" href="utility.html"/>
         <link rel="prev" title="Tutorial" href="tutorial.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                Update: 2017/09/04
+                Update: 2017/10/17
               </div>
             
           
@@ -115,7 +115,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#vasp-section">[VASP] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#qe-section">[QE] section</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#opt-cl2-section">[opt_cl2] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#soiap-section">[soiap] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bo-section">[BO] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#option-section">[option] section</a></li>
 </ul>
@@ -210,7 +210,7 @@
 </li>
 <li><a class="reference internal" href="#vasp-section" id="id13">[VASP] section</a></li>
 <li><a class="reference internal" href="#qe-section" id="id14">[QE] section</a></li>
-<li><a class="reference internal" href="#opt-cl2-section" id="id15">[opt_cl2] section</a></li>
+<li><a class="reference internal" href="#soiap-section" id="id15">[soiap] section</a></li>
 <li><a class="reference internal" href="#bo-section" id="id16">[BO] section</a></li>
 <li><a class="reference internal" href="#option-section" id="id17">[option] section</a></li>
 </ul>
@@ -281,7 +281,7 @@ Some values are given in a space-separated manner.</p>
 <td>Algorithm</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">calc_code</span></code></td>
-<td><code class="docutils literal"><span class="pre">VASP</span></code>, <code class="docutils literal"><span class="pre">QE</span></code>, <code class="docutils literal"><span class="pre">opt_cl2</span></code></td>
+<td><code class="docutils literal"><span class="pre">VASP</span></code>, <code class="docutils literal"><span class="pre">QE</span></code>, <code class="docutils literal"><span class="pre">soiap</span></code></td>
 <td>&#160;</td>
 <td>Caluculation code for structure optimization</td>
 </tr>
@@ -341,7 +341,7 @@ Some values are given in a space-separated manner.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">VASP</span></code>: <strong>VASP</strong> (<a class="reference external" href="https://www.vasp.at">https://www.vasp.at</a>)</li>
 <li><code class="docutils literal"><span class="pre">QE</span></code>: <strong>Q</strong>uantum <strong>E</strong>spresso (<a class="reference external" href="http://www.quantum-espresso.org">http://www.quantum-espresso.org</a>)</li>
-<li><code class="docutils literal"><span class="pre">opt_cl2</span></code>: <strong>opt_cl2</strong></li>
+<li><code class="docutils literal"><span class="pre">soiap</span></code>: <strong>soiap</strong> (<a class="reference external" href="https://github.com/nbsato/soiap">https://github.com/nbsato/soiap</a>)</li>
 </ul>
 </div>
 </div>
@@ -452,8 +452,8 @@ Some values are given in a space-separated manner.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="opt-cl2-section">
-<span id="index-8"></span><h2><a class="toc-backref" href="#id15">[opt_cl2] section</a><a class="headerlink" href="#opt-cl2-section" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="soiap-section">
+<span id="index-8"></span><h2><a class="toc-backref" href="#id15">[soiap] section</a><a class="headerlink" href="#soiap-section" title="Permalink to this headline">¶</a></h2>
 <table border="1" class="colwidths-auto docutils">
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Name</th>
@@ -463,20 +463,20 @@ Some values are given in a space-separated manner.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">opt_cl2_infile</span></code></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">soiap_infile</span></code></td>
 <td>&#160;</td>
 <td>&#160;</td>
-<td>Specify your opt_cl2 input file name</td>
+<td>Specify your soiap input file name</td>
 </tr>
-<tr class="row-odd"><td><code class="docutils literal"><span class="pre">opt_cl2_outfile</span></code></td>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">soiap_outfile</span></code></td>
 <td>&#160;</td>
 <td>&#160;</td>
-<td>Specify your opt_cl2 output file name</td>
+<td>Specify your soiap output file name</td>
 </tr>
-<tr class="row-even"><td><code class="docutils literal"><span class="pre">opt_cl2_cif</span></code></td>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">soiap_cif</span></code></td>
 <td>&#160;</td>
 <td>&#160;</td>
-<td>Specify your CIF-formatted opt_cl2 initial structure file name</td>
+<td>Specify your CIF-formatted soiap initial structure file name</td>
 </tr>
 </tbody>
 </table>
@@ -625,7 +625,7 @@ Some values are given in a space-separated manner.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'Updata: 2017/09/04',
+            VERSION:'Updata: 2017/10/17',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

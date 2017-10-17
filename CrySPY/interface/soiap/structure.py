@@ -34,7 +34,7 @@ def from_file(name):
     return structure
 
 
-def write(structure, output, symprec=1e-3, title="opt_cl2"):
+def write(structure, output, symprec=1e-3, title="soiap"):
     #---------- symmetrized structure
     analyzer = SpacegroupAnalyzer(structure, symprec=symprec)
     structure_sym = analyzer.get_symmetrized_structure()
