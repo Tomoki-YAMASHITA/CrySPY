@@ -1,6 +1,6 @@
 [basic]
 algo = RS
-calc_code = opt_cl2
+calc_code = soiap
 tot_struc = 10
 natot = 16
 atype = Si
@@ -16,7 +16,7 @@ maxlen = 20
 dangle = 20
 mindist = 1.8
 
-[opt_cl2]
-opt_cl2_infile = Si16.in
-opt_cl2_outfile = Si16.out
-opt_cl2_cif = initial.cif
+[soiap]
+soiap_infile = Si16.in
+soiap_outfile = Si16.out
+soiap_cif = initial.cif

@@ -16,7 +16,7 @@ def readin():
     global minlen, maxlen, dangle, mindist
     global kppvol, kpt_flag, force_gamma
     global qe_infile, qe_outfile
-    global opt_cl2_infile, opt_cl2_outfile, opt_cl2_cif
+    global soiap_infile, soiap_outfile, soiap_cif
     global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum, load_struc_flag, stop_next_struc
 
     #---------- read input file
@@ -131,17 +131,17 @@ def readin():
         except:
             force_gamma = False
 
-    #----- opt_cl2
-    elif calc_code == 'opt_cl2':
-        opt_cl2_infile = config.get('opt_cl2', 'opt_cl2_infile')
-        opt_cl2_outfile = config.get('opt_cl2', 'opt_cl2_outfile')
-        opt_cl2_cif = config.get('opt_cl2', 'opt_cl2_cif')
+    #----- soiap
+    elif calc_code == 'soiap':
+        soiap_infile = config.get('soiap', 'soiap_infile')
+        soiap_outfile = config.get('soiap', 'soiap_outfile')
+        soiap_cif = config.get('soiap', 'soiap_cif')
         kpt_flag = False
         force_gamma = False
     else:
         kpt_flag = False
         force_gamma = False
-        raise ValueError('calc_code should be VASP, QE, or opt_cl2 for now')
+        raise ValueError('calc_code should be VASP, QE, or soiap for now')
 
     #----- option
     try:
@@ -186,10 +186,10 @@ def check_algo(algo):
 
 
 def check_calc_code(calc_code):
-    if calc_code in ['VASP', 'QE', 'opt_cl2']:
+    if calc_code in ['VASP', 'QE', 'soiap']:
         pass
     else:
-        raise ValueError('calc_code should be VASP, QE, or opt_cl2 for now')
+        raise ValueError('calc_code should be VASP, QE, or soiap for now')
 
 
 def spglist(spgnum):
@@ -262,12 +262,12 @@ def writeout():
             fout.write('kppvol = {}\n'.format(' '.join(str(c) for c in kppvol)))
             fout.write('force_gamma = {}\n'.format(force_gamma))
 
-        #----- opt_cl2
-        if calc_code == 'opt_cl2':
-            fout.write('#----- opt_cl2 section\n')
-            fout.write('opt_cl2_infile = {}\n'.format(opt_cl2_infile))
-            fout.write('opt_cl2_outfile = {}\n'.format(opt_cl2_outfile))
-            fout.write('opt_cl2_cif = {}\n'.format(opt_cl2_cif))
+        #----- soiap
+        if calc_code == 'soiap':
+            fout.write('#----- soiap section\n')
+            fout.write('soiap_infile = {}\n'.format(soiap_infile))
+            fout.write('soiap_outfile = {}\n'.format(soiap_outfile))
+            fout.write('soiap_cif = {}\n'.format(soiap_cif))
 
         #----- option
         fout.write('#----- option section\n')
@@ -325,11 +325,11 @@ def save_stat(stat):
         stat.set('input', 'kppvol', '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('input', 'force_gamma', '{}'.format(force_gamma))
 
-    #---------- opt_cl2
-    if calc_code == 'opt_cl2':
-        stat.set('input', 'opt_cl2_infile', '{}'.format(opt_cl2_infile))
-        stat.set('input', 'opt_cl2_outfile', '{}'.format(opt_cl2_outfile))
-        stat.set('input', 'opt_cl2_cif', '{}'.format(opt_cl2_cif))
+    #---------- soiap
+    if calc_code == 'soiap':
+        stat.set('input', 'soiap_infile', '{}'.format(soiap_infile))
+        stat.set('input', 'soiap_outfile', '{}'.format(soiap_outfile))
+        stat.set('input', 'soiap_cif', '{}'.format(soiap_cif))
 
     #---------- option
     stat.set('input', 'maxcnt', '{}'.format(maxcnt))
@@ -395,11 +395,11 @@ def diffinstat(stat):
         old_kppvol = [int(x) for x in old_kppvol.split()]    # character --> int
         old_force_gamma = stat.getboolean('input', 'force_gamma')
 
-    #----- opt_cl2
-    if old_calc_code == 'opt_cl2':
-        old_opt_cl2_infile = stat.get('input', 'opt_cl2_infile')
-        old_opt_cl2_outfile = stat.get('input', 'opt_cl2_outfile')
-        old_opt_cl2_cif = stat.get('input', 'opt_cl2_cif')
+    #----- soiap
+    if old_calc_code == 'soiap':
+        old_soiap_infile = stat.get('input', 'soiap_infile')
+        old_soiap_outfile = stat.get('input', 'soiap_outfile')
+        old_soiap_cif = stat.get('input', 'soiap_cif')
 
     #----- option
     old_maxcnt = stat.getint('input', 'maxcnt')
@@ -542,14 +542,14 @@ def diffinstat(stat):
                 fout.write('\n#### Changed force_gamma from {0} to {1}\n'.format(old_force_gamma, force_gamma))
             logic_change = True
 
-    #----- opt_cl2
-    if calc_code == 'opt_cl2':
-        if not old_opt_cl2_infile == opt_cl2_infile:
-            raise ValueError('Do not change opt_cl2_infile')
-        if not old_opt_cl2_outfile == opt_cl2_outfile:
-            raise ValueError('Do not change opt_cl2_outfile')
-        if not old_opt_cl2_cif == opt_cl2_cif:
-            raise ValueError('Do not change opt_cl2_cif')
+    #----- soiap
+    if calc_code == 'soiap':
+        if not old_soiap_infile == soiap_infile:
+            raise ValueError('Do not change soiap_infile')
+        if not old_soiap_outfile == soiap_outfile:
+            raise ValueError('Do not change soiap_outfile')
+        if not old_soiap_cif == soiap_cif:
+            raise ValueError('Do not change soiap_cif')
 
     #----- option
     if not old_maxcnt == maxcnt:
