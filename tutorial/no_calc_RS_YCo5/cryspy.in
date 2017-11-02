@@ -5,7 +5,7 @@ tot_struc = 10
 natot = 6
 atype = Y Co
 nat = 1  5
-nstage = 3
+nstage = 4
 njob = 5
 jobcmd = bash
 jobfile = job_cryspy
@@ -14,7 +14,8 @@ jobfile = job_cryspy
 minlen = 4
 maxlen = 8
 dangle = 20
-mindist = 1.5
+mindist_1 = 2.0 1.8
+mindist_2 = 1.8 1.5
 
 [VASP]
-kppvol = 20 60 60
+kppvol = 20 60 60 60

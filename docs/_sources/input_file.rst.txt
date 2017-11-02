@@ -44,13 +44,14 @@ Example
    njob = 5
    jobcmd = qsub
    jobfile = job_cryspy
-   
+
    [lattice]
    minlen = 4
    maxlen = 8
    dangle = 20
-   mindist = 1.8
-   
+   mindist_1 = 2.0 1.8
+   mindist_2 = 1.8 1.5
+
    [VASP]
    kppvol = 40 100 100 100
 
@@ -110,7 +111,6 @@ CrySPY is interfaced with:
    single: [lattice]
    single: minlen
    single: maxlen
-   single: mindist
 
 [lattice] section
 ==================
@@ -122,7 +122,7 @@ CrySPY is interfaced with:
    ``minlen``, float,  ,  Minimum length of lattce vector
    ``maxlen``, float,  ,  Maximum length of lattce vector
    ``dangle``, float,  ,  "Delta angle for alpha, beta, and gamma in degree unit"
-   ``mindist``, float, ,  Constraint on minimum interatomic distance
+   ``mindist_?``, float [float ...], ,  Constraint on minimum interatomic distance
 
 
 .. index::
@@ -157,6 +157,27 @@ Rhombohedral system
    90^\circ - \theta \leq \alpha \leq 90^\circ + \theta
 
 
+.. index::
+   single: mindist
+
+``mindist``
+------------
+
+A mindist matrix consists on ``mindist_1``, ``mindist_2`` ... . For example, in the case of YCo5 (atype = ['Y', 'Co']),
+suppose taht ``mindist_1`` is  [2.0, 1,8] and ``mindist_2`` is [1.8, 1.5].
+The mindist matrix is
+
+.. math::
+   \begin{pmatrix}
+   2.0 & 1.8 \\
+   1.8 & 1.5
+   \end{pmatrix}
+
+This means that minimum interatomic distances of Y-Y, Y-Co, and Co-Co are 2.0, 1.8, and 1.5, respectively.
+A mindist matrix should be a symmetric matrix.
+
+.. attention::
+   mindist matrix: symmetric matrix
 
 
 .. index::
@@ -169,7 +190,7 @@ Rhombohedral system
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``kppvol``, integer [integer],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
+   ``kppvol``, integer [integer ...],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
    ``force_gamma``, boolean, ``False`` ,  "If True, force gammma-centered mesh"
 
 
@@ -221,6 +242,8 @@ Rhombohedral system
 
    ``interval``, integer,  ,  Number of structures to calculate between learning data
    ``score``, "``TS``, ``EI``, ``PI``",  ,  Acquisition function
+   ``num_rand_basis``, integer, 0, "If 0: Gaussian process, else: number of basis function"  
+   ``cdev``, float, 0.001, Cutoff of deviation for standardization
    ``dscrpt``, ``FP`` ,  , Descriptor for structure
    ``fp_rmin``, float, 0.5, Minimum cutoff of *r* in *fingerprint*
    ``fp_rmax``, float, 5.0, Maximum cutoff of *r* in *fingerprint*

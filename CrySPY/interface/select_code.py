@@ -47,7 +47,7 @@ def collect(current_id, work_path):
     else:
         raise SystemExit('now only VASP, QE, or soiap')
 
-    #---------- return
+    # ---------- return
     return opt_struc, energy, magmom, check_opt
 
 

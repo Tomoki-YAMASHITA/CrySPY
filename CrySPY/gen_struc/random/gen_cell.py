@@ -6,9 +6,9 @@ import math
 
 
 def rndgen_lattice(spgnum, minlen, maxlen, dangle):
-    #---------- for spgnum = 0: no space group
+    # ---------- for spgnum = 0: no space group
     if spgnum == 0:
-        #----- trigonal = hexagonal
+        # trigonal = hexagonal
         crystal_system = ['Triclinic',
                           'Monoclinic',
                           'Orthorhombic',
@@ -18,7 +18,7 @@ def rndgen_lattice(spgnum, minlen, maxlen, dangle):
                           'Cubic']
         spg = 0
         csys = random.choice(crystal_system)
-    #---------- for spgnum 1--230
+    # ---------- for spgnum 1--230
     else:
         spg = get_spg(spgnum)
         if 1 <= spg <= 2:
@@ -30,7 +30,7 @@ def rndgen_lattice(spgnum, minlen, maxlen, dangle):
         elif 75 <= spg <= 142:
             csys = 'Tetragonal'
         elif 143 <= spg <= 167:
-            #----- trigonal includes rhombohedral in find_wy
+            # trigonal includes rhombohedral in find_wy
             csys = 'Trigonal'
         elif 168 <= spg <= 194:
             csys = 'Hexagonal'
@@ -39,7 +39,7 @@ def rndgen_lattice(spgnum, minlen, maxlen, dangle):
         else:
             raise ValueError('spg is wrong')
 
-    #---------- generate lattice constants a, b, c, alpha, beta, gamma
+    # ---------- generate lattice constants a, b, c, alpha, beta, gamma
     if csys == 'Triclinic':
         t1 = random.uniform(minlen, maxlen)
         t2 = random.uniform(minlen, maxlen)
@@ -106,19 +106,19 @@ def get_spg(spgnum):
 
 
 def calc_latvec(a, b, c, alpha, beta, gamma):
-    #---------- degree to radian
+    # ---------- degree to radian
     alpha_rad = math.radians(alpha)
     beta_rad = math.radians(beta)
     gamma_rad = math.radians(gamma)
 
-    #---------- calculate components
+    # ---------- calculate components
     bx = b*math.cos(gamma_rad)
     by = b*math.sin(gamma_rad)
     cx = c*math.cos(beta_rad)
     cy = (c*math.cos(alpha_rad) - cx*math.cos(gamma_rad))/math.sin(gamma_rad)
     cz = math.sqrt(c*c - cx*cx - cy*cy)
 
-    #---------- lattice vector as list
+    # ---------- lattice vector as list
     va = [a, 0.0, 0.0]
     vb = [bx, by, 0.0]
     vc = [cx, cy, cz]
@@ -127,7 +127,7 @@ def calc_latvec(a, b, c, alpha, beta, gamma):
 
 
 def calc_cos(alpha, beta, gamma):
-    #---------- degree to radian
+    # ---------- degree to radian
     a_rad = math.radians(alpha)
     b_rad = math.radians(beta)
     g_rad = math.radians(gamma)

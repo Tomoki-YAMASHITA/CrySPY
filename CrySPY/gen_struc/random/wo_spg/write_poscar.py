@@ -3,12 +3,12 @@
 
 
 def write_poscar(va, vb, vc, incoord, atype, nat):
-    #---------- float --> character
+    # ---------- float --> character
     va_c = '    {: .10f}      {: .10f}      {: .10f}\n'.format(va[0], va[1], va[2])
     vb_c = '    {: .10f}      {: .10f}      {: .10f}\n'.format(vb[0], vb[1], vb[2])
     vc_c = '    {: .10f}      {: .10f}      {: .10f}\n'.format(vc[0], vc[1], vc[2])
 
-    #---------- write
+    # ---------- write
     with open('POSCAR', 'w') as poscar:
         poscar.write('cpsy\n')
         poscar.write('1.0\n')

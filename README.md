@@ -2,7 +2,7 @@
 CrySPY is a crystal structure prediction tool written in Python.
 
 ## Latest version
-version 0.4.0 (2017 September 8)
+version 0.5.0 (2017 November 3)
 
 ## System requirements
 ### Python

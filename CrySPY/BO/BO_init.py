@@ -12,44 +12,44 @@ from ..IO import read_input as rin
 
 
 def initialize(stat, init_struc_data, rslt_data):
-    print('\n#----------Initialize Bayesian optimization')
+    print('\n# ---------- Initialize Bayesian optimization')
     with open('cryspy.out', 'a') as fout:
-        fout.write('\n#---------- Initilalize Bayesian optimization\n')
+        fout.write('\n# ---------- Initilalize Bayesian optimization\n')
 
-    #---------- initialize
+    # ---------- initialize
     gen = 1
     id_done = np.array([], dtype=int)
     targets = np.array([], dtype=float)
     non_error_id = np.arange(len(init_struc_data))
-    #------ rslt_data
+
+    # ---------- rslt_data
     rslt_data['Gen'] = pd.Series(dtype=int)
     rslt_data = rslt_data[['Gen', 'Struc_ID', 'Spg_num', 'Spg_sym', 'Spg_num_opt',
                            'Spg_sym_opt', 'Energy', 'Magmom', 'Opt']]
-    #- save
+    # ---------- save
     pkl_data.save_rslt(rslt_data)
 
-
-    #------ random select
+    # ---------- random select
     id_to_calc = random_select(len(init_struc_data), rin.interval)
 
-    #---------- calc descriptor
+    # ---------- calc descriptor
     descriptors = select_descriptor.calc_X(init_struc_data)
     next_BO_id = len(init_struc_data)
 
-    #------ save
+    # ---------- save for BO
     BO_id_data = (gen, next_BO_id, non_error_id, id_to_calc, id_done)
     pkl_data.save_BO_id(BO_id_data)
     BO_data = (descriptors, targets)
     pkl_data.save_BO_data(BO_data)
 
-    #---------- status
+    # ---------- status
     stat.set('status', 'generation', '{}'.format(gen))
     stat.set('status', 'selected_id', '{}'.format(' '.join(str(a) for a in id_to_calc)))
     stat.set('status', 'id_to_calc', '{}'.format(' '.join(str(a) for a in id_to_calc)))
     with open('cryspy.stat', 'w') as fstat:
         stat.write(fstat)
 
-    #---------- out and log
+    # ---------- out and log
     print('Generation: {}'.format(gen))
     print('selected_id: {}'.format(' '.join(str(a) for a in id_to_calc)))
     with open('cryspy.out', 'a') as fout:

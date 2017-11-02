@@ -13,7 +13,7 @@ from ...IO import read_input as rin
 
 
 def collect_soiap(current_id, work_path):
-    #---------- check optimization in current stage
+    # ---------- check optimization in current stage
     try:
         with open(work_path+rin.soiap_outfile, 'r') as fout:
             lines = fout.readlines()
@@ -26,7 +26,7 @@ def collect_soiap(current_id, work_path):
     except:
         check_opt = 'no_file'
 
-    #---------- obtain energy and magmom
+    # ---------- obtain energy and magmom
     magmom = np.nan    # magnetic moment is not calculated
     try:
         with open(work_path+'log.tote') as f:
@@ -37,20 +37,21 @@ def collect_soiap(current_id, work_path):
         energy = np.nan    # error
         print('    Structure ID {0}, could not obtain energy from {1}'.format(current_id, rin.soiap_outfile))
 
-    #---------- collect the last structure
+    # ---------- collect the last structure
     try:
         opt_struc = soiap_structure.from_file(work_path+'log.struc')
     except:
         opt_struc = None
 
-    #---------- mv xxxxx fin_xxxxx
-    soiap_files = [rin.soiap_infile, rin.soiap_outfile, rin.soiap_cif, 'log.struc', 'log.tote', 'log.frc', 'log.strs']
+    # ---------- mv xxxxx fin_xxxxx
+    soiap_files = [rin.soiap_infile, rin.soiap_outfile, rin.soiap_cif,
+                   'log.struc', 'log.tote', 'log.frc', 'log.strs']
     for f in soiap_files:
         if os.path.isfile(work_path+f):
             os.rename(work_path+f, work_path+'fin_'+f)
 
-    #---------- clean stat file
+    # ---------- clean stat file
     os.remove(work_path+'stat_job')
 
-    #---------- return
+    # ---------- return
     return opt_struc, energy, magmom, check_opt

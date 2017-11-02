@@ -77,16 +77,16 @@ class Ctrl_job(object):
         print('work{0:04d}: Structure ID {1} Stage {2} Done!'.format(
             self.work_id, self.id_stat[self.work_id], self.stage_stat[self.work_id]))
 
-        #---------- next stage
+        # ---------- next stage
         if self.stage_stat[self.work_id] < rin.nstage:
             self.ctrl_next_stage()
 
-        #---------- collect result and next struc
+        # ---------- collect result and next struc
         elif self.stage_stat[self.work_id] == rin.nstage:
             self.ctrl_collect()
             self.ctrl_next_struc()
 
-        #---------- error
+        # ---------- error
         else:
             raise ValueError('Wrong stage in '+self.work_path+'stat_job')
 
@@ -106,7 +106,7 @@ class Ctrl_job(object):
 
 
     def submit_next_stage(self):
-        #---------- submit job
+        # ---------- submit job
         os.chdir(self.work_path)    # cd work_path
         with open('stat_job', 'w') as fwstat:
             fwstat.write('{:<8}    # Structure ID\n'.format(self.id_stat[self.work_id]))
@@ -116,7 +116,7 @@ class Ctrl_job(object):
             subprocess.Popen([rin.jobcmd, rin.jobfile], stdout=logf, stderr=logf)
         os.chdir('../')    # go back to ..
 
-        #----- save status: work???? = structure_ID, Stage
+        # ------ save status: work???? = structure_ID, Stage
         self.stat.set('status', 'work{:04d}'.format(self.work_id),
                       'ID {0:>8}, Stage {1}'.format(self.id_stat[self.work_id],
                                                     self.stage_stat[self.work_id] + 1))
@@ -128,7 +128,7 @@ class Ctrl_job(object):
 
 
     def ctrl_collect(self):
-        #---------- collect results
+        # ---------- collect results
         current_id = self.id_stat[self.work_id]
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(current_id, self.work_path)
@@ -136,92 +136,92 @@ class Ctrl_job(object):
             fout.write('Done! Structure ID {0:>8}: E = {1}\n'.format(current_id, energy))
         print('    collect results: E = {0}'.format(energy))
 
-        #---------- check error
+        # ---------- check error
         fail = np.isnan(energy) or opt_struc is None
 
-        #---------- get initial spg info
+        # ---------- get initial spg info
         spg_sym, spg_num = self.init_struc_data[current_id].get_space_group_info(symprec=rin.symtoleI)
 
-        #---------- success
+        # ---------- success
         if not fail:
-            #------ get opt spg info
+            # ------ get opt spg info
             spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(symprec=rin.symtoleR)
-            #------ register opt_struc
+            # ------ register opt_struc
             self.opt_struc_data.append(opt_struc)
             pkl_data.save_opt_struc(self.opt_struc_data)
-            #------ out opt_struc
+            # ------ out opt_struc
             out_struc.out_opt_struc(opt_struc, current_id)
             out_struc.out_opt_cif(opt_struc, current_id, self.work_path)
-        #---------- error
+        # ---------- error
         else:
             spg_num_opt = 0
             spg_sym_opt = None
 
-        #---------- RS
+        # ---------- RS
         if rin.algo == 'RS':
-            #------ save rslt
+            # ------ save rslt
             tmp_series = pd.Series([current_id, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
-            #------ success
+            # ------ success
             if not fail:
-                #------ register id_done
+                # ------ register id_done
                 self.id_done = np.r_[self.id_done, np.array([current_id])]
 
-                #------ save
+                # ------ save
                 RS_id_data = (self.next_id, self.id_done)
                 pkl_data.save_RS_id(RS_id_data)
 
-        #---------- BO
+        # ---------- BO
         if rin.algo == 'BO':
-            #------ save rslt
+            # ------ save rslt
             tmp_series = pd.Series([self.gen, current_id, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
 
-            #------ index
+            # ------ index
             neid_index = np.where(self.non_error_id == current_id)[0]    # np.where returns tuple
 
-            #------ success
+            # ------ success
             if not fail:
-                #-- calc descriptor for opt sturcture
+                # -- calc descriptor for opt sturcture
                 dscrpt = select_descriptor.calc_X([opt_struc])
-                #-- register id_done and targets
+                # -- register id_done and targets
                 self.id_done = np.r_[self.id_done, np.array([current_id])]
                 self.targets = np.r_[self.targets, np.array([energy])]
-                #-- replace opt_descriptor
+                # -- replace opt_descriptor
                 self.descriptors[neid_index[0]] = dscrpt     # neid_index[0]: int
-            #------ error
+            # ------ error
             else:
-                #-- remove data
+                # -- remove data
                 self.non_error_id = np.delete(self.non_error_id, neid_index[0], 0)
                 self.descriptors = np.delete(self.descriptors, neid_index[0], 0)
 
-            #------ save
+            # ------ save
             BO_id_data = (self.gen, self.next_BO_id, self.non_error_id, self.id_to_calc, self.id_done)
             pkl_data.save_BO_id(BO_id_data)
             BO_data = (self.descriptors, self.targets)
             pkl_data.save_BO_data(BO_data)
 
-        #---------- save and out rslt
+        # ---------- save and out rslt
         pkl_data.save_rslt(self.rslt_data)
         out_results.write_rslt(self.rslt_data)
 
 
     def ctrl_next_struc(self):
-        #---------- option: stop_next_struc
+        # ---------- option: stop_next_struc
         if rin.stop_next_struc:
-            #------ clean status in cryspy.stat
+            # ------ clean status in cryspy.stat
             self.stat.set('status', 'work{:04d}'.format(self.work_id), '')
-            #------ save status
+            # ------ save status
             with open('cryspy.stat', 'w') as fstat:
                 self.stat.write(fstat)
 
             return
 
-        #---------- BO
+        # ---------- BO
         if rin.algo == 'BO':
-            #------ pick up id to calc
+            # ------ pick up id to calc
             if len(self.id_to_calc) == 0:
                 self.logic_next_gen = True
                 self.next_id = rin.tot_struc    # to do nothing
@@ -229,19 +229,19 @@ class Ctrl_job(object):
                 self.next_id = self.id_to_calc[0]
                 self.id_to_calc = self.id_to_calc[1:]
 
-        #---------- common part
+        # ---------- common part
         if self.next_id < rin.tot_struc:
             print('work{0:04d}: submit job, structure ID {1} Stage 1'.format(
                   self.work_id, self.next_id))
 
-            #------ prepare input files for structure optimization
+            # ------ prepare input files for structure optimization
             if rin.kpt_flag:
                 self.kpt_data = select_code.next_struc(self.init_struc_data, self.next_id,
                                                        self.work_path, self.kpt_data)
             else:
                 select_code.next_struc(self.init_struc_data, self.next_id, self.work_path)
 
-            #------ prepare jobfile
+            # ------ prepare jobfile
             if not os.path.isfile('./calc_in/' + rin.jobfile):
                 raise IOError('Could not find ./calc_in' + rin.jobfile)
             with open('./calc_in/' + rin.jobfile, 'r') as f:
@@ -252,20 +252,20 @@ class Ctrl_job(object):
             with open(self.work_path + rin.jobfile, 'w') as f:
                 f.writelines(lines2)
 
-            #------ submit
+            # ------ submit
             self.submit_next_struc()
 
         else:
-            #------ clean status in cryspy.stat
+            # ------ clean status in cryspy.stat
             self.stat.set('status', 'work{:04d}'.format(self.work_id), '')
 
-        #---------- save status
+        # ---------- save status
         with open('cryspy.stat', 'w') as fstat:
             self.stat.write(fstat)
 
 
     def submit_next_struc(self):
-        #---------- submit job
+        # ---------- submit job
         os.chdir(self.work_path)    # cd work_path
         with open('stat_job', 'w') as fwstat:
             fwstat.write('{:<8}    # Structure ID\n'.format(self.next_id))
@@ -275,17 +275,17 @@ class Ctrl_job(object):
             subprocess.Popen([rin.jobcmd, rin.jobfile], stdout=logf, stderr=logf)
         os.chdir('../')    # go back to csp root dir
 
-        #---------- update status
+        # ---------- update status
         self.stat.set('status', 'work{:04d}'.format(self.work_id),
                       'ID {0:>8}, Stage 1'.format(self.next_id))
 
-        #---------- RS
+        # ---------- RS
         if rin.algo == 'RS':
             self.next_id += 1
             RS_id_data = (self.next_id, self.id_done)
             pkl_data.save_RS_id(RS_id_data)
             self.stat.set('status', 'next_id', '{}'.format(self.next_id))
-        #---------- BO
+        # ---------- BO
         elif rin.algo == 'BO':
             BO_id_data = (self.gen, self.next_BO_id, self.non_error_id, self.id_to_calc, self.id_done)
             pkl_data.save_BO_id(BO_id_data)
@@ -296,102 +296,102 @@ class Ctrl_job(object):
     def ctrl_skip(self):
         current_id = self.id_stat[self.work_id]
 
-        #---------- log and out
+        # ---------- log and out
         with open('cryspy.out', 'a') as fout:
             fout.write('work{0:04d}: Skip Structure ID {1}\n'.format(self.work_id, current_id))
         print('work{0:04d}: Skip Structure ID{1}'.format(self.work_id, current_id))
 
-        #---------- get initial spg info
+        # ---------- get initial spg info
         spg_sym, spg_num = self.init_struc_data[current_id].get_space_group_info(symprec=rin.symtoleI)
 
-        #---------- 'skip' for rslt
+        # ---------- 'skip' for rslt
         spg_num_opt = 0
         spg_sym_opt = None
         energy = np.nan
         magmom = np.nan
         check_opt = 'skip'
 
-        #---------- RS
+        # ---------- RS
         if rin.algo == 'RS':
-            #------ save rslt
+            # ------ save rslt
             tmp_series = pd.Series([current_id, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
             pkl_data.save_rslt(self.rslt_data)
             out_results.write_rslt(self.rslt_data)
 
-        #---------- BO
+        # ---------- BO
         elif rin.algo == 'BO':
-            #------ save rslt
+            # ------ save rslt
             tmp_series = pd.Series([self.gen, current_id, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
             pkl_data.save_rslt(self.rslt_data)
             out_results.write_rslt(self.rslt_data)
 
-            #------ index
+            # ------ index
             neid_index = np.where(self.non_error_id == current_id)[0]    # np.where returns tuple
 
-            #------ remove data
+            # ------ remove data
             self.non_error_id = np.delete(self.non_error_id, neid_index[0], 0)
             self.descriptors = np.delete(self.descriptors, neid_index[0], 0)
 
-            #------ save
+            # ------ save
             BO_id_data = (self.gen, self.next_BO_id, self.non_error_id, self.id_to_calc, self.id_done)
             pkl_data.save_BO_id(BO_id_data)
             BO_data = (self.descriptors, self.targets)
             pkl_data.save_BO_data(BO_data)
 
-        #---------- clean files
+        # ---------- clean files
         select_code.clean_calc_files(self.work_path)
 
-        #---------- next struc
+        # ---------- next struc
         self.ctrl_next_struc()
 
 
-    #---------- BO
+    # ---------- BO
     def ctrl_next_gen(self):
-        #------ out and log
+        # ------ out and log
         with open('cryspy.out', 'a') as fout:
-            fout.write('#------ Bayesian optimization\n')
-        print('#------ Bayesian optimization')
+            fout.write('# ------ Bayesian optimization\n')
+        print('# ------ Bayesian optimization')
 
-        #------ id_done --> sact
+        # ------ id_done --> sact
         sact = np.array([], dtype=int)
         for i in self.id_done:
             tindx = np.where(self.non_error_id == i)[0][0]
             sact = np.r_[sact, np.array([tindx])]
 
-        #------ Bayesian optimization
+        # ------ Bayesian optimization
         actions = combo_cryspy.bayes_opt(sact, self.descriptors, self.targets)
 
-        #------ actions --> id_to_calc
+        # ------ actions --> id_to_calc
         for i in actions:
             self.id_to_calc = np.r_[self.id_to_calc, self.non_error_id[i]]
 
-        #------ gen+1
+        # ------ gen+1
         self.gen += 1
 
-        #------ write and save
+        # ------ write and save
         self.BO_save_write()
 
 
-    #---------- BO
+    # ---------- BO
     def BO_save_write(self):
-        #------ save
+        # ------ save
         BO_id_data = (self.gen, self.next_BO_id, self.non_error_id, self.id_to_calc, self.id_done)
         pkl_data.save_BO_id(BO_id_data)
 
-        #------ status
+        # ------ status
         self.stat.set('status', 'generation', '{}'.format(self.gen))
         self.stat.set('status', 'selected_id', '{}'.format(' '.join(str(a) for a in self.id_to_calc)))
         self.stat.set('status', 'id_to_calc', '{}'.format(' '.join(str(a) for a in self.id_to_calc)))
         with open('cryspy.stat', 'w') as fstat:
             self.stat.write(fstat)
 
-        #------ out and log
-        print('#----------Generation: {}'.format(self.gen))
+        # ------ out and log
+        print('# ---------- Generation: {}'.format(self.gen))
         print('selected_id: {}'.format(' '.join(str(a) for a in self.id_to_calc)))
         with open('cryspy.out', 'a') as fout:
-            fout.write('#----------Generation: {}\n'.format(self.gen))
+            fout.write('# ---------- Generation: {}\n'.format(self.gen))
             fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in self.id_to_calc)))

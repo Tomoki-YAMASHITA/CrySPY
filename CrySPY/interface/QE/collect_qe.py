@@ -13,7 +13,7 @@ from ...IO import read_input as rin
 
 
 def collect_qe(current_id, work_path):
-    #---------- check optimization in previous stage
+    # ---------- check optimization in previous stage
     try:
         with open(work_path+rin.qe_outfile, 'r') as fpout:
             lines = fpout.readlines()
@@ -24,7 +24,7 @@ def collect_qe(current_id, work_path):
     except:
         check_opt = 'no_file'
 
-    #---------- obtain energy and magmom
+    # ---------- obtain energy and magmom
     try:
         with open(work_path+rin.qe_outfile, 'r') as fpout:
             lines = fpout.readlines()
@@ -40,7 +40,7 @@ def collect_qe(current_id, work_path):
         magmom = np.nan    # error
         print('    Structure ID {0}, could not obtain energy from {1}'.format(current_id, rin.qe_outfile))
 
-    #---------- collect the last structure
+    # ---------- collect the last structure
     try:
         lines_cell = qe_structure.extract_cell_parameters(work_path+rin.qe_outfile)
         if lines_cell is None:
@@ -50,7 +50,7 @@ def collect_qe(current_id, work_path):
             lines_atom = qe_structure.extract_atomic_positions(work_path+rin.qe_infile)
         opt_struc = qe_structure.from_lines(lines_cell, lines_atom)
 
-        #----- opt_qe-structure
+        # ------ opt_qe-structure
         with open('./data/opt_qe-structure', 'a') as fstruc:
             fstruc.write('# ID {0:d}\n'.format(current_id))
         qe_structure.write(opt_struc, './data/opt_qe-structure', mode='a')
@@ -58,14 +58,14 @@ def collect_qe(current_id, work_path):
     except:
         opt_struc = None
 
-    #---------- mv xxxxx fin_xxxxx
+    # ---------- mv xxxxx fin_xxxxx
     qe_files = [rin.qe_infile, rin.qe_outfile]
     for f in qe_files:
         if os.path.isfile(work_path+f):
             os.rename(work_path+f, work_path+'fin_'+f)
 
-    #---------- clean stat file
+    # ---------- clean stat file
     os.remove(work_path+'stat_job')
 
-    #---------- return
+    # ---------- return
     return opt_struc, energy, magmom, check_opt

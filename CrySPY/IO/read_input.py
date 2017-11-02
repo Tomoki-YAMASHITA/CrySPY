@@ -9,27 +9,24 @@ import os
 
 
 def readin():
-    #---------- global declaration
-    global algo, calc_code, tot_struc, natot
-    global atype, nat, nstage, njob, jobcmd, jobfile
-    global interval, score, dscrpt, fp_rmin, fp_rmax, fp_npoints, fp_sigma
-    global minlen, maxlen, dangle, mindist
-    global kppvol, kpt_flag, force_gamma
-    global qe_infile, qe_outfile
-    global soiap_infile, soiap_outfile, soiap_cif
-    global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum, load_struc_flag, stop_next_struc
 
-    #---------- read input file
+    # ---------- read cryspy.in
     if not os.path.isfile('cryspy.in'):
         raise IOError('Could not find cryspy.in file')
     config = ConfigParser.ConfigParser()
     config.read('cryspy.in')
 
-    #----- basic
+    # ---------- basic
+    # ------ global declaration
+    global algo, calc_code, tot_struc, natot
+    global atype, nat, nstage, njob, jobcmd, jobfile
+    # ------ read intput variables
     algo = config.get('basic', 'algo')
-    check_algo(algo)
+    if algo not in ['RS', 'BO']:
+        raise ValueError('algo should be RS or BO')
     calc_code = config.get('basic', 'calc_code')
-    check_calc_code(calc_code)
+    if calc_code not in ['VASP', 'QE', 'soiap']:
+        raise ValueError('calc_code should be VASP, QE, or soiap for now')
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
@@ -50,12 +47,15 @@ def readin():
     njob = config.getint('basic', 'njob')
     if njob <= 0:
         raise ValueError('njob <= 0, check njob')
-
     jobcmd = config.get('basic', 'jobcmd')
     jobfile = config.get('basic', 'jobfile')
 
-    #----- BO
+    # ---------- BO
     if algo == 'BO':
+        # ------ global declaration
+        global interval, score, num_rand_basis, cdev, dscrpt
+        global fp_rmin, fp_rmax, fp_npoints, fp_sigma
+        # ------ read intput variables
         interval = config.getint('BO', 'interval')
         if interval <= 0:
             raise ValueError('interval <= 0, check interval')
@@ -66,12 +66,20 @@ def readin():
             pass
         else:
             raise ValueError('score should be TS, EI, or PI, check score')
+        try:
+            num_rand_basis = config.getint('BO', 'num_rand_basis')
+        except:
+            num_rand_basis = 0
+        try:
+            cdev = config.getfloat('BO', 'cdev')
+        except:
+            cdev = 0.001
         dscrpt = config.get('BO', 'dscrpt')
         if dscrpt == 'FP':
             pass
         else:
             raise ValueError('Now FP only')
-        #-- parameters for f-fingerprint (optional)
+        # -- parameters for f-fingerprint (optional)
         try:
             fp_rmin = config.getfloat('BO', 'fp_rmin')
         except:
@@ -97,16 +105,36 @@ def readin():
         if fp_sigma < 0:
             raise ValueError('fp_sigma < 0, check fp_sigma')
 
-    #----- lattice
+    # ---------- lattice
+    # ------ global declaration
+    global minlen, maxlen, dangle, mindist
+    # ------ read intput variables
     minlen = config.getfloat('lattice', 'minlen')
     maxlen = config.getfloat('lattice', 'maxlen')
     dangle = config.getfloat('lattice', 'dangle')
     if dangle < 0.0:
         raise ValueError('dangle < 0.0, dangle should be positive')
-    mindist = config.getfloat('lattice', 'mindist')
+    mindist = []
+    for i in range(len(atype)):
+        tmp = config.get('lattice', 'mindist_{}'.format(i+1))
+        tmp = [float(x) for x in tmp.split()]    # character --> float
+        if not len(tmp) == len(atype):
+            raise ValueError('not len(mindist_{}) == len(atype)'.format(i+1))
+        mindist.append(tmp)
+    # -- check symmetric matrix
+    for i in range(len(mindist)):
+        for j in range(len(mindist)):
+            if i < j:
+                if not mindist[i][j] == mindist[j][i]:
+                    raise ValueError('mindist is not symmetric. ({}, {}) --> {}, ({}, {}) --> {}'.format(
+                        i, j, mindist[i][j], j, i, mindist[j][i]))
 
-    #----- VASP
+    # ---------- global declaration for comman part in calc_code
+    global kppvol, kpt_flag, force_gamma
+
+    # ---------- VASP
     if calc_code == 'VASP':
+        # ------ read intput variables
         kpt_flag = True
         kppvol = config.get('VASP', 'kppvol')
         kppvol = [int(x) for x in kppvol.split()]    # character --> int
@@ -117,8 +145,11 @@ def readin():
         except:
             force_gamma = False
 
-    #----- QE
+    # ---------- QE
     elif calc_code == 'QE':
+        # ------ global declaration
+        global qe_infile, qe_outfile
+        # ------ read intput variables
         kpt_flag = True
         qe_infile = config.get('QE', 'qe_infile')
         qe_outfile = config.get('QE', 'qe_outfile')
@@ -131,8 +162,11 @@ def readin():
         except:
             force_gamma = False
 
-    #----- soiap
+    # ---------- soiap
     elif calc_code == 'soiap':
+        # ------ global declaration
+        global soiap_infile, soiap_outfile, soiap_cif
+        # ------ read intput variables
         soiap_infile = config.get('soiap', 'soiap_infile')
         soiap_outfile = config.get('soiap', 'soiap_outfile')
         soiap_cif = config.get('soiap', 'soiap_cif')
@@ -143,7 +177,11 @@ def readin():
         force_gamma = False
         raise ValueError('calc_code should be VASP, QE, or soiap for now')
 
-    #----- option
+    # ---------- option
+    # ------ global declaration
+    global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum
+    global load_struc_flag, stop_next_struc
+    # ------ read intput variables
     try:
         maxcnt = config.getint('option', 'maxcnt')
     except:
@@ -178,20 +216,6 @@ def readin():
         stop_next_struc = False
 
 
-def check_algo(algo):
-    if algo in ['RS', 'BO']:
-        pass
-    else:
-        raise ValueError('algo should be RS or BO')
-
-
-def check_calc_code(calc_code):
-    if calc_code in ['VASP', 'QE', 'soiap']:
-        pass
-    else:
-        raise ValueError('calc_code should be VASP, QE, or soiap for now')
-
-
 def spglist(spgnum):
     tmpspg = []
     for c in spgnum.split():
@@ -214,11 +238,11 @@ def spglist(spgnum):
 
 
 def writeout():
-    #---------- write input data in output file
+    # ---------- write input data in output file
     print('Write input data in cryspy.out')
     with open('cryspy.out', 'a') as fout:
-        fout.write('#---------- Read cryspy.in (at 1st run)\n')
-        fout.write('#----- basic section\n')
+        fout.write('# ---------- Read cryspy.in (at 1st run)\n')
+        fout.write('# ------ basic section\n')
         fout.write('algo = {}\n'.format(algo))
         fout.write('calc_code = {}\n'.format(calc_code))
         fout.write('tot_struc = {}\n'.format(tot_struc))
@@ -230,47 +254,50 @@ def writeout():
         fout.write('jobcmd = {}\n'.format(jobcmd))
         fout.write('jobfile = {}\n'.format(jobfile))
 
-        #----- BO
+        # ------ BO
         if algo == 'BO':
-            fout.write('#----- BO section\n')
+            fout.write('# ------ BO section\n')
             fout.write('interval = {}\n'.format(interval))
             fout.write('score = {}\n'.format(score))
+            fout.write('num_rand_basis = {}\n'.format(num_rand_basis))
+            fout.write('cdev = {}\n'.format(cdev))
             fout.write('dscrpt = {}\n'.format(dscrpt))
             fout.write('fp_rmin = {}\n'.format(fp_rmin))
             fout.write('fp_rmax = {}\n'.format(fp_rmax))
             fout.write('fp_npoints = {}\n'.format(fp_npoints))
             fout.write('fp_sigma = {}\n'.format(fp_sigma))
 
-        #----- lattice
-        fout.write('#----- lattice section\n')
+        # ------ lattice
+        fout.write('# ------ lattice section\n')
         fout.write('minlen = {}\n'.format(minlen))
         fout.write('maxlen = {}\n'.format(maxlen))
         fout.write('dangle = {}\n'.format(dangle))
-        fout.write('mindist = {}\n'.format(mindist))
+        for i in range(len(atype)):
+            fout.write('mindist_{0} = {1}\n'.format(i+1, ' '.join(str(c) for c in mindist[i])))
 
-        #----- VASP
+        # ------ VASP
         if calc_code == 'VASP':
-            fout.write('#----- VASP section\n')
+            fout.write('# ------ VASP section\n')
             fout.write('kppvol = {}\n'.format(' '.join(str(c) for c in kppvol)))
             fout.write('force_gamma = {}\n'.format(force_gamma))
 
-        #------ QE
+        # ------- QE
         if calc_code == 'QE':
-            fout.write('#----- QE section\n')
+            fout.write('# ------ QE section\n')
             fout.write('qe_infile = {}\n'.format(qe_infile))
             fout.write('qe_outfile = {}\n'.format(qe_outfile))
             fout.write('kppvol = {}\n'.format(' '.join(str(c) for c in kppvol)))
             fout.write('force_gamma = {}\n'.format(force_gamma))
 
-        #----- soiap
+        # ------ soiap
         if calc_code == 'soiap':
-            fout.write('#----- soiap section\n')
+            fout.write('# ------ soiap section\n')
             fout.write('soiap_infile = {}\n'.format(soiap_infile))
             fout.write('soiap_outfile = {}\n'.format(soiap_outfile))
             fout.write('soiap_cif = {}\n'.format(soiap_cif))
 
-        #----- option
-        fout.write('#----- option section\n')
+        # ------ option
+        fout.write('# ------ option section\n')
         fout.write('maxcnt = {}\n'.format(maxcnt))
         fout.write('stop_chkpt = {}\n'.format(stop_chkpt))
         fout.write('symtoleI = {}\n'.format(symtoleI))
@@ -285,7 +312,7 @@ def writeout():
 
 def save_stat(stat):
     print('Save input data in cryspy.stat')
-    #---------- basic
+    # ---------- basic
     stat.set('input', 'algo', '{}'.format(algo))
     stat.set('input', 'calc_code', '{}'.format(calc_code))
     stat.set('input', 'tot_struc', '{}'.format(tot_struc))
@@ -297,41 +324,44 @@ def save_stat(stat):
     stat.set('input', 'jobcmd', '{}'.format(jobcmd))
     stat.set('input', 'jobfile', '{}'.format(jobfile))
 
-    #---------- BO
+    # ---------- BO
     if algo == 'BO':
         stat.set('input', 'interval', '{}'.format(interval))
         stat.set('input', 'score', '{}'.format(score))
+        stat.set('input', 'num_rand_basis', '{}'.format(num_rand_basis))
+        stat.set('input', 'cdev', '{}'.format(cdev))
         stat.set('input', 'dscrpt', '{}'.format(dscrpt))
         stat.set('input', 'fp_rmin', '{}'.format(fp_rmin))
         stat.set('input', 'fp_rmax', '{}'.format(fp_rmax))
         stat.set('input', 'fp_npoints', '{}'.format(fp_npoints))
         stat.set('input', 'fp_sigma', '{}'.format(fp_sigma))
 
-    #---------- lattice
+    # ---------- lattice
     stat.set('input', 'minlen', '{}'.format(minlen))
     stat.set('input', 'maxlen', '{}'.format(maxlen))
     stat.set('input', 'dangle', '{}'.format(dangle))
-    stat.set('input', 'mindist', '{}'.format(mindist))
+    for i in range(len(atype)):
+        stat.set('input', 'mindist_{}'.format(i+1), '{}'.format(' '.join(str(c) for c in mindist[i])))
 
-    #---------- VASP
+    # ---------- VASP
     if calc_code == 'VASP':
         stat.set('input', 'kppvol', '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('input', 'force_gamma', '{}'.format(force_gamma))
 
-    #---------- QE
+    # ---------- QE
     if calc_code == 'QE':
         stat.set('input', 'qe_infile', '{}'.format(qe_infile))
         stat.set('input', 'qe_outfile', '{}'.format(qe_outfile))
         stat.set('input', 'kppvol', '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('input', 'force_gamma', '{}'.format(force_gamma))
 
-    #---------- soiap
+    # ---------- soiap
     if calc_code == 'soiap':
         stat.set('input', 'soiap_infile', '{}'.format(soiap_infile))
         stat.set('input', 'soiap_outfile', '{}'.format(soiap_outfile))
         stat.set('input', 'soiap_cif', '{}'.format(soiap_cif))
 
-    #---------- option
+    # ---------- option
     stat.set('input', 'maxcnt', '{}'.format(maxcnt))
     stat.set('input', 'stop_chkpt', '{}'.format(stop_chkpt))
     stat.set('input', 'symtoleI', '{}'.format(symtoleI))
@@ -343,7 +373,7 @@ def save_stat(stat):
     stat.set('input', 'load_struc_flag', '{}'.format(load_struc_flag))
     stat.set('input', 'stop_next_struc', '{}'.format(stop_next_struc))
 
-    #---------- write stat
+    # ---------- write stat
     with open('cryspy.stat', 'w') as fstat:
         stat.write(fstat)
 
@@ -351,8 +381,8 @@ def save_stat(stat):
 def diffinstat(stat):
     logic_change = False
 
-    #---------- old input
-    #----- basic
+    # ---------- old input
+    # ------ basic
     old_algo = stat.get('input', 'algo')
     old_calc_code = stat.get('input', 'calc_code')
     old_tot_struc = stat.getint('input', 'tot_struc')
@@ -365,29 +395,35 @@ def diffinstat(stat):
     old_njob = stat.getint('input', 'njob')
     old_jobcmd = stat.get('input', 'jobcmd')
     old_jobfile = stat.get('input', 'jobfile')
-    #----- BO
+    # ------ BO
     if old_algo == 'BO':
         old_interval = stat.getint('input', 'interval')
         old_score = stat.get('input', 'score')
+        old_num_rand_basis = stat.getint('input', 'num_rand_basis')
+        old_cdev = stat.getfloat('input', 'cdev')
         old_dscrpt = stat.get('input', 'dscrpt')
         old_fp_rmin = stat.getfloat('input', 'fp_rmin')
         old_fp_rmax = stat.getfloat('input', 'fp_rmax')
         old_fp_npoints = stat.getint('input', 'fp_npoints')
         old_fp_sigma = stat.getfloat('input', 'fp_sigma')
 
-    #----- lattice
+    # ------ lattice
     old_minlen = stat.getfloat('input', 'minlen')
     old_maxlen = stat.getfloat('input', 'maxlen')
     old_dangle = stat.getfloat('input', 'dangle')
-    old_mindist = stat.getfloat('input', 'mindist')
+    old_mindist = []
+    for i in range(len(atype)):
+        tmp = stat.get('input', 'mindist_{}'.format(i+1))
+        tmp = [float(x) for x in tmp.split()]    # character --> float
+        old_mindist.append(tmp)
 
-    #----- VASP
+    # ------ VASP
     if old_calc_code == 'VASP':
         old_kppvol = stat.get('input', 'kppvol')
         old_kppvol = [int(x) for x in old_kppvol.split()]    # character --> int
         old_force_gamma = stat.getboolean('input', 'force_gamma')
 
-    #----- QE
+    # ------ QE
     if old_calc_code == 'QE':
         old_qe_infile = stat.get('input', 'qe_infile')
         old_qe_outfile = stat.get('input', 'qe_outfile')
@@ -395,13 +431,13 @@ def diffinstat(stat):
         old_kppvol = [int(x) for x in old_kppvol.split()]    # character --> int
         old_force_gamma = stat.getboolean('input', 'force_gamma')
 
-    #----- soiap
+    # ------ soiap
     if old_calc_code == 'soiap':
         old_soiap_infile = stat.get('input', 'soiap_infile')
         old_soiap_outfile = stat.get('input', 'soiap_outfile')
         old_soiap_cif = stat.get('input', 'soiap_cif')
 
-    #----- option
+    # ------ option
     old_maxcnt = stat.getint('input', 'maxcnt')
     old_stop_chkpt = stat.getint('input', 'stop_chkpt')
     old_symtoleI = stat.getfloat('input', 'symtoleI')
@@ -414,9 +450,8 @@ def diffinstat(stat):
     old_load_struc_flag = stat.getboolean('input', 'load_struc_flag')
     old_stop_next_struc = stat.getboolean('input', 'stop_next_struc')
 
-
-    #---------- check difference
-    #----- basic
+    # ---------- check difference
+    # ------ basic
     if not old_algo == algo:
         raise ValueError('Do not change algo')
         logic_change = True
@@ -455,7 +490,7 @@ def diffinstat(stat):
             fout.write('\n#### Changed jobfile from {0} to {1}\n'.format(old_jobfile, jobfile))
         logic_change = True
 
-    #----- BO
+    # ------ BO
     if algo == 'BO':
         if not old_interval == interval:
             print('Changed interval from {0} to {1}'.format(old_interval, interval))
@@ -471,6 +506,20 @@ def diffinstat(stat):
                 fout.write('\n#### Changed score from {0} to {1}\n'.format(old_score, score))
                 fout.write('####     This will be enabled in next BO\n')
             logic_change = True
+        if not old_num_rand_basis == num_rand_basis:
+            print('Changed num_rand_basis from {0} to {1}'.format(old_num_rand_basis, num_rand_basis))
+            print('    This will be enabled in next BO')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed num_rand_basis from {0} to {1}\n'.format(old_num_rand_basis, num_rand_basis))
+                fout.write('####     This will be enabled in next BO\n')
+            logic_change = True
+        if not old_cdev == cdev:
+            print('Changed cdev from {0} to {1}'.format(old_cdev, cdev))
+            print('    This will be enabled in next BO')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed cdev from {0} to {1}\n'.format(old_cdev, cdev))
+                fout.write('####     This will be enabled in next BO\n')
+            logic_change = True
         if not old_dscrpt == dscrpt:
             raise ValueError('Do not change dscrpt')
         if not old_fp_rmin == fp_rmin:
@@ -482,7 +531,7 @@ def diffinstat(stat):
         if not old_fp_sigma == fp_sigma:
             raise ValueError('Do not change fp_sigma')
 
-    #----- lattice
+    # ------ lattice
     if not old_minlen == minlen:
         print('Changed minlen from {0} to {1}'.format(old_minlen, minlen))
         print('    This will be enabled in next structure generation')
@@ -512,7 +561,7 @@ def diffinstat(stat):
             fout.write('####     This will be enabled in next structure generation\n')
         logic_change = True
 
-    #----- VASP
+    # ------ VASP
     if calc_code == 'VASP':
         if not old_kppvol == kppvol:
             print('Changed kppvol from {0} to {1}'.format(old_kppvol, kppvol))
@@ -525,7 +574,7 @@ def diffinstat(stat):
                 fout.write('\n#### Changed force_gamma from {0} to {1}\n'.format(old_force_gamma, force_gamma))
             logic_change = True
 
-    #----- QE
+    # ------ QE
     if calc_code == 'QE':
         if not old_qe_infile == qe_infile:
             raise ValueError('Do not change qe_infile')
@@ -542,7 +591,7 @@ def diffinstat(stat):
                 fout.write('\n#### Changed force_gamma from {0} to {1}\n'.format(old_force_gamma, force_gamma))
             logic_change = True
 
-    #----- soiap
+    # ------ soiap
     if calc_code == 'soiap':
         if not old_soiap_infile == soiap_infile:
             raise ValueError('Do not change soiap_infile')
@@ -551,7 +600,7 @@ def diffinstat(stat):
         if not old_soiap_cif == soiap_cif:
             raise ValueError('Do not change soiap_cif')
 
-    #----- option
+    # ------ option
     if not old_maxcnt == maxcnt:
         print('Changed maxcnt from {0} to {1}'.format(old_maxcnt, maxcnt))
         print('    This will be enabled in next structure generation')
@@ -592,6 +641,6 @@ def diffinstat(stat):
             fout.write('\n#### Changed stop_next_struc from {0} to {1}\n'.format(old_stop_next_struc, stop_next_struc))
         logic_change = True
 
-    #---------- save stat if necessary
+    # ---------- save stat if necessary
     if logic_change:
         save_stat(stat)

@@ -8,7 +8,7 @@ from ...IO import read_input as rin
 
 
 def extract_cell_parameters(filename):
-    #---------- last CELL_PARAMETERS
+    # ---------- last CELL_PARAMETERS
     with open(filename, 'r') as f:
         lines = f.readlines()
     lines_cell = None
@@ -18,12 +18,11 @@ def extract_cell_parameters(filename):
             iend = ibegin + 4
             lines_cell = lines[ibegin:iend]
             break
-
     return lines_cell
 
 
 def extract_atomic_positions(filename):
-    #---------- last ATOMIC_POSITIONS
+    # ---------- last ATOMIC_POSITIONS
     with open(filename, 'r') as f:
         lines = f.readlines()
     lines_atom = None
@@ -33,12 +32,11 @@ def extract_atomic_positions(filename):
             iend = ibegin + rin.natot + 1
             lines_atom = lines[ibegin:iend]
             break
-
     return lines_atom
 
 
 def from_lines(lines_cell, lines_atom):
-    #---------- lattice
+    # ---------- lattice
     unit = lines_cell[0].split()[1]
     if unit[0] == '(' and unit[-1] == ')':
         unit = unit[1:-1]
@@ -53,7 +51,7 @@ def from_lines(lines_cell, lines_atom):
         ValueError('unit "{0:s}" for CELL_PARAMETERS is not supported'.format(unit))
     lattice = [[scale * float(x) for x in line.split()] for line in lines_cell[1:4]]
 
-    #---------- species & coordinates
+    # ---------- species & coordinates
     unit = lines_atom[0].split()[1]
     if unit[0] == '(' and unit[-1] == ')':
         unit = unit[1:-1]
@@ -69,17 +67,16 @@ def from_lines(lines_cell, lines_atom):
             ValueError('unit "{0:s}" for ATOMIC_POSITIONS is not supported yet'.format(unit))
 
     structure = Structure(lattice, species, coords)
-
     return structure
 
 
 def write(structure, output, mode='w'):
-    #---------- get in POSCAR format
+    # ---------- get in POSCAR format
     poscar = structure.to(fmt='poscar')
     lines = poscar.split('\n')[:-1]
     lines = [line+'\n' for line in lines]
 
-    #---------- write in QE format
+    # ---------- write in QE format
     with open(output, mode) as f:
         f.write('CELL_PARAMETERS angstrom\n')
         for line in lines[2:5]:

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 #
 # This code partly includes find_wy (https://github.com/nim-hrkn/find_wy)
 # which is distributed under the Apache License, Version 2.0.
 #
-#------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
 from __future__ import print_function
 
@@ -37,21 +37,21 @@ def fw_input(atype, nat, spg, a, b, c, cosa, cosb, cosg):
         f.write('cosb  {}\n'.format(cosb))
         f.write('cosc  {}\n'.format(cosg))
         f.write('\n')
-        #f.write('selectone true\n')
+        # f.write('selectone true\n')
         f.write('randomseed auto\n')
 
 
-def gen_wypos(mindist, maxcnt):
+def gen_wypos(cumul_nat, mindist, maxcnt):
     '''
     Success --> return True, structure data
     Failure --> return False, _
     '''
 
-    #---------- load POS_WY_SKEL_ALL.json
+    # ---------- load POS_WY_SKEL_ALL.json
     with open('POS_WY_SKEL_ALL.json', 'r') as f:
         wydata = json.load(f)
 
-    #---------- generate structure
+    # ---------- generate structure
     plat = wydata['primitivevector']
     clat = wydata['conventionalvector']
     atomnames = []
@@ -62,7 +62,7 @@ def gen_wypos(mindist, maxcnt):
             while True:
                 tmp_atomnames, tmp_positions = gen_eq_atoms(wydata2, atomnames, positions)
 
-                #----- Cartesian coordinate
+                # ------ Cartesian coordinate
                 #      platではなくclatを使って変換しないと上手くいかない
                 cart = []
                 for p in tmp_positions:
@@ -72,10 +72,9 @@ def gen_wypos(mindist, maxcnt):
                         v += p[i] * a
                     cart.append(v)
 
-                #----- check minimum distance
+                # ------ check minimum distance
                 spgstruc = Structure(plat, tmp_atomnames, cart, coords_are_cartesian=True)
-                min_dist = check_min_dist(spgstruc)
-                if min_dist < mindist:
+                if check_min_dist(spgstruc, cumul_nat, mindist) is False:
                     cnt += 1
                     if maxcnt < cnt:
                         return False, spgstruc    # spgstruc is dummy
@@ -123,15 +122,48 @@ def gen_eq_atoms(wydata2, atomnames, positions):
     return tmp_atomnames, tmp_positions
 
 
-def check_min_dist(structure):
+def check_min_dist(structure, cumul_nat, mindist):
     if structure.num_sites == 1:
-        return 10.0    # dummy
-
-    min_dist = structure.get_distance(0, 1)
+        return True
     for i in xrange(structure.num_sites):
         for j in xrange(structure.num_sites):
             if i < j:
                 dist = structure.get_distance(i, j)
-                if dist < min_dist:
-                    min_dist = dist
-    return min_dist
+                type_i = get_atype_num(cumul_nat, i)
+                type_j = get_atype_num(cumul_nat, j)
+                if dist < mindist[type_i][type_j]:
+                    return False
+    return True
+
+
+# ---------- obsolete
+#                version 0.4.x or lower
+# def check_min_dist(structure):
+#     if structure.num_sites == 1:
+#         return 100.0    # dummy
+
+#     min_dist = structure.get_distance(0, 1)
+#     for i in xrange(structure.num_sites):
+#         for j in xrange(structure.num_sites):
+#             if i < j:
+#                 dist = structure.get_distance(i, j)
+#                 if dist < min_dist:
+#                     min_dist = dist
+#     return min_dist
+
+
+def get_atype_num(cumul_nat, site_num):
+    '''
+    e.g. SrTiO3
+    atype = ['Sr', 'Ti', 'O']
+    nat = [1, 1, 3]
+
+    atom 0: Sr1 --> atype_num = 0
+    atom 1: Ti1 --> atype_num = 1
+    atom 2: O1 --> atype_num = 2
+    atom 3: O2 --> atype_num = 2
+    atom 4: O3 --> atype_num = 2
+    '''
+    for atype_num, cumul_i in enumerate(cumul_nat):
+        if site_num < cumul_i:
+            return atype_num

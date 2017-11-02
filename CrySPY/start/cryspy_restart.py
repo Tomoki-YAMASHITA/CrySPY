@@ -19,7 +19,7 @@ def restart():
     stat = ConfigParser.ConfigParser()
     stat.read('cryspy.stat')
 
-    #---------- read input and check the change
+    # ---------- read input and check the change
     rin.readin()
     rin.diffinstat(stat)
 
@@ -27,10 +27,10 @@ def restart():
 
 
 def append_struc(init_struc_data):
-    #---------- append initial structures
-    print('\n#---------- Append structures')
+    # ---------- append initial structures
+    print('\n# ---------- Append structures')
     with open('cryspy.out', 'a') as fout:
-        fout.write('\n#---------- Append structures\n')
+        fout.write('\n# ---------- Append structures\n')
     init_pos_path = utility.get_init_pos_path()
     cID = len(init_struc_data)
     nstruc = rin.tot_struc - cID
@@ -50,7 +50,7 @@ def append_struc(init_struc_data):
     with open('cryspy.out', 'a') as fout:
         fout.write('Generated structures up to ID {}\n\n'.format(len(init_struc_data)-1))
 
-    #---------- save
+    # ---------- save
     pkl_data.save_init_struc(init_struc_data)
 
     return init_struc_data

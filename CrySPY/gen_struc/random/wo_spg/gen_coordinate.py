@@ -6,7 +6,7 @@ import random
 
 
 def rndgen_coord(natot, va, vb, vc, mindist, maxcnt):
-    #---------- generate internal coordinates
+    # ---------- generate internal coordinates
     cnt = 0
     incoord = []
     while len(incoord) < natot:
@@ -24,7 +24,7 @@ def rndgen_coord(natot, va, vb, vc, mindist, maxcnt):
 
 def check_distance(va, vb, vc, incoord, tmp_coord, cnt, mindist):
     for j in incoord:    # atom loop
-        #----- check interatomic distance
+        # ---------- check interatomic distance
         dist = calc_atom_dist(va, vb, vc, j, tmp_coord)
         if dist < mindist:
             return cnt + 1
@@ -32,7 +32,7 @@ def check_distance(va, vb, vc, incoord, tmp_coord, cnt, mindist):
 
 
 def calc_atom_dist(va, vb, vc, incoordA, incoordB):
-    #---------- search nearest neighbor
+    # ---------- search nearest neighbor
     din = []
     for i in range(3):
         dtmp = incoordA[i] - incoordB[i]
@@ -42,7 +42,7 @@ def calc_atom_dist(va, vb, vc, incoordA, incoordB):
             dtmp -= 1.0
         din.append(dtmp)
 
-    #---------- calculate distance
+    # ---------- calculate distance
     dx = din[0]*va[0] + din[1]*vb[0] + din[2]*vc[0]
     dy = din[0]*va[1] + din[1]*vb[1] + din[2]*vc[1]
     dz = din[0]*va[2] + din[1]*vb[2] + din[2]*vc[2]

@@ -9,9 +9,9 @@ import CrySPY
 from CrySPY.IO import read_input as rin
 
 
-#---------- initialize
+# ---------- initialize
 if not os.path.isfile('cryspy.stat'):
-    #------ cryspy_init
+    # ------ cryspy_init
     stat, init_struc_data, opt_struc_data, rslt_data = CrySPY.start.cryspy_init.initialize()
     if rin.algo == 'RS':
         RS_id_data = CrySPY.start.cryspy_init.RS_init(stat)
@@ -20,12 +20,12 @@ if not os.path.isfile('cryspy.stat'):
     if rin.kpt_flag:
         kpt_data = CrySPY.start.cryspy_init.kpt_init()
 
-#---------- restart
+# ---------- restart
 else:
-    #------ cpsy_restart
+    # ------ cpsy_restart
     stat = CrySPY.start.cryspy_restart.restart()
 
-    #------ load data
+    # ------ load data
     init_struc_data = CrySPY.IO.pkl_data.load_init_struc()
     opt_struc_data = CrySPY.IO.pkl_data.load_opt_struc()
     rslt_data = CrySPY.IO.pkl_data.load_rslt()
@@ -37,12 +37,12 @@ else:
     if rin.kpt_flag:
         kpt_data = CrySPY.IO.pkl_data.load_kpt()
 
-    #------ append structures
+    # ------ append structures
     if len(init_struc_data) < rin.tot_struc:
         init_struc_data = CrySPY.start.cryspy_restart.append_struc(init_struc_data)
     elif rin.tot_struc < len(init_struc_data):
         raise ValueError('tot_struc < len(init_struc_data)')
-    #-- BO
+    # -- BO
     if rin.algo == 'BO':
         if BO_id_data[1] < len(init_struc_data):    # BO_id_data[1] is next_BO_id
             BO_id_data, BO_data = CrySPY.BO.BO_restart.restart(init_struc_data, BO_id_data, BO_data)
@@ -50,7 +50,7 @@ else:
 
 
 
-#---------- check point 1
+# ---------- check point 1
 if rin.stop_chkpt == 1:
     print('Stop at check point 1')
     raise SystemExit()
@@ -58,13 +58,13 @@ if rin.stop_chkpt == 1:
 
 
 
-#---------- check calc files in ./calc_in
+# ---------- check calc files in ./calc_in
 CrySPY.interface.select_code.check_calc_files()
 
 
 
 
-#---------- check point 2
+# ---------- check point 2
 if rin.stop_chkpt == 2:
     print('Stop at check point 2')
     raise SystemExit()
@@ -72,13 +72,13 @@ if rin.stop_chkpt == 2:
 
 
 
-#---------- make working directory
+# ---------- make working directory
 if not os.path.isdir('work{:04d}'.format(rin.njob - 1)):
     for i in range(rin.njob):
         if not os.path.isdir('work{:04d}'.format(i)):
             os.mkdir('work{:04d}'.format(i))
 
-#---------- instantiate Ctrl_job class
+# ---------- instantiate Ctrl_job class
 jobs = CrySPY.job.ctrl_job.Ctrl_job(stat, init_struc_data, opt_struc_data, rslt_data)
 if rin.algo == 'RS':
     jobs.RS_init(RS_id_data)
@@ -87,17 +87,17 @@ elif rin.algo == 'BO':
 if rin.kpt_flag:
     jobs.kpt_init(kpt_data)
 
-#---------- check job status
+# ---------- check job status
 jobs.check_job()
 
-#---------- control job
-print('\n#---------- job status')
+# ---------- control job
+print('\n# ---------- job status')
 for work_id, jstat in enumerate(jobs.job_stat):
-    #------ set work_id and work_path
+    # ------ set work_id and work_path
     jobs.work_id = work_id
     jobs.work_path = './work{:04d}/'.format(work_id)
 
-    #------ handle job
+    # ------ handle job
     if jstat == 'submitted':
         print('work{:04d}: still queuing or runnning'.format(work_id))
     elif jstat == 'done':
@@ -113,28 +113,28 @@ for work_id, jstat in enumerate(jobs.job_stat):
     else:
         raise ValueError('Unexpected error in '+jobs.work_path+'stat_job')
 
-#---------- BO
+# ---------- BO
 if rin.algo == 'BO':
     if jobs.logic_next_gen:
-        #------ log and out
+        # ------ log and out
         with open('cryspy.out', 'a') as fout:
             fout.write('\nDone generation {}\n\n'.format(jobs.gen))
         print('\nDone generation {}\n'.format(jobs.gen))
 
-        #------ done all structures
+        # ------ done all structures
         if len(jobs.rslt_data) == rin.tot_struc:
             with open('cryspy.out', 'a') as fout:
                 fout.write('\nDone all structures!\n')
             print('\nDone all structures!')
             raise SystemExit()
 
-        #------ check job status
+        # ------ check job status
         jobs.check_job()
 
-        #------ next generation
+        # ------ next generation
         if 'submitted' not in jobs.job_stat:
 
-            #---------- check point 3
+            # ---------- check point 3
             if rin.stop_chkpt == 3:
                 print('Stop at check point 3: BO is ready')
                 raise SystemExit()

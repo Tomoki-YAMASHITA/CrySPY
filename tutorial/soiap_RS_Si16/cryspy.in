@@ -14,7 +14,7 @@ jobfile = job_cryspy
 minlen = 5
 maxlen = 20
 dangle = 20
-mindist = 1.8
+mindist_1 = 1.8
 
 [soiap]
 soiap_infile = Si16.in
