@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from . import utility
-from .. import gen_struc
+from ..gen_struc.random import rndgen
 from ..IO import pkl_data
 from ..IO import read_input as rin
 
@@ -49,13 +49,13 @@ def initialize():
         with open('cryspy.out', 'a') as fout:
             fout.write('# ---------- Generate initial structures\n')
         if rin.spgnum == 0:
-            init_struc_data = gen_struc.random.rndgen.rndgen_wo_spg(
+            init_struc_data = rndgen.rndgen_wo_spg(
                                   rin.tot_struc, rin.natot, rin.atype, rin.nat, 0,
                                   rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
                                   rin.maxcnt, rin.symtoleI, init_pos_path)
         else:
             fwpath = utility.check_fwpath()
-            init_struc_data = gen_struc.random.rndgen.rndgen_spg(
+            init_struc_data = rndgen.rndgen_spg(
                                   rin.tot_struc, rin.natot, rin.atype, rin.nat, rin.spgnum,
                                   0, rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
                                   rin.maxcnt, rin.symtoleI, init_pos_path, fwpath)

@@ -6,11 +6,9 @@ from __future__ import print_function
 import os
 import subprocess
 
-from pymatgen import Structure
-
-from . import gen_cell
-from . import with_spg
-from . import wo_spg
+from gen_cell import rndgen_lattice, calc_latvec, calc_cos
+from with_spg.fw import fw_input, gen_wypos
+from wo_spg.gen_coordinate import rndgen_coord
 
 
 def rndgen_wo_spg(nstruc, natot, atype, nat, cID=0, minlen=4, maxlen=10, dangle=20, mindist=1.5,
@@ -28,35 +26,27 @@ def rndgen_wo_spg(nstruc, natot, atype, nat, cID=0, minlen=4, maxlen=10, dangle=
         os.mkdir('gen_struc')
     os.chdir('gen_struc')
 
+    # ---------- atomlist
+    atomlist = get_atomlist(atype, nat)
+
+    # ---------- cumulate nat
+    cumul_nat = cumulate_nat(nat)
+
     # ---------- generate structures
     while len(init_struc_data) < nstruc:
-        spg_in, a, b, c, alpha, beta, gamma = gen_cell.rndgen_lattice(spgnum, minlen, maxlen, dangle)
-        va, vb, vc = gen_cell.calc_latvec(a, b, c, alpha, beta, gamma)
-        incoord = wo_spg.gen_coordinate.rndgen_coord(natot, va, vb, vc, mindist, maxcnt)
-        if incoord:    # success of generation
-            wo_spg.write_poscar.write_poscar(va, vb, vc, incoord, atype, nat)
-
-            # ------ pymatgen
-            tmp_struc = Structure.from_file('POSCAR')
-            if not natot == tmp_struc.num_sites:
-                os.remove('POSCAR')
-                continue
-
+        spg_in, a, b, c, alpha, beta, gamma = rndgen_lattice(spgnum, minlen, maxlen, dangle)
+        va, vb, vc = calc_latvec(a, b, c, alpha, beta, gamma)
+        tmp_struc = rndgen_coord(natot, va, vb, vc, atomlist, cumul_nat, mindist, maxcnt)
+        if tmp_struc is not None:    # success of generation
             # ------ check actual space group using pymatgen
             spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=symtoleI)
-
             # ------ register the structure in pymatgen format
             init_struc_data.append(tmp_struc)
             print('Structure ID {0:>8} was generated. Space group: {1:>3} --> {2:>3} {3}'.format(
                    len(init_struc_data) - 1 + cID, spg_in, spg_num, spg_sym))
-
             # ------ save poscar
             if init_pos_path is not None:
                 save_init_poscar(tmp_struc, len(init_struc_data) - 1 + cID, init_pos_path)
-
-            # ------ clear
-            os.remove('POSCAR')
-
     # ---------- go back to ..
     os.chdir('../')
 
@@ -84,9 +74,9 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
 
     # ---------- generate structures
     while len(init_struc_data) < nstruc:
-        spg_in, a, b, c, alpha, beta, gamma = gen_cell.rndgen_lattice(spgnum, minlen, maxlen, dangle)
-        cosa, cosb, cosg = gen_cell.calc_cos(alpha, beta, gamma)
-        with_spg.fw.fw_input(atype, nat, spg_in, a, b, c, cosa, cosb, cosg)
+        spg_in, a, b, c, alpha, beta, gamma = rndgen_lattice(spgnum, minlen, maxlen, dangle)
+        cosa, cosb, cosg = calc_cos(alpha, beta, gamma)
+        fw_input(atype, nat, spg_in, a, b, c, cosa, cosb, cosg)
 
         # ------ loop for same fw_input
         cnt = 0
@@ -99,7 +89,7 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
             if not os.path.isfile('POS_WY_SKEL_ALL.json'):
                 wyflag = False
                 break
-            wyflag, tmp_struc = with_spg.fw.gen_wypos(cumul_nat, mindist, maxcnt)
+            wyflag, tmp_struc = gen_wypos(cumul_nat, mindist, maxcnt)
             if wyflag is False:    # Failure
                 os.remove('POS_WY_SKEL_ALL.json')
                 cnt += 1
@@ -131,6 +121,13 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
     os.chdir('../')
 
     return init_struc_data
+
+
+def get_atomlist(atype, nat):
+    atomlist = []
+    for i in range(len(atype)):
+        atomlist += [atype[i]]*nat[i]
+    return atomlist
 
 
 def cumulate_nat(nat):

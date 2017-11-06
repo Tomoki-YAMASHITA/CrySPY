@@ -3,7 +3,7 @@
 # --------------------------------------------------
 #
 # This code partly includes program codes in COMBO
-# (https://github.com/tsudalab/combo),
+# (https://github.com/tsudalab/combo)
 # which is distributed under the MIT License.
 #
 # --------------------------------------------------

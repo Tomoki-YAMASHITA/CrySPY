@@ -15,6 +15,8 @@ import json
 import numpy as np
 from pymatgen import Structure
 
+from ..dist import check_min_dist
+
 
 def fw_input(atype, nat, spg, a, b, c, cosa, cosb, cosg):
     with open('input', 'w') as f:
@@ -120,50 +122,3 @@ def gen_eq_atoms(wydata2, atomnames, positions):
         tmp_atomnames.append(each['name'])
 
     return tmp_atomnames, tmp_positions
-
-
-def check_min_dist(structure, cumul_nat, mindist):
-    if structure.num_sites == 1:
-        return True
-    for i in xrange(structure.num_sites):
-        for j in xrange(structure.num_sites):
-            if i < j:
-                dist = structure.get_distance(i, j)
-                type_i = get_atype_num(cumul_nat, i)
-                type_j = get_atype_num(cumul_nat, j)
-                if dist < mindist[type_i][type_j]:
-                    return False
-    return True
-
-
-# ---------- obsolete
-#                version 0.4.x or lower
-# def check_min_dist(structure):
-#     if structure.num_sites == 1:
-#         return 100.0    # dummy
-
-#     min_dist = structure.get_distance(0, 1)
-#     for i in xrange(structure.num_sites):
-#         for j in xrange(structure.num_sites):
-#             if i < j:
-#                 dist = structure.get_distance(i, j)
-#                 if dist < min_dist:
-#                     min_dist = dist
-#     return min_dist
-
-
-def get_atype_num(cumul_nat, site_num):
-    '''
-    e.g. SrTiO3
-    atype = ['Sr', 'Ti', 'O']
-    nat = [1, 1, 3]
-
-    atom 0: Sr1 --> atype_num = 0
-    atom 1: Ti1 --> atype_num = 1
-    atom 2: O1 --> atype_num = 2
-    atom 3: O2 --> atype_num = 2
-    atom 4: O3 --> atype_num = 2
-    '''
-    for atype_num, cumul_i in enumerate(cumul_nat):
-        if site_num < cumul_i:
-            return atype_num

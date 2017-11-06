@@ -5,72 +5,71 @@ from __future__ import print_function
 
 import os
 
-import CrySPY
+from CrySPY.BO import BO_init, BO_restart
+from CrySPY.interface import select_code
+from CrySPY.job import ctrl_job
+from CrySPY.IO import pkl_data
 from CrySPY.IO import read_input as rin
+from CrySPY.start import cryspy_init, cryspy_restart
 
 
 # ---------- initialize
 if not os.path.isfile('cryspy.stat'):
     # ------ cryspy_init
-    stat, init_struc_data, opt_struc_data, rslt_data = CrySPY.start.cryspy_init.initialize()
+    stat, init_struc_data, opt_struc_data, rslt_data = cryspy_init.initialize()
     if rin.algo == 'RS':
-        RS_id_data = CrySPY.start.cryspy_init.RS_init(stat)
+        RS_id_data = cryspy_init.RS_init(stat)
     elif rin.algo == 'BO':
-        rslt_data, BO_id_data, BO_data= CrySPY.BO.BO_init.initialize(stat, init_struc_data, rslt_data)
+        rslt_data, BO_id_data, BO_data = BO_init.initialize(stat, init_struc_data, rslt_data)
     if rin.kpt_flag:
-        kpt_data = CrySPY.start.cryspy_init.kpt_init()
+        kpt_data = cryspy_init.kpt_init()
 
 # ---------- restart
 else:
     # ------ cpsy_restart
-    stat = CrySPY.start.cryspy_restart.restart()
+    stat = cryspy_restart.restart()
 
     # ------ load data
-    init_struc_data = CrySPY.IO.pkl_data.load_init_struc()
-    opt_struc_data = CrySPY.IO.pkl_data.load_opt_struc()
-    rslt_data = CrySPY.IO.pkl_data.load_rslt()
+    init_struc_data = pkl_data.load_init_struc()
+    opt_struc_data = pkl_data.load_opt_struc()
+    rslt_data = pkl_data.load_rslt()
     if rin.algo == 'RS':
-        RS_id_data = CrySPY.IO.pkl_data.load_RS_id()
+        RS_id_data = pkl_data.load_RS_id()
     elif rin.algo == 'BO':
-        BO_id_data = CrySPY.IO.pkl_data.load_BO_id()
-        BO_data = CrySPY.IO.pkl_data.load_BO_data()
+        BO_id_data = pkl_data.load_BO_id()
+        BO_data = pkl_data.load_BO_data()
     if rin.kpt_flag:
-        kpt_data = CrySPY.IO.pkl_data.load_kpt()
+        kpt_data = pkl_data.load_kpt()
 
     # ------ append structures
     if len(init_struc_data) < rin.tot_struc:
-        init_struc_data = CrySPY.start.cryspy_restart.append_struc(init_struc_data)
+        init_struc_data = cryspy_restart.append_struc(init_struc_data)
     elif rin.tot_struc < len(init_struc_data):
         raise ValueError('tot_struc < len(init_struc_data)')
     # -- BO
     if rin.algo == 'BO':
         if BO_id_data[1] < len(init_struc_data):    # BO_id_data[1] is next_BO_id
-            BO_id_data, BO_data = CrySPY.BO.BO_restart.restart(init_struc_data, BO_id_data, BO_data)
-
-
-
-
+            BO_id_data, BO_data = BO_restart.restart(init_struc_data, BO_id_data, BO_data)
+#
+#
 # ---------- check point 1
+#
+#
 if rin.stop_chkpt == 1:
     print('Stop at check point 1')
     raise SystemExit()
 
-
-
-
 # ---------- check calc files in ./calc_in
-CrySPY.interface.select_code.check_calc_files()
+select_code.check_calc_files()
 
-
-
-
+#
+#
 # ---------- check point 2
+#
+#
 if rin.stop_chkpt == 2:
     print('Stop at check point 2')
     raise SystemExit()
-
-
-
 
 # ---------- make working directory
 if not os.path.isdir('work{:04d}'.format(rin.njob - 1)):
@@ -79,7 +78,7 @@ if not os.path.isdir('work{:04d}'.format(rin.njob - 1)):
             os.mkdir('work{:04d}'.format(i))
 
 # ---------- instantiate Ctrl_job class
-jobs = CrySPY.job.ctrl_job.Ctrl_job(stat, init_struc_data, opt_struc_data, rslt_data)
+jobs = ctrl_job.Ctrl_job(stat, init_struc_data, opt_struc_data, rslt_data)
 if rin.algo == 'RS':
     jobs.RS_init(RS_id_data)
 elif rin.algo == 'BO':

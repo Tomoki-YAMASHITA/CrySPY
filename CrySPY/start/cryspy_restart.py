@@ -6,7 +6,7 @@ from __future__ import print_function
 import ConfigParser
 
 from . import utility
-from .. import gen_struc
+from ..gen_struc.random import rndgen
 from ..IO import pkl_data
 from ..IO import read_input as rin
 
@@ -35,13 +35,13 @@ def append_struc(init_struc_data):
     cID = len(init_struc_data)
     nstruc = rin.tot_struc - cID
     if rin.spgnum == 0:
-        init_struc_data += gen_struc.random.rndgen.rndgen_wo_spg(
+        init_struc_data += rndgen.rndgen_wo_spg(
                                nstruc, rin.natot, rin.atype, rin.nat, cID,
                                rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
                                rin.maxcnt, rin.symtoleI, init_pos_path)
     else:
         fwpath = utility.check_fwpath()
-        init_struc_data += gen_struc.random.rndgen.rndgen_spg(
+        init_struc_data += rndgen.rndgen_spg(
                               nstruc, rin.natot, rin.atype, rin.nat, rin.spgnum, cID,
                               rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
                               rin.maxcnt, rin.symtoleI, init_pos_path, fwpath)
