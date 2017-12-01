@@ -23,6 +23,12 @@ if not os.path.isfile('cryspy.stat'):
         rslt_data, BO_id_data, BO_data = BO_init.initialize(stat, init_struc_data, rslt_data)
     if rin.kpt_flag:
         kpt_data = cryspy_init.kpt_init()
+    if rin.energy_step_flag:
+        energy_step_data = cryspy_init.energy_step_init()
+    if rin.struc_step_flag:
+        struc_step_data = cryspy_init.struc_step_init()
+    if rin.fs_step_flag:
+        fs_step_data = cryspy_init.fs_step_init()
 
 # ---------- restart
 else:
@@ -40,6 +46,12 @@ else:
         BO_data = pkl_data.load_BO_data()
     if rin.kpt_flag:
         kpt_data = pkl_data.load_kpt()
+    if rin.energy_step_flag:
+        energy_step_data = pkl_data.load_energy_step()
+    if rin.struc_step_flag:
+        struc_step_data = pkl_data.load_struc_step()
+    if rin.fs_step_flag:
+        fs_step_data = pkl_data.load_fs_step()
 
     # ------ append structures
     if len(init_struc_data) < rin.tot_struc:
@@ -84,7 +96,13 @@ if rin.algo == 'RS':
 elif rin.algo == 'BO':
     jobs.BO_init(BO_id_data, BO_data)
 if rin.kpt_flag:
-    jobs.kpt_init(kpt_data)
+    jobs.kpt_data = kpt_data
+if rin.energy_step_flag:
+    jobs.energy_step_data = energy_step_data
+if rin.struc_step_flag:
+    jobs.struc_step_data = struc_step_data
+if rin.fs_step_flag:
+    jobs.fs_step_data = fs_step_data
 
 # ---------- check job status
 jobs.check_job()

@@ -17,7 +17,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     skip_flag = False
 
     # ---------- prepare vasp files
-    vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR']
+    vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR', 'vasprun.xml']
     for f in vasp_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)

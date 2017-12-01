@@ -38,10 +38,6 @@ class Ctrl_job(object):
         self.logic_next_gen = False
 
 
-    def kpt_init(self, kpt_data):
-        self.kpt_data = kpt_data
-
-
     def check_job(self):
         id_stat = []
         stage_stat = []
@@ -93,15 +89,35 @@ class Ctrl_job(object):
 
     def ctrl_next_stage(self):
         current_id = self.id_stat[self.work_id]
+
+        # ---------- energy step
+        if rin.energy_step_flag:
+            self.energy_step_data = select_code.get_energy_step(self.energy_step_data, current_id, self.work_path)
+
+        # ---------- struc step
+        if rin.struc_step_flag:
+            self.struc_step_data = select_code.get_struc_step(self.struc_step_data, current_id, self.work_path)
+
+        # ---------- fs step
+        if rin.fs_step_flag:
+            self.fs_step_data = select_code.get_fs_step(self.fs_step_data, current_id, self.work_path)
+
+        # ---------- next stage
         if rin.kpt_flag:
             skip_flag, self.kpt_data = select_code.next_stage(self.stage_stat[self.work_id] + 1,
                                                               self.work_path, self.kpt_data, current_id)
         else:
             skip_flag = select_code.next_stage(self.stage_stat[self.work_id] + 1,
                                                self.work_path)
+        # ---------- skip
         if skip_flag:
             self.ctrl_skip()
             return
+
+        # ---------- prepare jobfile
+        self.prepare_jobfile(current_id)
+
+        # ---------- submit
         self.submit_next_stage()
 
 
@@ -130,6 +146,20 @@ class Ctrl_job(object):
     def ctrl_collect(self):
         # ---------- collect results
         current_id = self.id_stat[self.work_id]
+
+        # ---------- energy step
+        if rin.energy_step_flag:
+            self.energy_step_data = select_code.get_energy_step(self.energy_step_data, current_id, self.work_path)
+
+        # ---------- struc step
+        if rin.struc_step_flag:
+            self.struc_step_data = select_code.get_struc_step(self.struc_step_data, current_id, self.work_path)
+
+        # ---------- fs step
+        if rin.fs_step_flag:
+            self.fs_step_data = select_code.get_fs_step(self.fs_step_data, current_id, self.work_path)
+
+        # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(current_id, self.work_path)
         with open('cryspy.out', 'a') as fout:
@@ -242,15 +272,7 @@ class Ctrl_job(object):
                 select_code.next_struc(self.init_struc_data, self.next_id, self.work_path)
 
             # ------ prepare jobfile
-            if not os.path.isfile('./calc_in/' + rin.jobfile):
-                raise IOError('Could not find ./calc_in' + rin.jobfile)
-            with open('./calc_in/' + rin.jobfile, 'r') as f:
-                lines = f.readlines()
-            lines2 = []
-            for line in lines:
-                lines2.append(line.replace('CrySPY_ID', str(self.next_id)))
-            with open(self.work_path + rin.jobfile, 'w') as f:
-                f.writelines(lines2)
+            self.prepare_jobfile(self.next_id)
 
             # ------ submit
             self.submit_next_struc()
@@ -347,6 +369,18 @@ class Ctrl_job(object):
 
         # ---------- next struc
         self.ctrl_next_struc()
+
+
+    def prepare_jobfile(self, current_id):
+        if not os.path.isfile('./calc_in/' + rin.jobfile):
+            raise IOError('Could not find ./calc_in' + rin.jobfile)
+        with open('./calc_in/' + rin.jobfile, 'r') as f:
+            lines = f.readlines()
+        lines2 = []
+        for line in lines:
+            lines2.append(line.replace('CrySPY_ID', str(current_id)))
+        with open(self.work_path + rin.jobfile, 'w') as f:
+            f.writelines(lines2)
 
 
     # ---------- BO

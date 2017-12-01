@@ -270,5 +270,7 @@ A mindist matrix should be a symmetric matrix.
    ``spgnum``, "``all``, space group number", ``all`` , Constraint on space group
    ``load_struc_flag``, boolean, ``False``, "If True, load initial structures from ``./data/pkl_data/init_struc_data.pkl``"
    ``stop_next_struc``, boolean, ``False``, "If True, not submit next structures, but submit next stage and collect results"
-
+   ``energy_step_flag``, boolean, ``False``, "If True, save energy_step_data in ``./data/pkl_data/energy_step_data.pkl``"
+   ``struc_step_flag``, boolean, ``False``, "If True, save struc_step_data in ``./data/pkl_data/struc_step_data.pkl``"
+   ``fs_step_flag``, boolean, ``False``, "If True, save fs_step_data (force and stress) in ``./data/pkl_data/fs_step_data.pkl``"
 

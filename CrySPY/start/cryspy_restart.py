@@ -5,7 +5,7 @@ from __future__ import print_function
 
 import ConfigParser
 
-from . import utility
+from .. import utility
 from ..gen_struc.random import rndgen
 from ..IO import pkl_data
 from ..IO import read_input as rin

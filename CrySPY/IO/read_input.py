@@ -173,14 +173,14 @@ def readin():
         kpt_flag = False
         force_gamma = False
     else:
-        kpt_flag = False
-        force_gamma = False
         raise ValueError('calc_code should be VASP, QE, or soiap for now')
 
     # ---------- option
     # ------ global declaration
     global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum
     global load_struc_flag, stop_next_struc
+    global energy_step_flag, struc_step_flag, fs_step_flag
+
     # ------ read intput variables
     try:
         maxcnt = config.getint('option', 'maxcnt')
@@ -214,6 +214,27 @@ def readin():
         stop_next_struc = config.getboolean('option', 'stop_next_struc')
     except:
         stop_next_struc = False
+    try:
+        energy_step_flag = config.getboolean('option', 'energy_step_flag')
+        # -- VASP only for now
+        if calc_code in ['QE', 'soiap']:
+            energy_step_flag = False
+    except:
+        energy_step_flag = False
+    try:
+        struc_step_flag = config.getboolean('option', 'struc_step_flag')
+        # -- VASP only for now
+        if calc_code in ['QE', 'soiap']:
+            struc_step_flag = False
+    except:
+        struc_step_flag = False
+    try:
+        fs_step_flag = config.getboolean('option', 'fs_step_flag')
+        # -- VASP only for now
+        if calc_code in ['QE', 'soiap']:
+            fs_step_flag = False
+    except:
+        fs_step_flag = False
 
 
 def spglist(spgnum):
@@ -308,6 +329,9 @@ def writeout():
             fout.write('spgnum = {}\n'.format(' '.join(str(d) for d in spgnum)))
         fout.write('load_struc_flag = {}\n'.format(load_struc_flag))
         fout.write('stop_next_struc = {}\n\n\n'.format(stop_next_struc))
+        fout.write('energy_step_flag = {}\n'.format(energy_step_flag))
+        fout.write('struc_step_flag = {}\n'.format(struc_step_flag))
+        fout.write('fs_step_flag = {}\n'.format(fs_step_flag))
 
 
 def save_stat(stat):
@@ -372,6 +396,9 @@ def save_stat(stat):
         stat.set('input', 'spgnum', '{}'.format(' '.join(str(d) for d in spgnum)))
     stat.set('input', 'load_struc_flag', '{}'.format(load_struc_flag))
     stat.set('input', 'stop_next_struc', '{}'.format(stop_next_struc))
+    stat.set('input', 'energy_step_flag', '{}'.format(energy_step_flag))
+    stat.set('input', 'struc_step_flag', '{}'.format(struc_step_flag))
+    stat.set('input', 'fs_step_flag', '{}'.format(fs_step_flag))
 
     # ---------- write stat
     with open('cryspy.stat', 'w') as fstat:
@@ -449,6 +476,9 @@ def diffinstat(stat):
         old_spgnum = [int(x) for x in old_spgnum.split()]    # character --> integer list
     old_load_struc_flag = stat.getboolean('input', 'load_struc_flag')
     old_stop_next_struc = stat.getboolean('input', 'stop_next_struc')
+    old_energy_step_flag = stat.getboolean('input', 'energy_step_flag')
+    old_struc_step_flag = stat.getboolean('input', 'struc_step_flag')
+    old_fs_step_flag = stat.getboolean('input', 'fs_step_flag')
 
     # ---------- check difference
     # ------ basic
@@ -640,6 +670,12 @@ def diffinstat(stat):
         with open('cryspy.out', 'a') as fout:
             fout.write('\n#### Changed stop_next_struc from {0} to {1}\n'.format(old_stop_next_struc, stop_next_struc))
         logic_change = True
+    if not old_energy_step_flag == energy_step_flag:
+        raise ValueError('Do not change energy_step_flag')
+    if not old_struc_step_flag == struc_step_flag:
+        raise ValueError('Do not change struc_step_flag')
+    if not old_fs_step_flag == fs_step_flag:
+        raise ValueError('Do not change fs_step_flag')
 
     # ---------- save stat if necessary
     if logic_change:

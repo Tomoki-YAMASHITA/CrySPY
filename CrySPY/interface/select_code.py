@@ -74,3 +74,39 @@ def clean_calc_files(work_path):
         calc_files_soiap.clean_calc_files_soiap(work_path)
     else:
         raise SystemExit('now only VASP, QE, or soiap')
+
+
+def get_energy_step(energy_step_data, current_id, work_path):
+    if rin.calc_code == 'VASP':
+        energy_step_data = collect_vasp.get_energy_step_vasp(energy_step_data, current_id, work_path+'vasprun.xml')
+        return energy_step_data
+    elif rin.calc_code == 'QE':
+        raise SystemExit('now only VASP')
+    elif rin.calc_code == 'soiap':
+        raise SystemExit('now only VASP')
+    else:
+        raise SystemExit('now only VASP')
+
+
+def get_struc_step(struc_step_data, current_id, work_path):
+    if rin.calc_code == 'VASP':
+        struc_step_data = collect_vasp.get_struc_step_vasp(struc_step_data, current_id, work_path+'vasprun.xml')
+        return struc_step_data
+    elif rin.calc_code == 'QE':
+        raise SystemExit('now only VASP')
+    elif rin.calc_code == 'soiap':
+        raise SystemExit('now only VASP')
+    else:
+        raise SystemExit('now only VASP')
+
+
+def get_fs_step(fs_step_data, current_id, work_path):
+    if rin.calc_code == 'VASP':
+        fs_step_data = collect_vasp.get_fs_step_vasp(fs_step_data, current_id, work_path+'vasprun.xml')
+        return fs_step_data
+    elif rin.calc_code == 'QE':
+        raise SystemExit('now only VASP')
+    elif rin.calc_code == 'soiap':
+        raise SystemExit('now only VASP')
+    else:
+        raise SystemExit('now only VASP')

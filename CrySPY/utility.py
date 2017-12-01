@@ -7,7 +7,7 @@ import os
 
 
 def get_version():
-    return 'CrySPY 0.5.1'
+    return 'CrySPY 0.5.2'
 
 
 def get_date():
@@ -20,8 +20,7 @@ def get_init_pos_path():
 
 def check_fwpath():
     # ---------- check find_wy executable file
-    fwpath = os.path.dirname(os.path.abspath(__file__)) + '/../find_wy/find_wy'
+    fwpath = os.path.dirname(os.path.abspath(__file__)) + '/find_wy/find_wy'
     if not os.path.isfile(fwpath):
-        raise IOError('There is no find_wy program in CrySPY/find_wy/find_wy')
-
+        raise IOError('There is no find_wy program in {}'.format(fwpath))
     return fwpath

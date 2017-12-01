@@ -39,7 +39,9 @@ Git
 
 .. code-block:: bash
 
-    $ git clone https://github.com/Tomoki-YAMASHITA/CrySPY.git
+    $ git clone https://github.com/Tomoki-YAMASHITA/CrySPY.git CrySPY_root
+
+You can use an arbitarary directory name. Here just use ``CrySPY_root``.
 
 Zip file
 ---------
@@ -48,11 +50,11 @@ You can download the source as a zip file from github: https://github.com/Tomoki
 
 Setup
 =========
-You can put the source code in an arbitrary directory. Here, let's put the source code in ``~/CrySPY/``.
+You can put the source code in an arbitrary directory. Here, let's put the source code in ``~/CrySPY_root/``.
 
-Directory tree in ``~/CrySPY/``::
+Directory tree in ``~/CrySPY_root/``::
 
-    CrySPY
+    CrySPY_root
     ├── CrySPY
     │   ├── BO
     │   ├── IO
@@ -74,7 +76,7 @@ Directory tree in ``~/CrySPY/``::
 
 find_wy
 ----------
-Put the executable file of **find_wy** in ``~/CrySPY/CrySPY/find_wy/``, so that the executable file path is ``~/CrySPY/CrySPY/find_wy/find_wy``.
+Put the executable file of **find_wy** in ``~/CrySPY_root/CrySPY/find_wy/``, so that the executable file path is ``~/CrySPY_root/CrySPY/find_wy/find_wy``.
 
 .. seealso::
    You need to install `find_wy <https://github.com/nim-hrkn/find_wy>`_ in advance.
@@ -97,7 +99,7 @@ If you want to use Bayesian optimization, compile **cal_fingerpirnt** program.
     $ (edit Makefile)
     $ make
 
-Make sure that the executable file of **cal_fingerprint** exist in ``~/CrySPY/CrySPY/f-fingerprint/``.
+Make sure that the executable file of **cal_fingerprint** exist in ``~/CrySPY_root/CrySPY/f-fingerprint/``.
 
 .. note::
    Check ``/your_cryspy_path/CrySPY/f-fingerprint/cal_fingerprint``

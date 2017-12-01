@@ -12,7 +12,7 @@ News
 ===========
 
 
-Latest version: 0.5.0
+Latest version: 0.5.2
 
 
 
