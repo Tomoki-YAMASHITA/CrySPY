@@ -328,11 +328,11 @@ def writeout():
         else:
             fout.write('spgnum = {}\n'.format(' '.join(str(d) for d in spgnum)))
         fout.write('load_struc_flag = {}\n'.format(load_struc_flag))
-        fout.write('stop_next_struc = {}\n\n\n'.format(stop_next_struc))
+        fout.write('stop_next_struc = {}\n'.format(stop_next_struc))
         fout.write('energy_step_flag = {}\n'.format(energy_step_flag))
         fout.write('struc_step_flag = {}\n'.format(struc_step_flag))
         fout.write('fs_step_flag = {}\n'.format(fs_step_flag))
-
+        fout.write('\n\n')
 
 def save_stat(stat):
     print('Save input data in cryspy.stat')
