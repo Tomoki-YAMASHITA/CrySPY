@@ -49,6 +49,13 @@ def collect_vasp(current_id, work_path):
     except:
         opt_struc = None
 
+    # ---------- check
+    if np.isnan(energy):
+        opt_struc = None
+    if opt_struc is None:
+        energy = np.nan
+        magmom = np.nan
+
     # ---------- mv xxxxx fin_xxxxx
     vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR', 'WAVECAR', 'CHGCAR', 'vasprun.xml']
     for f in vasp_files:

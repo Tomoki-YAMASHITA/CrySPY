@@ -21,7 +21,8 @@ def calc_X(init_struc_data):
             raise IOError('There is no cal_fingerprint program in CrySPY/f-fingerprint/cal_fingerprint')
 
         # ---------- calc descriptors
-        descriptors = calc_FP.calc_X(init_struc_data, fppath,
+        strucs_list = [init_struc_data[i] for i in range(len(init_struc_data))]    # dict --> list
+        descriptors = calc_FP.calc_X(strucs_list, fppath,
                                      rin.fp_rmin, rin.fp_rmax,
                                      rin.fp_npoints, rin.fp_sigma)
     else:
@@ -39,7 +40,8 @@ def append_X(init_struc_data, next_BO_id, non_error_id, descriptors):
             raise IOError('There is no cal_fingerprint program in CrySY/f-fingerprint/cal_fingerprint')
 
         # ---------- append descriptor
-        tmp_dscrpt = calc_FP.calc_X(init_struc_data[next_BO_id:], fppath,
+        strucs_list = [init_struc_data[i] for i in range(next_BO_id, len(init_struc_data))]    # dict --> list
+        tmp_dscrpt = calc_FP.calc_X(strucs_list, fppath,
                                     rin.fp_rmin, rin.fp_rmax,
                                     rin.fp_npoints, rin.fp_sigma)
         descriptors = np.vstack((descriptors, tmp_dscrpt))

@@ -45,7 +45,7 @@ def next_stage_soiap(stage, work_path):
     return skip_flag
 
 
-def next_struc_soiap(init_struc_data, next_id, work_path):
+def next_struc_soiap(structure, next_id, work_path):
     # ---------- copy files
     calc_inputs = [rin.soiap_infile]
     for f in calc_inputs:
@@ -56,7 +56,6 @@ def next_struc_soiap(init_struc_data, next_id, work_path):
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- generate the CIF file
-    structure = init_struc_data[next_id]
     soiap_structure.write(structure,
                           work_path+rin.soiap_cif,
                           symprec=rin.symtoleI,

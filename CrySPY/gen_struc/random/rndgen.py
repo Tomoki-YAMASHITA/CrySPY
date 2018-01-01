@@ -11,14 +11,14 @@ from with_spg.fw import fw_input, gen_wypos
 from wo_spg.gen_coordinate import rndgen_coord
 
 
-def rndgen_wo_spg(nstruc, natot, atype, nat, cID=0, minlen=4, maxlen=10, dangle=20, mindist=1.5,
+def rndgen_wo_spg(nstruc, natot, atype, nat, id_offset=0, minlen=4, maxlen=10, dangle=20, mindist=1.5,
                   maxcnt=200, symtoleI=0.001, init_pos_path=None):
     '''
     Randomly generate structures without space group information
     '''
 
     # ---------- initialize
-    init_struc_data = []
+    init_struc_data = {}
     spgnum = 0
 
     # ---------- cd gen_struc
@@ -41,19 +41,20 @@ def rndgen_wo_spg(nstruc, natot, atype, nat, cID=0, minlen=4, maxlen=10, dangle=
             # ------ check actual space group using pymatgen
             spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=symtoleI)
             # ------ register the structure in pymatgen format
-            init_struc_data.append(tmp_struc)
+            cID = len(init_struc_data) + id_offset
+            init_struc_data[cID] = tmp_struc
             print('Structure ID {0:>8} was generated. Space group: {1:>3} --> {2:>3} {3}'.format(
-                   len(init_struc_data) - 1 + cID, spg_in, spg_num, spg_sym))
+                   cID, spg_in, spg_num, spg_sym))
             # ------ save poscar
             if init_pos_path is not None:
-                save_init_poscar(tmp_struc, len(init_struc_data) - 1 + cID, init_pos_path)
+                save_init_poscar(tmp_struc, cID + id_offset, init_pos_path)
     # ---------- go back to ..
     os.chdir('../')
 
     return init_struc_data
 
 
-def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
+def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', id_offset=0,
                minlen=4, maxlen=10, dangle=20, mindist=1.5,
                maxcnt=200, symtoleI=0.001,
                init_pos_path=None, fwpath='./find_wy'):
@@ -62,7 +63,7 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
     '''
 
     # ---------- initialize
-    init_struc_data = []
+    init_struc_data = {}
 
     # ---------- cd gen_struc
     if not os.path.isdir('gen_struc'):
@@ -106,13 +107,14 @@ def rndgen_spg(nstruc, natot, atype, nat, spgnum='all', cID=0,
         spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=symtoleI)
 
         # ------ register the structure in pymatgen format
-        init_struc_data.append(tmp_struc)
+        cID = len(init_struc_data) + id_offset
+        init_struc_data[cID] = tmp_struc
         print('Structure ID {0:>8} was generated. Space group: {1:>3} --> {2:>3} {3}'.format(
-               len(init_struc_data) - 1 + cID, spg_in, spg_num, spg_sym))
+               cID, spg_in, spg_num, spg_sym))
 
         # ------ save poscar
         if init_pos_path is not None:
-            save_init_poscar(tmp_struc, len(init_struc_data) - 1 + cID, init_pos_path)
+            save_init_poscar(tmp_struc, cID, init_pos_path)
 
         # ------ clean
         rm_files()

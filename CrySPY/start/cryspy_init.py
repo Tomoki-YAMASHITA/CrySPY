@@ -78,7 +78,7 @@ def initialize():
                              rin.tot_struc, len(init_struc_data)))
 
     # ---------- initialize opt_struc_data
-    opt_struc_data = []
+    opt_struc_data = {}
     pkl_data.save_opt_struc(opt_struc_data)
 
     # ---------- initialize rslt_data

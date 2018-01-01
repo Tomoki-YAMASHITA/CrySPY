@@ -51,16 +51,16 @@ def collect(current_id, work_path):
     return opt_struc, energy, magmom, check_opt
 
 
-def next_struc(init_struc_data, next_id, work_path, *args):
+def next_struc(structure, next_id, work_path, *args):
     # args[0] <-- kpt_data
     if rin.calc_code == 'VASP':
-        kpt_data = ctrl_job_vasp.next_struc_vasp(init_struc_data, next_id, work_path, args[0])
+        kpt_data = ctrl_job_vasp.next_struc_vasp(structure, next_id, work_path, args[0])
         return kpt_data
     elif rin.calc_code == 'QE':
-        kpt_data = ctrl_job_qe.next_struc_qe(init_struc_data, next_id, work_path, args[0])
+        kpt_data = ctrl_job_qe.next_struc_qe(structure, next_id, work_path, args[0])
         return kpt_data
     elif rin.calc_code == 'soiap':
-        ctrl_job_soiap.next_struc_soiap(init_struc_data, next_id, work_path)
+        ctrl_job_soiap.next_struc_soiap(structure, next_id, work_path)
     else:
         raise SystemExit('now only VASP, QE, or soiap')
 

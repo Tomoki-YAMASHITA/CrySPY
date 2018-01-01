@@ -66,7 +66,7 @@ def next_stage_qe(stage, work_path, kpt_data, current_id):
     return skip_flag, kpt_data
 
 
-def next_struc_qe(init_struc_data, next_id, work_path, kpt_data):
+def next_struc_qe(structure, next_id, work_path, kpt_data):
     # ---------- copy files
     calc_inputs = [rin.qe_infile]
     for f in calc_inputs:
@@ -77,7 +77,6 @@ def next_struc_qe(init_struc_data, next_id, work_path, kpt_data):
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- append structure info. to the input file
-    structure = init_struc_data[next_id]
     with open(work_path+rin.qe_infile, 'a') as fin:
         fin.write('\n')
     qe_structure.write(structure, work_path+rin.qe_infile, mode='a')

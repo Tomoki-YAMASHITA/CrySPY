@@ -57,7 +57,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     return skip_flag, kpt_data
 
 
-def next_struc_vasp(init_struc_data, next_id, work_path, kpt_data):
+def next_struc_vasp(structure, next_id, work_path, kpt_data):
     # ---------- copy files
     calc_inputs = ['POTCAR', 'INCAR']
     for f in calc_inputs:
@@ -68,7 +68,6 @@ def next_struc_vasp(init_struc_data, next_id, work_path, kpt_data):
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- generate POSCAR
-    structure = init_struc_data[next_id]
     structure.to(fmt='poscar', filename=work_path+'POSCAR')
     if not os.path.isfile(work_path+'POSCAR'):
         raise IOError('Could not find {}POSCAR'.format(work_path))

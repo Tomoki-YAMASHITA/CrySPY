@@ -43,6 +43,13 @@ def collect_soiap(current_id, work_path):
     except:
         opt_struc = None
 
+    # ---------- check
+    if np.isnan(energy):
+        opt_struc = None
+    if opt_struc is None:
+        energy = np.nan
+        magmom = np.nan
+
     # ---------- mv xxxxx fin_xxxxx
     soiap_files = [rin.soiap_infile, rin.soiap_outfile, rin.soiap_cif,
                    'log.struc', 'log.tote', 'log.frc', 'log.strs']

@@ -58,6 +58,13 @@ def collect_qe(current_id, work_path):
     except:
         opt_struc = None
 
+    # ---------- check
+    if np.isnan(energy):
+        opt_struc = None
+    if opt_struc is None:
+        energy = np.nan
+        magmom = np.nan
+
     # ---------- mv xxxxx fin_xxxxx
     qe_files = [rin.qe_infile, rin.qe_outfile]
     for f in qe_files:
