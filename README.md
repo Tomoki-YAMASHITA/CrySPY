@@ -17,3 +17,11 @@ version 0.5.2 (2017 December 1)
 
 ## Document
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY "CrySPY documment")
+
+## Reference
+T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Materials **2**, 013803 (2017).  
+https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
+
+## License
+CrySPY is distributed under the MIT License.  
+Copyright (c) 2018 CrySPY Development Team
