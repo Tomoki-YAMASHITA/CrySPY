@@ -30,7 +30,7 @@ def calc_X(init_struc_data):
     return descriptors
 
 
-def append_X(init_struc_data, next_BO_id, non_error_id, descriptors):
+def append_X(init_struc_data, prev_nstruc, non_error_id, descriptors):
     if rin.dscrpt == 'FP':
         print('Append descriptors: FingerPrint')
 
@@ -40,12 +40,12 @@ def append_X(init_struc_data, next_BO_id, non_error_id, descriptors):
             raise IOError('There is no cal_fingerprint program in CrySY/f-fingerprint/cal_fingerprint')
 
         # ---------- append descriptor
-        strucs_list = [init_struc_data[i] for i in range(next_BO_id, len(init_struc_data))]    # dict --> list
+        strucs_list = [init_struc_data[i] for i in range(prev_nstruc, len(init_struc_data))]    # dict --> list
         tmp_dscrpt = calc_FP.calc_X(strucs_list, fppath,
                                     rin.fp_rmin, rin.fp_rmax,
                                     rin.fp_npoints, rin.fp_sigma)
         descriptors = np.vstack((descriptors, tmp_dscrpt))
-        non_error_id = np.r_[non_error_id, np.arange(next_BO_id, len(init_struc_data))]
+        non_error_id = np.r_[non_error_id, np.arange(prev_nstruc, len(init_struc_data))]
     else:
         raise ValueError('Now FP only')
     return non_error_id, descriptors

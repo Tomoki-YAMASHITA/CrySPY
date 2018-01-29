@@ -112,3 +112,25 @@ def load_BO_data():
 def save_BO_data(BO_data):
     with open('./data/pkl_data/BO_data.pkl', 'wb') as ddata:
         pickle.dump(BO_data, ddata)
+
+
+def load_LAQA_id():
+    with open('./data/pkl_data/LAQA_id_data.pkl', 'rb') as laqaid:
+        LAQA_id_data = pickle.load(laqaid)
+    return LAQA_id_data
+
+
+def save_LAQA_id(LAQA_id_data):
+    with open('./data/pkl_data/LAQA_id_data.pkl', 'wb') as laqaid:
+        pickle.dump(LAQA_id_data, laqaid)
+
+
+def load_LAQA_data():
+    with open('./data/pkl_data/LAQA_data.pkl', 'rb') as ddata:
+        LAQA_data = pickle.load(ddata)
+    return LAQA_data
+
+
+def save_LAQA_data(LAQA_data):
+    with open('./data/pkl_data/LAQA_data.pkl', 'wb') as ddata:
+        pickle.dump(LAQA_data, ddata)

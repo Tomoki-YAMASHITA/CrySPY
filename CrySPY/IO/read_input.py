@@ -9,7 +9,6 @@ import os
 
 
 def readin():
-
     # ---------- read cryspy.in
     if not os.path.isfile('cryspy.in'):
         raise IOError('Could not find cryspy.in file')
@@ -22,9 +21,12 @@ def readin():
     global atype, nat, nstage, njob, jobcmd, jobfile
     # ------ read intput variables
     algo = config.get('basic', 'algo')
-    if algo not in ['RS', 'BO']:
-        raise ValueError('algo should be RS or BO')
+    if algo not in ['RS', 'BO', 'LAQA']:
+        raise ValueError('algo should be RS, BO, or LAQA')
     calc_code = config.get('basic', 'calc_code')
+    if algo == 'LAQA':
+        if not calc_code == 'VASP':
+            raise ValueError('LAQA: only VASP for now')
     if calc_code not in ['VASP', 'QE', 'soiap']:
         raise ValueError('calc_code should be VASP, QE, or soiap for now')
     tot_struc = config.getint('basic', 'tot_struc')
@@ -44,6 +46,9 @@ def readin():
     nstage = config.getint('basic', 'nstage')
     if nstage <= 0:
         raise ValueError('nstage <= 0, check nstage')
+    if algo == 'LAQA':
+        if not nstage == 1:
+            raise ValueError('nstage shoud be 1 in LAQA')
     njob = config.getint('basic', 'njob')
     if njob <= 0:
         raise ValueError('njob <= 0, check njob')
@@ -104,6 +109,17 @@ def readin():
             fp_sigma = 0.2
         if fp_sigma < 0:
             raise ValueError('fp_sigma < 0, check fp_sigma')
+
+    # ---------- LAQA
+    if algo == 'LAQA':
+        # ------ global declaration
+        global nselect, weight_LAQA
+        # ------ read intput variables
+        nselect = config.getint('LAQA', 'nselect')
+        try:
+            weight_LAQA = config.getfloat('LAQA', 'weight_LAQA')
+        except:
+            weight_LAQA = 1.0
 
     # ---------- lattice
     # ------ global declaration
@@ -235,6 +251,8 @@ def readin():
             fs_step_flag = False
     except:
         fs_step_flag = False
+    if algo == 'LAQA':
+        fs_step_flag = True
 
 
 def spglist(spgnum):
@@ -288,6 +306,12 @@ def writeout():
             fout.write('fp_npoints = {}\n'.format(fp_npoints))
             fout.write('fp_sigma = {}\n'.format(fp_sigma))
 
+        # ------ LAQA
+        if algo == 'LAQA':
+            fout.write('# ------ LAQA section\n')
+            fout.write('nselect = {}\n'.format(nselect))
+            fout.write('weight_LAQA = {}\n'.format(weight_LAQA))
+
         # ------ lattice
         fout.write('# ------ lattice section\n')
         fout.write('minlen = {}\n'.format(minlen))
@@ -334,6 +358,7 @@ def writeout():
         fout.write('fs_step_flag = {}\n'.format(fs_step_flag))
         fout.write('\n\n')
 
+
 def save_stat(stat):
     print('Save input data in cryspy.stat')
     # ---------- basic
@@ -359,6 +384,11 @@ def save_stat(stat):
         stat.set('input', 'fp_rmax', '{}'.format(fp_rmax))
         stat.set('input', 'fp_npoints', '{}'.format(fp_npoints))
         stat.set('input', 'fp_sigma', '{}'.format(fp_sigma))
+
+    # ---------- LAQA
+    if algo == 'LAQA':
+        stat.set('input', 'nselect', '{}'.format(nselect))
+        stat.set('input', 'weight_LAQA', '{}'.format(weight_LAQA))
 
     # ---------- lattice
     stat.set('input', 'minlen', '{}'.format(minlen))
@@ -433,6 +463,11 @@ def diffinstat(stat):
         old_fp_rmax = stat.getfloat('input', 'fp_rmax')
         old_fp_npoints = stat.getint('input', 'fp_npoints')
         old_fp_sigma = stat.getfloat('input', 'fp_sigma')
+
+    # ------ LAQA
+    if old_algo == 'LAQA':
+        old_nselect = stat.getint('input', 'nselect')
+        old_weight_LAQA = stat.getfloat('input', 'weight_LAQA')
 
     # ------ lattice
     old_minlen = stat.getfloat('input', 'minlen')
@@ -560,6 +595,21 @@ def diffinstat(stat):
             raise ValueError('Do not change fp_npoints')
         if not old_fp_sigma == fp_sigma:
             raise ValueError('Do not change fp_sigma')
+
+    # ------ LAQA
+    if algo == 'LAQA':
+        if not old_nselect == nselect:
+            print('Changed nselect from {0} to {1}'.format(old_nselect, nselect))
+            print('    This will be enabled in next selection')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed nselect from {0} to {1}\n'.format(old_nselect, nselect))
+                fout.write('####     This will be enabled in next selection\n')
+            logic_change = True
+        if not old_weight_LAQA == weight_LAQA:
+            print('Changed weight_LAQA from {0} to {1}'.format(old_weight_LAQA, weight_LAQA))
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed weight_LAQA from {0} to {1}\n'.format(old_weight_LAQA, weight_LAQA))
+            logic_change = True
 
     # ------ lattice
     if not old_minlen == minlen:

@@ -34,10 +34,9 @@ def initialize(stat, init_struc_data, rslt_data):
 
     # ---------- calc descriptor
     descriptors = select_descriptor.calc_X(init_struc_data)
-    next_BO_id = len(init_struc_data)
 
     # ---------- save for BO
-    BO_id_data = (gen, next_BO_id, non_error_id, id_to_calc, id_done)
+    BO_id_data = (gen, non_error_id, id_to_calc, id_done)
     pkl_data.save_BO_id(BO_id_data)
     BO_data = (descriptors, targets)
     pkl_data.save_BO_data(BO_data)
@@ -56,7 +55,7 @@ def initialize(stat, init_struc_data, rslt_data):
         fout.write('Generation: {}\n'.format(gen))
         fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in id_to_calc)))
 
-    return rslt_data, BO_id_data, BO_data
+    return stat, rslt_data, BO_id_data, BO_data
 
 
 def random_select(length, n):

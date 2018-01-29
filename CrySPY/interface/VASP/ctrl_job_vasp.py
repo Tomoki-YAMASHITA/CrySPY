@@ -7,7 +7,7 @@ import shutil
 from pymatgen import Structure
 from pymatgen.io.vasp.sets import MITRelaxSet
 
-from ...IO import out_kpts
+from ...IO.out_results import out_kpts
 from ...IO import pkl_data
 from ...IO import read_input as rin
 
@@ -17,7 +17,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     skip_flag = False
 
     # ---------- prepare vasp files
-    vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR', 'vasprun.xml']
+    vasp_files = ['CONTCAR', 'OUTCAR', 'OSZICAR', 'vasprun.xml', 'POSCAR']
     for f in vasp_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)
@@ -35,7 +35,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
         skip_flag = True
         kpt_data[current_id].append(['skip'])
         pkl_data.save_kpt(kpt_data)
-        out_kpts.write_kpts(kpt_data)
+        out_kpts(kpt_data)
         print('    error in VASP,  skip this structure')
         return skip_flag, kpt_data
     mitparamset = MITRelaxSet(structure)
@@ -47,7 +47,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     # ---------- kpt_data
     kpt_data[current_id].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
-    out_kpts.write_kpts(kpt_data)
+    out_kpts(kpt_data)
 
     # ---------- cp INCAR_? from ./calc_in
     fincar = './calc_in/INCAR_{}'.format(stage)
@@ -91,7 +91,7 @@ def next_struc_vasp(structure, next_id, work_path, kpt_data):
     kpt_data[next_id] = []    # initialize
     kpt_data[next_id].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
-    out_kpts.write_kpts(kpt_data)
+    out_kpts(kpt_data)
 
     # ---------- return
     return kpt_data

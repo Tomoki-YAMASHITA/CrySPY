@@ -12,65 +12,74 @@ from pymatgen import Structure
 from ...IO import pkl_data
 
 
-def collect_vasp(current_id, work_path):
-    # ---------- check optimization in previous stage
-    try:
-        with open(work_path+'prev_OUTCAR', 'r') as fpout:
-            lines = fpout.readlines()
-        check_opt = 'not_yet'
-        for line in lines:
-            if 'reached required accuracy' in line:
-                check_opt = 'done'
-    except:
-        check_opt = 'no_file'
-
+def collect_vasp(current_id, work_path, check_file):
+    # ---------- check optimization
+    if check_file is None:
+        check_opt = check_opt_vasp(work_path+'prev_OUTCAR')
+    else:    # for LAQA
+        check_opt = check_opt_vasp(work_path+check_file)
     # ---------- obtain energy and magmom
-    try:
-        with open(work_path+'OSZICAR',  'r') as foszi:
-            oszi = foszi.readlines()
-        if 'F=' in oszi[-1]:
-            energy = float(oszi[-1].split()[2])    # free energy (eV)
-            if 'mag=' in oszi[-1]:
-                magmom = float(oszi[-1].split()[-1])    # total magnetic moment
-            else:
-                magmom = np.nan
-        else:
-            energy = np.nan    # error
-            magmom = np.nan    # error
-            print('    Structure ID {0}, could not obtain energy from OSZICAR'.format(current_id))
-    except:
-        energy = np.nan    # error
-        magmom = np.nan    # error
+    energy, magmom = get_energy_magmom_vasp(work_path)
+    if np.isnan(energy):
         print('    Structure ID {0}, could not obtain energy from OSZICAR'.format(current_id))
-
     # ---------- collect CONTCAR
-    try:
-        opt_struc = Structure.from_file(work_path+'CONTCAR')
-    except:
-        opt_struc = None
-
+    opt_struc = get_opt_struc_vasp(work_path+'CONTCAR')
     # ---------- check
     if np.isnan(energy):
         opt_struc = None
     if opt_struc is None:
         energy = np.nan
         magmom = np.nan
-
     # ---------- mv xxxxx fin_xxxxx
     vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR', 'WAVECAR', 'CHGCAR', 'vasprun.xml']
     for f in vasp_files:
         if os.path.isfile(work_path+f):
             os.rename(work_path+f, work_path+'fin_'+f)
-
     # ---------- remove STOPCAR
     if os.path.isfile(work_path+'STOPCAR'):
         os.remove(work_path+'STOPCAR')
-
     # ---------- clean stat file
     os.remove(work_path+'stat_job')
-
     # ---------- return
     return opt_struc, energy, magmom, check_opt
+
+
+def check_opt_vasp(file_path):
+    try:
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        check_opt = 'not_yet'
+        for line in lines:
+            if 'reached required accuracy' in line:
+                check_opt = 'done'
+    except:
+        check_opt = 'no_file'
+    return check_opt
+
+
+def get_energy_magmom_vasp(work_path):
+    # ---------- obtain energy and magmom
+    energy = np.nan
+    magmom = np.nan
+    try:
+        with open(work_path+'OSZICAR', 'r') as foszi:
+            oszi = foszi.readlines()
+        if 'F=' in oszi[-1]:
+            energy = float(oszi[-1].split()[2])    # free energy (eV)
+            if 'mag=' in oszi[-1]:
+                magmom = float(oszi[-1].split()[-1])    # total magnetic moment
+    except:
+        pass
+    # ---------- return
+    return energy, magmom
+
+
+def get_opt_struc_vasp(file_name):
+    try:
+        opt_struc = Structure.from_file(file_name)
+    except:
+        opt_struc = None
+    return opt_struc
 
 
 def get_energy_step_vasp(energy_step_data, current_id, filename):
@@ -150,7 +159,7 @@ def get_struc_step_vasp(struc_step_data, current_id, filename):
         struc_step_data[current_id] = []    # initialize
     struc_step_data[current_id].append(struc_step)
 
-    # ---------- save energy_step_data
+    # ---------- save struc_step_data
     pkl_data.save_struc_step(struc_step_data)
 
     # ---------- return
@@ -206,7 +215,7 @@ def get_fs_step_vasp(fs_step_data, current_id, filename):
         stress_step_data[current_id] = []    # initialize
     stress_step_data[current_id].append(stress_step)
 
-    # ---------- save energy_step_data
+    # ---------- save fs_step_data
     fs_step_data = (force_step_data, stress_step_data)
     pkl_data.save_fs_step(fs_step_data)
 

@@ -34,10 +34,10 @@ def next_stage(stage, work_path, *args):
         raise SystemExit('now only VASP, QE, or soiap')
 
 
-def collect(current_id, work_path):
+def collect(current_id, work_path, check_file=None):
     if rin.calc_code == 'VASP':
         opt_struc, energy, magmom, check_opt = \
-            collect_vasp.collect_vasp(current_id, work_path)
+            collect_vasp.collect_vasp(current_id, work_path, check_file)
     elif rin.calc_code == 'QE':
         opt_struc, energy, magmom, check_opt = \
             collect_qe.collect_qe(current_id, work_path)
