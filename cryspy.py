@@ -164,6 +164,7 @@ if rin.algo == 'BO':
                 raise SystemExit()
             # -- BO
             jobs.ctrl_next_gen()
+
 # ---------- LAQA
 elif rin.algo == 'LAQA':
     if jobs.logic_next_selection:

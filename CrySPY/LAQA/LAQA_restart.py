@@ -8,7 +8,7 @@ from ..IO import read_input as rin
 def restart(stat, LAQA_id_data, LAQA_data, prev_nstruc):
     # ---------- load LAQA data
     id_to_calc, id_select_hist, id_done = LAQA_id_data
-    total_step, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score = LAQA_data
+    tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score = LAQA_data
 
     # ---------- append scores and id_to_calc
     for i in range(prev_nstruc, rin.tot_struc):
@@ -33,7 +33,7 @@ def restart(stat, LAQA_id_data, LAQA_data, prev_nstruc):
     # ---------- save for LAQA
     LAQA_id_data = (id_to_calc, id_select_hist, id_done)
     pkl_data.save_LAQA_id(LAQA_id_data)
-    LAQA_data = (total_step, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
+    LAQA_data = (tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
     pkl_data.save_LAQA_data(LAQA_data)
 
     # ---------- return

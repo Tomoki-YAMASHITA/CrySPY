@@ -13,7 +13,7 @@ def initialize(stat, init_struc_data):
         fout.write('\n# ---------- Initilalize LAQA\n')
 
     # ---------- initialize
-    total_step = 0
+    tot_step_select = [0]
     LAQA_step = {}
     LAQA_struc = {}
     LAQA_energy = {}
@@ -32,7 +32,7 @@ def initialize(stat, init_struc_data):
     # ---------- save for LAQA
     LAQA_id_data = (id_to_calc, id_select_hist, id_done)
     pkl_data.save_LAQA_id(LAQA_id_data)
-    LAQA_data = (total_step, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
+    LAQA_data = (tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
     pkl_data.save_LAQA_data(LAQA_data)
 
     # ---------- status
@@ -62,7 +62,3 @@ def initialize(stat, init_struc_data):
 
     # ---------- return
     return stat, LAQA_id_data, LAQA_data
-
-
-
-

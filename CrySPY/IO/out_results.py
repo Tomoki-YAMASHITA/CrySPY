@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
-
 from . import read_input as rin
 
 
 def out_rslt(rslt_data):
     # ---------- asc in Struc_ID or Gen
     with open('./data/cryspy_rslt', 'w') as frslt:
-        if rin.algo == 'RS':
+        if rin.algo == 'RS' or rin.algo == 'LAQA':
             frslt.write(rslt_data.sort_values(by=['Struc_ID'], ascending=True).to_string(index=False))
         elif rin.algo == 'BO':
             frslt.write(rslt_data.sort_values(by=['Gen', 'Struc_ID'], ascending=True).to_string(index=False))
@@ -31,15 +29,15 @@ def out_kpts(kpt_data):
 def out_LAQA_status(LAQA_step, LAQA_score, LAQA_energy, LAQA_bias):
     # ------ desc in score
     with open('./data/LAQA_status', 'w') as frslt:
-        frslt.write('{0:>10}  {1:>12}  {2:>12}  {3:>12}  {4:>12}  {5:>12}\n'.format(
+        frslt.write('{0:>10}  {1:>14}  {2:>14}  {3:>14}  {4:>12}  {5:>12}\n'.format(
             'Struc_ID', 'Score', 'E(eV/atom)', 'Bias', 'Selection', 'Step'))
         for key, value in sorted(LAQA_score.items(), key=lambda x: -x[1][-1]):
             if LAQA_energy[key]:    # whether list is vacant or not?
-                frslt.write('{0:10d}  {1: 12.8f}  {2: 12.8f}  {3: 12.8f}  {4:12d}  {5:12d}\n'.format(
+                frslt.write('{0:10d}  {1: 14.8f}  {2: 14.8f}  {3: 14.8f}  {4:12d}  {5:12d}\n'.format(
                     key, value[-1], LAQA_energy[key][-1], LAQA_bias[key][-1],
                     len(LAQA_step[key]), sum(LAQA_step[key])))
             else:
-                frslt.write('{0:10d}  {1: 12.8f}  {2:>12}  {3:>12}  {4:12d}  {5:12d}\n'.format(
+                frslt.write('{0:10d}  {1: 14.8f}  {2:>14}  {3:>14}  {4:12d}  {5:12d}\n'.format(
                     key, value[-1], LAQA_energy[key], LAQA_bias[key], len(LAQA_step[key]), sum(LAQA_step[key])))
 
 
@@ -57,11 +55,11 @@ def out_LAQA_step(LAQA_step):
 def out_LAQA_score(LAQA_score):
     # ------ asc in ID
     with open('./data/LAQA_score', 'w') as frslt:
-        frslt.write('{0:>10}  {1:>12}\n'.format('Struc_ID', 'Score'))
+        frslt.write('{0:>10}  {1:>14}\n'.format('Struc_ID', 'Score'))
         for key, value in sorted(LAQA_score.items()):
             frslt.write('{0:10d}'.format(key))
             for x in value:
-                frslt.write('  {: 12.8f}'.format(x))
+                frslt.write('  {: 14.8f}'.format(x))
             frslt.write('\n')
 
 
@@ -79,11 +77,11 @@ def out_LAQA_energy(LAQA_energy):
 def out_LAQA_bias(LAQA_bias):
     # ------ asc in ID
     with open('./data/LAQA_bias', 'w') as frslt:
-        frslt.write('{0:>10}  {1:>12}\n'.format('Struc_ID', 'Bias'))
+        frslt.write('{0:>10}  {1:>14}\n'.format('Struc_ID', 'Bias'))
         for key, value in sorted(LAQA_bias.items()):
             frslt.write('{0:10d}'.format(key))
             for x in value:
-                frslt.write('  {: 12.8f}'.format(x))
+                frslt.write('  {: 14.8f}'.format(x))
             frslt.write('\n')
 
 

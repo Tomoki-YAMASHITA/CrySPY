@@ -3,16 +3,16 @@
 
 from __future__ import print_function
 
+import argparse
 import pickle
-import sys
 
 from pymatgen import Structure
 from pymatgen.io.vasp.sets import MITRelaxSet
 
 
 def get_struc(filename):
-    structure = Structure.from_file(filename)
-    return structure
+    struc = Structure.from_file(filename)
+    return struc
 
 
 def load_init_struc(filepath):
@@ -21,41 +21,60 @@ def load_init_struc(filepath):
     return init_struc_data
 
 
-def kpt_check(structure, kppvol):
-    mitparamset = MITRelaxSet(structure)
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure, kppvol)
-    print('a =', structure.lattice.a)
-    print('b =', structure.lattice.b)
-    print('c =', structure.lattice.c)
+def write_kpt(struc, kppvol):
+    mitparamset = MITRelaxSet(struc)
+    kpoints = mitparamset.kpoints.automatic_density_by_vol(struc, kppvol)
+    kpoints.write_file('KPOINTS')
+
+
+def kpt_check(struc, kppvol):
+    mitparamset = MITRelaxSet(struc)
+    kpoints = mitparamset.kpoints.automatic_density_by_vol(struc, kppvol)
+    print('a =', struc.lattice.a)
+    print('b =', struc.lattice.b)
+    print('c =', struc.lattice.c)
     print('    Lattice vector')
-    print(structure.lattice)
+    print(struc.lattice)
     print()
     print('kppvol: ', kppvol)
     print('k-points: ', kpoints.kpts[0])
 
 
+def kpt_check_init_struc(init_struc_data, kppvol, nstruc):
+    init_struc_data = [init_struc_data[i] for i in range(len(init_struc_data))]    # dict --> list
+    for cnt, struc in enumerate(init_struc_data):
+        print('\n\n# ---------- {}th structure'.format(cnt))
+        kpt_check(struc, kppvol)
+        if cnt == nstruc-1:
+            return
+    return
+
+
 if __name__ == '__main__':
+    '''
+    sys.argv[1] <-- POSCAR, CONTCAR, or init_struc_data.pkl
+                    ./aaa/bbb/POSCAR is OK
+    sys.argv[2] <-- kppvol
+    '''
+    # ---------- argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-w', '--write', help='write KPOINTS', action='store_true')
+    parser.add_argument('-n', '--nstruc', help='number of structure to check', type=int, default=5)
+    parser.add_argument('infile', help='input file: POSCAR or CONTCAR or init_struc_data.pkl')
+    parser.add_argument('kppvol', help='kppvol', type=int)
+    args = parser.parse_args()
 
-    # sys.argv[1] <-- POSCAR, CONTCAR, or init_struc_data.pkl
-    #                 ./aaa/bbb/POSCAR is OK
-    # sys.argv[2] <-- kppvol
-
-    nstruc = 5
-
-    if len(sys.argv) == 3:    # two arguments
-        vaspfiles = ['POSCAR', 'CONTCAR']
-        filename = sys.argv[1].split('/')[-1]
-        if filename in vaspfiles:
-            structure = get_struc(sys.argv[1])
-            kpt_check(structure, int(sys.argv[2]))
-        elif filename == 'init_struc_data.pkl':
-            init_struc_data = load_init_struc(sys.argv[1])
-            count = 0
-            for structure in init_struc_data:
-                print('\n\n#---------- {}th structure'.format(count))
-                kpt_check(structure, int(sys.argv[2]))
-                count += 1
-                if count > nstruc - 1 :
-                    sys.exit()
+    # ---------- main
+    vaspfiles = ['POSCAR', 'CONTCAR']
+    filename = args.infile.split('/')[-1]
+    if filename in vaspfiles:
+        struc = get_struc(args.infile)
+        if args.write:
+            write_kpt(struc, args.kppvol)
+        else:
+            kpt_check(struc, args.kppvol)
+    elif filename == 'init_struc_data.pkl':
+        init_struc_data = load_init_struc(args.infile)
+        kpt_check_init_struc(init_struc_data, args.kppvol, args.nstruc)
     else:
-        raise SystemExit('Usage: [python] kpt_check.py filename kppvol')
+        raise SystemExit('usage: kpt_check.py [-h] [-w] [-n NSTRUC] infile kppvol')

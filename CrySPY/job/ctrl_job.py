@@ -39,7 +39,8 @@ class Ctrl_job(object):
 
     def LAQA_init(self, LAQA_id_data, LAQA_data):
         self.id_to_calc, self.id_select_hist, self.id_done = LAQA_id_data
-        self.total_step, self.LAQA_step, self.LAQA_struc, self.LAQA_energy, self.LAQA_bias, self.LAQA_score = LAQA_data
+        (self.tot_step_select, self.LAQA_step, self.LAQA_struc,
+         self.LAQA_energy, self.LAQA_bias, self.LAQA_score) = LAQA_data
         self.logic_next_selection = False
 
     def check_job(self):
@@ -251,10 +252,10 @@ class Ctrl_job(object):
         if self.fs_step_data[0][current_id][-1] is None:
             self.LAQA_step[current_id].append(0)
         else:
-            self.total_step += len(self.fs_step_data[0][current_id][-1])
+            self.tot_step_select[-1] += len(self.fs_step_data[0][current_id][-1])
             self.LAQA_step[current_id].append(len(self.fs_step_data[0][current_id][-1]))
         # ------ save status
-        self.stat.set('status', 'total step', '{}'.format(self.total_step))
+        self.stat.set('status', 'total step', '{}'.format(sum(self.tot_step_select)))
         with open('cryspy.stat', 'w') as fstat:
                 self.stat.write(fstat)
         # ---------- append LAQA struc
@@ -274,7 +275,7 @@ class Ctrl_job(object):
         else:
             self.LAQA_score[current_id].append(-energy/rin.natot + tmp_LAQA_bias)
         # ---------- save LAQA data
-        LAQA_data = (self.total_step, self.LAQA_step, self.LAQA_struc,
+        LAQA_data = (self.tot_step_select, self.LAQA_step, self.LAQA_struc,
                      self.LAQA_energy, self.LAQA_bias, self.LAQA_score)
         pkl_data.save_LAQA_data(LAQA_data)
         # ---------- out LAQA data
@@ -465,7 +466,7 @@ class Ctrl_job(object):
             self.LAQA_bias[current_id].append(np.nan)
             self.LAQA_score[current_id].append(-float('inf'))
             # ---------- save LAQA data
-            LAQA_data = (self.total_step, self.LAQA_step, self.LAQA_struc,
+            LAQA_data = (self.tot_step_select, self.LAQA_step, self.LAQA_struc,
                          self.LAQA_energy, self.LAQA_bias, self.LAQA_score)
             pkl_data.save_LAQA_data(LAQA_data)
             # ---------- out LAQA data
@@ -528,7 +529,7 @@ class Ctrl_job(object):
     def ctrl_next_selection(self):
         # ------ LAQA selection
         for k, v in sorted(self.LAQA_score.items(), key=lambda x: -x[1][-1]):
-            if v == -float('inf'):
+            if v[-1] == -float('inf'):
                 break
             else:
                 self.id_to_calc.append(k)
@@ -543,9 +544,14 @@ class Ctrl_job(object):
         # ------ append id_select_hist and out
         self.id_select_hist.append(self.id_to_calc)
         out_LAQA_id_hist(self.id_select_hist)
+        # ------ tot_step_select for next selection
+        self.tot_step_select.append(0)
         # ------ save
         LAQA_id_data = (self.id_to_calc, self.id_select_hist, self.id_done)
         pkl_data.save_LAQA_id(LAQA_id_data)
+        LAQA_data = (self.tot_step_select, self.LAQA_step, self.LAQA_struc,
+                     self.LAQA_energy, self.LAQA_bias, self.LAQA_score)
+        pkl_data.save_LAQA_data(LAQA_data)
         # ------ status
         self.stat.set('status', 'LAQA_selection', '{}'.format(len(self.id_select_hist)))
         if len(self.id_to_calc) > 30:
