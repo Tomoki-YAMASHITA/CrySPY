@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CrySPY &mdash; CrySPY Updata: 2017/12/1 documentation</title>
+  <title>CrySPY &mdash; CrySPY Updata: 2018/2/20 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2017/12/1 documentation" href="#"/>
+    <link rel="top" title="CrySPY Updata: 2018/2/20 documentation" href="#"/>
         <link rel="next" title="About" href="about.html"/> 
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                Update: 2017/12/1
+                Update: 2018/2/20
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_format.html">Data format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
@@ -174,7 +175,11 @@
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="about.html#crystal-structure-prediction">Crystal structure prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="about.html#searching-algorithms">Searching algorithms</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#system-requirements">System requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#download">Download</a></li>
@@ -191,13 +196,25 @@
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#qe-section">[QE] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#soiap-section">[soiap] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#bo-section">[BO] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_file.html#laqa-section">[LAQA] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#option-section">[option] section</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_format.html">Data format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_format.html#common-data">Common data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_format.html#random-search">Random Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_format.html#bayesian-optimization">Bayesian Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_format.html#laqa">LAQA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_format.html#optional-data">Optional data</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="utility.html#cryspy-analyzer-rs-ipynb">cryspy_analyzer_RS.ipynb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html#cryspy-analyzer-bo-ipynb">cryspy_analyzer_BO.ipynb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#cryspy-analyzer-laqa-ipynb">cryspy_analyzer_LAQA.ipynb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html#pkl-data-ipynb">pkl_data.ipynb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#kpt-check-py">kpt_check.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#struc2cif-py">struc2cif.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
@@ -257,7 +274,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'Updata: 2017/12/1',
+            VERSION:'Updata: 2018/2/20',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -22,6 +22,12 @@ Python
 - `pymatgen <http://pymatgen.org>`_
 
 
+Structure optimizer
+--------------------
+- `VASP <https://www.vasp.at/>`_ or `Quantum ESPRESSO <http://www.quantum-espresso.org/>`_ or `soiap <https://github.com/nbsato/soiap>`_
+
+
+
 .. index::
    single: find_wy
 

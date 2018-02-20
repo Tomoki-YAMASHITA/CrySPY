@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; CrySPY Updata: 2017/12/1 documentation</title>
+  <title>Installation &mdash; CrySPY Updata: 2018/2/20 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2017/12/1 documentation" href="index.html"/>
+    <link rel="top" title="CrySPY Updata: 2018/2/20 documentation" href="index.html"/>
         <link rel="next" title="Tutorial" href="tutorial.html"/>
         <link rel="prev" title="About" href="about.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                Update: 2017/12/1
+                Update: 2018/2/20
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#system-requirements">System requirements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#python">Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#structure-optimizer">Structure optimizer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#others">Others</a></li>
 </ul>
 </li>
@@ -114,6 +115,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_format.html">Data format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
@@ -188,17 +190,18 @@
 <li><a class="reference internal" href="#installation" id="id3">Installation</a><ul>
 <li><a class="reference internal" href="#system-requirements" id="id4">System requirements</a><ul>
 <li><a class="reference internal" href="#python" id="id5">Python</a></li>
-<li><a class="reference internal" href="#others" id="id6">Others</a></li>
+<li><a class="reference internal" href="#structure-optimizer" id="id6">Structure optimizer</a></li>
+<li><a class="reference internal" href="#others" id="id7">Others</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#download" id="id7">Download</a><ul>
-<li><a class="reference internal" href="#git" id="id8">Git</a></li>
-<li><a class="reference internal" href="#zip-file" id="id9">Zip file</a></li>
+<li><a class="reference internal" href="#download" id="id8">Download</a><ul>
+<li><a class="reference internal" href="#git" id="id9">Git</a></li>
+<li><a class="reference internal" href="#zip-file" id="id10">Zip file</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#setup" id="id10">Setup</a><ul>
-<li><a class="reference internal" href="#id1" id="id11">find_wy</a></li>
-<li><a class="reference internal" href="#f-fingerprint" id="id12">f-fingerprint</a></li>
+<li><a class="reference internal" href="#setup" id="id11">Setup</a><ul>
+<li><a class="reference internal" href="#id1" id="id12">find_wy</a></li>
+<li><a class="reference internal" href="#f-fingerprint" id="id13">f-fingerprint</a></li>
 </ul>
 </li>
 </ul>
@@ -217,29 +220,35 @@
 <li><a class="reference external" href="http://pymatgen.org">pymatgen</a></li>
 </ul>
 </div>
+<div class="section" id="structure-optimizer">
+<h3><a class="toc-backref" href="#id6">Structure optimizer</a><a class="headerlink" href="#structure-optimizer" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference external" href="https://www.vasp.at/">VASP</a> or <a class="reference external" href="http://www.quantum-espresso.org/">Quantum ESPRESSO</a> or <a class="reference external" href="https://github.com/nbsato/soiap">soiap</a></li>
+</ul>
+</div>
 <div class="section" id="others">
-<span id="index-1"></span><h3><a class="toc-backref" href="#id6">Others</a><a class="headerlink" href="#others" title="Permalink to this headline">¶</a></h3>
+<span id="index-1"></span><h3><a class="toc-backref" href="#id7">Others</a><a class="headerlink" href="#others" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/nim-hrkn/find_wy">find_wy</a></li>
 </ul>
 </div>
 </div>
 <div class="section" id="download">
-<h2><a class="toc-backref" href="#id7">Download</a><a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id8">Download</a><a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="git">
-<h3><a class="toc-backref" href="#id8">Git</a><a class="headerlink" href="#git" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">Git</a><a class="headerlink" href="#git" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>$ git clone https://github.com/Tomoki-YAMASHITA/CrySPY.git CrySPY_root
 </pre></div>
 </div>
 <p>You can use an arbitarary directory name. Here just use <code class="docutils literal"><span class="pre">CrySPY_root</span></code>.</p>
 </div>
 <div class="section" id="zip-file">
-<h3><a class="toc-backref" href="#id9">Zip file</a><a class="headerlink" href="#zip-file" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">Zip file</a><a class="headerlink" href="#zip-file" title="Permalink to this headline">¶</a></h3>
 <p>You can download the source as a zip file from github: <a class="reference external" href="https://github.com/Tomoki-YAMASHITA/CrySPY">https://github.com/Tomoki-YAMASHITA/CrySPY</a></p>
 </div>
 </div>
 <div class="section" id="setup">
-<h2><a class="toc-backref" href="#id10">Setup</a><a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">Setup</a><a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h2>
 <p>You can put the source code in an arbitrary directory. Here, let&#8217;s put the source code in <code class="docutils literal"><span class="pre">~/CrySPY_root/</span></code>.</p>
 <p>Directory tree in <code class="docutils literal"><span class="pre">~/CrySPY_root/</span></code>:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span>CrySPY_root
@@ -263,7 +272,7 @@
 </pre></div>
 </div>
 <div class="section" id="id1">
-<h3><a class="toc-backref" href="#id11">find_wy</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">find_wy</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Put the executable file of <strong>find_wy</strong> in <code class="docutils literal"><span class="pre">~/CrySPY_root/CrySPY/find_wy/</span></code>, so that the executable file path is <code class="docutils literal"><span class="pre">~/CrySPY_root/CrySPY/find_wy/find_wy</span></code>.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -275,7 +284,7 @@
 </div>
 </div>
 <div class="section" id="f-fingerprint">
-<span id="index-2"></span><h3><a class="toc-backref" href="#id12">f-fingerprint</a><a class="headerlink" href="#f-fingerprint" title="Permalink to this headline">¶</a></h3>
+<span id="index-2"></span><h3><a class="toc-backref" href="#id13">f-fingerprint</a><a class="headerlink" href="#f-fingerprint" title="Permalink to this headline">¶</a></h3>
 <p>If you want to use Bayesian optimization, compile <strong>cal_fingerpirnt</strong> program.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> ~/CrySPY/CrySPY/f-fingerprint
 $ <span class="o">(</span>edit Makefile<span class="o">)</span>
@@ -335,7 +344,7 @@ $ make
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'Updata: 2017/12/1',
+            VERSION:'Updata: 2018/2/20',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

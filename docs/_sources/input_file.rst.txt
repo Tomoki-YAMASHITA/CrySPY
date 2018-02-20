@@ -68,7 +68,7 @@ Example
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``algo``, "``RS`` , ``BO``",  ,  Algorithm
+   ``algo``, "``RS`` , ``BO``, ``LAQA``",  ,  Algorithm
    ``calc_code``, "``VASP``, ``QE``, ``soiap``",  , Caluculation code for structure optimization
    ``tot_struc``, integer,  , Total number of structures
    ``natot``, integer,  , Total number of atoms in a unit cell
@@ -90,6 +90,12 @@ Available algorithms for crystal structure prediction are:
 
 - ``RS``: **R**\ andom **S**\ earch
 - ``BO``: **B**\ ayesian **O**\ ptimization
+- ``LAQA``: **L**\ ook **A**\ head based on **Q**\ uadratic **A**\ pproximation
+
+In using LAQA, automatically ``fs_step_flag`` = ``True`` in [option] section.
+
+
+
 
 
 .. index::
@@ -242,15 +248,41 @@ A mindist matrix should be a symmetric matrix.
 
    ``interval``, integer,  ,  Number of structures to calculate between learning data
    ``score``, "``TS``, ``EI``, ``PI``",  ,  Acquisition function
-   ``num_rand_basis``, integer, 0, "If 0: Gaussian process, else: number of basis function"  
+   ``num_rand_basis``, integer, 0, "If 0: Gaussian process, else: number of basis function"
    ``cdev``, float, 0.001, Cutoff of deviation for standardization
    ``dscrpt``, ``FP`` ,  , Descriptor for structure
    ``fp_rmin``, float, 0.5, Minimum cutoff of *r* in *fingerprint*
    ``fp_rmax``, float, 5.0, Maximum cutoff of *r* in *fingerprint*
-   ``fp_npoints``, integer, 50, Number of discretized *r* points in *fingerprint*
+   ``fp_npoints``, integer, 50, Number of discretized *r* points for each pair in *fingerprint*
    ``fp_sigma``, float, 0.2, Sigma parameter in Gaussian smearing function in Angstrom unit
 
 
+
+.. index::
+   single: [LAQA]
+
+[LAQA] section
+=================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``nselect``, integer,  ,  Number of structures to select at once
+   ``weight_laqa``, float, 1.0 ,  weight of bias
+
+
+.. index::
+   single: weight_laqa
+
+``weight_laqa``
+-----------------
+In LAQA, the score is evaluated by the following equation:
+
+.. math::
+   \mathrm{score} = -E + c\frac{F^2}{2\Delta F},
+
+where :math:`c` is ``weight_laqa``, weight of bias.
 
 
 .. index::

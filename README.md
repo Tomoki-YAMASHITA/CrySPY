@@ -2,7 +2,12 @@
 CrySPY is a crystal structure prediction tool written in Python.
 
 ## Latest version
-version 0.5.2 (2017 December 1)
+version 0.6.0 (2018 February 20)
+
+## Important changes
+* version 0.6.0
+    - LAQA is now available
+    - Changed the data format of init_struc_data and opt_struc_data from int to dict
 
 ## System requirements
 ### Python
@@ -11,6 +16,9 @@ version 0.5.2 (2017 December 1)
 - numpy
 - pandas
 - [pymatgen](http://pymatgen.org "pymatgen")
+
+### Structure optimizer
+- [VASP](https://www.vasp.at/ "VASP") or [Quantum ESPRESSO](http://www.quantum-espresso.org/ "Quantum ESPRESSO") or [soiap](https://github.com/nbsato/soiap "soiap")
 
 ### Others
 - [find_wy](https://github.com/nim-hrkn/find_wy "find_wy")

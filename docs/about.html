@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>About &mdash; CrySPY Updata: 2017/12/1 documentation</title>
+  <title>About &mdash; CrySPY Updata: 2018/2/20 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2017/12/1 documentation" href="index.html"/>
+    <link rel="top" title="CrySPY Updata: 2018/2/20 documentation" href="index.html"/>
         <link rel="next" title="Installation" href="installation.html"/>
         <link rel="prev" title="CrySPY" href="index.html"/> 
 
@@ -68,7 +68,7 @@
             
             
               <div class="version">
-                Update: 2017/12/1
+                Update: 2018/2/20
               </div>
             
           
@@ -93,10 +93,21 @@
             
             
               <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">About</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">About</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#crystal-structure-prediction">Crystal structure prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#searching-algorithms">Searching algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#random-search-rs">Random Search (RS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bayesian-optimization-bo">Bayesian Optimization (BO)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#look-ahead-based-on-quadratic-approximation-laqa">Look Ahead based on Quadratic Approximation (LAQA)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#evolutionary-algorithm-ea">Evolutionary Algorithm (EA)</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_format.html">Data format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
@@ -164,7 +175,51 @@
            <div itemprop="articleBody">
             
   <div class="section" id="about">
-<h1>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h1>
+<h1><a class="toc-backref" href="#id1">About</a><a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#about" id="id1">About</a><ul>
+<li><a class="reference internal" href="#crystal-structure-prediction" id="id2">Crystal structure prediction</a></li>
+<li><a class="reference internal" href="#searching-algorithms" id="id3">Searching algorithms</a><ul>
+<li><a class="reference internal" href="#random-search-rs" id="id4">Random Search (RS)</a></li>
+<li><a class="reference internal" href="#bayesian-optimization-bo" id="id5">Bayesian Optimization (BO)</a></li>
+<li><a class="reference internal" href="#look-ahead-based-on-quadratic-approximation-laqa" id="id6">Look Ahead based on Quadratic Approximation (LAQA)</a></li>
+<li><a class="reference internal" href="#evolutionary-algorithm-ea" id="id7">Evolutionary Algorithm (EA)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="crystal-structure-prediction">
+<h2><a class="toc-backref" href="#id2">Crystal structure prediction</a><a class="headerlink" href="#crystal-structure-prediction" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="_images/CSP.png"><img alt="_images/CSP.png" src="_images/CSP.png" style="width: 15cm;" /></a>
+</div>
+<div class="section" id="searching-algorithms">
+<h2><a class="toc-backref" href="#id3">Searching algorithms</a><a class="headerlink" href="#searching-algorithms" title="Permalink to this headline">¶</a></h2>
+<p>The following searching algorithms are available in CrySPY:</p>
+<ul class="simple">
+<li>Random Search (RS)</li>
+<li>Bayesian Optimization (BO)</li>
+<li>Look Ahead based on Quadratic Approximation (LAQA)</li>
+<li>Evolutionary Algorithm (EA) (only develop ver.)</li>
+</ul>
+<div class="section" id="random-search-rs">
+<h3><a class="toc-backref" href="#id4">Random Search (RS)</a><a class="headerlink" href="#random-search-rs" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="bayesian-optimization-bo">
+<h3><a class="toc-backref" href="#id5">Bayesian Optimization (BO)</a><a class="headerlink" href="#bayesian-optimization-bo" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/BO.png"><img alt="_images/BO.png" src="_images/BO.png" style="width: 20cm;" /></a>
+</div>
+<div class="section" id="look-ahead-based-on-quadratic-approximation-laqa">
+<h3><a class="toc-backref" href="#id6">Look Ahead based on Quadratic Approximation (LAQA)</a><a class="headerlink" href="#look-ahead-based-on-quadratic-approximation-laqa" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/LAQA.gif"><img alt="_images/LAQA.gif" src="_images/LAQA.gif" style="width: 15cm;" /></a>
+</div>
+<div class="section" id="evolutionary-algorithm-ea">
+<h3><a class="toc-backref" href="#id7">Evolutionary Algorithm (EA)</a><a class="headerlink" href="#evolutionary-algorithm-ea" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
 </div>
 
 
@@ -211,7 +266,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'Updata: 2017/12/1',
+            VERSION:'Updata: 2018/2/20',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

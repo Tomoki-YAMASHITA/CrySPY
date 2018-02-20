@@ -1,0 +1,932 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Data format &mdash; CrySPY Updata: 2018/2/20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="CrySPY Updata: 2018/2/20 documentation" href="index.html"/>
+        <link rel="next" title="Utility" href="utility.html"/>
+        <link rel="prev" title="Input file: cryspy.in" href="input_file.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> CrySPY
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Update: 2018/2/20
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#common-data">Common data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#init-struc-data-pkl-opt-struc-data-pkl"><code class="docutils literal"><span class="pre">init_struc_data.pkl</span></code> / <code class="docutils literal"><span class="pre">opt_struc_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#init-struc-data-opt-struc-data"><code class="docutils literal"><span class="pre">init_struc_data</span></code> / <code class="docutils literal"><span class="pre">opt_struc_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#rslt-data-pkl"><code class="docutils literal"><span class="pre">rslt_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#rslt-data"><code class="docutils literal"><span class="pre">rslt_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#kpt-data-pkl"><code class="docutils literal"><span class="pre">kpt_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#kpt-data"><code class="docutils literal"><span class="pre">kpt_data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#random-search">Random Search</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rs-id-data-pkl"><code class="docutils literal"><span class="pre">RS_id_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#next-id"><code class="docutils literal"><span class="pre">next_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#index-8"><code class="docutils literal"><span class="pre">id_done</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bayesian-optimization">Bayesian Optimization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bo-id-data-pkl"><code class="docutils literal"><span class="pre">BO_id_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gen"><code class="docutils literal"><span class="pre">gen</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#non-error-id"><code class="docutils literal"><span class="pre">non_error_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#index-12"><code class="docutils literal"><span class="pre">id_to_calc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#index-13"><code class="docutils literal"><span class="pre">id_done</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#bo-data-pkl"><code class="docutils literal"><span class="pre">BO_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#descriptors"><code class="docutils literal"><span class="pre">descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#targets"><code class="docutils literal"><span class="pre">targets</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#laqa">LAQA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#laqa-id-data-pkl"><code class="docutils literal"><span class="pre">LAQA_id_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#index-18"><code class="docutils literal"><span class="pre">id_to_calc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#index-19"><code class="docutils literal"><span class="pre">id_select_hist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#index-20"><code class="docutils literal"><span class="pre">id_done</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#laqa-data-pkl"><code class="docutils literal"><span class="pre">LAQA_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tot-step-select"><code class="docutils literal"><span class="pre">tot_step_select</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#laqa-step"><code class="docutils literal"><span class="pre">LAQA_step</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#laqa-struc"><code class="docutils literal"><span class="pre">LAQA_struc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#laqa-energy"><code class="docutils literal"><span class="pre">LAQA_energy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#laqa-bias"><code class="docutils literal"><span class="pre">LAQA_bias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#laqa-score"><code class="docutils literal"><span class="pre">LAQA_score</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-data">Optional data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#energy-step-data-pkl"><code class="docutils literal"><span class="pre">energy_step_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#energy-step-data"><code class="docutils literal"><span class="pre">energy_step_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#struc-step-data-pkl"><code class="docutils literal"><span class="pre">struc_step_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#struc-step-data"><code class="docutils literal"><span class="pre">struc_step_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#fs-step-data-pkl"><code class="docutils literal"><span class="pre">fs_step_data.pkl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#force-step-data"><code class="docutils literal"><span class="pre">force_step_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#stress-step-data"><code class="docutils literal"><span class="pre">stress_step_data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CrySPY</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Data format</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/data_format.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="data-format">
+<h1><a class="toc-backref" href="#id4">Data format</a><a class="headerlink" href="#data-format" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#data-format" id="id4">Data format</a><ul>
+<li><a class="reference internal" href="#common-data" id="id5">Common data</a><ul>
+<li><a class="reference internal" href="#init-struc-data-pkl-opt-struc-data-pkl" id="id6"><code class="docutils literal"><span class="pre">init_struc_data.pkl</span></code> / <code class="docutils literal"><span class="pre">opt_struc_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#init-struc-data-opt-struc-data" id="id7"><code class="docutils literal"><span class="pre">init_struc_data</span></code> / <code class="docutils literal"><span class="pre">opt_struc_data</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rslt-data-pkl" id="id8"><code class="docutils literal"><span class="pre">rslt_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#rslt-data" id="id9"><code class="docutils literal"><span class="pre">rslt_data</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#kpt-data-pkl" id="id10"><code class="docutils literal"><span class="pre">kpt_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#kpt-data" id="id11"><code class="docutils literal"><span class="pre">kpt_data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#random-search" id="id12">Random Search</a><ul>
+<li><a class="reference internal" href="#rs-id-data-pkl" id="id13"><code class="docutils literal"><span class="pre">RS_id_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#next-id" id="id14"><code class="docutils literal"><span class="pre">next_id</span></code></a></li>
+<li><a class="reference internal" href="#index-8" id="id15"><code class="docutils literal"><span class="pre">id_done</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayesian-optimization" id="id16">Bayesian Optimization</a><ul>
+<li><a class="reference internal" href="#bo-id-data-pkl" id="id17"><code class="docutils literal"><span class="pre">BO_id_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#gen" id="id18"><code class="docutils literal"><span class="pre">gen</span></code></a></li>
+<li><a class="reference internal" href="#non-error-id" id="id19"><code class="docutils literal"><span class="pre">non_error_id</span></code></a></li>
+<li><a class="reference internal" href="#index-12" id="id20"><code class="docutils literal"><span class="pre">id_to_calc</span></code></a></li>
+<li><a class="reference internal" href="#index-13" id="id21"><code class="docutils literal"><span class="pre">id_done</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bo-data-pkl" id="id22"><code class="docutils literal"><span class="pre">BO_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#descriptors" id="id23"><code class="docutils literal"><span class="pre">descriptors</span></code></a></li>
+<li><a class="reference internal" href="#targets" id="id24"><code class="docutils literal"><span class="pre">targets</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#laqa" id="id25">LAQA</a><ul>
+<li><a class="reference internal" href="#laqa-id-data-pkl" id="id26"><code class="docutils literal"><span class="pre">LAQA_id_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#index-18" id="id27"><code class="docutils literal"><span class="pre">id_to_calc</span></code></a></li>
+<li><a class="reference internal" href="#index-19" id="id28"><code class="docutils literal"><span class="pre">id_select_hist</span></code></a></li>
+<li><a class="reference internal" href="#index-20" id="id29"><code class="docutils literal"><span class="pre">id_done</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#laqa-data-pkl" id="id30"><code class="docutils literal"><span class="pre">LAQA_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#tot-step-select" id="id31"><code class="docutils literal"><span class="pre">tot_step_select</span></code></a></li>
+<li><a class="reference internal" href="#laqa-step" id="id32"><code class="docutils literal"><span class="pre">LAQA_step</span></code></a></li>
+<li><a class="reference internal" href="#laqa-struc" id="id33"><code class="docutils literal"><span class="pre">LAQA_struc</span></code></a></li>
+<li><a class="reference internal" href="#laqa-energy" id="id34"><code class="docutils literal"><span class="pre">LAQA_energy</span></code></a></li>
+<li><a class="reference internal" href="#laqa-bias" id="id35"><code class="docutils literal"><span class="pre">LAQA_bias</span></code></a></li>
+<li><a class="reference internal" href="#laqa-score" id="id36"><code class="docutils literal"><span class="pre">LAQA_score</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#optional-data" id="id37">Optional data</a><ul>
+<li><a class="reference internal" href="#energy-step-data-pkl" id="id38"><code class="docutils literal"><span class="pre">energy_step_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#energy-step-data" id="id39"><code class="docutils literal"><span class="pre">energy_step_data</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#struc-step-data-pkl" id="id40"><code class="docutils literal"><span class="pre">struc_step_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#struc-step-data" id="id41"><code class="docutils literal"><span class="pre">struc_step_data</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#fs-step-data-pkl" id="id42"><code class="docutils literal"><span class="pre">fs_step_data.pkl</span></code></a><ul>
+<li><a class="reference internal" href="#force-step-data" id="id43"><code class="docutils literal"><span class="pre">force_step_data</span></code></a></li>
+<li><a class="reference internal" href="#stress-step-data" id="id44"><code class="docutils literal"><span class="pre">stress_step_data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="common-data">
+<h2><a class="toc-backref" href="#id5">Common data</a><a class="headerlink" href="#common-data" title="Permalink to this headline">¶</a></h2>
+<p>All data on CrySPY are saved in <code class="docutils literal"><span class="pre">./data/pkl_data/</span></code> as pickled files.
+You can easily access the data using Python.
+If you use Jupyter Notebook, <code class="docutils literal"><span class="pre">/your_cryspy_path/utility/pkl_data.ipynb</span></code> will be useful to analyze the data.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="utility.html"><span class="doc">Utility</span></a></p>
+</div>
+<div class="section" id="init-struc-data-pkl-opt-struc-data-pkl">
+<span id="index-0"></span><h3><a class="toc-backref" href="#id6"><code class="docutils literal"><span class="pre">init_struc_data.pkl</span></code> / <code class="docutils literal"><span class="pre">opt_struc_data.pkl</span></code></a><a class="headerlink" href="#init-struc-data-pkl-opt-struc-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">init_struc_data.pkl</span></code> (<code class="docutils literal"><span class="pre">opt_struc_data.pkl</span></code>) includes initial (optimized) structure data, <code class="docutils literal"><span class="pre">init_struc_data</span></code> (<code class="docutils literal"><span class="pre">opt_struc_data</span></code>).</p>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;init_struc_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">init_struc_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="init-struc-data-opt-struc-data">
+<span id="index-1"></span><h4><a class="toc-backref" href="#id7"><code class="docutils literal"><span class="pre">init_struc_data</span></code> / <code class="docutils literal"><span class="pre">opt_struc_data</span></code></a><a class="headerlink" href="#init-struc-data-opt-struc-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: struc1, 1: struc1, ...}</div>
+<div class="line-block">
+<div class="line">The keys are structre ID</div>
+<div class="line">The values are structure data in pymatgen format</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- e.g., struc ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">init_struc_data</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="rslt-data-pkl">
+<span id="index-2"></span><h3><a class="toc-backref" href="#id8"><code class="docutils literal"><span class="pre">rslt_data.pkl</span></code></a><a class="headerlink" href="#rslt-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">rslt_data.pkl</span></code> includes result data, <code class="docutils literal"><span class="pre">rslt_data</span></code>.</p>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;rslt_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">rslt_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="rslt-data">
+<span id="index-3"></span><h4><a class="toc-backref" href="#id9"><code class="docutils literal"><span class="pre">rslt_data</span></code></a><a class="headerlink" href="#rslt-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: DataFrame</div>
+<div class="line"><br /></div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- e.g., first 10 data</span>
+<span class="k">print</span><span class="p">(</span><span class="n">rslt_data</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="kpt-data-pkl">
+<span id="index-4"></span><h3><a class="toc-backref" href="#id10"><code class="docutils literal"><span class="pre">kpt_data.pkl</span></code></a><a class="headerlink" href="#kpt-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">kpt_data.pkl</span></code> includes k-point data, <code class="docutils literal"><span class="pre">kpt_data</span></code>.</p>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;kpt_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">kpt_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="kpt-data">
+<span id="index-5"></span><h4><a class="toc-backref" href="#id11"><code class="docutils literal"><span class="pre">kpt_data</span></code></a><a class="headerlink" href="#kpt-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: [[2, ,2 ,2], [4, 4, 4,], [6, 6, 6,], ...], 1: ...}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values indicate k-mesh in each stage as list</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- e.g., k-mesh of ID 7, stage 2</span>
+<span class="c1"># kpt_data[ID][stage]</span>
+<span class="c1"># kpt_data[ID][0] &lt;-- stage 1</span>
+<span class="c1"># kpt_data[ID][1] &lt;-- stage 2</span>
+<span class="k">print</span><span class="p">(</span><span class="n">kpt_data</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="random-search">
+<h2><a class="toc-backref" href="#id12">Random Search</a><a class="headerlink" href="#random-search" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="rs-id-data-pkl">
+<span id="index-6"></span><h3><a class="toc-backref" href="#id13"><code class="docutils literal"><span class="pre">RS_id_data.pkl</span></code></a><a class="headerlink" href="#rs-id-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">RS_id_data.pkl</span></code> includes</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">next_id</span></code>: next structure ID to calculate</li>
+<li><code class="docutils literal"><span class="pre">id_done</span></code>: finished structure ID</li>
+</ul>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;RS_id_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">next_id</span><span class="p">,</span> <span class="n">id_done</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="next-id">
+<span id="index-7"></span><h4><a class="toc-backref" href="#id14"><code class="docutils literal"><span class="pre">next_id</span></code></a><a class="headerlink" href="#next-id" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: int</div>
+<div class="line">String form: 5</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="index-8">
+<span id="id-done"></span><h4><a class="toc-backref" href="#id15"><code class="docutils literal"><span class="pre">id_done</span></code></a><a class="headerlink" href="#index-8" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: 1d array</div>
+<div class="line">String form: [0 1 2 3 4]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="bayesian-optimization">
+<h2><a class="toc-backref" href="#id16">Bayesian Optimization</a><a class="headerlink" href="#bayesian-optimization" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bo-id-data-pkl">
+<span id="index-9"></span><h3><a class="toc-backref" href="#id17"><code class="docutils literal"><span class="pre">BO_id_data.pkl</span></code></a><a class="headerlink" href="#bo-id-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">BO_id_data.pkl</span></code> includes</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">gen</span></code>: generation</li>
+<li><code class="docutils literal"><span class="pre">non_error_id</span></code>: non-error structure ID</li>
+<li><code class="docutils literal"><span class="pre">id_to_calc</span></code>: structure ID to calculate in the current generation</li>
+<li><code class="docutils literal"><span class="pre">id_done</span></code>: finished structure ID</li>
+</ul>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;BO_id_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">gen</span><span class="p">,</span> <span class="n">non_error_id</span><span class="p">,</span> <span class="n">id_to_calc</span><span class="p">,</span> <span class="n">id_done</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="gen">
+<span id="index-10"></span><h4><a class="toc-backref" href="#id18"><code class="docutils literal"><span class="pre">gen</span></code></a><a class="headerlink" href="#gen" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: int</div>
+<div class="line">String form: 1</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="non-error-id">
+<span id="index-11"></span><h4><a class="toc-backref" href="#id19"><code class="docutils literal"><span class="pre">non_error_id</span></code></a><a class="headerlink" href="#non-error-id" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: 1d array</div>
+<div class="line">String form: [0 1 2 3 4 5 6 7 8 9]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="index-12">
+<span id="id-to-calc"></span><h4><a class="toc-backref" href="#id20"><code class="docutils literal"><span class="pre">id_to_calc</span></code></a><a class="headerlink" href="#index-12" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: 1d array</div>
+<div class="line">String form: [8 6 4 1 2]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="index-13">
+<span id="id1"></span><h4><a class="toc-backref" href="#id21"><code class="docutils literal"><span class="pre">id_done</span></code></a><a class="headerlink" href="#index-13" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: 1d array</div>
+<div class="line">String form: [0 9 3 5 7]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="bo-data-pkl">
+<span id="index-14"></span><h3><a class="toc-backref" href="#id22"><code class="docutils literal"><span class="pre">BO_data.pkl</span></code></a><a class="headerlink" href="#bo-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">BO_data.pkl</span></code> includes</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">descriptors</span></code>: descriptor data</li>
+<li><code class="docutils literal"><span class="pre">targets</span></code>: target(=energy) data</li>
+</ul>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;BO_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">descriptors</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="descriptors">
+<span id="index-15"></span><h4><a class="toc-backref" href="#id23"><code class="docutils literal"><span class="pre">descriptors</span></code></a><a class="headerlink" href="#descriptors" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: 2d array</div>
+<div class="line">String form: [[descriptor array of ID 0], [descriptor array of ID 1], [descriptor array of ID 3], ....]</div>
+<div class="line-block">
+<div class="line">len(<code class="docutils literal"><span class="pre">descriptors</span></code>) = len(<code class="docutils literal"><span class="pre">non_error_id</span></code>)</div>
+<div class="line">If your calculation for ID 2 failed, the descriptor data of ID 2 is deleted like this example.</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- how to access descriptor of ID 3</span>
+<span class="c1"># descriptors[3] does not always correspond to the data of ID 3!</span>
+<span class="n">descriptors</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">non_error_id</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="targets">
+<span id="index-16"></span><h4><a class="toc-backref" href="#id24"><code class="docutils literal"><span class="pre">targets</span></code></a><a class="headerlink" href="#targets" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: 1d array</div>
+<div class="line">String form: [-10.45, -8.789, ....]</div>
+<div class="line-block">
+<div class="line">len(<code class="docutils literal"><span class="pre">targets</span></code>) = len(<code class="docutils literal"><span class="pre">id_done</span></code>)</div>
+<div class="line">The order of ID in <code class="docutils literal"><span class="pre">targets</span></code> follows the order of <code class="docutils literal"><span class="pre">id_done</span></code></div>
+<div class="line"><br /></div>
+</div>
+<div class="line">e.g.,</div>
+<div class="line">id_done = [7, 3, 0, 1, ...]</div>
+<div class="line">targets = [energy of ID 7, energy of ID 3, energy of ID 0, energy of ID 1, ...]</div>
+<div class="line"><br /></div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- how to access target of ID 3</span>
+<span class="c1"># targets[3] does not correspond to the data of ID 3!</span>
+<span class="n">targets</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">id_done</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="laqa">
+<h2><a class="toc-backref" href="#id25">LAQA</a><a class="headerlink" href="#laqa" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="laqa-id-data-pkl">
+<span id="index-17"></span><h3><a class="toc-backref" href="#id26"><code class="docutils literal"><span class="pre">LAQA_id_data.pkl</span></code></a><a class="headerlink" href="#laqa-id-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">LAQA_id_data.pkl</span></code> includes</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">id_to_calc</span></code>: structure ID to calculate in the current generation</li>
+<li><code class="docutils literal"><span class="pre">id_select_hist</span></code>: history of ID selection</li>
+<li><code class="docutils literal"><span class="pre">id_done</span></code>: finished structure ID</li>
+</ul>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;LAQA_id_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">id_to_calc</span><span class="p">,</span> <span class="n">id_select_hist</span><span class="p">,</span> <span class="n">id_done</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="index-18">
+<span id="id2"></span><h4><a class="toc-backref" href="#id27"><code class="docutils literal"><span class="pre">id_to_calc</span></code></a><a class="headerlink" href="#index-18" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: list</div>
+<div class="line">String form: [8, 6, 4, 1, 2]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="index-19">
+<span id="id-select-hist"></span><h4><a class="toc-backref" href="#id28"><code class="docutils literal"><span class="pre">id_select_hist</span></code></a><a class="headerlink" href="#index-19" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: list</div>
+<div class="line">String form: [[5, 3, 9, 0, 7], ..., [8, 6, 4, 1, 2]]</div>
+<div class="line-block">
+<div class="line">[[list of first selection], [list of second selection], ...]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><code class="docutils literal"><span class="pre">id_select_hist</span></code> does not include 0th selection (all initial structures), start with 1st selection.</p>
+</div>
+</div>
+<div class="section" id="index-20">
+<span id="id3"></span><h4><a class="toc-backref" href="#id29"><code class="docutils literal"><span class="pre">id_done</span></code></a><a class="headerlink" href="#index-20" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: list</div>
+<div class="line">String form: [5, 3, 9, 0, 7]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+</div>
+<div class="section" id="laqa-data-pkl">
+<span id="index-21"></span><h3><a class="toc-backref" href="#id30"><code class="docutils literal"><span class="pre">LAQA_data.pkl</span></code></a><a class="headerlink" href="#laqa-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">LAQA_data.pkl</span></code> includes</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">tot_step_select</span></code>: total number of optimization steps in each selection</li>
+<li><code class="docutils literal"><span class="pre">LAQA_step</span></code>: number of optimization steps in each ID</li>
+<li><code class="docutils literal"><span class="pre">LAQA_struc</span></code>: list of structure data in each ID</li>
+<li><code class="docutils literal"><span class="pre">LAQA_energy</span></code>: list of energy data in each ID</li>
+<li><code class="docutils literal"><span class="pre">LAQA_bias</span></code>:</li>
+<li><code class="docutils literal"><span class="pre">LAQA_score</span></code>:</li>
+</ul>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;LAQA_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">tot_step_select</span><span class="p">,</span> <span class="n">LAQA_step</span><span class="p">,</span> <span class="n">LAQA_struc</span><span class="p">,</span> <span class="n">LAQA_energy</span><span class="p">,</span> <span class="n">LAQA_bias</span><span class="p">,</span> <span class="n">LAQA_score</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="tot-step-select">
+<span id="index-22"></span><h4><a class="toc-backref" href="#id31"><code class="docutils literal"><span class="pre">tot_step_select</span></code></a><a class="headerlink" href="#tot-step-select" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: list</div>
+<div class="line">String form: [2000, 200, 200, ...]</div>
+<div class="line-block">
+<div class="line">len(<code class="docutils literal"><span class="pre">tot_step_select</span></code>) = len(<code class="docutils literal"><span class="pre">id_select_hist</span></code>) + 1</div>
+<div class="line"><code class="docutils literal"><span class="pre">tot_step_select</span></code> includes 0th selection</div>
+<div class="line">[0th, 1st, 2nd, ...]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- total number of optimization steps (all steps)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Total steps: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">tot_step_select</span><span class="p">)))</span>
+<span class="c1"># ---------- up to 5 selection. Note that tot_step_select includes 0th selection</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Number of steps up to 5 selection: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">tot_step_select</span><span class="p">[:</span><span class="mi">5</span><span class="o">+</span><span class="mi">1</span><span class="p">])))</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><code class="docutils literal"><span class="pre">tot_step_select</span></code> includes 0th selection (all initial structures) unlike <code class="docutils literal"><span class="pre">id_select_hist</span></code></p>
+</div>
+</div>
+<div class="section" id="laqa-step">
+<span id="index-23"></span><h4><a class="toc-backref" href="#id32"><code class="docutils literal"><span class="pre">LAQA_step</span></code></a><a class="headerlink" href="#laqa-step" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: [20, 7], 1:[20, 20, 20, 5], ...}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are list of number of optimization steps</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">LAQA_step</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+<span class="c1"># ---------- total steps in ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Total number of optimization steps in ID 7: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">LAQA_step</span><span class="p">[</span><span class="mi">7</span><span class="p">])))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="laqa-struc">
+<span id="index-24"></span><h4><a class="toc-backref" href="#id33"><code class="docutils literal"><span class="pre">LAQA_struc</span></code></a><a class="headerlink" href="#laqa-struc" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: [list of structures], 1:[list of structures], ...}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are list of structure data in pymatgen format</div>
+<div class="line">len(LAQA_struc[7]) == len(LAQA_step[7])</div>
+<div class="line">If the optimization finished, LAQA_struc[7][-1] is equal to opt_struc_data[7]</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- latest structure of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_struc</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="laqa-energy">
+<span id="index-25"></span><h4><a class="toc-backref" href="#id34"><code class="docutils literal"><span class="pre">LAQA_energy</span></code></a><a class="headerlink" href="#laqa-energy" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: [-3.287, -3.330], 1:[-3.105, -3.194, -3.233, -3.347], ...}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are list of energy data</div>
+<div class="line">len(LAQA_energy[7]) == len(LAQA_step[7])</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- energy list of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_energy</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+<span class="c1"># ---------- latest energy of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_energy</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="laqa-bias">
+<span id="index-26"></span><h4><a class="toc-backref" href="#id35"><code class="docutils literal"><span class="pre">LAQA_bias</span></code></a><a class="headerlink" href="#laqa-bias" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: [0.059, 0.003], 1:[0.501, 0.210, 0.984, 0.758], ...}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are list of bias data</div>
+<div class="line">len(LAQA_bias[7]) == len(LAQA_step[7])</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- bias list of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_bias</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+<span class="c1"># ---------- latest bias of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_bias</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="laqa-score">
+<span id="index-27"></span><h4><a class="toc-backref" href="#id36"><code class="docutils literal"><span class="pre">LAQA_score</span></code></a><a class="headerlink" href="#laqa-score" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0: [inf, 3.346, -inf], 1:[3.606, 3.404, 4.217, -inf], ...}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are list of score data</div>
+<div class="line">len(LAQA_score[7]) == len(LAQA_step[7]) + 1</div>
+<div class="line"><code class="docutils literal"><span class="pre">LAQA_score</span></code> includes 0th score (= plus infinity)</div>
+<div class="line">If the optimization finished, -inf is appended to the score list</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># ---------- score list of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_score</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+<span class="c1"># ---------- latest score of ID 7</span>
+<span class="k">print</span><span class="p">(</span><span class="n">LAQA_score</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><code class="docutils literal"><span class="pre">LAQA_score</span></code> includes 0th score (= inf) unlike <code class="docutils literal"><span class="pre">LAQA_energy</span></code> and <code class="docutils literal"><span class="pre">LAQA_bias</span></code>, so len(LAQA_score[7]) is not equal to len(LAQA_energy[7]).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="optional-data">
+<h2><a class="toc-backref" href="#id37">Optional data</a><a class="headerlink" href="#optional-data" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="energy-step-data-pkl">
+<span id="index-28"></span><h3><a class="toc-backref" href="#id38"><code class="docutils literal"><span class="pre">energy_step_data.pkl</span></code></a><a class="headerlink" href="#energy-step-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">energy_step_data.pkl</span></code> includes energy_step_data</p>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;energy_step_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">energy_step_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="energy-step-data">
+<span id="index-29"></span><h4><a class="toc-backref" href="#id39"><code class="docutils literal"><span class="pre">energy_step_data</span></code></a><a class="headerlink" href="#energy-step-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0:  [ [array(stage1, step1), array(stage1, step2), ...], [array(stage2, step1), array(stage2, step2), ...], ... ]}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are energy-step array</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># energy_step_data[ID][stage][step]</span>
+<span class="c1"># energy_step_data[ID][0] &lt;-- stage 1</span>
+<span class="c1"># energy_step_data[ID][1] &lt;-- stage 2</span>
+<span class="c1">#</span>
+<span class="c1"># ---------- energy-step data of ID 7, stage 2, step 8</span>
+<span class="n">energy_step_data</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">8</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">stage and step start from 1 unlike ID</p>
+</div>
+</div>
+</div>
+<div class="section" id="struc-step-data-pkl">
+<span id="index-30"></span><h3><a class="toc-backref" href="#id40"><code class="docutils literal"><span class="pre">struc_step_data.pkl</span></code></a><a class="headerlink" href="#struc-step-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">struc_step_data.pkl</span></code> includes struc_step_data</p>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;struc_step_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">struc_step_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="struc-step-data">
+<span id="index-31"></span><h4><a class="toc-backref" href="#id41"><code class="docutils literal"><span class="pre">struc_step_data</span></code></a><a class="headerlink" href="#struc-step-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0:  [ [ (stage1, step1), (stage1, step2), ...], [(stage2, step1), (stage2, step2), ...], ...]}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are structure-step list</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># struc_step_data[ID][stage][step]</span>
+<span class="c1"># struc_step_data[ID][0] &lt;-- stage 1</span>
+<span class="c1"># struc_step_data[ID][1] &lt;-- stage 2</span>
+<span class="c1">#</span>
+<span class="c1"># ---------- structure-step data of ID 7, stage 2, step 8</span>
+<span class="n">sturc_step_data</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">8</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">stage and step start from 1 unlike ID</p>
+</div>
+</div>
+</div>
+<div class="section" id="fs-step-data-pkl">
+<span id="index-32"></span><h3><a class="toc-backref" href="#id42"><code class="docutils literal"><span class="pre">fs_step_data.pkl</span></code></a><a class="headerlink" href="#fs-step-data-pkl" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">fs_step_data.pkl</span></code> includes</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">force_step_data</span></code>: force-step data</li>
+<li><code class="docutils literal"><span class="pre">stress_step_data</span></code>: stress-step data</li>
+</ul>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;fs_step_data.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span>
+    <span class="n">force_step_data</span><span class="p">,</span> <span class="n">stress_step_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="force-step-data">
+<span id="index-33"></span><h4><a class="toc-backref" href="#id43"><code class="docutils literal"><span class="pre">force_step_data</span></code></a><a class="headerlink" href="#force-step-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0:  [ [array(stage1, step1), array(stage1, step2), ...], [array(stage2, step1), array(stage2, step2), ...], ... ]}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are force-step array</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># force_step_data[ID][stage][step]</span>
+<span class="c1"># force_step_data[ID][0] &lt;-- stage 1</span>
+<span class="c1"># force_step_data[ID][1] &lt;-- stage 2</span>
+<span class="c1">#</span>
+<span class="c1"># ---------- force-step data of ID 7, stage 2, step 8</span>
+<span class="n">force_step_data</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">8</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">stage and step start from 1 unlike ID</p>
+</div>
+</div>
+<div class="section" id="stress-step-data">
+<span id="index-34"></span><h4><a class="toc-backref" href="#id44"><code class="docutils literal"><span class="pre">stress_step_data</span></code></a><a class="headerlink" href="#stress-step-data" title="Permalink to this headline">¶</a></h4>
+<div class="line-block">
+<div class="line">Type: dict</div>
+<div class="line">String form: {0:  [ [array(stage1, step1), array(stage1, step2), ...], [array(stage2, step1), array(stage2, step2), ...], ... ]}</div>
+<div class="line-block">
+<div class="line">The keys are structure ID</div>
+<div class="line">The values are stress-step array</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="highlight-Python"><div class="highlight"><pre><span></span><span class="c1"># stress_step_data[ID][stage][step]</span>
+<span class="c1"># stress_step_data[ID][0] &lt;-- stage 1</span>
+<span class="c1"># stress_step_data[ID][1] &lt;-- stage 2</span>
+<span class="c1">#</span>
+<span class="c1"># ---------- stress-step data of ID 7, stage 2, step 8</span>
+<span class="n">stress_step_data</span><span class="p">[</span><span class="mi">7</span><span class="p">][</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">8</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">stage and step start from 1 unlike ID</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utility.html" class="btn btn-neutral float-right" title="Utility" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="input_file.html" class="btn btn-neutral" title="Input file: cryspy.in" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CrySPY Development Team.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'Updata: 2018/2/20',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

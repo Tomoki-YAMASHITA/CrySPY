@@ -27,6 +27,7 @@ Contents
    installation
    tutorial
    input_file
+   data_format
    utility
    tips
    faq
