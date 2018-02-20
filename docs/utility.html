@@ -226,7 +226,7 @@ kppvol:  100
 k-points:  <span class="o">[</span>2, 2, 2<span class="o">]</span>
 </pre></div>
 </div>
-<p>You can write a <code class="docutils literal"><span class="pre">KPOINTS</span></code> file with -w or &#8211;write option for VASP.</p>
+<p>You can write a <code class="docutils literal"><span class="pre">KPOINTS</span></code> file with <code class="docutils literal"><span class="pre">-w</span></code> or <code class="docutils literal"><span class="pre">--write</span></code> option for VASP.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>$ python kpt_check.py -w POSCAR 100
 $ cat KPOINTS
 pymatgen 4.7.6+ generated KPOINTS with grid <span class="nv">density</span> <span class="o">=</span> <span class="m">607</span> / atom
@@ -235,7 +235,7 @@ Monkhorst
 <span class="m">2</span> <span class="m">2</span> 2
 </pre></div>
 </div>
-<p>In checking k-point meshes for init_struc_data.pkl, first five structures in init_struc_data.pkl are automatically checked in the default setting. You can change the number of structures using -n or &#8211;nstruc option.</p>
+<p>In checking k-point meshes for init_struc_data.pkl, first five structures in init_struc_data.pkl are automatically checked in the default setting. You can change the number of structures using <code class="docutils literal"><span class="pre">-n</span></code> or <code class="docutils literal"><span class="pre">--nstruc</span></code> option.</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>$ python kpt_check.py -n <span class="m">3</span> init_struc_data.pkl 100
 
 

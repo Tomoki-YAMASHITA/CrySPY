@@ -75,7 +75,7 @@ For example, check a k-point mesh with kppvol = 100 for a POSCAR file.
    kppvol:  100
    k-points:  [2, 2, 2]
 
-You can write a ``KPOINTS`` file with -w or --write option for VASP.
+You can write a ``KPOINTS`` file with ``-w`` or ``--write`` option for VASP.
 
 .. code-block:: bash
 
@@ -86,7 +86,7 @@ You can write a ``KPOINTS`` file with -w or --write option for VASP.
    Monkhorst
    2 2 2
 
-In checking k-point meshes for init_struc_data.pkl, first five structures in init_struc_data.pkl are automatically checked in the default setting. You can change the number of structures using -n or --nstruc option.
+In checking k-point meshes for init_struc_data.pkl, first five structures in init_struc_data.pkl are automatically checked in the default setting. You can change the number of structures using ``-n`` or ``--nstruc`` option.
 
 .. code-block:: bash
 
