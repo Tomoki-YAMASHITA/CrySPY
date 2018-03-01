@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.1] - 2018-03-01
+### Fixed
+- Fixed a bug for job control in RS
+
 ## [0.6.0] - 2018-02-20
 ### Added
 - LAQA is now available

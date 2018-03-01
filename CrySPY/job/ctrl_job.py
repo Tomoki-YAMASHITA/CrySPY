@@ -331,7 +331,8 @@ class Ctrl_job(object):
             return
         # ---------- RS
         if rin.algo == 'RS':
-            next_struc_data = self.init_struc_data[self.next_id]
+            if self.next_id < rin.tot_struc:
+                next_struc_data = self.init_struc_data[self.next_id]
         # ---------- BO
         elif rin.algo == 'BO':
             # ------ pick up id to calc
