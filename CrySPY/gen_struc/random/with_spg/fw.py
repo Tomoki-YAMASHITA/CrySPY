@@ -9,7 +9,6 @@
 
 from __future__ import print_function
 
-import copy
 import json
 
 import numpy as np
@@ -56,39 +55,54 @@ def gen_wypos(cumul_nat, mindist, maxcnt):
     # ---------- generate structure
     plat = wydata['primitivevector']
     clat = wydata['conventionalvector']
-    atomnames = []
-    positions = []
-    for specie in wydata['atoms']:
-        for wydata2 in specie:    # equivalent atom loop
-            cnt = 0
-            while True:
-                tmp_atomnames, tmp_positions = gen_eq_atoms(wydata2, atomnames, positions)
-
-                # ------ Cartesian coordinate
-                #      platではなくclatを使って変換しないと上手くいかない
-                cart = []
-                for p in tmp_positions:
-                    v = np.zeros(3)
-                    for i in range(3):
-                        a = np.array(clat[i])
-                        v += p[i] * a
-                    cart.append(v)
-
-                # ------ check minimum distance
-                spgstruc = Structure(plat, tmp_atomnames, cart, coords_are_cartesian=True)
-                if check_min_dist(spgstruc, cumul_nat, mindist) is False:
-                    cnt += 1
-                    if maxcnt < cnt:
-                        return False, spgstruc    # spgstruc is dummy
-                else:
-                    atomnames, positions = tmp_atomnames, tmp_positions
-                    break
+    n_uniq, wydata_eq_atom = get_wydata_eq_atom(wydata)
+    eq_atomnames = {}
+    eq_positions = {}
+    for key, value in sorted(n_uniq.items(), key=lambda x: x[1]):    # equivalent atom loop
+        # ------ distribute eq atoms. first, special (num_uniqvar = 0), then, others
+        cnt = 0
+        while True:
+            eq_atomnames[key], eq_positions[key] = gen_eq_atoms(wydata_eq_atom[key])
+            # -- sort in original order
+            atomnames = []
+            positions = []
+            for key_a, value_a in sorted(eq_atomnames.items()):
+                atomnames += eq_atomnames[key_a]
+                positions += eq_positions[key_a]
+            # -- Cartesian coordinate; use clat (not plat)
+            cart = []
+            for p in positions:
+                v = np.zeros(3)
+                for i in range(3):
+                    a = np.array(clat[i])
+                    v += p[i] * a
+                cart.append(v)
+            # -- check minimum distance
+            spgstruc = Structure(plat, atomnames, cart, coords_are_cartesian=True)
+            if check_min_dist(spgstruc, cumul_nat, mindist) is False:
+                cnt = maxcnt + 1 if value == 0 else cnt + 1    # num_uniqvar = 0 --> value == 0
+                if maxcnt < cnt:
+                    return False, spgstruc    # spgstruc is dummy
+            else:
+                break    # break while loop --> next eq atoms
     return True, spgstruc
 
 
-def gen_eq_atoms(wydata2, atomnames, positions):
-    tmp_atomnames = copy.deepcopy(atomnames)
-    tmp_positions = copy.deepcopy(positions)
+def get_wydata_eq_atom(wydata):
+    i = 0    # count eq_atom, not atom
+    n_uniq = {}    # num_uniqvar each eq_atom
+    wydata_eq_atom = {}    # wydata each eq_atom
+    for specie in wydata['atoms']:
+        for wydata2 in specie:    # equivalent atom loop
+            n_uniq[i] = wydata2[0]['num_uniqvar']
+            wydata_eq_atom[i] = wydata2
+            i += 1
+    return n_uniq, wydata_eq_atom
+
+
+def gen_eq_atoms(wydata2):
+    eq_atomnames = []
+    eq_positions = []
     rval = np.random.random_sample(3)
     for each in wydata2:
         pos = []
@@ -118,7 +132,7 @@ def gen_eq_atoms(wydata2, atomnames, positions):
             else:
                 raise ValueError('unknown ch in conversion in gen_wycoord')
         pos = np.array(pos)
-        tmp_positions.append(pos + each['add'])
-        tmp_atomnames.append(each['name'])
+        eq_positions.append(pos + each['add'])
+        eq_atomnames.append(each['name'])
 
-    return tmp_atomnames, tmp_positions
+    return eq_atomnames, eq_positions
