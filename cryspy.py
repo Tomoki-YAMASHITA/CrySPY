@@ -132,6 +132,7 @@ for work_id, jstat in enumerate(jobs.job_stat):
         jobs.handle_done()
     elif jstat == 'skip':
         jobs.ctrl_skip()
+        jobs.ctrl_next_struc()
     elif jstat == 'else':
         raise ValueError('Wrong job_stat in ' +
                          jobs.work_path +

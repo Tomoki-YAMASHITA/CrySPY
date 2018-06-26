@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CrySPY &mdash; CrySPY Updata: 2018/2/20 documentation</title>
+  <title>CrySPY &mdash; CrySPY Updata: 2018/6/26 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2018/2/20 documentation" href="#"/>
+    <link rel="top" title="CrySPY Updata: 2018/6/26 documentation" href="#"/>
         <link rel="next" title="About" href="about.html"/> 
 
   
@@ -67,7 +67,7 @@
             
             
               <div class="version">
-                Update: 2018/2/20
+                Update: 2018/6/26
               </div>
             
           
@@ -167,21 +167,23 @@
 <h1>CrySPY<a class="headerlink" href="#cryspy" title="Permalink to this headline">¶</a></h1>
 <div class="line-block">
 <div class="line">CrySPY is a crystal structure prediction tool written in Python.</div>
-<div class="line">Source code: [github] <a class="reference external" href="https://github.com/Tomoki-YAMASHITA/CrySPY">https://github.com/Tomoki-YAMASHITA/CrySPY</a></div>
 <div class="line"><br /></div>
+<div class="line">Source code: [github] <a class="reference external" href="https://github.com/Tomoki-YAMASHITA/CrySPY">https://github.com/Tomoki-YAMASHITA/CrySPY</a></div>
+<div class="line">Download: [github] <a class="reference external" href="https://github.com/Tomoki-YAMASHITA/CrySPY/releases">https://github.com/Tomoki-YAMASHITA/CrySPY/releases</a></div>
 </div>
 <div class="section" id="news">
 <h2>News<a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h2>
 <div class="line-block">
-<div class="line">Latest version: 0.6.0</div>
-<div class="line">Our paper on CrySPY  has been published in Physical Review Materials, <a class="reference external" href="https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803">https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803</a></div>
+<div class="line">[2018 June 26] Version 0.6.2 released</div>
+<div class="line">[2018 March 1] Version 0.6.1 released</div>
+<div class="line">[2018 January 9] Our paper on CrySPY  has been published in Physical Review Materials, <a class="reference external" href="https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803">https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803</a></div>
 <div class="line"><br /></div>
 </div>
 </div>
 <div class="section" id="reference">
 <h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
 <div class="line-block">
-<div class="line">T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Materials 2, 013803 (2017).</div>
+<div class="line">T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Materials 2, 013803 (2018).</div>
 <div class="line"><a class="reference external" href="https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803">https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803</a></div>
 <div class="line"><br /></div>
 </div>
@@ -193,6 +195,7 @@
 <li class="toctree-l1"><a class="reference internal" href="about.html">About</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="about.html#crystal-structure-prediction">Crystal structure prediction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="about.html#searching-algorithms">Searching algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="about.html#interface">Interface</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
@@ -210,6 +213,7 @@
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#vasp-section">[VASP] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#qe-section">[QE] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#soiap-section">[soiap] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_file.html#lammps-section">[LAMMPS] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#bo-section">[BO] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#laqa-section">[LAQA] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#option-section">[option] section</a></li>
@@ -229,6 +233,7 @@
 <li class="toctree-l2"><a class="reference internal" href="utility.html#cryspy-analyzer-laqa-ipynb">cryspy_analyzer_LAQA.ipynb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html#pkl-data-ipynb">pkl_data.ipynb</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html#kpt-check-py">kpt_check.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utility.html#spg-check-py">spg_check.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utility.html#struc2cif-py">struc2cif.py</a></li>
 </ul>
 </li>
@@ -289,7 +294,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'Updata: 2018/2/20',
+            VERSION:'Updata: 2018/6/26',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

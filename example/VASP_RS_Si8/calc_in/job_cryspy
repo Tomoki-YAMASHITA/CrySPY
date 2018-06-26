@@ -1,0 +1,27 @@
+#!/bin/sh
+#------------------------------------
+# qM: min:12, max:864, max wtime:48
+#------------------------------------
+#QSUB2 queue qM
+#QSUB2 core 24
+#QSUB2 mpi  24
+#QSUB2 smp  1
+#QSUB2 wtime 24:00:00
+#PBS -N Si_CrySPY_ID
+cd $PBS_O_WORKDIR
+. /etc/profile.d/modules.sh
+module load Recommend/comp1
+
+
+#---------- for VASP
+EXEPATH='/path/to/vasp/'
+EXE='vasp_std'
+#EXE='vasp_gam'
+#EXE='vasp_ncl'
+
+
+mpijob -mpi 24 -smp 1 ${EXEPATH}/$EXE
+
+
+#---------- for cryspy
+sed -i -e '3 s/^.*$/done/' stat_job

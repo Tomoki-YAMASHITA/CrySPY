@@ -57,7 +57,7 @@ Jupyter Notebook to analyze pickled data in CrySPY.
 
 kpt_check.py
 ===============
-kpt_check.py can check a k-point mesh with a given ``kppvol``. In this script, ``POSCAR``, ``CONTCAR``, and ``init_struc_data.pkl`` are readable.
+``kpt_check.py`` can check a k-point mesh with a given ``kppvol``. In this script, ``POSCAR``, ``CONTCAR``, and ``init_struc_data.pkl`` are readable.
 
 For example, check a k-point mesh with kppvol = 100 for a POSCAR file.
 
@@ -132,12 +132,38 @@ In checking k-point meshes for init_struc_data.pkl, first five structures in ini
    k-points:  [4, 4, 4]
 
 
+
+.. index::
+   single: spg_check.py
+
+spg_check.py
+=================
+``spg_check.py`` can check space group information of a specified file. Structure.from_file() in pymatgen is used in this code. Supported formats include CIF, POSCAR/CONTCAR, ... etc. XXX.vasp file (POSCAR format) is also supported in this code.
+
+.. seealso::
+   `pymatgen <http://pymatgen.org/>`_
+
+.. code-block:: bash
+
+   $ python spg_check.py Al2O3.vasp
+   (u'R-3c', 167)
+
+You can change a tolerance value for checking the space group with ``-t`` or ``--tolerance`` option (default value is 0.1).
+
+.. code-block:: bash
+
+   $ python spg_check.py -t 0.001 Al2O3.vasp
+   (u'R-3c', 167)
+
+
+
+
 .. index::
    single: struc2cif.py
 
 struc2cif.py
 ===================
-struc2cif.py can covert a structure file to a cif file using pymatgen. You can specify various formats. A (input file name + '.cif') file is generated.
+``struc2cif.py`` can covert a structure file to a cif file using pymatgen. Structure.from_file() in pymatgen is used in this code. Supported formats include CIF, POSCAR/CONTCAR, ... etc. XXX.vasp file (POSCAR format) is also supported in this code. (input file name + '.cif') file is generated.
 
 .. seealso::
    `pymatgen <http://pymatgen.org/>`_
@@ -151,3 +177,6 @@ You can change a tolerance value for checking the space group with ``-t`` or ``-
 .. code-block:: bash
 
    $ python struc2cif.py -t 0.001 POSCAR
+
+
+

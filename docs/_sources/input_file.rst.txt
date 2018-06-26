@@ -69,7 +69,7 @@ Example
    :widths: auto
 
    ``algo``, "``RS`` , ``BO``, ``LAQA``",  ,  Algorithm
-   ``calc_code``, "``VASP``, ``QE``, ``soiap``",  , Caluculation code for structure optimization
+   ``calc_code``, "``VASP``, ``QE``, ``soiap``, ``LAMMPS``",  , Caluculation code for structure optimization
    ``tot_struc``, integer,  , Total number of structures
    ``natot``, integer,  , Total number of atoms in a unit cell
    ``atype``, "atomic symbol [atomic symbol ...]",  , Atom type
@@ -109,7 +109,7 @@ CrySPY is interfaced with:
 - ``VASP``: **VASP** (https://www.vasp.at)
 - ``QE``: **Q**\ uantum **E**\ spresso (http://www.quantum-espresso.org)
 - ``soiap``: **soiap** (https://github.com/nbsato/soiap)
-
+- ``LAMMPS``: **LAMMPS** (http://lammps.sandia.gov)
 
 
 
@@ -232,6 +232,24 @@ A mindist matrix should be a symmetric matrix.
    ``soiap_infile``,  ,  ,  Specify your soiap input file name
    ``soiap_outfile``,  ,  ,  Specify your soiap output file name
    ``soiap_cif``,  ,  ,  Specify your CIF-formatted soiap initial structure file name
+
+
+
+
+.. index::
+   single: [LAMMPS]
+
+[LAMMPS] section
+==================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``lammps_infile``,  ,  ,  Specify your LAMMPS input file name
+   ``lammps_potential``,  , ``None`` ,  "Specify your LAMMPS potential, if any"
+   ``lammps_outfile``,  ,  ,  Specify your LAMMPS output file name
+   ``lammps_data``,  ,  ,  Specify your LAMMPS data file name
 
 
 

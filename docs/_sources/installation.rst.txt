@@ -24,7 +24,7 @@ Python
 
 Structure optimizer
 --------------------
-- `VASP <https://www.vasp.at/>`_ or `Quantum ESPRESSO <http://www.quantum-espresso.org/>`_ or `soiap <https://github.com/nbsato/soiap>`_
+- `VASP <https://www.vasp.at>`_, `Quantum ESPRESSO <http://www.quantum-espresso.org>`_, `soiap <https://github.com/nbsato/soiap>`_, or `LAMMPS <http://lammps.sandia.gov>`_
 
 
 
@@ -49,9 +49,9 @@ Git
 
 You can use an arbitarary directory name. Here just use ``CrySPY_root``.
 
-Zip file
----------
-You can download the source as a zip file from github: https://github.com/Tomoki-YAMASHITA/CrySPY
+Zip or tar.gz file
+-------------------
+You can download the source as a zip or tar.gz file from github: https://github.com/Tomoki-YAMASHITA/CrySPY/releases
 
 
 Setup
@@ -61,6 +61,7 @@ You can put the source code in an arbitrary directory. Here, let's put the sourc
 Directory tree in ``~/CrySPY_root/``::
 
     CrySPY_root
+    ├── CHANGELOG.md
     ├── CrySPY
     │   ├── BO
     │   ├── IO
@@ -72,11 +73,11 @@ Directory tree in ``~/CrySPY_root/``::
     │   ├── interface
     │   ├── job
     │   └── start
+    ├── LICENSE
     ├── README.md
     ├── cryspy.py
     ├── docs
     ├── example
-    ├── tutorial
     └── utility
 
 

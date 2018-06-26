@@ -1,0 +1,31 @@
+ &control
+    title = 'Si8'
+    calculation = 'vc-relax'
+    nstep = 100
+    restart_mode = 'from_scratch',
+    wf_collect = .true.
+    pseudo_dir = '/path/to/PSEUDOPOTENTIALS/'
+    outdir='./out.d/'
+ /
+
+ &system
+    ibrav = 0
+    nat = 8
+    ntyp = 1
+    ecutwfc = 48.0
+    occupations = 'smearing'
+    degauss = 0.009
+    smearing = 'mp'
+ /
+
+ &electrons
+ /
+
+ &ions
+ /
+
+ &cell
+ /
+
+ATOMIC_SPECIES
+  Si  28.086  Si.pbe-n-kjpaw_psl.1.0.0.UPF

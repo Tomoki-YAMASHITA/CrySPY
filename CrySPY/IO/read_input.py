@@ -22,13 +22,13 @@ def readin():
     # ------ read intput variables
     algo = config.get('basic', 'algo')
     if algo not in ['RS', 'BO', 'LAQA']:
-        raise ValueError('algo should be RS, BO, or LAQA')
+        raise NotImplementedError('algo should be RS, BO, or LAQA')
     calc_code = config.get('basic', 'calc_code')
     if algo == 'LAQA':
         if not calc_code == 'VASP':
-            raise ValueError('LAQA: only VASP for now')
-    if calc_code not in ['VASP', 'QE', 'soiap']:
-        raise ValueError('calc_code should be VASP, QE, or soiap for now')
+            raise NotImplementedError('LAQA: only VASP for now')
+    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS']:
+        raise NotImplementedError('calc_code should be VASP, QE, soiap, or LAMMPS')
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
@@ -83,7 +83,7 @@ def readin():
         if dscrpt == 'FP':
             pass
         else:
-            raise ValueError('Now FP only')
+            raise NotImplementedError('Now FP only')
         # -- parameters for f-fingerprint (optional)
         try:
             fp_rmin = config.getfloat('BO', 'fp_rmin')
@@ -188,8 +188,23 @@ def readin():
         soiap_cif = config.get('soiap', 'soiap_cif')
         kpt_flag = False
         force_gamma = False
+
+    # ---------- lammps
+    elif calc_code == 'LAMMPS':
+        # ------ global declaration
+        global lammps_infile, lammps_outfile, lammps_potential, lammps_data
+        # ------ read intput variables
+        lammps_infile = config.get('LAMMPS', 'lammps_infile')
+        lammps_outfile = config.get('LAMMPS', 'lammps_outfile')
+        try:
+            lammps_potential = config.get('LAMMPS', 'lammps_potential')
+        except:
+            lammps_potential = None
+        lammps_data = config.get('LAMMPS', 'lammps_data')
+        kpt_flag = False
+        force_gamma = False
     else:
-        raise ValueError('calc_code should be VASP, QE, or soiap for now')
+        raise NotImplementedError('calc_code should be VASP, QE, soiap, or LAMMPS')
 
     # ---------- option
     # ------ global declaration
@@ -233,21 +248,21 @@ def readin():
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
         # -- VASP only for now
-        if calc_code in ['QE', 'soiap']:
+        if calc_code in ['QE', 'soiap', 'LAMMPS']:
             energy_step_flag = False
     except:
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
         # -- VASP only for now
-        if calc_code in ['QE', 'soiap']:
+        if calc_code in ['QE', 'soiap', 'LAMMPS']:
             struc_step_flag = False
     except:
         struc_step_flag = False
     try:
         fs_step_flag = config.getboolean('option', 'fs_step_flag')
         # -- VASP only for now
-        if calc_code in ['QE', 'soiap']:
+        if calc_code in ['QE', 'soiap', 'LAMMPS']:
             fs_step_flag = False
     except:
         fs_step_flag = False
@@ -341,6 +356,14 @@ def writeout():
             fout.write('soiap_outfile = {}\n'.format(soiap_outfile))
             fout.write('soiap_cif = {}\n'.format(soiap_cif))
 
+        # ------ lammps
+        if calc_code == 'LAMMPS':
+            fout.write('# ------ lammps section\n')
+            fout.write('lammps_infile = {}\n'.format(lammps_infile))
+            fout.write('lammps_outfile = {}\n'.format(lammps_outfile))
+            fout.write('lammps_potential = {}\n'.format(lammps_potential))
+            fout.write('lammps_data = {}\n'.format(lammps_data))
+
         # ------ option
         fout.write('# ------ option section\n')
         fout.write('maxcnt = {}\n'.format(maxcnt))
@@ -414,6 +437,13 @@ def save_stat(stat):
         stat.set('input', 'soiap_infile', '{}'.format(soiap_infile))
         stat.set('input', 'soiap_outfile', '{}'.format(soiap_outfile))
         stat.set('input', 'soiap_cif', '{}'.format(soiap_cif))
+
+    # ---------- lammps
+    if calc_code == 'LAMMPS':
+        stat.set('input', 'lammps_infile', '{}'.format(lammps_infile))
+        stat.set('input', 'lammps_outfile', '{}'.format(lammps_outfile))
+        stat.set('input', 'lammps_potential', '{}'.format(lammps_potential))
+        stat.set('input', 'lammps_data', '{}'.format(lammps_data))
 
     # ---------- option
     stat.set('input', 'maxcnt', '{}'.format(maxcnt))
@@ -498,6 +528,15 @@ def diffinstat(stat):
         old_soiap_infile = stat.get('input', 'soiap_infile')
         old_soiap_outfile = stat.get('input', 'soiap_outfile')
         old_soiap_cif = stat.get('input', 'soiap_cif')
+
+    # ------ lammps
+    if old_calc_code == 'LAMMPS':
+        old_lammps_infile = stat.get('input', 'lammps_infile')
+        old_lammps_outfile = stat.get('input', 'lammps_outfile')
+        old_lammps_potential = stat.get('input', 'lammps_potential')
+        if old_lammps_potential == 'None':    # 'None' is just character here
+            old_lammps_potential = None
+        old_lammps_data = stat.get('input', 'lammps_data')
 
     # ------ option
     old_maxcnt = stat.getint('input', 'maxcnt')
@@ -679,6 +718,17 @@ def diffinstat(stat):
             raise ValueError('Do not change soiap_outfile')
         if not old_soiap_cif == soiap_cif:
             raise ValueError('Do not change soiap_cif')
+
+    # ------ lammps
+    if calc_code == 'LAMMPS':
+        if not old_lammps_infile == lammps_infile:
+            raise ValueError('Do not change lammps_infile')
+        if not old_lammps_outfile == lammps_outfile:
+            raise ValueError('Do not change lammps_outfile')
+        if not old_lammps_potential == lammps_potential:
+            raise ValueError('Do not change lammps_potential')
+        if not old_lammps_data == lammps_data:
+            raise ValueError('Do not change lammps_data')
 
     # ------ option
     if not old_maxcnt == maxcnt:

@@ -105,7 +105,8 @@ class Ctrl_job(object):
                                                self.work_path)
         # ---------- skip
         if skip_flag:
-            self.ctrl_skip()
+            self.ctrl_skip(current_id)
+            self.ctrl_next_struc()
             return
         # ---------- prepare jobfile
         self.prepare_jobfile(current_id)
@@ -360,18 +361,28 @@ class Ctrl_job(object):
             raise ValueError('Error, algo')
         # ---------- common part
         if self.next_id < rin.tot_struc:
-            print('work{0:04d}: submit job, structure ID {1} Stage 1'.format(
-                  self.work_id, self.next_id))
-            # ------ prepare input files for structure optimization
-            if rin.kpt_flag:
-                self.kpt_data = select_code.next_struc(next_struc_data, self.next_id,
-                                                       self.work_path, self.kpt_data)
+            # ------ in case there is no initial strucure data
+            if next_struc_data is None:
+                print('work{0:04d}: structure ID {1} is None'.format(
+                      self.work_id, self.next_id))
+                self.ctrl_skip(self.next_id)
+                self.update_status()
+            # ------ right initial structure data
             else:
-                select_code.next_struc(next_struc_data, self.next_id, self.work_path)
-            # ------ prepare jobfile
-            self.prepare_jobfile(self.next_id)
-            # ------ submit
-            self.submit_next_struc()
+                # -- prepare input files for structure optimization
+                if rin.kpt_flag:
+                    self.kpt_data = select_code.next_struc(next_struc_data, self.next_id,
+                                                           self.work_path, self.kpt_data)
+                else:
+                    select_code.next_struc(next_struc_data, self.next_id, self.work_path)
+                # -- prepare jobfile
+                self.prepare_jobfile(self.next_id)
+                # -- submit
+                print('work{0:04d}: submit job, structure ID {1} Stage 1'.format(
+                      self.work_id, self.next_id))
+                self.submit_next_struc()
+                # -- update status
+                self.update_status()
         else:
             # ------ clean status in cryspy.stat
             self.stat.set('status', 'work{:04d}'.format(self.work_id), '')
@@ -389,6 +400,8 @@ class Ctrl_job(object):
         with open('sublog', 'w') as logf:
             subprocess.Popen([rin.jobcmd, rin.jobfile], stdout=logf, stderr=logf)
         os.chdir('../')    # go back to csp root dir
+
+    def update_status(self):
         # ---------- update status
         self.stat.set('status', 'work{:04d}'.format(self.work_id),
                       'ID {0:>8}, Stage 1'.format(self.next_id))
@@ -412,20 +425,28 @@ class Ctrl_job(object):
             else:
                 self.stat.set('status', 'id_to_calc', '{}'.format(' '.join(str(a) for a in self.id_to_calc)))
 
-    def ctrl_skip(self):
-        current_id = self.id_stat[self.work_id]
+    def ctrl_skip(self, current_id='auto'):
+        if current_id == 'auto':
+            current_id = self.id_stat[self.work_id]
         # ---------- log and out
         with open('cryspy.out', 'a') as fout:
             fout.write('work{0:04d}: Skip Structure ID {1}\n'.format(self.work_id, current_id))
         print('work{0:04d}: Skip Structure ID{1}'.format(self.work_id, current_id))
         # ---------- get initial spg info
-        spg_sym, spg_num = self.init_struc_data[current_id].get_space_group_info(symprec=rin.symtoleI)
+        if self.init_struc_data[current_id] is None:
+            spg_sym = None
+            spg_num = 0
+        else:
+            spg_sym, spg_num = self.init_struc_data[current_id].get_space_group_info(symprec=rin.symtoleI)
         # ---------- 'skip' for rslt
         spg_num_opt = 0
         spg_sym_opt = None
         energy = np.nan
         magmom = np.nan
         check_opt = 'skip'
+        # ---------- register opt_struc
+        self.opt_struc_data[current_id] = None
+        pkl_data.save_opt_struc(self.opt_struc_data)
         # ---------- RS
         if rin.algo == 'RS':
             # ------ save rslt
@@ -478,8 +499,6 @@ class Ctrl_job(object):
             out_LAQA_bias(self.LAQA_bias)
         # ---------- clean files
         select_code.clean_calc_files(self.work_path)
-        # ---------- next struc
-        self.ctrl_next_struc()
 
     def prepare_jobfile(self, current_id):
         if not os.path.isfile('./calc_in/' + rin.jobfile):

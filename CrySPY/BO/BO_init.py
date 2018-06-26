@@ -16,6 +16,10 @@ def initialize(stat, init_struc_data, rslt_data):
     with open('cryspy.out', 'a') as fout:
         fout.write('\n# ---------- Initilalize Bayesian optimization\n')
 
+    # ---------- check init_struc_data
+    if None in init_struc_data.values():
+        raise ValueError('init_struc_data includes None')
+
     # ---------- initialize
     gen = 1
     id_done = np.array([], dtype=int)

@@ -1,0 +1,18 @@
+SYSTEM = Si8
+PREC = High
+Algo = Fast
+LREAL = Auto
+NSW = 200
+
+!!!LWAVE = .FALSE.
+!!!!LCHARG = .FALSE.
+
+ISMEAR = 0
+SIGMA = 0.15
+
+IBRION = 1
+!!!!POTIM = 0.3
+ISIF = 3
+
+EDIFF = 1e-5
+EDIFFG = -0.01

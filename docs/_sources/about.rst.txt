@@ -44,3 +44,15 @@ Evolutionary Algorithm (EA)
 ----------------------------
 
 
+
+
+
+Interface
+=============
+
+CrySPY is interfaced with several structure optimizers:
+
+- VASP (https://www.vasp.at)
+- Quantum Espresso (http://www.quantum-espresso.org)
+- soiap (https://github.com/nbsato/soiap)
+- LAMMPS (http://lammps.sandia.gov)

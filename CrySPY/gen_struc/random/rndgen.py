@@ -138,7 +138,7 @@ def cumulate_nat(nat):
     atype = ['Sr', 'Ti', 'O']
     nat = [1, 1, 3]
 
-    cumul_nat = [1, 2, 5] <-- [1, (1+1), (1+2+5)]
+    cumul_nat = [1, 2, 5] <-- [1, (1+1), (1+1+3)]
     '''
     cumul_nat = []
     for n in nat:

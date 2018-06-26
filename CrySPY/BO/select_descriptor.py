@@ -26,7 +26,7 @@ def calc_X(init_struc_data):
                                      rin.fp_rmin, rin.fp_rmax,
                                      rin.fp_npoints, rin.fp_sigma)
     else:
-        raise ValueError('Now FP only')
+        raise NotImplementedError('Now FP only')
     return descriptors
 
 
@@ -37,7 +37,7 @@ def append_X(init_struc_data, prev_nstruc, non_error_id, descriptors):
         # ---------- check cal_fingerprint executable file
         fppath = os.path.dirname(os.path.abspath(__file__)) + '/../f-fingerprint/cal_fingerprint'
         if not os.path.isfile(fppath):
-            raise IOError('There is no cal_fingerprint program in CrySY/f-fingerprint/cal_fingerprint')
+            raise IOError('There is no cal_fingerprint program in CrySPY/f-fingerprint/cal_fingerprint')
 
         # ---------- append descriptor
         strucs_list = [init_struc_data[i] for i in range(prev_nstruc, len(init_struc_data))]    # dict --> list
@@ -47,5 +47,5 @@ def append_X(init_struc_data, prev_nstruc, non_error_id, descriptors):
         descriptors = np.vstack((descriptors, tmp_dscrpt))
         non_error_id = np.r_[non_error_id, np.arange(prev_nstruc, len(init_struc_data))]
     else:
-        raise ValueError('Now FP only')
+        raise NotImplementedError('Now FP only')
     return non_error_id, descriptors
