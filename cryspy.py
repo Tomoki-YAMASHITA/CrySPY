@@ -17,28 +17,47 @@ from CrySPY.start import cryspy_init, cryspy_restart
 # ---------- initialize
 if not os.path.isfile('cryspy.stat'):
     # ------ cryspy_init
-    stat, init_struc_data, opt_struc_data, rslt_data = cryspy_init.initialize()
+    stat, init_struc_data, rslt_data = cryspy_init.initialize()
     if rin.algo == 'RS':
-        RS_id_data = cryspy_init.RS_init(stat)
+        cryspy_init.RS_init(stat)
     elif rin.algo == 'BO':
-        stat, rslt_data, BO_id_data, BO_data = BO_init.initialize(stat, init_struc_data, rslt_data)
+        BO_init.initialize(stat, init_struc_data, rslt_data)
     elif rin.algo == 'LAQA':
-        stat, LAQA_id_data, LAQA_data = LAQA_init.initialize(stat, init_struc_data)
+        LAQA_init.initialize(stat, init_struc_data)
     if rin.kpt_flag:
-        kpt_data = cryspy_init.kpt_init()
+        cryspy_init.kpt_init()
     if rin.energy_step_flag:
-        energy_step_data = cryspy_init.energy_step_init()
+        cryspy_init.energy_step_init()
     if rin.struc_step_flag:
-        struc_step_data = cryspy_init.struc_step_init()
+        cryspy_init.struc_step_init()
     if rin.fs_step_flag:
-        fs_step_data = cryspy_init.fs_step_init()
+        cryspy_init.fs_step_init()
+    raise SystemExit()
 
 # ---------- restart
 else:
     # ------ cpsy_restart
     stat = cryspy_restart.restart()
-    # ------ load data
+    # ------ load init_struc_data for appending structures
     init_struc_data = pkl_data.load_init_struc()
+    # ------ append structures
+    prev_nstruc = len(init_struc_data)
+    if prev_nstruc < rin.tot_struc:
+        init_struc_data = cryspy_restart.append_struc(init_struc_data)
+        # -- BO
+        if rin.algo == 'BO':
+            BO_id_data = pkl_data.load_BO_id()
+            BO_data = pkl_data.load_BO_data()
+            BO_restart.restart(init_struc_data, BO_id_data, BO_data, prev_nstruc)
+        # -- LAQA
+        if rin.algo == 'LAQA':
+            LAQA_id_data = pkl_data.load_LAQA_id()
+            LAQA_data = pkl_data.load_LAQA_data()
+            LAQA_restart.restart(stat, LAQA_id_data, LAQA_data, prev_nstruc)
+        raise SystemExit()
+    elif rin.tot_struc < prev_nstruc:
+        raise ValueError('tot_struc < len(init_struc_data)')
+    # ------ load data
     opt_struc_data = pkl_data.load_opt_struc()
     rslt_data = pkl_data.load_rslt()
     if rin.algo == 'RS':
@@ -57,20 +76,7 @@ else:
         struc_step_data = pkl_data.load_struc_step()
     if rin.fs_step_flag:
         fs_step_data = pkl_data.load_fs_step()
-    # ------ append structures
-    prev_nstruc = len(init_struc_data)
-    if prev_nstruc < rin.tot_struc:
-        init_struc_data = cryspy_restart.append_struc(init_struc_data)
-    elif rin.tot_struc < prev_nstruc:
-        raise ValueError('tot_struc < len(init_struc_data)')
-    # -- BO
-    if rin.algo == 'BO':
-        if prev_nstruc < len(init_struc_data):
-            BO_id_data, BO_data = BO_restart.restart(init_struc_data, BO_id_data, BO_data, prev_nstruc)
-    # -- LAQA
-    if rin.algo == 'LAQA':
-        if prev_nstruc < len(init_struc_data):
-            stat, LAQA_id_data, LAQA_data = LAQA_restart.restart(stat, LAQA_id_data, LAQA_data, prev_nstruc)
+
 #
 #
 # ---------- check point 1

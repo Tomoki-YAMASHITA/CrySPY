@@ -59,8 +59,6 @@ def initialize(stat, init_struc_data, rslt_data):
         fout.write('Generation: {}\n'.format(gen))
         fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in id_to_calc)))
 
-    return stat, rslt_data, BO_id_data, BO_data
-
 
 def random_select(length, n):
     rnd_perm = np.random.permutation(xrange(length))

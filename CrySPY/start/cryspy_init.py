@@ -90,7 +90,7 @@ def initialize():
     pkl_data.save_rslt(rslt_data)
 
     # ---------- return
-    return stat, init_struc_data, opt_struc_data, rslt_data
+    return stat, init_struc_data, rslt_data
 
 
 def RS_init(stat):
@@ -102,25 +102,20 @@ def RS_init(stat):
     RS_id_data = (next_id, id_done)
     pkl_data.save_RS_id(RS_id_data)
 
-    return RS_id_data
-
 
 def kpt_init():
     kpt_data = {}
     pkl_data.save_kpt(kpt_data)
-    return kpt_data
 
 
 def energy_step_init():
     energy_step_data = {}
     pkl_data.save_energy_step(energy_step_data)
-    return energy_step_data
 
 
 def struc_step_init():
     struc_step_data = {}
     pkl_data.save_struc_step(struc_step_data)
-    return struc_step_data
 
 
 def fs_step_init():
@@ -128,4 +123,3 @@ def fs_step_init():
     stress_step_data = {}
     fs_step_data = (force_step_data, stress_step_data)
     pkl_data.save_fs_step(fs_step_data)
-    return force_step_data, stress_step_data

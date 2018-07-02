@@ -1,0 +1,8 @@
+#!/bin/bash
+# "in.si" --> "lammps_infile = in.si" in cryspy.in
+# "out.si" --> "lammps_outfile = out.si" in cryspy.in
+lammps_root=/path/to/lammps
+$lammps_root/src/lmp_serial -in ./in.si -log ./out.si -screen none
+
+sed -i -e '3 s/^.*$/done/' stat_job
+

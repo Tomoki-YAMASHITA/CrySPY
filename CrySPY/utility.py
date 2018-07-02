@@ -7,7 +7,7 @@ import os
 
 
 def get_version():
-    return 'CrySPY 0.6.2'
+    return 'CrySPY 0.6.3'
 
 
 def get_date():

@@ -18,5 +18,3 @@ def restart(init_struc_data, BO_id_data, BO_data, prev_nstruc):
     pkl_data.save_BO_id(BO_id_data)
     BO_data = (descriptors, targets)
     pkl_data.save_BO_data(BO_data)
-
-    return BO_id_data, BO_data

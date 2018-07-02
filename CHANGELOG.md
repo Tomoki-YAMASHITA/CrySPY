@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.3] - 2018-07-02
+### Added
+- Added LAMMPS example
+### Changed
+- In generating structures (including appending structures), CrySPY always stops before submitting jobs.
+
 ## [0.6.2] - 2018-06-26
 ### Added
 - LAMMPS can be used in CrySPY

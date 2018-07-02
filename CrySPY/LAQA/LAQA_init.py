@@ -59,6 +59,3 @@ def initialize(stat, init_struc_data):
         print('selected_id: {}'.format(' '.join(str(a) for a in id_to_calc)))
         with open('cryspy.out', 'a') as fout:
             fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in id_to_calc)))
-
-    # ---------- return
-    return stat, LAQA_id_data, LAQA_data

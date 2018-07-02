@@ -35,6 +35,3 @@ def restart(stat, LAQA_id_data, LAQA_data, prev_nstruc):
     pkl_data.save_LAQA_id(LAQA_id_data)
     LAQA_data = (tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
     pkl_data.save_LAQA_data(LAQA_data)
-
-    # ---------- return
-    return stat, LAQA_id_data, LAQA_data
