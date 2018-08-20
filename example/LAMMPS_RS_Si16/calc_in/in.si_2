@@ -23,7 +23,7 @@ thermo_style  custom step etotal fmax vol press
 dump  struc  all atom 1 log.struc
 
 # optimize cell
-#fix 1 all box/relax  aniso 0.0 vmax 0.005
+fix 1 all box/relax  aniso 0.0 vmax 0.005
 
 # Minimize
 min_style  cg

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.4] - 2018-08-20
+### Fixed
+- Fixed a bug for spgnum in cryspy.in/read_input.py
+
 ## [0.6.3] - 2018-07-02
 ### Added
 - Added LAMMPS example

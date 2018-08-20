@@ -16,10 +16,10 @@ def next_stage_lammps(stage, work_path):
 
     # ---------- prepare lammps files
     if rin.lammps_potential is None:
-        lammps_files = [rin.lammps_infile, rin.lammps_outfile, rin.lammps_data]
+        lammps_files = [rin.lammps_infile, rin.lammps_outfile, rin.lammps_data, 'log.struc']
     else:
         lammps_files = [rin.lammps_infile, rin.lammps_outfile,
-                        rin.lammps_potential, rin.lammps_data]
+                        rin.lammps_potential, rin.lammps_data, 'log.struc']
     for f in lammps_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)

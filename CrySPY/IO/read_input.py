@@ -73,11 +73,11 @@ def readin():
             raise ValueError('score should be TS, EI, or PI, check score')
         try:
             num_rand_basis = config.getint('BO', 'num_rand_basis')
-        except:
+        except ConfigParser.NoOptionError:
             num_rand_basis = 0
         try:
             cdev = config.getfloat('BO', 'cdev')
-        except:
+        except ConfigParser.NoOptionError:
             cdev = 0.001
         dscrpt = config.get('BO', 'dscrpt')
         if dscrpt == 'FP':
@@ -87,11 +87,11 @@ def readin():
         # -- parameters for f-fingerprint (optional)
         try:
             fp_rmin = config.getfloat('BO', 'fp_rmin')
-        except:
+        except ConfigParser.NoOptionError:
             fp_rmin = 0.5
         try:
             fp_rmax = config.getfloat('BO', 'fp_rmax')
-        except:
+        except ConfigParser.NoOptionError:
             fp_rmax = 5.0
         if fp_rmin < 0.0:
             raise ValueError('fp_rmin < 0, check fp_rmin')
@@ -99,13 +99,13 @@ def readin():
             raise ValueError('fp_rmax < fp_rmin, check fp_rmin and fp_rmax')
         try:
             fp_npoints = config.getint('BO', 'fp_npoints')
-        except:
+        except ConfigParser.NoOptionError:
             fp_npoints = 50
         if fp_npoints <= 0:
             raise ValueError('fp_npoints <= 0, check fp_npoints')
         try:
             fp_sigma = config.getfloat('BO', 'fp_sigma')
-        except:
+        except ConfigParser.NoOptionError:
             fp_sigma = 0.2
         if fp_sigma < 0:
             raise ValueError('fp_sigma < 0, check fp_sigma')
@@ -118,7 +118,7 @@ def readin():
         nselect = config.getint('LAQA', 'nselect')
         try:
             weight_LAQA = config.getfloat('LAQA', 'weight_LAQA')
-        except:
+        except ConfigParser.NoOptionError:
             weight_LAQA = 1.0
 
     # ---------- lattice
@@ -158,7 +158,7 @@ def readin():
             raise ValueError('not len(kppvol) == nstage, check kppvol and nstage')
         try:
             force_gamma = config.getboolean('VASP', 'force_gamma')
-        except:
+        except ConfigParser.NoOptionError:
             force_gamma = False
 
     # ---------- QE
@@ -175,7 +175,7 @@ def readin():
             raise ValueError('not len(kppvol) == nstage, check kppvol and nstage')
         try:
             force_gamma = config.getboolean('QE', 'force_gamma')
-        except:
+        except ConfigParser.NoOptionError:
             force_gamma = False
 
     # ---------- soiap
@@ -198,7 +198,7 @@ def readin():
         lammps_outfile = config.get('LAMMPS', 'lammps_outfile')
         try:
             lammps_potential = config.get('LAMMPS', 'lammps_potential')
-        except:
+        except ConfigParser.NoOptionError:
             lammps_potential = None
         lammps_data = config.get('LAMMPS', 'lammps_data')
         kpt_flag = False
@@ -215,56 +215,58 @@ def readin():
     # ------ read intput variables
     try:
         maxcnt = config.getint('option', 'maxcnt')
-    except:
+    except ConfigParser.NoOptionError:
         maxcnt = 200
     try:
         stop_chkpt = config.getint('option', 'stop_chkpt')
-    except:
+    except ConfigParser.NoOptionError:
         stop_chkpt = 0
     try:
         symtoleI = config.getfloat('option', 'symtoleI')
-    except:
+    except ConfigParser.NoOptionError:
         symtoleI = 0.001
     try:
         symtoleR = config.getfloat('option', 'symtoleR')
-    except:
+    except ConfigParser.NoOptionError:
         symtoleR = 0.1
     try:
         spgnum = config.get('option', 'spgnum')
-        if spgnum == '0':
-            spgnum = 0
-        else:
-            spgnum = spglist(spgnum)
-    except:
+    except ConfigParser.NoOptionError:
         spgnum = 'all'
+    if spgnum == '0':
+        spgnum = 0
+    elif spgnum == 'all':
+        pass
+    else:
+        spgnum = spglist(spgnum)
     try:
         load_struc_flag = config.getboolean('option', 'load_struc_flag')
-    except:
+    except ConfigParser.NoOptionError:
         load_struc_flag = False
     try:
         stop_next_struc = config.getboolean('option', 'stop_next_struc')
-    except:
+    except ConfigParser.NoOptionError:
         stop_next_struc = False
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
         # -- VASP only for now
         if calc_code in ['QE', 'soiap', 'LAMMPS']:
             energy_step_flag = False
-    except:
+    except ConfigParser.NoOptionError:
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
         # -- VASP only for now
         if calc_code in ['QE', 'soiap', 'LAMMPS']:
             struc_step_flag = False
-    except:
+    except ConfigParser.NoOptionError:
         struc_step_flag = False
     try:
         fs_step_flag = config.getboolean('option', 'fs_step_flag')
         # -- VASP only for now
         if calc_code in ['QE', 'soiap', 'LAMMPS']:
             fs_step_flag = False
-    except:
+    except ConfigParser.NoOptionError:
         fs_step_flag = False
     if algo == 'LAQA':
         fs_step_flag = True
