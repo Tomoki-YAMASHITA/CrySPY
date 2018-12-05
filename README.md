@@ -35,6 +35,9 @@ At least either one of
 ## Document
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY "CrySPY documment")
 
+## Tutorial (written in Japanese)
+[チュートリアルと解説](https://tomoki-yamashita.github.io/cryspy/tutorial/outline.html "tutorial")
+
 ## Reference
 ### Bayesian optimization
 T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2017).  
