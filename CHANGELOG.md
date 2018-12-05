@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0] - 2018-12-05
+### Added
+- Evolutionary algorithm is now available
+- Added lock_cryspy system
+### Fixed
+- Fixed minor bugs
+
 ## [0.6.4] - 2018-08-20
 ### Fixed
 - Fixed a bug for spgnum in cryspy.in/read_input.py

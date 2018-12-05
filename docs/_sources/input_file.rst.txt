@@ -17,21 +17,25 @@ CrySPY uses the `ConfigParser <https://docs.python.org/2.7/library/configparser.
 ``cryspy.in``  consists of sections, led by a ``[section]`` header and followed by ``name = value`` or ``name : value`` entries.
 Section names and values are case sensitive, but names are not.
 Lines beginning with ``#`` or ``;`` are ignored and may be used to provide comments.
-Accepted Boolean values are ``1``, ``yes``, ``true``, and ``on``, which cause this method to return ``True``, and ``0``, ``no``, ``false``, and ``off``, which cause it to return False. These string values for Boolean are checked in a case-insensitive manner.
+Accepted bool values are ``1``, ``yes``, ``true``, and ``on``, which cause this method to return ``True``, and ``0``, ``no``, ``false``, and ``off``, which cause it to return False. These string values for bool are checked in a case-insensitive manner.
 Some values are given in a space-separated manner.
 
 .. seealso:: `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_
 .. attention::
    | section name: case sensitive
    | name: case insensitive
-   | value: case sensitive except for Boolean
+   | value: case sensitive except for bool
 
 
 
 
 Example
 =================
-``cryspy.in`` for YCo\ `5`:sub: by random search::
+
+Random Search
+----------------------------
+
+``cryspy.in`` of YCo\ `5`:sub: by Random Search::
 
    [basic]
    algo = RS
@@ -41,7 +45,7 @@ Example
    atype = Y Co
    nat = 1  5
    nstage = 4
-   njob = 5
+   njob = 2
    jobcmd = qsub
    jobfile = job_cryspy
 
@@ -53,9 +57,116 @@ Example
    mindist_2 = 1.8 1.5
 
    [VASP]
-   kppvol = 40 100 100 100
+   kppvol = 40 60 100 100
 
 
+
+Bayesian Optimization
+-----------------------------------
+
+``cryspy.in`` of YCo\ `5`:sub: by Bayesian Optimization::
+
+   [basic]
+   algo = BO
+   calc_code = VASP
+   tot_struc = 10
+   natot = 6
+   atype = Y Co
+   nat = 1  5
+   nstage = 4
+   njob = 2
+   jobcmd = qsub
+   jobfile = job_cryspy
+
+   [lattice]
+   minlen = 4
+   maxlen = 8
+   dangle = 20
+   mindist_1 = 2.0 1.8
+   mindist_2 = 1.8 1.5
+
+   [VASP]
+   kppvol = 40 60 100 100
+
+   [BO]
+   interval = 2
+   dscrpt = FP
+   score = TS
+   fp_rmin = 0.5
+   fp_rmax = 5.0
+   fp_npoints = 50
+   fp_sigma = 0.2
+
+
+
+Look Ahead based on Quadratic Approximation
+-----------------------------------------------------------------------
+
+``cryspy.in`` of YCo\ `5`:sub: by Look Ahead based on Quadratic Approximation::
+
+   [basic]
+   algo = LAQA
+   calc_code = VASP
+   tot_struc = 10
+   natot = 6
+   atype = Y Co
+   nat = 1  5
+   nstage = 4
+   njob = 2
+   jobcmd = qsub
+   jobfile = job_cryspy
+
+   [lattice]
+   minlen = 4
+   maxlen = 8
+   dangle = 20
+   mindist_1 = 2.0 1.8
+   mindist_2 = 1.8 1.5
+
+   [VASP]
+   kppvol = 40 60 100 100
+
+   [LAQA]
+   nselect = 2
+
+
+
+Evolutionary Algorithm
+-------------------------------------
+
+``cryspy.in`` of YCo\ `5`:sub: by Evolutionary Algorithm::
+
+   [basic]
+   algo = EA
+   calc_code = VASP
+   tot_struc = 10
+   natot = 6
+   atype = Y Co
+   nat = 1  5
+   nstage = 4
+   njob = 2
+   jobcmd = qsub
+   jobfile = job_cryspy
+
+   [lattice]
+   minlen = 4
+   maxlen = 8
+   dangle = 20
+   mindist_1 = 2.0 1.8
+   mindist_2 = 1.8 1.5
+
+   [VASP]
+   kppvol = 40 60 100 100
+
+   [EA]
+   n_pop = 10
+   n_crsov = 5
+   n_perm = 2
+   n_strain = 2
+   n_rand = 1
+   n_elite = 2
+   slct_func = TNM
+   t_size = 2
 
 
 .. index::
@@ -68,16 +179,16 @@ Example
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``algo``, "``RS`` , ``BO``, ``LAQA``",  ,  Algorithm
+   ``algo``, "``RS`` , ``BO``, ``LAQA``, ``EA``",  ,  Algorithm
    ``calc_code``, "``VASP``, ``QE``, ``soiap``, ``LAMMPS``",  , Caluculation code for structure optimization
-   ``tot_struc``, integer,  , Total number of structures
-   ``natot``, integer,  , Total number of atoms in a unit cell
+   ``tot_struc``, int,  , Total number of structures
+   ``natot``, int,  , Total number of atoms in a unit cell
    ``atype``, "atomic symbol [atomic symbol ...]",  , Atom type
-   ``nat``, "integer [integer ...]",  , "Number of atoms in atom type1 [type2 ...]"
-   ``nstage``, integer,  , Number of calculation stages
-   ``njob``, integer,  , Number simultaneously submitted jobs
-   ``jobcmd``,  ,  , "Specify a command to submit jobs, such as qsub"
-   ``jobfile``,  ,  , "Specify a jobfile to submit jobs for VASP, QE, and so on"
+   ``nat``, "int [int ...]",  , "Number of atoms in atom type1 [type2 ...]"
+   ``nstage``, int,  , Number of calculation stages
+   ``njob``, int,  , Number simultaneously submitted jobs
+   ``jobcmd``, str ,  , "Specify a command to submit jobs, such as qsub"
+   ``jobfile``, str,  , "Specify a jobfile to submit jobs for VASP, QE, and so on"
 
 
 .. index::
@@ -91,6 +202,7 @@ Available algorithms for crystal structure prediction are:
 - ``RS``: **R**\ andom **S**\ earch
 - ``BO``: **B**\ ayesian **O**\ ptimization
 - ``LAQA``: **L**\ ook **A**\ head based on **Q**\ uadratic **A**\ pproximation
+- ``EA``: **E**\ volutionary **A**\ lgorithm
 
 In using LAQA, automatically ``fs_step_flag`` = ``True`` in [option] section.
 
@@ -125,10 +237,10 @@ CrySPY is interfaced with:
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``minlen``, float,  ,  Minimum length of lattce vector
-   ``maxlen``, float,  ,  Maximum length of lattce vector
+   ``minlen``, float,  ,  Minimum length of lattce vector [Å]
+   ``maxlen``, float,  ,  Maximum length of lattce vector [Å]
    ``dangle``, float,  ,  "Delta angle for alpha, beta, and gamma in degree unit"
-   ``mindist_?``, float [float ...], ,  Constraint on minimum interatomic distance
+   ``mindist_?``, float [float ...], ,  Constraint on minimum interatomic distance [Å]
 
 
 .. index::
@@ -169,8 +281,8 @@ Rhombohedral system
 ``mindist``
 ------------
 
-A mindist matrix consists on ``mindist_1``, ``mindist_2`` ... . For example, in the case of YCo5 (atype = ['Y', 'Co']),
-suppose taht ``mindist_1`` is  [2.0, 1,8] and ``mindist_2`` is [1.8, 1.5].
+A mindist matrix consists on ``mindist_1``, ``mindist_2`` ... . For example, in the case of YCo\ :sub:`5` \ (atype = ['Y', 'Co']),
+suppose that ``mindist_1`` is  [2.0, 1,8] and ``mindist_2`` is [1.8, 1.5].
 The mindist matrix is
 
 .. math::
@@ -196,8 +308,8 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``kppvol``, integer [integer ...],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
-   ``force_gamma``, boolean, ``False`` ,  "If True, force gammma-centered mesh"
+   ``kppvol``, int [int ...],  ,  Grid density per Å\ `-3`:sup: of  reciprocal cell in each stage
+   ``force_gamma``, bool, ``False`` ,  "If True, force gammma-centered mesh"
 
 
 
@@ -212,9 +324,9 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``kppvol``, integer [integer ...],  ,  Grid density per Angstrom\ `-3`:sup: of  reciprocal cell in each stage
-   ``qe_infile``,  ,  ,  Specify your QE input file name
-   ``qe_outfile``,  ,  ,  Specify your QE output file name
+   ``kppvol``, int [int ...],  ,  Grid density per Å\ `-3`:sup: of  reciprocal cell in each stage
+   ``qe_infile``, str,  ,  Specify your QE input file name
+   ``qe_outfile``, str,  ,  Specify your QE output file name
 
 
 
@@ -229,9 +341,9 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``soiap_infile``,  ,  ,  Specify your soiap input file name
-   ``soiap_outfile``,  ,  ,  Specify your soiap output file name
-   ``soiap_cif``,  ,  ,  Specify your CIF-formatted soiap initial structure file name
+   ``soiap_infile``, str,  ,  Specify your soiap input file name
+   ``soiap_outfile``, str,  ,  Specify your soiap output file name
+   ``soiap_cif``,  str,  ,  Specify your CIF-formatted soiap initial structure file name
 
 
 
@@ -246,10 +358,10 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``lammps_infile``,  ,  ,  Specify your LAMMPS input file name
-   ``lammps_potential``,  , ``None`` ,  "Specify your LAMMPS potential, if any"
-   ``lammps_outfile``,  ,  ,  Specify your LAMMPS output file name
-   ``lammps_data``,  ,  ,  Specify your LAMMPS data file name
+   ``lammps_infile``, str,  ,  Specify your LAMMPS input file name
+   ``lammps_potential``,  "str, ``None``", ``None`` ,  "Specify your LAMMPS potential, if any"
+   ``lammps_outfile``,  str,  ,  Specify your LAMMPS output file name
+   ``lammps_data``,  str,  ,  Specify your LAMMPS data file name
 
 
 
@@ -264,16 +376,16 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``interval``, integer,  ,  Number of structures to calculate between learning data
+   ``interval``, int,  ,  Number of structures to calculate between learning data
    ``score``, "``TS``, ``EI``, ``PI``",  ,  Acquisition function
-   ``num_rand_basis``, integer, 0, "If 0: Gaussian process, else: number of basis function"
+   ``num_rand_basis``, int, 0, "If 0: Gaussian process, else: number of basis function"
    ``cdev``, float, 0.001, Cutoff of deviation for standardization
    ``dscrpt``, ``FP`` ,  , Descriptor for structure
    ``fp_rmin``, float, 0.5, Minimum cutoff of *r* in *fingerprint*
    ``fp_rmax``, float, 5.0, Maximum cutoff of *r* in *fingerprint*
-   ``fp_npoints``, integer, 50, Number of discretized *r* points for each pair in *fingerprint*
+   ``fp_npoints``, int, 50, Number of discretized *r* points for each pair in *fingerprint*
    ``fp_sigma``, float, 0.2, Sigma parameter in Gaussian smearing function in Angstrom unit
-
+   ``maxgen``, int, 0, Maximum generation
 
 
 .. index::
@@ -286,7 +398,7 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``nselect``, integer,  ,  Number of structures to select at once
+   ``nselect``, int,  ,  Number of structures to select at once
    ``weight_laqa``, float, 1.0 ,  weight of bias
 
 
@@ -303,6 +415,110 @@ In LAQA, the score is evaluated by the following equation:
 where :math:`c` is ``weight_laqa``, weight of bias.
 
 
+
+
+.. index::
+   single: [EA]
+
+[EA] section
+=================
+
+.. csv-table::
+   :header: Name, Value, Default value, Description
+   :widths: auto
+
+   ``n_pop``, int,  ,  Population after second generation
+   ``n_crsov``, int, , Number of structure generated by crossover
+   ``n_perm``, int, , Number of structure generated by permutation
+   ``n_strain``, int, , Number of structure generated by strain
+   ``n_rand``, int, , Number of structure generated randomly
+   ``n_elite``, int, , Number of elite
+   ``fit_reverse``, bool, ``False``, "If False, search minimum value"
+   ``n_fittest``, int, ``None`` ,  Number of structure which can survive
+   ``slct_func``, "``TNM``, ``RLT``", , Select function
+   ``t_size``, int, 3, [Only if slct_func == TNM] Size in tournament selection
+   ``a_rlt``, float, 2.0, [Only if slct_func == RLT] Parameter for linear scaling
+   ``b_rlt``, float, 1.0, [Only if slct_func == RLT] Parameter for linear scaling
+   ``crs_lat``, "``equal``, ``random``", ``equal``, How to mix lattice vectors
+   ``crs_func``, "``OP``, ``TP``", ``OP``, **O**\ne **P**\oint crossover or **T**\wo **P**\oint crossover
+   ``nat_diff_tole``, int, 4, Tolerance for difference in number of atoms in crossover
+   ``ntimes``, int, 1, ntimes permutation
+   ``sigma_st``, float, 0.5, Standard deviation for strain
+   ``maxcnt_EA``, int, 100, Maximum number of trials in EA
+   ``maxgen``, int, 0, Maximum generation
+..   ``restart_gen``, int, 0, Restart from specified generation
+
+
+.. index::
+   single: n_pop
+   single: n_crsov
+   single: n_perm
+   single: n_strain
+   single: n_rand
+
+``n_pop``, ``n_crsov``, ``n_perm``, ``n_strain``, and ``n_rand``
+-----------------------------------------------------------------
+
+Population in first generation is decided by ``tot_struc``. After second generation, population in :math:`n`\ th generation corresponds to ``n_pop``.
+For example, ``tot_struc`` = 40, ``n_pop`` = 20 --> population = [40, 20, 20, ...].
+You have to set ``n_pop`` to satisfy the following equation:
+
+.. math::
+   n_\mathrm{pop} = n_\mathrm{crsov} + n_\mathrm{perm} + n_\mathrm{strain} + n_\mathrm{rand}
+
+
+.. index::
+   single: slct_func
+   single: TNM
+   single: RLT
+
+``slct_func``
+---------------
+Available selection functions are tournament (``TNM``) and roulette (``RLT``).
+
+
+Tournament (``TNM``)
+^^^^^^^^^^^^^^^^^^^^^
+
+
+Roulette (``RLT``)
+^^^^^^^^^^^^^^^^^^^^^
+If fit_reverse is False, fitness = -fitness.
+Linear scaling of fitness:
+
+.. math::
+   f_i^{\prime} = \frac{a-b}{f_\mathrm{max} - f_\mathrm{min}}f_i + \frac{b f_\mathrm{max} - a f_\mathrm{min}}{f_\mathrm{max} - f_\mathrm{min}},
+
+where :math:`a, b` are parameters of ``a_rlt`` and ``b_rlt``. :math:`f_i, f_\mathrm{max}, f_\mathrm{min}` are :math:`i` th, maximum, and minimum values of the fitness.
+
+Probability of selecting individual :math:`i` is expressed as:
+
+.. math::
+   p_i = \frac{f_i^{\prime}}{\sum_{k}f_k^{\prime}}.
+
+
+
+.. index::
+   single: simga_EA
+
+``sigma_st``
+--------------
+
+In strain operation, lattice vectors :math:`\bm{a}`  are transformed to :math:`\bm{a^\prime}` by applying a strain matrix:
+
+.. math::
+   \bm{a^\prime} =    \begin{pmatrix}
+                           1+\eta_1 & \frac{1}{2}\eta_6 & \frac{1}{2}\eta_5  \\
+                           \frac{1}{2}\eta_6 & 1+\eta_2 & \frac{1}{2}\eta_4  \\
+                           \frac{1}{2}\eta_5 & \frac{1}{2}\eta_4 & 1+\eta_3
+                      \end{pmatrix} \bm{a},
+
+where :math:`\eta_i` are given by normal distribution with a mean of zero and a standard deviation of ``sigma_st``, :math:`N(0, \sigma^2_\mathrm{st})`.
+
+
+
+
+
 .. index::
    single: [option]
 
@@ -313,14 +529,14 @@ where :math:`c` is ``weight_laqa``, weight of bias.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``maxcnt``, integer,  200,  Maximum number of trials to determine atom positions
-   ``stop_chkpt``, integer , 0,  Program stops at a specified check point
-   ``symtoleI``, float , 0.001 , Tolerance for symmetry finding for Initial structures
-   ``symtoleR``, float , 0.1   , Tolerance for symmetry finding for Relaxed structures
-   ``spgnum``, "``all``, space group number", ``all`` , Constraint on space group
-   ``load_struc_flag``, boolean, ``False``, "If True, load initial structures from ``./data/pkl_data/init_struc_data.pkl``"
-   ``stop_next_struc``, boolean, ``False``, "If True, not submit next structures, but submit next stage and collect results"
-   ``energy_step_flag``, boolean, ``False``, "If True, save energy_step_data in ``./data/pkl_data/energy_step_data.pkl``"
-   ``struc_step_flag``, boolean, ``False``, "If True, save struc_step_data in ``./data/pkl_data/struc_step_data.pkl``"
-   ``fs_step_flag``, boolean, ``False``, "If True, save fs_step_data (force and stress) in ``./data/pkl_data/fs_step_data.pkl``"
+   ``maxcnt``, int,  200,  Maximum number of trials to determine atom positions
+   ``stop_chkpt``, int , 0,  Program stops at a specified check point
+   ``symprec``, float , 0.001 , Precision for symmetry finding
+   ``spgnum``, "``all``, space group number, 0", ``all`` , "Constraint on space group. If all, 1--230. If 0, without space group information. "
+   ``load_struc_flag``, bool, ``False``, "If True, load initial structures from ``./data/pkl_data/init_struc_data.pkl``"
+   ``stop_next_struc``, bool, ``False``, "If True, not submit next structures, but submit next stage and collect results"
+   ``append_struc_ea``, bool, ``False``, "If True, append structures by EA"
+   ``energy_step_flag``, bool, ``False``, "If True, save energy_step_data in ``./data/pkl_data/energy_step_data.pkl``"
+   ``struc_step_flag``, bool, ``False``, "If True, save struc_step_data in ``./data/pkl_data/struc_step_data.pkl``"
+   ``fs_step_flag``, bool, ``False``, "If True, save fs_step_data (force and stress) in ``./data/pkl_data/fs_step_data.pkl``"
 

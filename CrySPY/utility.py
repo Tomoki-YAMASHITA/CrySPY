@@ -7,15 +7,11 @@ import os
 
 
 def get_version():
-    return 'CrySPY 0.6.4'
+    return 'CrySPY 0.7.0'
 
 
 def get_date():
     return datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-
-
-def get_init_pos_path():
-    return '../data/init_POSCARS'
 
 
 def check_fwpath():

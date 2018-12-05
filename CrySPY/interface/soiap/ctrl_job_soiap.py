@@ -38,7 +38,7 @@ def next_stage_soiap(stage, work_path):
     title = lines[0][5:]    # string following 'data_'
     soiap_structure.write(structure,
                           work_path+rin.soiap_cif,
-                          symprec=rin.symtoleR,
+                          symprec=rin.symprec,
                           title=title)
 
     # ---------- return
@@ -58,5 +58,5 @@ def next_struc_soiap(structure, next_id, work_path):
     # ---------- generate the CIF file
     soiap_structure.write(structure,
                           work_path+rin.soiap_cif,
-                          symprec=rin.symtoleI,
+                          symprec=rin.symprec,
                           title='ID_{0:d}'.format(next_id))

@@ -14,26 +14,26 @@ def initialize(stat, init_struc_data):
 
     # ---------- initialize
     tot_step_select = [0]
-    LAQA_step = {}
-    LAQA_struc = {}
-    LAQA_energy = {}
-    LAQA_bias = {}
-    LAQA_score = {}
+    laqa_step = {}
+    laqa_struc = {}
+    laqa_energy = {}
+    laqa_bias = {}
+    laqa_score = {}
     for i in range(rin.tot_struc):
-        LAQA_step[i] = []
-        LAQA_struc[i] = []
-        LAQA_energy[i] = []
-        LAQA_bias[i] = []
-        LAQA_score[i] = [float('inf')]
+        laqa_step[i] = []
+        laqa_struc[i] = []
+        laqa_energy[i] = []
+        laqa_bias[i] = []
+        laqa_score[i] = [float('inf')]
     id_to_calc = [i for i in range(rin.tot_struc)]
     id_select_hist = []
     id_done = []
 
     # ---------- save for LAQA
-    LAQA_id_data = (id_to_calc, id_select_hist, id_done)
-    pkl_data.save_LAQA_id(LAQA_id_data)
-    LAQA_data = (tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
-    pkl_data.save_LAQA_data(LAQA_data)
+    laqa_id_data = (id_to_calc, id_select_hist, id_done)
+    pkl_data.save_laqa_id(laqa_id_data)
+    laqa_data = (tot_step_select, laqa_step, laqa_struc, laqa_energy, laqa_bias, laqa_score)
+    pkl_data.save_laqa_data(laqa_data)
 
     # ---------- status
     stat.set('status', 'LAQA_selection', '0')

@@ -20,7 +20,7 @@ The following searching algorithms are available in CrySPY:
 - Random Search (RS)
 - Bayesian Optimization (BO)
 - Look Ahead based on Quadratic Approximation (LAQA)
-- Evolutionary Algorithm (EA) (only develop ver.)
+- Evolutionary Algorithm (EA)
 
 Random Search (RS)
 ----------------------------
@@ -44,7 +44,17 @@ Evolutionary Algorithm (EA)
 ----------------------------
 
 
-
++ Selection methods
+    - Tournament selection
+    - Roulette selection
+    - Elite selection
++ Evolutionary operations
+    - Crossover
+    - Permutation
+    - Strain
++ etc.
+    - Survival of the fittest
+    - Dedupe structures in survival of the fittest
 
 
 Interface

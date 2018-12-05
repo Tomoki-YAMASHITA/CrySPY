@@ -12,6 +12,7 @@ from ..IO import read_input as rin
 
 
 def initialize(stat, init_struc_data, rslt_data):
+    # ---------- log
     print('\n# ---------- Initialize Bayesian optimization')
     with open('cryspy.out', 'a') as fout:
         fout.write('\n# ---------- Initilalize Bayesian optimization\n')
@@ -30,7 +31,6 @@ def initialize(stat, init_struc_data, rslt_data):
     rslt_data['Gen'] = pd.Series(dtype=int)
     rslt_data = rslt_data[['Gen', 'Struc_ID', 'Spg_num', 'Spg_sym', 'Spg_num_opt',
                            'Spg_sym_opt', 'Energy', 'Magmom', 'Opt']]
-    # ---------- save
     pkl_data.save_rslt(rslt_data)
 
     # ---------- random select
@@ -40,10 +40,10 @@ def initialize(stat, init_struc_data, rslt_data):
     descriptors = select_descriptor.calc_X(init_struc_data)
 
     # ---------- save for BO
-    BO_id_data = (gen, non_error_id, id_to_calc, id_done)
-    pkl_data.save_BO_id(BO_id_data)
-    BO_data = (descriptors, targets)
-    pkl_data.save_BO_data(BO_data)
+    bo_id_data = (gen, non_error_id, id_to_calc, id_done)
+    pkl_data.save_bo_id(bo_id_data)
+    bo_data = (descriptors, targets)
+    pkl_data.save_bo_data(bo_data)
 
     # ---------- status
     stat.set('status', 'generation', '{}'.format(gen))

@@ -2,9 +2,11 @@
 CrySPY is a crystal structure prediction tool written in Python.
 
 ## Latest version
-version 0.6.4 (2018 August 20)
+version 0.7.0 (2018 December 5)
 
 ## Important changes
+* version 0.7.0
+    - Evolutionary algorithm is now available
 * version 0.6.2
     - LAMMPS can be used in CrySPY
 * version 0.6.0
@@ -20,7 +22,12 @@ version 0.6.4 (2018 August 20)
 - [pymatgen](http://pymatgen.org "pymatgen")
 
 ### Structure optimizer
-- [VASP](https://www.vasp.at "VASP"), [Quantum ESPRESSO](http://www.quantum-espresso.org "Quantum ESPRESSO"), [soiap](https://github.com/nbsato/soiap "soiap"), or [LAMMPS](http://lammps.sandia.gov "LAMMPS")
+At least either one of
+
+- [VASP](https://www.vasp.at "VASP") (tested with version 5.4.1)
+- [Quantum ESPRESSO](http://www.quantum-espresso.org "Quantum ESPRESSO") (tested with version 6.1, version 5.x does not work)
+- [soiap](https://github.com/nbsato/soiap "soiap") (tested with version 0.2.2)
+- [LAMMPS](http://lammps.sandia.gov "LAMMPS")
 
 ### Others
 - [find_wy](https://github.com/nim-hrkn/find_wy "find_wy")
@@ -29,8 +36,14 @@ version 0.6.4 (2018 August 20)
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY "CrySPY documment")
 
 ## Reference
-T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Materials **2**, 013803 (2017).  
+### Bayesian optimization
+T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2017).  
 https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
+
+### LAQA
+K.Terayama, T. Yamashita, T. Oguchi, and K. Tsuda, npj Comput. Mater. **4**, 32 (2018).  
+https://www.nature.com/articles/s41524-018-0090-y
+
 
 ## License
 CrySPY is distributed under the MIT License.  

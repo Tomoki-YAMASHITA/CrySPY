@@ -21,14 +21,14 @@ def readin():
     global atype, nat, nstage, njob, jobcmd, jobfile
     # ------ read intput variables
     algo = config.get('basic', 'algo')
-    if algo not in ['RS', 'BO', 'LAQA']:
-        raise NotImplementedError('algo should be RS, BO, or LAQA')
+    if algo not in ['RS', 'BO', 'LAQA', 'EA']:
+        raise NotImplementedError('algo must be RS, BO, LAQA, or EA')
     calc_code = config.get('basic', 'calc_code')
     if algo == 'LAQA':
         if not calc_code == 'VASP':
             raise NotImplementedError('LAQA: only VASP for now')
     if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS']:
-        raise NotImplementedError('calc_code should be VASP, QE, soiap, or LAMMPS')
+        raise NotImplementedError('calc_code must be VASP, QE, soiap, or LAMMPS')
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
@@ -60,6 +60,7 @@ def readin():
         # ------ global declaration
         global interval, score, num_rand_basis, cdev, dscrpt
         global fp_rmin, fp_rmax, fp_npoints, fp_sigma
+        global maxgen
         # ------ read intput variables
         interval = config.getint('BO', 'interval')
         if interval <= 0:
@@ -70,7 +71,7 @@ def readin():
         if score == 'TS' or score == 'EI' or score == 'PI':
             pass
         else:
-            raise ValueError('score should be TS, EI, or PI, check score')
+            raise ValueError('score must be TS, EI, or PI, check score')
         try:
             num_rand_basis = config.getint('BO', 'num_rand_basis')
         except ConfigParser.NoOptionError:
@@ -109,17 +110,27 @@ def readin():
             fp_sigma = 0.2
         if fp_sigma < 0:
             raise ValueError('fp_sigma < 0, check fp_sigma')
+        # -- BO option
+        try:
+            maxgen = config.getint('BO', 'maxgen')
+        except ConfigParser.NoOptionError:
+            maxgen = 0
+        if maxgen < 0:
+            raise ValueError('maxgen must be non-negative int')
 
     # ---------- LAQA
     if algo == 'LAQA':
         # ------ global declaration
-        global nselect, weight_LAQA
+        global nselect, weight_laqa
         # ------ read intput variables
         nselect = config.getint('LAQA', 'nselect')
         try:
-            weight_LAQA = config.getfloat('LAQA', 'weight_LAQA')
+            weight_laqa = config.getfloat('LAQA', 'weight_laqa')
         except ConfigParser.NoOptionError:
-            weight_LAQA = 1.0
+            weight_laqa = 1.0
+
+    # ---------- EA
+    # EA part is written below option section
 
     # ---------- lattice
     # ------ global declaration
@@ -129,7 +140,7 @@ def readin():
     maxlen = config.getfloat('lattice', 'maxlen')
     dangle = config.getfloat('lattice', 'dangle')
     if dangle < 0.0:
-        raise ValueError('dangle < 0.0, dangle should be positive')
+        raise ValueError('dangle < 0.0, dangle must be positive')
     mindist = []
     for i in range(len(atype)):
         tmp = config.get('lattice', 'mindist_{}'.format(i+1))
@@ -204,34 +215,30 @@ def readin():
         kpt_flag = False
         force_gamma = False
     else:
-        raise NotImplementedError('calc_code should be VASP, QE, soiap, or LAMMPS')
+        raise NotImplementedError('calc_code must be VASP, QE, soiap, or LAMMPS')
 
     # ---------- option
     # ------ global declaration
-    global maxcnt, stop_chkpt, symtoleI, symtoleR, spgnum
-    global load_struc_flag, stop_next_struc
+    global maxcnt, stop_chkpt, symprec, spgnum
+    global load_struc_flag, stop_next_struc, append_struc_ea
     global energy_step_flag, struc_step_flag, fs_step_flag
 
     # ------ read intput variables
     try:
         maxcnt = config.getint('option', 'maxcnt')
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         maxcnt = 200
     try:
         stop_chkpt = config.getint('option', 'stop_chkpt')
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         stop_chkpt = 0
     try:
-        symtoleI = config.getfloat('option', 'symtoleI')
-    except ConfigParser.NoOptionError:
-        symtoleI = 0.001
-    try:
-        symtoleR = config.getfloat('option', 'symtoleR')
-    except ConfigParser.NoOptionError:
-        symtoleR = 0.1
+        symprec = config.getfloat('option', 'symprec')
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+        symprec = 0.001
     try:
         spgnum = config.get('option', 'spgnum')
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         spgnum = 'all'
     if spgnum == '0':
         spgnum = 0
@@ -241,35 +248,153 @@ def readin():
         spgnum = spglist(spgnum)
     try:
         load_struc_flag = config.getboolean('option', 'load_struc_flag')
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         load_struc_flag = False
     try:
         stop_next_struc = config.getboolean('option', 'stop_next_struc')
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         stop_next_struc = False
     try:
+        append_struc_ea = config.getboolean('option', 'append_struc_ea')
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+        append_struc_ea = False
+    try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
-        # -- VASP only for now
-        if calc_code in ['QE', 'soiap', 'LAMMPS']:
+        # -- only VASP or QE for now
+        if calc_code in ['soiap', 'LAMMPS']:
             energy_step_flag = False
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
-        # -- VASP only for now
-        if calc_code in ['QE', 'soiap', 'LAMMPS']:
+        # -- only VASP or QE for now
+        if calc_code in ['soiap', 'LAMMPS']:
             struc_step_flag = False
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         struc_step_flag = False
     try:
         fs_step_flag = config.getboolean('option', 'fs_step_flag')
-        # -- VASP only for now
-        if calc_code in ['QE', 'soiap', 'LAMMPS']:
+        # -- only VASP or QE for now
+        if calc_code in ['soiap', 'LAMMPS']:
             fs_step_flag = False
-    except ConfigParser.NoOptionError:
+    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
         fs_step_flag = False
     if algo == 'LAQA':
         fs_step_flag = True
+
+    # ---------- EA
+    if algo == 'EA' or append_struc_ea:
+        # ------ global declaration
+        global n_pop, n_crsov, n_perm, n_strain, n_rand, n_elite
+        global fit_reverse, n_fittest
+        global slct_func, t_size, a_rlt, b_rlt
+        global crs_lat, crs_func, nat_diff_tole, ntimes, sigma_st,  maxcnt_ea
+        global maxgen
+        # global restart_gen
+        # ------ read intput variables
+        # -- number of structures
+        n_pop = config.getint('EA', 'n_pop')
+        if n_pop <= 0:
+            raise ValueError('n_pop must be positive int')
+        n_crsov = config.getint('EA', 'n_crsov')
+        if n_crsov < 0:
+            raise ValueError('n_crsov must be zero or positive int')
+        n_perm = config.getint('EA', 'n_perm')
+        if n_perm < 0:
+            raise ValueError('n_perm must be zero or positive int')
+        if n_perm != 0 and len(atype) == 1:
+            raise ValueError('When the number of atom type is 1, n_perm must be 0')
+        n_strain = config.getint('EA', 'n_strain')
+        if n_strain < 0:
+            raise ValueError('n_strain must be zero or positive int')
+        n_rand = config.getint('EA', 'n_rand')
+        if n_rand < 0:
+            raise ValueError('n_rand must be zero or positive int')
+        if n_crsov + n_perm + n_strain + n_rand != n_pop:
+            raise ValueError('n_crsov + n_perm + n_strain + n_rand must be n_pop')
+        n_elite = config.getint('EA', 'n_elite')
+        if n_elite < 0:
+            raise ValueError('n_elite must be non-negative int')
+        # -- fittest
+        try:
+            fit_reverse = config.getboolean('EA', 'fit_reverse')
+        except ConfigParser.NoOptionError:
+            fit_reverse = False
+        try:
+            n_fittest = config.getint('EA', 'n_fittest')
+        except ConfigParser.NoOptionError:
+            n_fittest = 0
+        if n_fittest < 0:
+            raise ValueError('n_fittest must be zero or positive int')
+        # -- select function
+        slct_func = config.get('EA', 'slct_func')
+        if slct_func not in ['TNM', 'RLT']:
+            raise ValueError('slct_func must be TNM or RLT')
+        if slct_func == 'TNM':
+            try:
+                t_size = config.getint('EA', 't_size')
+            except ConfigParser.NoOptionError:
+                t_size = 3
+            if t_size < 2:
+                raise ValueError('t_size must be greater than or equal to 2')
+        elif slct_func == 'RLT':
+            try:
+                a_rlt = config.getfloat('EA', 'a_rlt')
+            except ConfigParser.NoOptionError:
+                a_rlt = 2.0
+            try:
+                b_rlt = config.getfloat('EA', 'b_rlt')
+            except ConfigParser.NoOptionError:
+                b_rlt = 1.0
+        # -- crossover
+        try:
+            crs_lat = config.get('EA', 'crs_lat')
+        except ConfigParser.NoOptionError:
+            crs_lat = 'equal'
+        if crs_lat not in ['equal', 'random']:
+            raise ValueError('crs_lat must be equal or random')
+        try:
+            crs_func = config.get('EA', 'crs_func')
+        except ConfigParser.NoOptionError:
+            crs_func = 'OP'
+        if crs_func not in ['OP', 'TP']:
+            raise ValueError('crs_func must be OP or TP')
+        try:
+            nat_diff_tole = config.getint('EA', 'nat_diff_tole')
+        except ConfigParser.NoOptionError:
+            nat_diff_tole = 4
+        if nat_diff_tole < 0:
+            raise ValueError('nat_diff_tole must be nen-negative int')
+        # -- permutation
+        try:
+            ntimes = config.getint('EA', 'ntimes')
+        except ConfigParser.NoOptionError:
+            ntimes = 1
+        if ntimes <= 0:
+            raise ValueError('ntimes must be positive int')
+        try:
+            sigma_st = config.getfloat('EA', 'sigma_st')
+        except ConfigParser.NoOptionError:
+            sigma_st = 0.5
+        if sigma_st <= 0:
+            raise ValueError('simga_st must be positive float')
+        # -- common
+        try:
+            maxcnt_ea = config.getint('EA', 'maxcnt_ea')
+        except ConfigParser.NoOptionError:
+            maxcnt_ea = 100
+        # -- EA option
+        try:
+            maxgen = config.getint('EA', 'maxgen')
+        except ConfigParser.NoOptionError:
+            maxgen = 0
+        if maxgen < 0:
+            raise ValueError('maxgen must be non-negative int')
+        # # -- restart option
+        # try:
+        #     restart_gen = config.getint('EA', 'restart_gen')
+        # except ConfigParser.NoOptionError:
+        #     restart_gen = 0
 
 
 def spglist(spgnum):
@@ -281,13 +406,15 @@ def spglist(spgnum):
             istart = int(c.split('-')[0])
             iend = int(c.split('-')[1])+1
             if istart < 0 or 230 < istart:
-                raise ValueError('spgnum should be 1 -- 230')
+                raise ValueError('spgnum must be 1 -- 230')
             if iend < 0 or 231 < iend:
-                raise ValueError('spgnum should be 1 -- 230')
-            tmpspg += [i for i in range(istart, iend)]
+                raise ValueError('spgnum must be 1 -- 230')
+            for i in range(istart, iend):
+                if not i in tmpspg:
+                    tmpspg.append(i)
         else:
             if int(c) < 0 or 230 < int(c):
-                raise ValueError('spgnum should be 1 -- 230')
+                raise ValueError('spgnum must be 1 -- 230')
             if not int(c) in tmpspg:
                 tmpspg += [int(c)]
     return tmpspg
@@ -322,12 +449,39 @@ def writeout():
             fout.write('fp_rmax = {}\n'.format(fp_rmax))
             fout.write('fp_npoints = {}\n'.format(fp_npoints))
             fout.write('fp_sigma = {}\n'.format(fp_sigma))
+            fout.write('maxgen = {}\n'.format(maxgen))
 
         # ------ LAQA
         if algo == 'LAQA':
             fout.write('# ------ LAQA section\n')
             fout.write('nselect = {}\n'.format(nselect))
-            fout.write('weight_LAQA = {}\n'.format(weight_LAQA))
+            fout.write('weight_laqa = {}\n'.format(weight_laqa))
+
+        # ------ EA
+        if algo == 'EA' or append_struc_ea:
+            fout.write('# ------ EA section\n')
+            fout.write('n_pop = {}\n'.format(n_pop))
+            fout.write('n_crsov = {}\n'.format(n_crsov))
+            fout.write('n_perm = {}\n'.format(n_perm))
+            fout.write('n_strain = {}\n'.format(n_strain))
+            fout.write('n_rand = {}\n'.format(n_rand))
+            fout.write('n_elite = {}\n'.format(n_elite))
+            fout.write('fit_reverse = {}\n'.format(fit_reverse))
+            fout.write('n_fittest = {}\n'.format(n_fittest))
+            fout.write('slct_func = {}\n'.format(slct_func))
+            if slct_func == 'TNM':
+                fout.write('t_size = {}\n'.format(t_size))
+            elif slct_func == 'RLT':
+                fout.write('a_rlt = {}\n'.format(a_rlt))
+                fout.write('b_rlt = {}\n'.format(b_rlt))
+            fout.write('crs_lat = {}\n'.format(crs_lat))
+            fout.write('crs_func = {}\n'.format(crs_func))
+            fout.write('nat_diff_tole = {}\n'.format(nat_diff_tole))
+            fout.write('ntimes = {}\n'.format(ntimes))
+            fout.write('sigma_st = {}\n'.format(sigma_st))
+            fout.write('maxcnt_ea = {}\n'.format(maxcnt_ea))
+            fout.write('maxgen = {}\n'.format(maxgen))
+#            fout.write('restart_gen = {}\n'.format(restart_gen))
 
         # ------ lattice
         fout.write('# ------ lattice section\n')
@@ -370,14 +524,14 @@ def writeout():
         fout.write('# ------ option section\n')
         fout.write('maxcnt = {}\n'.format(maxcnt))
         fout.write('stop_chkpt = {}\n'.format(stop_chkpt))
-        fout.write('symtoleI = {}\n'.format(symtoleI))
-        fout.write('symtoleR = {}\n'.format(symtoleR))
+        fout.write('symprec = {}\n'.format(symprec))
         if spgnum == 0 or spgnum == 'all':
             fout.write('spgnum = {}\n'.format(spgnum))
         else:
             fout.write('spgnum = {}\n'.format(' '.join(str(d) for d in spgnum)))
         fout.write('load_struc_flag = {}\n'.format(load_struc_flag))
         fout.write('stop_next_struc = {}\n'.format(stop_next_struc))
+        fout.write('append_struc_ea = {}\n'.format(append_struc_ea))
         fout.write('energy_step_flag = {}\n'.format(energy_step_flag))
         fout.write('struc_step_flag = {}\n'.format(struc_step_flag))
         fout.write('fs_step_flag = {}\n'.format(fs_step_flag))
@@ -409,11 +563,36 @@ def save_stat(stat):
         stat.set('input', 'fp_rmax', '{}'.format(fp_rmax))
         stat.set('input', 'fp_npoints', '{}'.format(fp_npoints))
         stat.set('input', 'fp_sigma', '{}'.format(fp_sigma))
+        stat.set('input', 'maxgen', '{}'.format(maxgen))
 
     # ---------- LAQA
     if algo == 'LAQA':
         stat.set('input', 'nselect', '{}'.format(nselect))
-        stat.set('input', 'weight_LAQA', '{}'.format(weight_LAQA))
+        stat.set('input', 'weight_laqa', '{}'.format(weight_laqa))
+
+    # ---------- EA
+    elif algo == 'EA' or append_struc_ea:
+        stat.set('input', 'n_pop', '{}'.format(n_pop))
+        stat.set('input', 'n_crsov', '{}'.format(n_crsov))
+        stat.set('input', 'n_perm', '{}'.format(n_perm))
+        stat.set('input', 'n_strain', '{}'.format(n_strain))
+        stat.set('input', 'n_rand', '{}'.format(n_rand))
+        stat.set('input', 'n_elite', '{}'.format(n_elite))
+        stat.set('input', 'fit_reverse', '{}'.format(fit_reverse))
+        stat.set('input', 'n_fittest', '{}'.format(n_fittest))
+        stat.set('input', 'slct_func', '{}'.format(slct_func))
+        if slct_func == 'TNM':
+            stat.set('input', 't_size', '{}'.format(t_size))
+        elif slct_func == 'RLT':
+            stat.set('input', 'a_rlt', '{}'.format(a_rlt))
+            stat.set('input', 'b_rlt', '{}'.format(b_rlt))
+        stat.set('input', 'crs_func', '{}'.format(crs_func))
+        stat.set('input', 'crs_lat', '{}'.format(crs_lat))
+        stat.set('input', 'nat_diff_tole', '{}'.format(nat_diff_tole))
+        stat.set('input', 'ntimes', '{}'.format(ntimes))
+        stat.set('input', 'sigma_st', '{}'.format(sigma_st))
+        stat.set('input', 'maxcnt_ea', '{}'.format(maxcnt_ea))
+        stat.set('input', 'maxgen', '{}'.format(maxgen))
 
     # ---------- lattice
     stat.set('input', 'minlen', '{}'.format(minlen))
@@ -450,14 +629,14 @@ def save_stat(stat):
     # ---------- option
     stat.set('input', 'maxcnt', '{}'.format(maxcnt))
     stat.set('input', 'stop_chkpt', '{}'.format(stop_chkpt))
-    stat.set('input', 'symtoleI', '{}'.format(symtoleI))
-    stat.set('input', 'symtoleR', '{}'.format(symtoleR))
+    stat.set('input', 'symprec', '{}'.format(symprec))
     if spgnum == 0 or spgnum == 'all':
         stat.set('input', 'spgnum', '{}'.format(spgnum))
     else:
         stat.set('input', 'spgnum', '{}'.format(' '.join(str(d) for d in spgnum)))
     stat.set('input', 'load_struc_flag', '{}'.format(load_struc_flag))
     stat.set('input', 'stop_next_struc', '{}'.format(stop_next_struc))
+    stat.set('input', 'append_struc_ea', '{}'.format(append_struc_ea))
     stat.set('input', 'energy_step_flag', '{}'.format(energy_step_flag))
     stat.set('input', 'struc_step_flag', '{}'.format(struc_step_flag))
     stat.set('input', 'fs_step_flag', '{}'.format(fs_step_flag))
@@ -484,6 +663,7 @@ def diffinstat(stat):
     old_njob = stat.getint('input', 'njob')
     old_jobcmd = stat.get('input', 'jobcmd')
     old_jobfile = stat.get('input', 'jobfile')
+
     # ------ BO
     if old_algo == 'BO':
         old_interval = stat.getint('input', 'interval')
@@ -495,11 +675,37 @@ def diffinstat(stat):
         old_fp_rmax = stat.getfloat('input', 'fp_rmax')
         old_fp_npoints = stat.getint('input', 'fp_npoints')
         old_fp_sigma = stat.getfloat('input', 'fp_sigma')
+        old_maxgen = stat.getint('input', 'maxgen')
 
     # ------ LAQA
     if old_algo == 'LAQA':
         old_nselect = stat.getint('input', 'nselect')
-        old_weight_LAQA = stat.getfloat('input', 'weight_LAQA')
+        old_weight_laqa = stat.getfloat('input', 'weight_laqa')
+
+    # ------ EA
+    if old_algo == 'EA':
+        old_n_pop = stat.getint('input', 'n_pop')
+        old_n_crsov = stat.getint('input', 'n_crsov')
+        old_n_perm = stat.getint('input', 'n_perm')
+        old_n_strain = stat.getint('input', 'n_strain')
+        old_n_rand = stat.getint('input', 'n_rand')
+        old_n_elite = stat.getint('input', 'n_elite')
+        old_fit_reverse = stat.getboolean('input', 'fit_reverse')
+        old_n_fittest = stat.getint('input', 'n_fittest')
+        old_slct_func = stat.get('input', 'slct_func')
+        if old_slct_func == 'TNM':
+            old_t_size = stat.getint('input', 't_size')
+        elif old_slct_func == 'RLT':
+            old_a_rlt = stat.getfloat('input', 'a_rlt')
+            old_b_rlt = stat.getfloat('input', 'b_rlt')
+        old_crs_lat = stat.get('input', 'crs_lat')
+        old_crs_func = stat.get('input', 'crs_func')
+        old_nat_diff_tole = stat.getint('input', 'nat_diff_tole')
+        old_ntimes = stat.getint('input', 'ntimes')
+        old_sigma_st = stat.getfloat('input', 'sigma_st')
+        old_maxcnt_ea = stat.getint('input', 'maxcnt_ea')
+        old_maxgen = stat.getint('input', 'maxgen')
+        # old_restart_gen = stat.get('input', 'restart_gen')
 
     # ------ lattice
     old_minlen = stat.getfloat('input', 'minlen')
@@ -543,8 +749,7 @@ def diffinstat(stat):
     # ------ option
     old_maxcnt = stat.getint('input', 'maxcnt')
     old_stop_chkpt = stat.getint('input', 'stop_chkpt')
-    old_symtoleI = stat.getfloat('input', 'symtoleI')
-    old_symtoleR = stat.getfloat('input', 'symtoleR')
+    old_symprec = stat.getfloat('input', 'symprec')
     old_spgnum = stat.get('input', 'spgnum')
     if old_spgnum == '0':
         old_spgnum = 0
@@ -552,6 +757,7 @@ def diffinstat(stat):
         old_spgnum = [int(x) for x in old_spgnum.split()]    # character --> integer list
     old_load_struc_flag = stat.getboolean('input', 'load_struc_flag')
     old_stop_next_struc = stat.getboolean('input', 'stop_next_struc')
+    old_append_struc_ea = stat.getboolean('input', 'append_struc_ea')
     old_energy_step_flag = stat.getboolean('input', 'energy_step_flag')
     old_struc_step_flag = stat.getboolean('input', 'struc_step_flag')
     old_fs_step_flag = stat.getboolean('input', 'fs_step_flag')
@@ -565,6 +771,8 @@ def diffinstat(stat):
         raise ValueError('Do not change calc code')
         logic_change = True
     if not old_tot_struc == tot_struc:
+        if algo == 'EA':
+            raise ValueError('Do not change tot_struc in EA')
         print('Changed tot_struc from {0} to {1}'.format(old_tot_struc, tot_struc))
         with open('cryspy.out', 'a') as fout:
             fout.write('\n#### Changed tot_struc from {0} to {1}\n'.format(old_tot_struc, tot_struc))
@@ -636,6 +844,11 @@ def diffinstat(stat):
             raise ValueError('Do not change fp_npoints')
         if not old_fp_sigma == fp_sigma:
             raise ValueError('Do not change fp_sigma')
+        if not old_maxgen == maxgen:
+            print('Changed maxgen from {0} to {1}'.format(old_maxgen, maxgen))
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed maxgen from {0} to {1}\n'.format(old_maxgen, maxgen))
+            logic_change = True
 
     # ------ LAQA
     if algo == 'LAQA':
@@ -646,10 +859,130 @@ def diffinstat(stat):
                 fout.write('\n#### Changed nselect from {0} to {1}\n'.format(old_nselect, nselect))
                 fout.write('####     This will be enabled in next selection\n')
             logic_change = True
-        if not old_weight_LAQA == weight_LAQA:
-            print('Changed weight_LAQA from {0} to {1}'.format(old_weight_LAQA, weight_LAQA))
+        if not old_weight_laqa == weight_laqa:
+            print('Changed weight_laqa from {0} to {1}'.format(old_weight_laqa, weight_laqa))
             with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed weight_LAQA from {0} to {1}\n'.format(old_weight_LAQA, weight_LAQA))
+                fout.write('\n#### Changed weight_laqa from {0} to {1}\n'.format(old_weight_laqa, weight_laqa))
+            logic_change = True
+
+    # ------ EA
+    if algo == 'EA':
+        if not old_n_pop == n_pop:
+            print('Changed n_pop from {0} to {1}'.format(old_n_pop, n_pop))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_pop from {0} to {1}\n'.format(old_n_pop, n_pop))
+            logic_change = True
+        if not old_n_crsov == n_crsov:
+            print('Changed n_crsov from {0} to {1}'.format(old_n_crsov, n_crsov))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_crsov from {0} to {1}\n'.format(old_n_crsov, n_crsov))
+            logic_change = True
+        if not old_n_perm == n_perm:
+            print('Changed n_perm from {0} to {1}'.format(old_n_perm, n_perm))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_perm from {0} to {1}\n'.format(old_n_perm, n_perm))
+            logic_change = True
+        if not old_n_strain == n_strain:
+            print('Changed n_strain from {0} to {1}'.format(old_n_strain, n_strain))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_n_strain from {0} to {1}\n'.format(old_n_strain, n_strain))
+            logic_change = True
+        if not old_n_rand == n_rand:
+            print('Changed n_rand from {0} to {1}'.format(old_n_rand, n_rand))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_fittest from {0} to {1}\n'.format(old_n_rand, n_rand))
+            logic_change = True
+        if not old_n_elite == n_elite:
+            print('Changed n_elite from {0} to {1}'.format(old_n_elite, n_elite))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_elite from {0} to {1}\n'.format(old_n_elite, n_elite))
+            logic_change = True
+        if not old_fit_reverse == fit_reverse:
+            raise ValueError('Do not change fit_reverse')
+        if not old_n_fittest == n_fittest:
+            print('Changed n_fittest from {0} to {1}'.format(old_n_fittest, n_fittest))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed n_fittest from {0} to {1}\n'.format(old_n_fittest, n_fittest))
+            logic_change = True
+        if not old_slct_func == slct_func:
+            print('Changed slct_func from {0} to {1}'.format(old_slct_func, slct_func))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed slct_func from {0} to {1}\n'.format(old_slct_func, slct_func))
+            logic_change = True
+        if old_slct_func == 'TNM' and slct_func == 'TNM':
+            if not old_t_size == t_size:
+                print('Changed t_size from {0} to {1}'.format(old_t_size, t_size))
+                print('    This will be enabled in next generation')
+                with open('cryspy.out', 'a') as fout:
+                    fout.write('\n### Changed t_size from {0} to {1}\n'.format(old_t_size, t_size))
+                logic_change = True
+        elif old_slct_func == 'RLT' and slct_func == 'RLT':
+            if not old_a_rlt == a_rlt:
+                print('Changed a_rlt from {0} to {1}'.format(old_a_rlt, a_rlt))
+                print('    This will be enabled in next generation')
+                with open('cryspy.out', 'a') as fout:
+                    fout.write('\n### Changed a_rlt from {0} to {1}\n'.format(old_a_rlt, a_rlt))
+                logic_change = True
+            if not old_b_rlt == b_rlt:
+                print('Changed b_rlt from {0} to {1}'.format(old_b_rlt, b_rlt))
+                print('    This will be enabled in next generation')
+                with open('cryspy.out', 'a') as fout:
+                    fout.write('\n### Changed b_rlt from {0} to {1}\n'.format(old_b_rlt, b_rlt))
+                logic_change = True
+        elif not old_slct_func == slct_func:
+            print('Changed slct_func from {0} to {1}'.format(old_slct_func, slct_func))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed slct_func from {0} to {1}\n'.format(old_slct_func, slct_func))
+            logic_change = True
+        if not old_crs_lat == crs_lat:
+            print('Changed crs_lat from {0} to {1}'.format(old_crs_lat, crs_lat))
+            print('    This will be enabled in next generation')
+            with open('CrySPY.out', 'a') as fout:
+                fout.write('\n### Changed crs_lat from {0} to {1}\n'.format(old_crs_lat, crs_lat))
+            logic_change = True
+        if not old_crs_func == crs_func:
+            print('Changed crs_func from {0} to {1}'.format(old_crs_func, crs_func))
+            print('    This will be enabled in next generation')
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n### Changed crs_func from {0} to {1}\n'.format(old_crs_func, crs_func))
+            logic_change = True
+        if not old_nat_diff_tole == nat_diff_tole:
+            print('Changed nat_diff_tole from {0} to {1}'.format(old_nat_diff_tole, nat_diff_tole))
+            print('    This will be enabled in next generation')
+            with open('CrySPY.out', 'a') as fout:
+                fout.write('\n### Changed nat_diff_tole from {0} to {1}\n'.format(old_nat_diff_tole, nat_diff_tole))
+            logic_change = True
+        if not old_ntimes == ntimes:
+            print('Changed ntimes from {0} to {1}'.format(old_ntimes, ntimes))
+            print('    This will be enabled in next generation')
+            with open('CrySPY.out', 'a') as fout:
+                fout.write('\n### Changed ntimes from {0} to {1}\n'.format(old_ntimes, ntimes))
+            logic_change = True
+        if not old_sigma_st == sigma_st:
+            print('Changed sigma_st from {0} to {1}'.format(old_sigma_st, sigma_st))
+            print('    This will be enabled in next generation')
+            with open('CrySPY.out', 'a') as fout:
+                fout.write('\n### Changed sigma_st from {0} to {1}\n'.format(old_sigma_st, sigma_st))
+            logic_change = True
+        if not old_maxcnt_ea == maxcnt_ea:
+            print('Changed maxcnt_ea from {0} to {1}'.format(old_maxcnt_ea, maxcnt_ea))
+            print('    This will be enabled in next generation')
+            with open('CrySPY.out', 'a') as fout:
+                fout.write('\n### Changed maxcnt_ea from {0} to {1}\n'.format(old_maxcnt_ea, maxcnt_ea))
+            logic_change = True
+        if not old_maxgen == maxgen:
+            print('Changed maxgen from {0} to {1}'.format(old_maxgen, maxgen))
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed maxgen from {0} to {1}\n'.format(old_maxgen, maxgen))
             logic_change = True
 
     # ------ lattice
@@ -745,15 +1078,10 @@ def diffinstat(stat):
         with open('cryspy.out', 'a') as fout:
             fout.write('\n#### Changed stop_chkpt from {0} to {1}\n'.format(old_stop_chkpt, stop_chkpt))
         logic_change = True
-    if not old_symtoleI == symtoleI:
-        print('Changed symtoleI from {0} to {1}'.format(old_symtoleI, symtoleI))
+    if not old_symprec == symprec:
+        print('Changed symprec from {0} to {1}'.format(old_symprec, symprec))
         with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed symtoleI from {0} to {1}\n'.format(old_symtoleI, symtoleI))
-        logic_change = True
-    if not old_symtoleR == symtoleR:
-        print('Changed symtoleR from {0} to {1}'.format(old_symtoleR, symtoleR))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed symtoleR from {0} to {1}\n'.format(old_symtoleR, symtoleR))
+            fout.write('\n#### Changed symprec from {0} to {1}\n'.format(old_symprec, symprec))
         logic_change = True
     if not old_spgnum == spgnum:
         print('Changed spgnum')

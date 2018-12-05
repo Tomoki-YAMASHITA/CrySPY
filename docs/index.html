@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CrySPY &mdash; CrySPY Updata: 2018/6/26 documentation</title>
+  <title>CrySPY &mdash; CrySPY version 0.7.0 documentation</title>
   
 
   
@@ -24,28 +24,19 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="author" title="About these documents"
-              href="about.html"/>
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2018/6/26 documentation" href="#"/>
-        <link rel="next" title="About" href="about.html"/> 
+  <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="About" href="about.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -67,7 +58,7 @@
             
             
               <div class="version">
-                Update: 2018/6/26
+                version 0.7.0
               </div>
             
           
@@ -95,7 +86,7 @@
 <li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal notranslate"><span class="pre">cryspy.in</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_format.html">Data format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
@@ -111,7 +102,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="#">CrySPY</a>
@@ -119,9 +110,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -174,6 +166,9 @@
 <div class="section" id="news">
 <h2>News<a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h2>
 <div class="line-block">
+<div class="line">[2018 December 5] version 0.7.0 released. Evolutionary algorithm is now available</div>
+<div class="line">[2018 August 20] version 0.6.4 released</div>
+<div class="line">[2018 July 2] version 0.6.3 released</div>
 <div class="line">[2018 June 26] Version 0.6.2 released</div>
 <div class="line">[2018 March 1] Version 0.6.1 released</div>
 <div class="line">[2018 January 9] Our paper on CrySPY  has been published in Physical Review Materials, <a class="reference external" href="https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803">https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803</a></div>
@@ -182,10 +177,21 @@
 </div>
 <div class="section" id="reference">
 <h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bayesian-optimization">
+<h3>Bayesian optimization<a class="headerlink" href="#bayesian-optimization" title="Permalink to this headline">¶</a></h3>
 <div class="line-block">
-<div class="line">T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Materials 2, 013803 (2018).</div>
+<div class="line">T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. <strong>2</strong>, 013803 (2018).</div>
 <div class="line"><a class="reference external" href="https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803">https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803</a></div>
 <div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="laqa">
+<h3>LAQA<a class="headerlink" href="#laqa" title="Permalink to this headline">¶</a></h3>
+<div class="line-block">
+<div class="line">K.Terayama, T. Yamashita, T. Oguchi, and K. Tsuda, npj Comput. Mater. <strong>4</strong>, 32 (2018).</div>
+<div class="line"><a class="reference external" href="https://www.nature.com/articles/s41524-018-0090-y">https://www.nature.com/articles/s41524-018-0090-y</a></div>
+<div class="line"><br /></div>
+</div>
 </div>
 </div>
 <div class="section" id="contents">
@@ -200,12 +206,13 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#system-requirements">System requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installation-of-find-wy">Installation of find_wy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#download">Download</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#setup">Setup</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal notranslate"><span class="pre">cryspy.in</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#file-format">File format</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#basic-section">[basic] section</a></li>
@@ -216,6 +223,7 @@
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#lammps-section">[LAMMPS] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#bo-section">[BO] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#laqa-section">[LAQA] section</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_file.html#ea-section">[EA] section</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_file.html#option-section">[option] section</a></li>
 </ul>
 </li>
@@ -254,9 +262,7 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -272,11 +278,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, CrySPY Development Team.
+        &copy; Copyright 2017, CrySPY Development Team
+      Last updated on Dec 05, 2018.
 
     </p>
-  </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  </div> 
 
 </footer>
 
@@ -291,35 +297,23 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'Updata: 2018/6/26',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

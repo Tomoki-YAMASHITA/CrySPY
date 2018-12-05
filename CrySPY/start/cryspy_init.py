@@ -42,7 +42,6 @@ def initialize():
         os.makedirs('data/pkl_data')
 
     # ---------- generate initial structures
-    init_pos_path = utility.get_init_pos_path()
     if not rin.load_struc_flag:
         # ------ from scratch
         print('\n# --------- Generate initial structures')
@@ -52,13 +51,13 @@ def initialize():
             init_struc_data = rndgen.rndgen_wo_spg(
                                   rin.tot_struc, rin.natot, rin.atype, rin.nat, 0,
                                   rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                                  rin.maxcnt, rin.symtoleI, init_pos_path)
+                                  rin.maxcnt, rin.symprec, '../data/init_POSCARS')
         else:
             fwpath = utility.check_fwpath()
             init_struc_data = rndgen.rndgen_spg(
                                   rin.tot_struc, rin.natot, rin.atype, rin.nat, rin.spgnum,
                                   0, rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                                  rin.maxcnt, rin.symtoleI, init_pos_path, fwpath)
+                                  rin.maxcnt, rin.symprec, '../data/init_POSCARS', fwpath)
         with open('cryspy.out', 'a') as fout:
             fout.write('Generated structures up to ID {}\n\n'.format(len(init_struc_data)-1))
         # ------ save
@@ -93,14 +92,14 @@ def initialize():
     return stat, init_struc_data, rslt_data
 
 
-def RS_init(stat):
+def rs_init(stat):
     next_id = 0
     stat.set('status', 'next_id', '{}'.format(next_id))
     with open('cryspy.stat', 'w') as fstat:
         stat.write(fstat)
     id_done = np.array([], dtype=int)
-    RS_id_data = (next_id, id_done)
-    pkl_data.save_RS_id(RS_id_data)
+    rs_id_data = (next_id, id_done)
+    pkl_data.save_rs_id(rs_id_data)
 
 
 def kpt_init():

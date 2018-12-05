@@ -14,7 +14,7 @@ import json
 import numpy as np
 from pymatgen import Structure
 
-from ..dist import check_min_dist
+from ...struc_util import check_distance
 
 
 def fw_input(atype, nat, spg, a, b, c, cosa, cosb, cosg):
@@ -42,7 +42,7 @@ def fw_input(atype, nat, spg, a, b, c, cosa, cosb, cosg):
         f.write('randomseed auto\n')
 
 
-def gen_wypos(cumul_nat, mindist, maxcnt):
+def gen_wypos(atype, mindist, maxcnt):
     '''
     Success --> return True, structure data
     Failure --> return False, _
@@ -79,7 +79,7 @@ def gen_wypos(cumul_nat, mindist, maxcnt):
                 cart.append(v)
             # -- check minimum distance
             spgstruc = Structure(plat, atomnames, cart, coords_are_cartesian=True)
-            if check_min_dist(spgstruc, cumul_nat, mindist) is False:
+            if check_distance(spgstruc, atype, mindist) is False:
                 cnt = maxcnt + 1 if value == 0 else cnt + 1    # num_uniqvar = 0 --> value == 0
                 if maxcnt < cnt:
                     return False, spgstruc    # spgstruc is dummy

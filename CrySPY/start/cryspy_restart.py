@@ -31,21 +31,20 @@ def append_struc(init_struc_data):
     print('\n# ---------- Append structures')
     with open('cryspy.out', 'a') as fout:
         fout.write('\n# ---------- Append structures\n')
-    init_pos_path = utility.get_init_pos_path()
     id_offset = len(init_struc_data)
     nstruc = rin.tot_struc - id_offset
     if rin.spgnum == 0:
         tmp_struc_data = rndgen.rndgen_wo_spg(
                                nstruc, rin.natot, rin.atype, rin.nat, id_offset,
                                rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                               rin.maxcnt, rin.symtoleI, init_pos_path)
+                               rin.maxcnt, rin.symprec, '../data/init_POSCARS')
         init_struc_data.update(tmp_struc_data)
     else:
         fwpath = utility.check_fwpath()
         tmp_struc_data = rndgen.rndgen_spg(
                               nstruc, rin.natot, rin.atype, rin.nat, rin.spgnum, id_offset,
                               rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                              rin.maxcnt, rin.symtoleI, init_pos_path, fwpath)
+                              rin.maxcnt, rin.symprec, '../data/init_POSCARS', fwpath)
         init_struc_data.update(tmp_struc_data)
 
     print('')    # for blank line

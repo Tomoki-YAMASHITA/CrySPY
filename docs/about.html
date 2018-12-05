@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>About &mdash; CrySPY Updata: 2018/6/26 documentation</title>
+  <title>About &mdash; CrySPY version 0.7.0 documentation</title>
   
 
   
@@ -24,29 +24,20 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="author" title="About these documents"
-              href="#"/>
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="CrySPY Updata: 2018/6/26 documentation" href="index.html"/>
-        <link rel="next" title="Installation" href="installation.html"/>
-        <link rel="prev" title="CrySPY" href="index.html"/> 
+  <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="author" title="About these documents" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="CrySPY" href="index.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -68,7 +59,7 @@
             
             
               <div class="version">
-                Update: 2018/6/26
+                version 0.7.0
               </div>
             
           
@@ -107,7 +98,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal"><span class="pre">cryspy.in</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_file.html">Input file: <code class="docutils literal notranslate"><span class="pre">cryspy.in</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_format.html">Data format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utility.html">Utility</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
@@ -123,7 +114,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">CrySPY</a>
@@ -131,9 +122,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -205,7 +197,7 @@
 <li>Random Search (RS)</li>
 <li>Bayesian Optimization (BO)</li>
 <li>Look Ahead based on Quadratic Approximation (LAQA)</li>
-<li>Evolutionary Algorithm (EA) (only develop ver.)</li>
+<li>Evolutionary Algorithm (EA)</li>
 </ul>
 <div class="section" id="random-search-rs">
 <h3><a class="toc-backref" href="#id4">Random Search (RS)</a><a class="headerlink" href="#random-search-rs" title="Permalink to this headline">¶</a></h3>
@@ -220,6 +212,37 @@
 </div>
 <div class="section" id="evolutionary-algorithm-ea">
 <h3><a class="toc-backref" href="#id7">Evolutionary Algorithm (EA)</a><a class="headerlink" href="#evolutionary-algorithm-ea" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>Selection methods</dt>
+<dd><ul class="first last">
+<li>Tournament selection</li>
+<li>Roulette selection</li>
+<li>Elite selection</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Evolutionary operations</dt>
+<dd><ul class="first last">
+<li>Crossover</li>
+<li>Permutation</li>
+<li>Strain</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>etc.</dt>
+<dd><ul class="first last">
+<li>Survival of the fittest</li>
+<li>Dedupe structures in survival of the fittest</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
 </div>
 </div>
 <div class="section" id="interface">
@@ -236,9 +259,7 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -256,11 +277,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, CrySPY Development Team.
+        &copy; Copyright 2017, CrySPY Development Team
+      Last updated on Dec 05, 2018.
 
     </p>
-  </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  </div> 
 
 </footer>
 
@@ -275,35 +296,23 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'Updata: 2018/6/26',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

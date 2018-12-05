@@ -48,7 +48,7 @@ def from_lines(lines_cell, lines_atom):
     elif unit == 'angstrom':
         scale = 1.0    # in Ang
     else:
-        ValueError('unit "{0:s}" for CELL_PARAMETERS is not supported'.format(unit))
+        raise ValueError('unit "{0:s}" for CELL_PARAMETERS is not supported'.format(unit))
     lattice = [[scale * float(x) for x in line.split()] for line in lines_cell[1:4]]
 
     # ---------- species & coordinates
@@ -64,7 +64,7 @@ def from_lines(lines_cell, lines_atom):
         if unit == 'crystal':
             pass    # 'coords' are already internal coordinates
         else:
-            ValueError('unit "{0:s}" for ATOMIC_POSITIONS is not supported yet'.format(unit))
+            raise ValueError('unit "{0:s}" for ATOMIC_POSITIONS is not supported yet'.format(unit))
 
     structure = Structure(lattice, species, coords)
     return structure

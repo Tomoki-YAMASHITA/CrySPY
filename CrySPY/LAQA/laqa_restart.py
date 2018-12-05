@@ -5,18 +5,18 @@ from ..IO import pkl_data
 from ..IO import read_input as rin
 
 
-def restart(stat, LAQA_id_data, LAQA_data, prev_nstruc):
-    # ---------- load LAQA data
-    id_to_calc, id_select_hist, id_done = LAQA_id_data
-    tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score = LAQA_data
+def restart(stat, laqa_id_data, laqa_data, prev_nstruc):
+    # ---------- load laqa data
+    id_to_calc, id_select_hist, id_done = laqa_id_data
+    tot_step_select, laqa_step, laqa_struc, laqa_energy, laqa_bias, laqa_score = laqa_data
 
     # ---------- append scores and id_to_calc
     for i in range(prev_nstruc, rin.tot_struc):
-        LAQA_step[i] = []
-        LAQA_struc[i] = []
-        LAQA_energy[i] = []
-        LAQA_bias[i] = []
-        LAQA_score[i] = [float('inf')]
+        laqa_step[i] = []
+        laqa_struc[i] = []
+        laqa_energy[i] = []
+        laqa_bias[i] = []
+        laqa_score[i] = [float('inf')]
         id_to_calc.append(i)
     print('Append scores and id_to_calc')
     with open('cryspy.out', 'a') as fout:
@@ -31,7 +31,7 @@ def restart(stat, LAQA_id_data, LAQA_data, prev_nstruc):
         stat.write(fstat)
 
     # ---------- save for LAQA
-    LAQA_id_data = (id_to_calc, id_select_hist, id_done)
-    pkl_data.save_LAQA_id(LAQA_id_data)
-    LAQA_data = (tot_step_select, LAQA_step, LAQA_struc, LAQA_energy, LAQA_bias, LAQA_score)
-    pkl_data.save_LAQA_data(LAQA_data)
+    laqa_id_data = (id_to_calc, id_select_hist, id_done)
+    pkl_data.save_laqa_id(laqa_id_data)
+    laqa_data = (tot_step_select, laqa_step, laqa_struc, laqa_energy, laqa_bias, laqa_score)
+    pkl_data.save_laqa_data(laqa_data)
