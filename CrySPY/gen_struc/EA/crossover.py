@@ -8,6 +8,7 @@ from pymatgen import Structure, Lattice
 
 from ..struc_util import origin_shift, sort_by_atype, check_distance
 
+
 class Crossover(object):
     '''
     crossover
@@ -43,17 +44,17 @@ class Crossover(object):
         # ---------- check args
         # ------ atype, nat, mindist
         for x in [atype, nat, mindist]:
-            if not isinstance(x, list):
-                raise TypeError('{} must be list'.format(x))
+            if type(x) is not list:
+                raise ValueError('atype, nat, and mindist must be list')
         if not len(atype) == len(nat) == len(mindist):
             raise ValueError('not len(atype) == len(nat) == len(mindist)')
         # -- check symmetric
         for i in range(len(mindist)):
             for j in range(i):
                 if not mindist[i][j] == mindist[j][i]:
-                    raise ValueError('mindist is not symmetric. ' + \
+                    raise ValueError('mindist is not symmetric. ' +
                                      '({}, {}): {}, ({}, {}): {}'.format(
-                                     i, j, mindist[i][j], j, i, mindist[j][i]))
+                                         i, j, mindist[i][j], j, i, mindist[j][i]))
         self.atype = atype
         self.nat = nat
         self.mindist = mindist
@@ -71,11 +72,10 @@ class Crossover(object):
             self.crs_func = crs_func
         # ------ nat_diff_tole, maxcnt_ea
         for x in [nat_diff_tole, maxcnt_ea]:
-            if isinstance(x, int):
-                if x <= 0:
-                    raise ValueError('{} must be positive int'.format(x))
+            if type(x) is int and x > 0:
+                pass
             else:
-                raise TypeError('{} must be int'.format(x))
+                raise ValueError('nat_diff_tole and maxcnt_ea must be positive int')
         self.nat_diff_tole = nat_diff_tole
         self.maxcnt_ea = maxcnt_ea
 
@@ -223,7 +223,7 @@ class Crossover(object):
         coords_B = []
         for i in range(self.parent_A.num_sites):
             if (self.parent_A.frac_coords[i, self._axis]
-                <= sp0) or (sp1<= self.parent_A.frac_coords[i, self._axis]):
+                <= sp0) or (sp1 <= self.parent_A.frac_coords[i, self._axis]):
                 species_A.append(self.parent_A[i].species_string)
                 coords_A.append(self.parent_A[i].frac_coords)
             else:

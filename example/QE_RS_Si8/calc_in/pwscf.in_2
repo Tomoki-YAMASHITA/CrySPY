@@ -1,7 +1,7 @@
  &control
     title = 'Si8'
     calculation = 'vc-relax'
-    nstep = 100
+    nstep = 200
     restart_mode = 'from_scratch',
     wf_collect = .true.
     pseudo_dir = '/path/to/PSEUDOPOTENTIALS/'

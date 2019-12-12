@@ -1,6 +1,14 @@
 # CrySPY
 CrySPY is a crystal structure prediction tool written in Python.
 
+You can automatically do the following things with CrySPY.
+* Structure generation
+* Submitting jobs for structure optimization
+* Collecting data for structure optimization
+* Selecting candidates using machine learning
+
+You can also use CrySPY partly for the purpose of only struture generation and descriptor calculation for crystal structures.
+
 ## Latest version
 version 0.7.0 (2018 December 5)
 
@@ -40,7 +48,7 @@ At least either one of
 
 ## Reference
 ### Bayesian optimization
-T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2017).  
+T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2018).  
 https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
 
 ### LAQA

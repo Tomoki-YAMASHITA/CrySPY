@@ -6,11 +6,10 @@ from __future__ import print_function
 import ConfigParser
 import os
 
-import numpy as np
 import pandas as pd
 
 from .. import utility
-from ..gen_struc.random import rndgen
+from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..IO import pkl_data
 from ..IO import read_input as rin
 
@@ -47,22 +46,21 @@ def initialize():
         print('\n# --------- Generate initial structures')
         with open('cryspy.out', 'a') as fout:
             fout.write('# ---------- Generate initial structures\n')
+        rsg = Rnd_struc_gen(rin.natot, rin.atype, rin.nat,
+                            rin.minlen, rin.maxlen, rin.dangle,
+                            rin.mindist, rin.maxcnt, rin.symprec)
         if rin.spgnum == 0:
-            init_struc_data = rndgen.rndgen_wo_spg(
-                                  rin.tot_struc, rin.natot, rin.atype, rin.nat, 0,
-                                  rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                                  rin.maxcnt, rin.symprec, '../data/init_POSCARS')
+            rsg.gen_wo_spg(rin.tot_struc, id_offset=0, init_pos_path='./data/init_POSCARS')
+            init_struc_data = rsg.init_struc_data
         else:
             fwpath = utility.check_fwpath()
-            init_struc_data = rndgen.rndgen_spg(
-                                  rin.tot_struc, rin.natot, rin.atype, rin.nat, rin.spgnum,
-                                  0, rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                                  rin.maxcnt, rin.symprec, '../data/init_POSCARS', fwpath)
+            rsg.gen_with_spg(rin.tot_struc, rin.spgnum, id_offset=0,
+                             init_pos_path='./data/init_POSCARS', fwpath=fwpath)
+            init_struc_data = rsg.init_struc_data
         with open('cryspy.out', 'a') as fout:
             fout.write('Generated structures up to ID {}\n\n'.format(len(init_struc_data)-1))
         # ------ save
         pkl_data.save_init_struc(init_struc_data)
-
     else:
         # ------ load initial structure
         print('\n# --------- Load initial structure data')
@@ -83,7 +81,7 @@ def initialize():
     # ---------- initialize rslt_data
     rslt_data = pd.DataFrame(columns=['Struc_ID', 'Spg_num', 'Spg_sym',
                                       'Spg_num_opt', 'Spg_sym_opt',
-                                      'Energy', 'Magmom', 'Opt'])
+                                      'E_eV_atom', 'Magmom', 'Opt'])
     rslt_data[['Struc_ID', 'Spg_num', 'Spg_num_opt']] = rslt_data[
                                    ['Struc_ID', 'Spg_num', 'Spg_num_opt']].astype(int)
     pkl_data.save_rslt(rslt_data)
@@ -97,8 +95,7 @@ def rs_init(stat):
     stat.set('status', 'next_id', '{}'.format(next_id))
     with open('cryspy.stat', 'w') as fstat:
         stat.write(fstat)
-    id_done = np.array([], dtype=int)
-    rs_id_data = (next_id, id_done)
+    rs_id_data = next_id
     pkl_data.save_rs_id(rs_id_data)
 
 

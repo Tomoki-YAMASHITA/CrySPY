@@ -35,7 +35,7 @@ class policy_cryspy(combo.search.discrete.policy):
         return action
 
 
-def bayes_opt(sact, descriptors, targets):
+def bayes_opt(s_act, descriptors, targets, nselect):
     # ---------- start COMBO part
     # ------ standardization
     # X = combo.misc.centering(descriptors)
@@ -47,7 +47,7 @@ def bayes_opt(sact, descriptors, targets):
     policryspy = policy_cryspy(test_X=X)
 
     # ------ pick up data, already optimized
-    actions = policryspy.specified_search(specified_actions=sact, max_num_probes=1)
+    actions = policryspy.specified_search(specified_actions=s_act, max_num_probes=1)
 
     # ------ write
     policryspy.write(actions, -targets)    # Combo trys to find max values --> use "-" (minus)
@@ -57,7 +57,7 @@ def bayes_opt(sact, descriptors, targets):
 
     # ------ Bayes_search
     actions = policryspy.bayes_search(max_num_probes=1,
-                                      num_search_each_probe=rin.interval,
+                                      num_search_each_probe=nselect,
                                       score=rin.score, num_rand_basis=rin.num_rand_basis)
     return actions
 

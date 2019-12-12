@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 
-import numpy as np
 import pandas as pd
 
 from ..IO import out_results
@@ -23,7 +22,6 @@ def initialize(stat, rslt_data):
 
     # ---------- initialize
     next_id = 0
-    id_done = np.array([], dtype=int)
     gen = 1
     # ------ ea_info
     ea_info = pd.DataFrame(columns=['Gen', 'Population',
@@ -47,10 +45,10 @@ def initialize(stat, rslt_data):
     # ------ rslt_data
     rslt_data['Gen'] = pd.Series(dtype=int)
     rslt_data = rslt_data[['Gen', 'Struc_ID', 'Spg_num', 'Spg_sym', 'Spg_num_opt',
-                           'Spg_sym_opt', 'Energy', 'Magmom', 'Opt']]
+                           'Spg_sym_opt', 'E_eV_atom', 'Magmom', 'Opt']]
 
     # ---------- save
-    ea_id_data = (gen, next_id, id_done)
+    ea_id_data = (gen, next_id)
     pkl_data.save_ea_id(ea_id_data)
     ea_data = (elite_struc, elite_fitness, ea_info, ea_origin)
     pkl_data.save_ea_data(ea_data)

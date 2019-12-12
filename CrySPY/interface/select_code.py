@@ -41,10 +41,10 @@ def next_stage(stage, work_path, *args):
         raise NotImplementedError('now only VASP, QE, soiap, or LAMMPS')
 
 
-def collect(current_id, work_path, check_file=None):
+def collect(current_id, work_path):
     if rin.calc_code == 'VASP':
         opt_struc, energy, magmom, check_opt = \
-            collect_vasp.collect_vasp(current_id, work_path, check_file)
+            collect_vasp.collect_vasp(current_id, work_path)
     elif rin.calc_code == 'QE':
         opt_struc, energy, magmom, check_opt = \
             collect_qe.collect_qe(current_id, work_path)

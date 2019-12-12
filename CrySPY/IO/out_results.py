@@ -5,16 +5,18 @@ from . import read_input as rin
 
 
 def out_rslt(rslt_data):
-    # ---------- asc in Struc_ID or Gen
+    # ---------- asc in Struc_ID or (Gen or Select)
     with open('./data/cryspy_rslt', 'w') as frslt:
         if rin.algo == 'RS' or rin.algo == 'LAQA':
             frslt.write(rslt_data.sort_values(by=['Struc_ID'], ascending=True).to_string(index=False))
-        elif rin.algo == 'BO' or rin.algo == 'EA':
+        elif rin.algo == 'BO':
             frslt.write(rslt_data.sort_values(by=['Gen', 'Struc_ID'], ascending=True).to_string(index=False))
+        elif rin.algo == 'EA':
+            frslt.write(rslt_data.sort_values(by=['Select', 'Struc_ID'], ascending=True).to_string(index=False))
 
     # ---------- asc in energy
     with open('./data/cryspy_rslt_energy_asc', 'w') as fasc:
-        fasc.write(rslt_data.sort_values(by=['Energy'], ascending=True).to_string(index=False))
+        fasc.write(rslt_data.sort_values(by=['E_eV_atom'], ascending=True).to_string(index=False))
 
 
 def out_kpts(kpt_data):
@@ -30,7 +32,7 @@ def out_laqa_status(laqa_step, laqa_score, laqa_energy, laqa_bias):
     # ------ desc in score
     with open('./data/LAQA_status', 'w') as frslt:
         frslt.write('{0:>10}  {1:>14}  {2:>14}  {3:>14}  {4:>12}  {5:>12}\n'.format(
-            'Struc_ID', 'Score', 'E(eV/atom)', 'Bias', 'Selection', 'Step'))
+            'Struc_ID', 'Score', 'E_eV_atom', 'Bias', 'Selection', 'Step'))
         for key, value in sorted(laqa_score.items(), key=lambda x: -x[1][-1]):
             if laqa_energy[key]:    # whether list is vacant or not?
                 frslt.write('{0:10d}  {1: 14.8f}  {2: 14.8f}  {3: 14.8f}  {4:12d}  {5:12d}\n'.format(
@@ -104,4 +106,3 @@ def out_ea_info(ea_info):
 def out_ea_origin(ea_origin):
     with open('./data/EA_origin', 'w') as frslt:
         frslt.write(ea_origin.to_string(index=False))
-

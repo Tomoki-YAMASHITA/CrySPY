@@ -3,49 +3,21 @@
 
 from __future__ import print_function
 
-import os
-
-import numpy as np
-
-from ..calc_dscrpt.FP import calc_FP
+from .. import utility
+from ..calc_dscrpt.FP.calc_FP import Calc_FP
 from ..IO import read_input as rin
 
 
-def calc_X(init_struc_data):
+def select_descriptor(struc_data):
+    # ---------- fingerprint
     if rin.dscrpt == 'FP':
         print('Calculate descriptors: FingerPrint')
-
-        # ---------- check cal_fingerprint executable file
-        fppath = os.path.dirname(os.path.abspath(__file__)) + '/../f-fingerprint/cal_fingerprint'
-        if not os.path.isfile(fppath):
-            raise IOError('There is no cal_fingerprint program in CrySPY/f-fingerprint/cal_fingerprint')
-
-        # ---------- calc descriptors
-        strucs_list = [init_struc_data[i] for i in range(len(init_struc_data))]    # dict --> list
-        descriptors = calc_FP.calc_X(strucs_list, fppath,
-                                     rin.fp_rmin, rin.fp_rmax,
-                                     rin.fp_npoints, rin.fp_sigma)
+        # ------ check cal_fingerprint executable file
+        fppath = utility.check_fppath()
+        # ------ calc fingerprint
+        cfp = Calc_FP(struc_data, rin.fp_rmin, rin.fp_rmax,
+                      rin.fp_npoints, rin.fp_sigma, fppath)
+        cfp.calc()
+        return cfp.descriptors
     else:
         raise NotImplementedError('Now FP only')
-    return descriptors
-
-
-def append_X(init_struc_data, prev_nstruc, non_error_id, descriptors):
-    if rin.dscrpt == 'FP':
-        print('Append descriptors: FingerPrint')
-
-        # ---------- check cal_fingerprint executable file
-        fppath = os.path.dirname(os.path.abspath(__file__)) + '/../f-fingerprint/cal_fingerprint'
-        if not os.path.isfile(fppath):
-            raise IOError('There is no cal_fingerprint program in CrySPY/f-fingerprint/cal_fingerprint')
-
-        # ---------- append descriptor
-        strucs_list = [init_struc_data[i] for i in range(prev_nstruc, len(init_struc_data))]    # dict --> list
-        tmp_dscrpt = calc_FP.calc_X(strucs_list, fppath,
-                                    rin.fp_rmin, rin.fp_rmax,
-                                    rin.fp_npoints, rin.fp_sigma)
-        descriptors = np.vstack((descriptors, tmp_dscrpt))
-        non_error_id = np.r_[non_error_id, np.arange(prev_nstruc, len(init_struc_data))]
-    else:
-        raise NotImplementedError('Now FP only')
-    return non_error_id, descriptors

@@ -14,7 +14,7 @@ from ..gen_struc.EA.crossover import Crossover
 from ..gen_struc.EA.permutation import Permutation
 from ..gen_struc.EA.strain import Strain
 from ..gen_struc.EA.ea_generation import EA_generation
-from ..gen_struc.random import rndgen
+from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..IO import out_results
 from ..IO import pkl_data
 from ..IO import read_input as rin
@@ -27,7 +27,7 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
         fout.write('\n# ---------- Append structures by EA\n')
 
     # ---------- fitness
-    fitness = dict(zip(rslt_data['Struc_ID'].values, rslt_data['Energy'].values))
+    fitness = dict(zip(rslt_data['Struc_ID'].values, rslt_data['E_eV_atom'].values))
 
     # ---------- instantiate Seclect_parents class
     print('# ------ select parents')
@@ -64,21 +64,17 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
 
     # ---------- random generation
     if rin.n_rand > 0:
+        rsg = Rnd_struc_gen(rin.natot, rin.atype, rin.nat,
+                            rin.minlen, rin.maxlen, rin.dangle,
+                            rin.mindist, rin.maxcnt, rin.symprec)
         if rin.spgnum == 0:
-            tmp_struc_data = rndgen.rndgen_wo_spg(
-                                   rin.n_rand, rin.natot, rin.atype, rin.nat, eagen.cID,
-                                   rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                                   rin.maxcnt, rin.symprec, '../data/init_POSCARS')
-            # ------ update init_struc_data
-            init_struc_data.update(tmp_struc_data)
+            rsg.gen_wo_spg(rin.n_rand, id_offset=eagen.cID, init_pos_path='./data/init_POSCARS')
+            init_struc_data.update(rsg.init_struc_data)
         else:
             fwpath = utility.check_fwpath()
-            tmp_struc_data = rndgen.rndgen_spg(
-                                  rin.n_rand, rin.natot, rin.atype, rin.nat, rin.spgnum, eagen.cID,
-                                  rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                                  rin.maxcnt, rin.symprec, '../data/init_POSCARS', fwpath)
-            # ------ update init_struc_data
-            init_struc_data.update(tmp_struc_data)
+            rsg.gen_with_spg(rin.n_rand, rin.spgnum, id_offset=eagen.cID,
+                             init_pos_path='./data/init_POSCARS', fwpath=fwpath)
+            init_struc_data.update(rsg.init_struc_data)
     with open('cryspy.out', 'a') as fout:
         fout.write('{} structures by random\n'.format(rin.n_rand))
 
@@ -101,8 +97,10 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
         ea_origin.iloc[:, 0:2] = ea_origin.iloc[:, 0:2].astype(int)
 
     # ---------- ea_info
-    tmp_info = pd.Series([rin.tot_struc, rin.n_pop, rin.n_crsov, rin.n_perm, rin.n_strain, rin.n_rand, 0,
-                          rin.crs_func, rin.crs_lat, rin.slct_func], index=ea_info.columns)
+    tmp_info = pd.Series([rin.tot_struc, rin.n_pop, rin.n_crsov,
+                          rin.n_perm, rin.n_strain, rin.n_rand, 0,
+                          rin.crs_func, rin.crs_lat, rin.slct_func],
+                         index=ea_info.columns)
     ea_info = ea_info.append(tmp_info, ignore_index=True)
     # ------ out ea_info
     out_results.out_ea_info(ea_info)
@@ -110,13 +108,14 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
     # ---------- ea_origin
     # ------ EA operation part
     for cID in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
-        tmp_origin = pd.Series([rin.tot_struc, cID, eagen.operation[cID], eagen.parents[cID]], index=ea_origin.columns)
+        tmp_origin = pd.Series([rin.tot_struc, cID, eagen.operation[cID],
+                                eagen.parents[cID]], index=ea_origin.columns)
         ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
     # ------ random part
     for cID in range(rin.tot_struc + rin.n_pop - rin.n_rand, rin.tot_struc + rin.n_pop):
         tmp_origin = pd.Series([rin.tot_struc, cID, 'random', None], index=ea_origin.columns)
         ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
-    #------  out ea_origin
+    # ------  out ea_origin
     out_results.out_ea_origin(ea_origin)
 
     # ---------- save ea_data

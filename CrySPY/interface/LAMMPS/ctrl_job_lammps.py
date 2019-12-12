@@ -15,11 +15,7 @@ def next_stage_lammps(stage, work_path):
     skip_flag = False
 
     # ---------- prepare lammps files
-    if rin.lammps_potential is None:
-        lammps_files = [rin.lammps_infile, rin.lammps_outfile, rin.lammps_data, 'log.struc']
-    else:
-        lammps_files = [rin.lammps_infile, rin.lammps_outfile,
-                        rin.lammps_potential, rin.lammps_data, 'log.struc']
+    lammps_files = [rin.lammps_infile, rin.lammps_outfile, rin.lammps_data, 'log.struc']
     for f in lammps_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)
@@ -52,7 +48,7 @@ def next_struc_lammps(structure, next_id, work_path):
     if rin.lammps_potential is None:
         calc_inputs = [rin.lammps_infile]
     else:
-        calc_inputs = [rin.lammps_infile, rin.lammps_potential]
+        calc_inputs = [rin.lammps_infile] + rin.lammps_potential
     for f in calc_inputs:
         ff = f+'_1' if f == rin.lammps_infile else f
         if not os.path.isfile('./calc_in/'+ff):

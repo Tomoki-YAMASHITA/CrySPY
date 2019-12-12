@@ -150,7 +150,7 @@
      npoints = 100
      sigma = 0.05 
      nrepeat_min = 1
-     nrepeat_max = 15
+     nrepeat_max = 30
      filename="POSCAR"
 
 #if USE_M_CMD_ARG

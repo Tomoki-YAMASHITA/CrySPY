@@ -6,7 +6,7 @@ from __future__ import print_function
 import ConfigParser
 
 from .. import utility
-from ..gen_struc.random import rndgen
+from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..IO import pkl_data
 from ..IO import read_input as rin
 
@@ -33,19 +33,17 @@ def append_struc(init_struc_data):
         fout.write('\n# ---------- Append structures\n')
     id_offset = len(init_struc_data)
     nstruc = rin.tot_struc - id_offset
+    rsg = Rnd_struc_gen(rin.natot, rin.atype, rin.nat,
+                        rin.minlen, rin.maxlen, rin.dangle,
+                        rin.mindist, rin.maxcnt, rin.symprec)
     if rin.spgnum == 0:
-        tmp_struc_data = rndgen.rndgen_wo_spg(
-                               nstruc, rin.natot, rin.atype, rin.nat, id_offset,
-                               rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                               rin.maxcnt, rin.symprec, '../data/init_POSCARS')
-        init_struc_data.update(tmp_struc_data)
+        rsg.gen_wo_spg(nstruc, id_offset, init_pos_path='./data/init_POSCARS')
+        init_struc_data.update(rsg.init_struc_data)
     else:
         fwpath = utility.check_fwpath()
-        tmp_struc_data = rndgen.rndgen_spg(
-                              nstruc, rin.natot, rin.atype, rin.nat, rin.spgnum, id_offset,
-                              rin.minlen, rin.maxlen, rin.dangle, rin.mindist,
-                              rin.maxcnt, rin.symprec, '../data/init_POSCARS', fwpath)
-        init_struc_data.update(tmp_struc_data)
+        rsg.gen_with_spg(nstruc, rin.spgnum, id_offset,
+                         init_pos_path='./data/init_POSCARS', fwpath=fwpath)
+        init_struc_data.update(rsg.init_struc_data)
 
     print('')    # for blank line
     with open('cryspy.out', 'a') as fout:

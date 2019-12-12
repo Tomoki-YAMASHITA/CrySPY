@@ -10,14 +10,12 @@ import numpy as np
 from pymatgen import Structure
 
 from ...IO import pkl_data
+from ...IO import read_input as rin
 
 
-def collect_vasp(current_id, work_path, check_file):
+def collect_vasp(current_id, work_path):
     # ---------- check optimization
-    if check_file is None:
-        check_opt = check_opt_vasp(work_path+'prev_OUTCAR')
-    else:    # for LAQA
-        check_opt = check_opt_vasp(work_path+check_file)
+    check_opt = check_opt_vasp(work_path+'OUTCAR')
     # ---------- obtain energy and magmom
     energy, magmom = get_energy_magmom_vasp(work_path)
     if np.isnan(energy):
@@ -65,7 +63,8 @@ def get_energy_magmom_vasp(work_path):
         with open(work_path+'OSZICAR', 'r') as foszi:
             oszi = foszi.readlines()
         if 'F=' in oszi[-1]:
-            energy = float(oszi[-1].split()[2])    # free energy (eV)
+            energy = float(oszi[-1].split()[2])    # free energy (eV/cell)
+            energy = energy/float(rin.natot)       # eV/atom
             if 'mag=' in oszi[-1]:
                 magmom = float(oszi[-1].split()[-1])    # total magnetic moment
     except:
@@ -83,6 +82,9 @@ def get_opt_struc_vasp(file_name):
 
 
 def get_energy_step_vasp(energy_step_data, current_id, filename):
+    '''
+    get energy step data in eV/atom
+    '''
     # ---------- get energy step from vasprun
     try:
         # ------ read file
@@ -102,7 +104,7 @@ def get_energy_step_vasp(energy_step_data, current_id, filename):
             else:
                 raise ValueError('bug')
         # ------ list, str --> array
-        energy_step = np.array(energy_step, dtype='float')
+        energy_step = np.array(energy_step, dtype='float')/float(rin.natot)
     except:
         energy_step = None
         print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(current_id))

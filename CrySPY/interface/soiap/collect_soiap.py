@@ -33,6 +33,7 @@ def collect_soiap(current_id, work_path):
             lines = f.readlines()
         energy = float(lines[-1].split()[2])    # in Hartree
         energy = float(Energy(energy, 'Ha').to('eV'))    # Hartree --> eV
+        energy = energy/float(rin.natot)    # eV/cell --> eV/atom
     except:
         energy = np.nan    # error
         print('    Structure ID {0}, could not obtain energy from {1}'.format(current_id, rin.soiap_outfile))

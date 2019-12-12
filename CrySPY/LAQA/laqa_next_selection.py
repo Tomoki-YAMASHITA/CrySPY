@@ -3,6 +3,8 @@
 
 from __future__ import print_function
 
+import os
+
 from ..IO import pkl_data
 from ..IO import read_input as rin
 from ..IO.out_results import out_laqa_id_hist
@@ -68,4 +70,3 @@ def next_selection(stat, laqa_id_data, laqa_data):
         print('selected_id: {}\n'.format(' '.join(str(a) for a in id_to_calc)))
         with open('cryspy.out', 'a') as fout:
             fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in id_to_calc)))
-

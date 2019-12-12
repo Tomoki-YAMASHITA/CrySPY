@@ -33,6 +33,7 @@ def collect_qe(current_id, work_path):
             if line.startswith('!'):
                 energy = float(line.split()[-2])    # in Ry
                 energy = float(Energy(energy, 'Ry').to('eV'))    # Ry --> eV
+                energy = energy/float(rin.natot)    # eV/cell --> eV/atom
                 break
         magmom = np.nan    # not implemented yet...
     except:

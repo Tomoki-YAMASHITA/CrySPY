@@ -60,7 +60,7 @@ def readin():
         # ------ global declaration
         global interval, score, num_rand_basis, cdev, dscrpt
         global fp_rmin, fp_rmax, fp_npoints, fp_sigma
-        global maxgen
+        global max_select_bo, manual_select_bo
         # ------ read intput variables
         interval = config.getint('BO', 'interval')
         if interval <= 0:
@@ -85,7 +85,7 @@ def readin():
             pass
         else:
             raise NotImplementedError('Now FP only')
-        # -- parameters for f-fingerprint (optional)
+        # -- parameters for f-fingerprint
         try:
             fp_rmin = config.getfloat('BO', 'fp_rmin')
         except ConfigParser.NoOptionError:
@@ -112,11 +112,25 @@ def readin():
             raise ValueError('fp_sigma < 0, check fp_sigma')
         # -- BO option
         try:
-            maxgen = config.getint('BO', 'maxgen')
+            max_select_bo = config.getint('BO', 'max_select_bo')
         except ConfigParser.NoOptionError:
-            maxgen = 0
-        if maxgen < 0:
-            raise ValueError('maxgen must be non-negative int')
+            max_select_bo = 0
+        if max_select_bo < 0:
+            raise ValueError('max_select_bo must be non-negative int')
+        try:
+            manual_select_bo = config.get('BO', 'manual_select_bo')
+            if manual_select_bo == 'None':    # here None is str
+                manual_select_bo = None
+            else:
+                manual_select_bo = [int(x) for x in manual_select_bo.split()]    # str --> integer
+                if len(manual_select_bo) == 0:
+                    manual_select_bo = None
+        except ConfigParser.NoOptionError:
+            manual_select_bo = None
+        if manual_select_bo is not None:
+            for i in manual_select_bo:
+                if not 0 <= i < tot_struc:
+                    raise ValueError('manual_select_bo must be non-negative int and less than tot_struc')
 
     # ---------- LAQA
     if algo == 'LAQA':
@@ -139,7 +153,11 @@ def readin():
     minlen = config.getfloat('lattice', 'minlen')
     maxlen = config.getfloat('lattice', 'maxlen')
     dangle = config.getfloat('lattice', 'dangle')
-    if dangle < 0.0:
+    if minlen <= 0.0:
+        raise ValueError('minlen must be positive')
+    if minlen > maxlen:
+        raise ValueError('minlen > maxlen')
+    if dangle <= 0.0:
         raise ValueError('dangle < 0.0, dangle must be positive')
     mindist = []
     for i in range(len(atype)):
@@ -209,6 +227,7 @@ def readin():
         lammps_outfile = config.get('LAMMPS', 'lammps_outfile')
         try:
             lammps_potential = config.get('LAMMPS', 'lammps_potential')
+            lammps_potential = lammps_potential.split()
         except ConfigParser.NoOptionError:
             lammps_potential = None
         lammps_data = config.get('LAMMPS', 'lammps_data')
@@ -289,7 +308,7 @@ def readin():
         global fit_reverse, n_fittest
         global slct_func, t_size, a_rlt, b_rlt
         global crs_lat, crs_func, nat_diff_tole, ntimes, sigma_st,  maxcnt_ea
-        global maxgen
+        global maxgen_ea
         # global restart_gen
         # ------ read intput variables
         # -- number of structures
@@ -385,11 +404,11 @@ def readin():
             maxcnt_ea = 100
         # -- EA option
         try:
-            maxgen = config.getint('EA', 'maxgen')
+            maxgen_ea = config.getint('EA', 'maxgen_ea')
         except ConfigParser.NoOptionError:
-            maxgen = 0
-        if maxgen < 0:
-            raise ValueError('maxgen must be non-negative int')
+            maxgen_ea = 0
+        if maxgen_ea < 0:
+            raise ValueError('maxgen_ea must be non-negative int')
         # # -- restart option
         # try:
         #     restart_gen = config.getint('EA', 'restart_gen')
@@ -410,7 +429,7 @@ def spglist(spgnum):
             if iend < 0 or 231 < iend:
                 raise ValueError('spgnum must be 1 -- 230')
             for i in range(istart, iend):
-                if not i in tmpspg:
+                if i not in tmpspg:
                     tmpspg.append(i)
         else:
             if int(c) < 0 or 230 < int(c):
@@ -449,8 +468,11 @@ def writeout():
             fout.write('fp_rmax = {}\n'.format(fp_rmax))
             fout.write('fp_npoints = {}\n'.format(fp_npoints))
             fout.write('fp_sigma = {}\n'.format(fp_sigma))
-            fout.write('maxgen = {}\n'.format(maxgen))
-
+            fout.write('max_select_bo = {}\n'.format(max_select_bo))
+            if manual_select_bo is None:
+                fout.write('manual_select_bo = \n')
+            else:
+                fout.write('manual_select_bo = {}\n'.format(' '.join(str(i) for i in manual_select_bo)))
         # ------ LAQA
         if algo == 'LAQA':
             fout.write('# ------ LAQA section\n')
@@ -480,7 +502,7 @@ def writeout():
             fout.write('ntimes = {}\n'.format(ntimes))
             fout.write('sigma_st = {}\n'.format(sigma_st))
             fout.write('maxcnt_ea = {}\n'.format(maxcnt_ea))
-            fout.write('maxgen = {}\n'.format(maxgen))
+            fout.write('maxgen_ea = {}\n'.format(maxgen_ea))
 #            fout.write('restart_gen = {}\n'.format(restart_gen))
 
         # ------ lattice
@@ -517,7 +539,7 @@ def writeout():
             fout.write('# ------ lammps section\n')
             fout.write('lammps_infile = {}\n'.format(lammps_infile))
             fout.write('lammps_outfile = {}\n'.format(lammps_outfile))
-            fout.write('lammps_potential = {}\n'.format(lammps_potential))
+            fout.write('lammps_potential = {}\n'.format(' '.join(lammps_potential)))
             fout.write('lammps_data = {}\n'.format(lammps_data))
 
         # ------ option
@@ -563,7 +585,11 @@ def save_stat(stat):
         stat.set('input', 'fp_rmax', '{}'.format(fp_rmax))
         stat.set('input', 'fp_npoints', '{}'.format(fp_npoints))
         stat.set('input', 'fp_sigma', '{}'.format(fp_sigma))
-        stat.set('input', 'maxgen', '{}'.format(maxgen))
+        stat.set('input', 'max_select_bo', '{}'.format(max_select_bo))
+        if manual_select_bo is None:
+            stat.set('input', 'manual_select_bo', 'None')
+        else:
+            stat.set('input', 'manual_select_bo', '{}'.format(' '.join(str(i) for i in manual_select_bo)))
 
     # ---------- LAQA
     if algo == 'LAQA':
@@ -592,7 +618,7 @@ def save_stat(stat):
         stat.set('input', 'ntimes', '{}'.format(ntimes))
         stat.set('input', 'sigma_st', '{}'.format(sigma_st))
         stat.set('input', 'maxcnt_ea', '{}'.format(maxcnt_ea))
-        stat.set('input', 'maxgen', '{}'.format(maxgen))
+        stat.set('input', 'maxgen_ea', '{}'.format(maxgen_ea))
 
     # ---------- lattice
     stat.set('input', 'minlen', '{}'.format(minlen))
@@ -623,7 +649,7 @@ def save_stat(stat):
     if calc_code == 'LAMMPS':
         stat.set('input', 'lammps_infile', '{}'.format(lammps_infile))
         stat.set('input', 'lammps_outfile', '{}'.format(lammps_outfile))
-        stat.set('input', 'lammps_potential', '{}'.format(lammps_potential))
+        stat.set('input', 'lammps_potential', '{}'.format(' '.join(lammps_potential)))
         stat.set('input', 'lammps_data', '{}'.format(lammps_data))
 
     # ---------- option
@@ -675,7 +701,12 @@ def diffinstat(stat):
         old_fp_rmax = stat.getfloat('input', 'fp_rmax')
         old_fp_npoints = stat.getint('input', 'fp_npoints')
         old_fp_sigma = stat.getfloat('input', 'fp_sigma')
-        old_maxgen = stat.getint('input', 'maxgen')
+        old_max_select_bo = stat.getint('input', 'max_select_bo')
+        old_manual_select_bo = stat.get('input', 'manual_select_bo')
+        if old_manual_select_bo == 'None':    # here None is str
+            old_manual_select_bo = None
+        else:
+            old_manual_select_bo = [int(x) for x in old_manual_select_bo.split()]    # str --> integer
 
     # ------ LAQA
     if old_algo == 'LAQA':
@@ -704,7 +735,7 @@ def diffinstat(stat):
         old_ntimes = stat.getint('input', 'ntimes')
         old_sigma_st = stat.getfloat('input', 'sigma_st')
         old_maxcnt_ea = stat.getint('input', 'maxcnt_ea')
-        old_maxgen = stat.getint('input', 'maxgen')
+        old_maxgen_ea = stat.getint('input', 'maxgen_ea')
         # old_restart_gen = stat.get('input', 'restart_gen')
 
     # ------ lattice
@@ -742,6 +773,7 @@ def diffinstat(stat):
         old_lammps_infile = stat.get('input', 'lammps_infile')
         old_lammps_outfile = stat.get('input', 'lammps_outfile')
         old_lammps_potential = stat.get('input', 'lammps_potential')
+        old_lammps_potential = old_lammps_potential.split()    # str --> list
         if old_lammps_potential == 'None':    # 'None' is just character here
             old_lammps_potential = None
         old_lammps_data = stat.get('input', 'lammps_data')
@@ -808,31 +840,31 @@ def diffinstat(stat):
     if algo == 'BO':
         if not old_interval == interval:
             print('Changed interval from {0} to {1}'.format(old_interval, interval))
-            print('    This will be enabled in next generation')
+            print('    This will be enabled in next selection')
             with open('cryspy.out', 'a') as fout:
                 fout.write('\n#### Changed interval from {0} to {1}\n'.format(old_interval, interval))
-                fout.write('####     This will be enabled in next generation\n')
+                fout.write('####     This will be enabled in next selection\n')
             logic_change = True
         if not old_score == score:
             print('Changed score from {0} to {1}'.format(old_score, score))
-            print('    This will be enabled in next BO')
+            print('    This will be enabled in next selection')
             with open('cryspy.out', 'a') as fout:
                 fout.write('\n#### Changed score from {0} to {1}\n'.format(old_score, score))
-                fout.write('####     This will be enabled in next BO\n')
+                fout.write('####     This will be enabled in next selection\n')
             logic_change = True
         if not old_num_rand_basis == num_rand_basis:
             print('Changed num_rand_basis from {0} to {1}'.format(old_num_rand_basis, num_rand_basis))
-            print('    This will be enabled in next BO')
+            print('    This will be enabled in next selection')
             with open('cryspy.out', 'a') as fout:
                 fout.write('\n#### Changed num_rand_basis from {0} to {1}\n'.format(old_num_rand_basis, num_rand_basis))
-                fout.write('####     This will be enabled in next BO\n')
+                fout.write('####     This will be enabled in next selection\n')
             logic_change = True
         if not old_cdev == cdev:
             print('Changed cdev from {0} to {1}'.format(old_cdev, cdev))
             print('    This will be enabled in next BO')
             with open('cryspy.out', 'a') as fout:
                 fout.write('\n#### Changed cdev from {0} to {1}\n'.format(old_cdev, cdev))
-                fout.write('####     This will be enabled in next BO\n')
+                fout.write('####     This will be enabled in next selection\n')
             logic_change = True
         if not old_dscrpt == dscrpt:
             raise ValueError('Do not change dscrpt')
@@ -844,10 +876,17 @@ def diffinstat(stat):
             raise ValueError('Do not change fp_npoints')
         if not old_fp_sigma == fp_sigma:
             raise ValueError('Do not change fp_sigma')
-        if not old_maxgen == maxgen:
-            print('Changed maxgen from {0} to {1}'.format(old_maxgen, maxgen))
+        if not old_max_select_bo == max_select_bo:
+            print('Changed max_select_bo from {0} to {1}'.format(old_max_select_bo, max_select_bo))
             with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed maxgen from {0} to {1}\n'.format(old_maxgen, maxgen))
+                fout.write('\n#### Changed max_select_bo from {0} to {1}\n'.format(
+                    old_max_select_bo, max_select_bo))
+            logic_change = True
+        if not old_manual_select_bo == manual_select_bo:
+            print('Changed manual_select_bo from {0} to {1}'.format(old_manual_select_bo, manual_select_bo))
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\n#### Changed manual_select_bo from {0} to {1}\n'.format(
+                    old_manual_select_bo, manual_select_bo))
             logic_change = True
 
     # ------ LAQA
@@ -979,10 +1018,10 @@ def diffinstat(stat):
             with open('CrySPY.out', 'a') as fout:
                 fout.write('\n### Changed maxcnt_ea from {0} to {1}\n'.format(old_maxcnt_ea, maxcnt_ea))
             logic_change = True
-        if not old_maxgen == maxgen:
-            print('Changed maxgen from {0} to {1}'.format(old_maxgen, maxgen))
+        if not old_maxgen_ea == maxgen_ea:
+            print('Changed maxgen_ea from {0} to {1}'.format(old_maxgen_ea, maxgen_ea))
             with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed maxgen from {0} to {1}\n'.format(old_maxgen, maxgen))
+                fout.write('\n#### Changed maxgen from {0} to {1}\n'.format(old_maxgen_ea, maxgen_ea))
             logic_change = True
 
     # ------ lattice
@@ -1099,6 +1138,11 @@ def diffinstat(stat):
         print('Changed stop_next_struc from {0} to {1}'.format(old_stop_next_struc, stop_next_struc))
         with open('cryspy.out', 'a') as fout:
             fout.write('\n#### Changed stop_next_struc from {0} to {1}\n'.format(old_stop_next_struc, stop_next_struc))
+        logic_change = True
+    if not old_append_struc_ea == append_struc_ea:
+        print('Changed append_struc_ea {0} to {1}'.format(old_append_struc_ea, append_struc_ea))
+        with open('cryspy.out', 'a') as fout:
+            fout.write('\n#### Changed append_struc_ea from {0} to {1}\n'.format(old_append_struc_ea, append_struc_ea))
         logic_change = True
     if not old_energy_step_flag == energy_step_flag:
         raise ValueError('Do not change energy_step_flag')

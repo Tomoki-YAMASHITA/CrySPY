@@ -9,7 +9,9 @@ import subprocess
 import numpy as np
 import pandas as pd
 
-from ..BO import select_descriptor
+from ..BO.select_descriptor import select_descriptor
+from ..BO import bo_next_select
+from ..EA import ea_next_gen
 from ..gen_struc.struc_util import out_poscar, out_cif
 from ..interface import select_code
 from ..IO import read_input as rin
@@ -18,6 +20,7 @@ from ..IO.out_results import out_rslt
 from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
 from ..IO.out_results import out_laqa_energy, out_laqa_bias
 from ..LAQA.calc_score import calc_laqa_bias
+from ..LAQA import laqa_next_selection
 
 
 class Ctrl_job(object):
@@ -27,24 +30,22 @@ class Ctrl_job(object):
         self.init_struc_data = init_struc_data
         self.opt_struc_data = opt_struc_data
         self.rslt_data = rslt_data
+        self.logic_next = False
 
     def rs_init(self, rs_id_data):
-        self.next_id, self.id_done = rs_id_data
+        self.next_id = rs_id_data
 
     def bo_init(self, bo_id_data, bo_data):
-        self.gen, self.non_error_id, self.id_to_calc, self.id_done = bo_id_data
-        self.descriptors, self.targets = bo_data
-        self.logic_next_gen = False
+        self.n_selection, self.id_to_calc = bo_id_data
+        self.init_dscrpt_data, self.opt_dscrpt_data = bo_data
 
     def laqa_init(self, laqa_id_data, laqa_data):
         self.id_to_calc, self.id_select_hist, self.id_done = laqa_id_data
         (self.tot_step_select, self.laqa_step, self.laqa_struc,
          self.laqa_energy, self.laqa_bias, self.laqa_score) = laqa_data
-        self.logic_next_selection = False
 
     def ea_init(self, ea_id_data):
-        self.gen, self.next_id, self.id_done = ea_id_data
-        self.logic_next_gen = False
+        self.gen, self.next_id = ea_id_data
 
     def check_job(self):
         # ---------- initialize
@@ -69,10 +70,47 @@ class Ctrl_job(object):
                         self.job_stat.append('skip')
                     else:
                         self.job_stat.append('else')
-            except:
+            except IOError:
                 self.id_stat.append('no_file')
                 self.stage_stat.append('no_file')
                 self.job_stat.append('no_file')
+
+    def handle_job(self):
+        print('\n# ---------- job status')
+        for work_id, jstat in enumerate(self.job_stat):
+            # ---------- set work_id and work_path
+            self.work_id = work_id
+            self.work_path = './work{:04d}/'.format(work_id)
+            # ---------- set current ID and stage
+            self.cID = self.id_stat[work_id]
+            self.cstage = self.stage_stat[work_id]
+            # ---------- handle job
+            if jstat == 'submitted':
+                print('work{:04d}: still queuing or runnning'.format(work_id))
+            elif jstat == 'done':
+                self.handle_done()
+            elif jstat == 'skip':
+                self.ctrl_skip()
+                self.ctrl_next_struc()
+            elif jstat == 'else':
+                raise ValueError('Wrong job_stat in ' +
+                                 self.work_path +
+                                 'stat_job. To skip this structure, write "skip" in stat_job line 3')
+            elif jstat == 'no_file':
+                self.ctrl_next_struc()
+            else:
+                raise ValueError('Unexpected error in '+self.work_path+'stat_job')
+        # ---------- next generation or selection
+        if self.logic_next:
+            # ------ check job status and run
+            self.check_job()
+            if set(self.job_stat) == {'no_file'}:
+                if rin.algo == 'BO':
+                    self.next_select_BO()
+                if rin.algo == 'LAQA':
+                    self.next_select_LAQA()
+                if rin.algo == 'EA':
+                    self.next_gen_EA()
 
     def handle_done(self):
         # ---------- log
@@ -161,35 +199,10 @@ class Ctrl_job(object):
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.cID, self.work_path)
         with open('cryspy.out', 'a') as fout:
-            fout.write('Done! Structure ID {0:>8}: E = {1}\n'.format(self.cID, energy))
-        print('    collect results: E = {0}'.format(energy))
-        # ---------- get initial spg info
-        try:
-            spg_sym, spg_num = self.init_struc_data[self.cID].get_space_group_info(symprec=rin.symprec)
-        except TypeError:
-            spg_num = 0
-            spg_sym = None
-        # ---------- success
-        if opt_struc is not None:
-            # ------ get opt spg info
-            try:
-                spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(symprec=rin.symprec)
-            except TypeError:
-                spg_num_opt = 0
-                spg_sym_opt = None
-            # ------ out opt_struc
-            out_poscar(opt_struc, self.cID, './data/opt_POSCARS')
-            try:
-                out_cif(opt_struc, self.cID, self.work_path, './data/opt_CIFS.cif', rin.symprec)
-            except TypeError:
-                print('failed to write opt_CIF')
-        # ---------- error
-        else:
-            spg_num_opt = 0
-            spg_sym_opt = None
+            fout.write('Done! Structure ID {0:>8}: E = {1} eV/atom\n'.format(self.cID, energy))
+        print('    collect results: E = {0} eV/atom'.format(energy))
         # ---------- register opt_struc
-        self.opt_struc_data[self.cID] = opt_struc
-        pkl_data.save_opt_struc(self.opt_struc_data)
+        spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
         tmp_series = pd.Series([self.cID, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                 energy, magmom, check_opt], index=self.rslt_data.columns)
@@ -198,10 +211,7 @@ class Ctrl_job(object):
         out_rslt(self.rslt_data)
         # ------ success
         if opt_struc is not None:
-            # -- register id_done
-            self.id_done = np.r_[self.id_done, np.array([self.cID])]
-            # -- save
-            rs_id_data = (self.next_id, self.id_done)
+            rs_id_data = self.next_id
             pkl_data.save_rs_id(rs_id_data)
 
     def ctrl_collect_bo(self):
@@ -209,67 +219,37 @@ class Ctrl_job(object):
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.cID, self.work_path)
         with open('cryspy.out', 'a') as fout:
-            fout.write('Done! Structure ID {0:>8}: E = {1}\n'.format(self.cID, energy))
-        print('    collect results: E = {0}'.format(energy))
-        # ---------- get initial spg info
-        try:
-            spg_sym, spg_num = self.init_struc_data[self.cID].get_space_group_info(symprec=rin.symprec)
-        except TypeError:
-            spg_num = 0
-            spg_sym = None
-        # ---------- success
-        if opt_struc is not None:
-            # ------ get opt spg info
-            try:
-                spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(symprec=rin.symprec)
-            except TypeError:
-                spg_num_opt = 0
-                spg_sym_opt = None
-            # ------ out opt_struc
-            out_poscar(opt_struc, self.cID, './data/opt_POSCARS')
-            try:
-                out_cif(opt_struc, self.cID, self.work_path, './data/opt_CIFS.cif', rin.symprec)
-            except TypeError:
-                print('failed to write opt_CIF')
-        # ---------- error
-        else:
-            spg_num_opt = 0
-            spg_sym_opt = None
+            fout.write('Done! Structure ID {0:>8}: E = {1} eV/atom\n'.format(self.cID, energy))
+        print('    collect results: E = {0} eV/atom'.format(energy))
         # ---------- register opt_struc
-        self.opt_struc_data[self.cID] = opt_struc
-        pkl_data.save_opt_struc(self.opt_struc_data)
+        spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
-        tmp_series = pd.Series([self.gen, self.cID, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+        tmp_series = pd.Series([self.n_selection, self.cID, spg_num, spg_sym,
+                                spg_num_opt, spg_sym_opt,
                                 energy, magmom, check_opt], index=self.rslt_data.columns)
         self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
         pkl_data.save_rslt(self.rslt_data)
         out_rslt(self.rslt_data)
-        # ---------- index
-        neid_index = np.where(self.non_error_id == self.cID)[0]    # np.where returns tuple
         # ---------- success
         if opt_struc is not None:
             # ------ calc descriptor for opt sturcture
-            dscrpt = select_descriptor.calc_X([opt_struc])
-            # ------ register id_done and targets
-            self.id_done = np.r_[self.id_done, np.array([self.cID])]
-            self.targets = np.r_[self.targets, np.array([energy])]
-            # ------ replace opt_descriptor
-            self.descriptors[neid_index[0]] = dscrpt     # neid_index[0]: int
+            tmp_dscrpt = select_descriptor({self.cID: opt_struc})
+            # ------ update descriptors
+            self.opt_dscrpt_data.update(tmp_dscrpt)
         # ---------- error
         else:
-            # ------ remove data
-            self.non_error_id = np.delete(self.non_error_id, neid_index[0], 0)
-            self.descriptors = np.delete(self.descriptors, neid_index[0], 0)
+            # ------ update descriptors and non_error_id
+            self.opt_dscrpt_data[self.cID] = None
         # ---------- save
-        bo_id_data = (self.gen, self.non_error_id, self.id_to_calc, self.id_done)
+        bo_id_data = (self.n_selection, self.id_to_calc)
         pkl_data.save_bo_id(bo_id_data)
-        bo_data = (self.descriptors, self.targets)
+        bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data)
         pkl_data.save_bo_data(bo_data)
 
     def ctrl_collect_laqa(self):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.cID, self.work_path, check_file='OUTCAR')
+            select_code.collect(self.cID, self.work_path)
         # ---------- total step and laqa_step
         #     fs_step_data[0] <-- force_step_data
         #     force_step_data[key][stage][step][atom]
@@ -285,7 +265,7 @@ class Ctrl_job(object):
         # ---------- append laqa struc
         self.laqa_struc[self.cID].append(opt_struc)
         # ---------- append laqa energy
-        self.laqa_energy[self.cID].append(energy/rin.natot)
+        self.laqa_energy[self.cID].append(energy)
         # ---------- append laqa bias
         #     fs_step_data[0] <-- force_step_data
         #     force_step_data[key][stage][step][atom]
@@ -297,7 +277,7 @@ class Ctrl_job(object):
         elif np.isnan(energy) or np.isnan(tmp_laqa_bias):
             self.laqa_score[self.cID].append(-float('inf'))
         else:
-            self.laqa_score[self.cID].append(-energy/rin.natot + tmp_laqa_bias)
+            self.laqa_score[self.cID].append(-energy + tmp_laqa_bias)
         # ---------- save laqa data
         laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,
                      self.laqa_energy, self.laqa_bias, self.laqa_score)
@@ -312,35 +292,10 @@ class Ctrl_job(object):
         # ---------- case of 'done'
         if check_opt is 'done':
             with open('cryspy.out', 'a') as fout:
-                fout.write('Done! Structure ID {0:>8}: E = {1}\n'.format(self.cID, energy))
-            print('    collect results: E = {0}'.format(energy))
-            # ------ get initial spg info
-            try:
-                spg_sym, spg_num = self.init_struc_data[self.cID].get_space_group_info(symprec=rin.symprec)
-            except TypeError:
-                spg_num = 0
-                spg_sym = None
-            # ------ success
-            if opt_struc is not None:
-                # -- get opt spg info
-                try:
-                    spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(symprec=rin.symprec)
-                except TypeError:
-                    spg_num_opt = 0
-                    spg_sym_opt = None
-                # -- out opt_struc
-                out_poscar(opt_struc, self.cID, './data/opt_POSCARS')
-                try:
-                    out_cif(opt_struc, self.cID, self.work_path, './data/opt_CIFS.cif', rin.symprec)
-                except TypeError:
-                    print('failed to write opt_CIF')
-            # ------ error
-            else:
-                spg_num_opt = 0
-                spg_sym_opt = None
+                fout.write('Done! Structure ID {0:>8}: E = {1} eV/atom\n'.format(self.cID, energy))
+            print('    collect results: E = {0} eV/atom'.format(energy))
             # ------ register opt_struc
-            self.opt_struc_data[self.cID] = opt_struc
-            pkl_data.save_opt_struc(self.opt_struc_data)
+            spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
             # ------ save rslt
             tmp_series = pd.Series([self.cID, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
@@ -359,8 +314,25 @@ class Ctrl_job(object):
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.cID, self.work_path)
         with open('cryspy.out', 'a') as fout:
-            fout.write('Done! Structure ID {0:>8}: E = {1}\n'.format(self.cID, energy))
-        print('    collect results: E = {0}'.format(energy))
+            fout.write('Done! Structure ID {0:>8}: E = {1} eV/atom\n'.format(self.cID, energy))
+        print('    collect results: E = {0} eV/atom'.format(energy))
+        # ---------- register opt_struc
+        spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
+        # ---------- save rslt
+        tmp_series = pd.Series([self.gen, self.cID, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+                                energy, magmom, check_opt], index=self.rslt_data.columns)
+        self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
+        pkl_data.save_rslt(self.rslt_data)
+        out_rslt(self.rslt_data)
+        # ------ success
+        if opt_struc is not None:
+            ea_id_data = (self.gen, self.next_id)
+            pkl_data.save_ea_id(ea_id_data)
+
+    def regist_opt(self, opt_struc):
+        '''
+        Common part in ctrl_collect_*
+        '''
         # ---------- get initial spg info
         try:
             spg_sym, spg_num = self.init_struc_data[self.cID].get_space_group_info(symprec=rin.symprec)
@@ -388,19 +360,8 @@ class Ctrl_job(object):
         # ---------- register opt_struc
         self.opt_struc_data[self.cID] = opt_struc
         pkl_data.save_opt_struc(self.opt_struc_data)
-        # ---------- save rslt
-        tmp_series = pd.Series([self.gen, self.cID, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
-                                energy, magmom, check_opt], index=self.rslt_data.columns)
-        self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
-        pkl_data.save_rslt(self.rslt_data)
-        out_rslt(self.rslt_data)
-        # ------ success
-        if opt_struc is not None:
-            # -- register id_done
-            self.id_done = np.r_[self.id_done, np.array([self.cID])]
-            # -- save
-            ea_id_data = (self.gen, self.next_id, self.id_done)
-            pkl_data.save_ea_id(ea_id_data)
+        # ---------- return
+        return spg_sym, spg_num, spg_sym_opt, spg_num_opt
 
     def ctrl_next_struc(self):
         # ---------- option: stop_next_struc
@@ -420,21 +381,19 @@ class Ctrl_job(object):
         elif rin.algo == 'BO':
             # ------ pick up id to calc
             if len(self.id_to_calc) == 0:
-                self.logic_next_gen = True
+                self.logic_next = True
                 self.next_id = rin.tot_struc    # to do nothing
             else:
-                self.next_id = self.id_to_calc[0]
-                self.id_to_calc = self.id_to_calc[1:]
+                self.next_id = self.id_to_calc.pop(0)
                 next_struc_data = self.init_struc_data[self.next_id]
         # ---------- LAQA
         elif rin.algo == 'LAQA':
             # ------ pick up id to calc
             if len(self.id_to_calc) == 0:
-                self.logic_next_selection = True
+                self.logic_next = True
                 self.next_id = rin.tot_struc    # to do nothing
             else:
-                self.next_id = self.id_to_calc[0]
-                self.id_to_calc = self.id_to_calc[1:]
+                self.next_id = self.id_to_calc.pop(0)
                 if self.laqa_struc[self.next_id]:    # vacant list?
                     next_struc_data = self.laqa_struc[self.next_id][-1]
                 else:
@@ -442,7 +401,7 @@ class Ctrl_job(object):
         # ---------- EA
         elif rin.algo == 'EA':
             if self.next_id == rin.tot_struc:
-                self.logic_next_gen = True
+                self.logic_next = True
             elif self.next_id < rin.tot_struc:
                 next_struc_data = self.init_struc_data[self.next_id]
         # ---------- algo is wrong
@@ -498,12 +457,12 @@ class Ctrl_job(object):
         # ---------- RS
         if rin.algo == 'RS':
             self.next_id += 1
-            rs_id_data = (self.next_id, self.id_done)
+            rs_id_data = self.next_id
             pkl_data.save_rs_id(rs_id_data)
             self.stat.set('status', 'next_id', '{}'.format(self.next_id))
         # ---------- BO
         elif rin.algo == 'BO':
-            bo_id_data = (self.gen, self.non_error_id, self.id_to_calc, self.id_done)
+            bo_id_data = (self.n_selection, self.id_to_calc)
             pkl_data.save_bo_id(bo_id_data)
             self.stat.set('status', 'id_to_calc', '{}'.format(' '.join(str(a) for a in self.id_to_calc)))
         # ---------- LAQA
@@ -517,7 +476,7 @@ class Ctrl_job(object):
         # ---------- EA
         if rin.algo == 'EA':
             self.next_id += 1
-            ea_id_data = (self.gen, self.next_id, self.id_done)
+            ea_id_data = (self.gen, self.next_id)
             pkl_data.save_ea_id(ea_id_data)
             self.stat.set('status', 'next_id', '{}'.format(self.next_id))
 
@@ -556,20 +515,18 @@ class Ctrl_job(object):
         # ---------- BO
         elif rin.algo == 'BO':
             # ------ save rslt
-            tmp_series = pd.Series([self.gen, self.cID, spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+            tmp_series = pd.Series([self.n_selection, self.cID, spg_num, spg_sym,
+                                    spg_num_opt, spg_sym_opt,
                                     energy, magmom, check_opt], index=self.rslt_data.columns)
             self.rslt_data = self.rslt_data.append(tmp_series, ignore_index=True)
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
-            # ------ index
-            neid_index = np.where(self.non_error_id == self.cID)[0]    # np.where returns tuple
-            # ------ remove data
-            self.non_error_id = np.delete(self.non_error_id, neid_index[0], 0)
-            self.descriptors = np.delete(self.descriptors, neid_index[0], 0)
+            # ------ update descriptors
+            self.opt_dscrpt_data[self.cID] = None
             # ------ save
-            bo_id_data = (self.gen, self.non_error_id, self.id_to_calc, self.id_done)
+            bo_id_data = (self.n_selection, self.id_to_calc)
             pkl_data.save_bo_id(bo_id_data)
-            bo_data = (self.descriptors, self.targets)
+            bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data)
             pkl_data.save_bo_data(bo_data)
         # ---------- LAQA
         elif rin.algo == 'LAQA':
@@ -615,3 +572,62 @@ class Ctrl_job(object):
             lines2.append(line.replace('CrySPY_ID', str(self.cID)))
         with open(self.work_path + rin.jobfile, 'w') as f:
             f.writelines(lines2)
+
+    def next_select_BO(self):
+        # ---------- log and out
+        with open('cryspy.out', 'a') as fout:
+            fout.write('\nDone selection {}\n\n'.format(self.n_selection))
+        print('\nDone selection {}\n'.format(self.selection))
+        # ---------- done all structures
+        if len(self.rslt_data) == rin.tot_struc:
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\nDone all structures!\n')
+            print('Done all structures!')
+            os.remove('lock_cryspy')
+            raise SystemExit()
+        # ---------- check point 3
+        if rin.stop_chkpt == 3:
+            print('Stop at check point 3: BO is ready\n')
+            os.remove('lock_cryspy')
+            raise SystemExit()
+        # ---------- max_select_bo
+        if 0 < rin.max_select_bo <= self.n_selection:
+            print('Reached max_select_bo: {}\n'.format(rin.max_select_bo))
+            os.remove('lock_cryspy')
+            raise SystemExit()
+        # ---------- BO
+        bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data)
+        bo_id_data = (self.n_selection, self.id_to_calc)
+        bo_next_select.next_select(self.stat, self.rslt_data, bo_id_data, bo_data)
+
+    def next_select_LAQA(self):
+        # ---------- check point 3
+        if rin.stop_chkpt == 3:
+            print('\nStop at check point 3: LAQA is ready\n')
+            os.remove('lock_cryspy')
+            raise SystemExit()
+        # ---------- selection of LAQA
+        laqa_id_data = (self.id_to_calc, self.id_select_hist, self.id_done)
+        laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,
+                     self.laqa_energy, self.laqa_bias, self.laqa_score)
+        laqa_next_selection.next_selection(self.stat, laqa_id_data, laqa_data)
+
+    def next_gen_EA(self):
+        # ---------- log and out
+        with open('cryspy.out', 'a') as fout:
+            fout.write('\nDone generation {}\n\n'.format(self.gen))
+        print('\nDone generation {}\n'.format(self.gen))
+        # ---------- check point 3
+        if rin.stop_chkpt == 3:
+            print('\nStop at check point 3: EA is ready\n')
+            os.remove('lock_cryspy')
+            raise SystemExit()
+        # ---------- maxgen_ea
+        if 0 < rin.maxgen_ea <= self.gen:
+            print('\nReached maxgen_ea: {}\n'.format(rin.maxgen_ea))
+            os.remove('lock_cryspy')
+            raise SystemExit()
+        # ---------- EA
+        ea_id_data = (self.gen, self.next_id)
+        ea_next_gen.next_gen(self.stat, self.init_struc_data,
+                             self.opt_struc_data, self.rslt_data, ea_id_data)

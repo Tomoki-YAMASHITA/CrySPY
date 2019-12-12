@@ -96,8 +96,8 @@ class EA_generation(object):
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>8} was generated'.format(self.cID) + \
-                      ' from {0:>8} and {1:>8} by crossover.'.format(pid_A, pid_B) + \
+                print('Structure ID {0:>8} was generated'.format(self.cID) +
+                      ' from {0:>8} and {1:>8} by crossover.'.format(pid_A, pid_B) +
                       ' Space group: {0:>3} {1}'.format(spg_num, spg_sym))
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cID, self.init_pos_path)
@@ -139,8 +139,8 @@ class EA_generation(object):
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>8} was generated'.format(self.cID) + \
-                      ' from {0:>8} by permutation.'.format(pid) + \
+                print('Structure ID {0:>8} was generated'.format(self.cID) +
+                      ' from {0:>8} by permutation.'.format(pid) +
                       ' Space group: {0:>3} {1}'.format(spg_num, spg_sym))
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cID, self.init_pos_path)
@@ -182,8 +182,8 @@ class EA_generation(object):
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>8} was generated'.format(self.cID) + \
-                      ' from {0:>8} by strain.'.format(pid) + \
+                print('Structure ID {0:>8} was generated'.format(self.cID) +
+                      ' from {0:>8} by strain.'.format(pid) +
                       ' Space group: {0:>3} {1}'.format(spg_num, spg_sym))
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cID, self.init_pos_path)

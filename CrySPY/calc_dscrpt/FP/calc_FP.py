@@ -7,43 +7,89 @@ import subprocess
 import numpy as np
 
 
-def calc_X(strucs_list, fppath='./cal_fingerprint',
-           fp_rmin=0.5, fp_rmax=5.0, fp_npoints=50, fp_sigma=0.2):
-    # ---------- cd calc_descriptor
-    if not os.path.isdir('calc_FP'):
-        os.mkdir('calc_FP')
-    os.chdir('calc_FP')
+class Calc_FP(object):
+    '''
+    calculate fingerprint using cal_fingerprint program
 
-    # ---------- calc fingerprint
-    descriptors = None
-    for struc in strucs_list:
-        # ------ output POSCAR
-        struc.to(fmt='poscar', filename='POSCAR')
-        fp = calc_fingerprint(fppath, fp_rmin, fp_rmax, fp_npoints, fp_sigma)
-        if descriptors is None:
-            descriptors = fp
+    # ---------- args
+    struc_data (dict or list): structure data
+        You may include None in struc_data
+        if type of struc_data is list,
+            struc_data is converted into dict type
+            as {0: struc_data_0, 1: struc_data_1, ...}
+
+    # ---------- instance methods
+    self.calc(self)
+
+    # ---------- comment
+    descriptor data in self.descriptors
+    '''
+
+    def __init__(self, struc_data, fp_rmin=0.5, fp_rmax=5.0, fp_npoints=10,
+                 fp_sigma=1.0, fppath='./cal_fingerprint'):
+        # ---------- check args
+        # ------ struc_data
+        if type(struc_data) is dict:
+            pass
+        elif type(struc_data) is list:
+            # -- convert to dict
+            struc_data = {i: struc_data[i] for i in range(len(struc_data))}
         else:
-            descriptors = np.vstack((descriptors, fp))
+            raise TypeError('Type of struc_data is wrong')
+        self.struc_data = struc_data
+        # ------ fp_rmin, fp_rmax, fp_sigma
+        if fp_rmin >= fp_rmax:
+            raise ValueError('fprmin >= fp_rmax')
+        for x in [fp_rmin, fp_rmax, fp_sigma]:
+            if type(x) is float and x > 0:
+                pass
+            else:
+                raise ValueError('fp_rmin, fp_rmax, and fp_sigma msut be positive float')
+        self.fp_rmin = fp_rmin
+        self.fp_rmax = fp_rmax
+        self.fp_sigma = fp_sigma
+        # ------ fp_npoints
+        if type(fp_npoints) is int and fp_npoints > 0:
+            pass
+        else:
+            raise ValueError('fp_npoints must be positive int')
+        self.fp_npoints = fp_npoints
+        # ------ fppath
+        if not os.path.isfile(fppath):
+            raise IOError('There is no cal_fingerprint program in {}'.format(fppath))
+        self.fppath = fppath
 
-    # ---------- go back to ..
-    os.chdir('../')
+    def calc(self):
+        '''
+        calculate fingerprint
 
-    return descriptors
-
-
-def calc_fingerprint(fppath='./cal_fingerprint',
-                     fp_rmin=0.5, fp_rmax=5.0, fp_npoints=50, fp_sigma=0.2):
-    # ---------- calc fingerprint
-    if not os.path.isfile('POSCAR'):
-        raise IOError('No POSCAR file')
-    with open('sublog', 'w') as logf:
-        subprocess.call([fppath, 'POSCAR', '-rmin', '{}'.format(fp_rmin), '-rmax', '{}'.format(fp_rmax),
-                         '-npoints', '{}'.format(fp_npoints), '-sigma', '{}'.format(fp_sigma)],
-                        stdout=logf, stderr=logf)
-    fp = np.loadtxt('feature_ffpf.dat')
-
-    # ---------- mv xxx --> fin_xxx
-    os.rename('POSCAR', 'fin_POSCAR')
-    os.rename('feature_ffpf.dat', 'fin_feature_ffpf.dat')
-
-    return fp
+        # ---------- return
+        self.descriptors (dict): descriptor data
+        '''
+        # ---------- cd temporary directory
+        if not os.path.isdir('tmp_calc_FP'):
+            os.mkdir('tmp_calc_FP')
+        os.chdir('tmp_calc_FP')
+        # ---------- calc fingerprint
+        self.descriptors = {}
+        for cid, struc in self.struc_data.items():
+            # ------ output POSCAR
+            struc.to(fmt='poscar', filename='POSCAR')
+            if not os.path.isfile('POSCAR'):
+                raise IOError('No POSCAR file')
+            # ------ run cal_fingerprint
+            with open('log_fingerprint', 'w') as logf:
+                subprocess.call([self.fppath, 'POSCAR',
+                                 '-rmin', '{}'.format(self.fp_rmin),
+                                 '-rmax', '{}'.format(self.fp_rmax),
+                                 '-npoints', '{}'.format(self.fp_npoints),
+                                 '-sigma', '{}'.format(self.fp_sigma)],
+                                stdout=logf, stderr=logf)
+            fp = np.loadtxt('feature_ffpf.dat')
+            # ------ mv xxx --> fin_xxx
+            os.rename('POSCAR', 'fin_POSCAR')
+            os.rename('feature_ffpf.dat', 'fin_feature_ffpf.dat')
+            # ------ fp --> descriptors
+            self.descriptors[cid] = fp
+        # ---------- go back to ..
+        os.chdir('../')

@@ -26,6 +26,7 @@ def collect_lammps(current_id, work_path):
                 break
             elif 'Minimization stats:' in line:    # Provisional judgment condition
                 energy = float(lines[i+3].split()[2])    # in eV (if units is metal)
+                energy = energy/float(rin.natot)    # eV/cell --> eV/atom
                 check_opt = 'done'
     except:
         print('    Structure ID {0}, could not obtain energy from {1}'.format(current_id, rin.lammps_outfile))

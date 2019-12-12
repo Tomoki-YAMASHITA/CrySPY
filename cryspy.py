@@ -5,13 +5,13 @@ from __future__ import print_function
 
 import os
 
-from CrySPY.BO import bo_init, bo_restart, bo_next_gen
-from CrySPY.EA import ea_init, ea_next_gen, ea_append
+from CrySPY.BO import bo_init, bo_restart
+from CrySPY.EA import ea_init, ea_append
 from CrySPY.interface import select_code
 from CrySPY.job import ctrl_job
 from CrySPY.IO import pkl_data
 from CrySPY.IO import read_input as rin
-from CrySPY.LAQA import laqa_init, laqa_restart, laqa_next_selection
+from CrySPY.LAQA import laqa_init, laqa_restart
 from CrySPY.start import cryspy_init, cryspy_restart
 
 
@@ -57,9 +57,8 @@ else:
         init_struc_data = cryspy_restart.append_struc(init_struc_data)
         # -- BO
         if rin.algo == 'BO':
-            bo_id_data = pkl_data.load_bo_id()
             bo_data = pkl_data.load_bo_data()
-            bo_restart.restart(init_struc_data, bo_id_data, bo_data, prev_nstruc)
+            bo_restart.restart(init_struc_data, bo_data, prev_nstruc)
         # -- LAQA
         if rin.algo == 'LAQA':
             laqa_id_data = pkl_data.load_laqa_id()
@@ -132,10 +131,9 @@ if rin.stop_chkpt == 2:
     raise SystemExit()
 
 # ---------- make working directory
-if not os.path.isdir('work{:04d}'.format(rin.njob - 1)):
-    for i in range(rin.njob):
-        if not os.path.isdir('work{:04d}'.format(i)):
-            os.mkdir('work{:04d}'.format(i))
+for i in range(rin.njob):
+    if not os.path.isdir('work{:04d}'.format(i)):
+        os.mkdir('work{:04d}'.format(i))
 
 # ---------- instantiate Ctrl_job class
 jobs = ctrl_job.Ctrl_job(stat, init_struc_data, opt_struc_data, rslt_data)
@@ -159,109 +157,8 @@ if rin.fs_step_flag:
 # ---------- check job status
 jobs.check_job()
 
-# ---------- control job
-print('\n# ---------- job status')
-for work_id, jstat in enumerate(jobs.job_stat):
-    # ------ set work_id and work_path
-    jobs.work_id = work_id
-    jobs.work_path = './work{:04d}/'.format(work_id)
-
-    # ------ set current ID and stage
-    jobs.cID = jobs.id_stat[work_id]
-    jobs.cstage = jobs.stage_stat[work_id]
-
-    # ------ handle job
-    if jstat == 'submitted':
-        print('work{:04d}: still queuing or runnning'.format(work_id))
-    elif jstat == 'done':
-        jobs.handle_done()
-    elif jstat == 'skip':
-        jobs.ctrl_skip()
-        jobs.ctrl_next_struc()
-    elif jstat == 'else':
-        raise ValueError('Wrong job_stat in ' +
-                         jobs.work_path +
-                         'stat_job. To skip this structure, write "skip" in stat_job line 3')
-    elif jstat == 'no_file':
-        jobs.ctrl_next_struc()
-    else:
-        raise ValueError('Unexpected error in '+jobs.work_path+'stat_job')
-
-# ---------- BO
-if rin.algo == 'BO':
-    if jobs.logic_next_gen:
-        # ------ check job status
-        jobs.check_job()
-        # ------ next generation
-        if set(jobs.job_stat) == {'no_file'}:
-            # -- log and out
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\nDone generation {}\n\n'.format(jobs.gen))
-            print('\nDone generation {}\n'.format(jobs.gen))
-            # -- done all structures
-            if len(jobs.rslt_data) == rin.tot_struc:
-                with open('cryspy.out', 'a') as fout:
-                    fout.write('\nDone all structures!\n')
-                print('\nDone all structures!')
-                os.remove('lock_cryspy')
-                raise SystemExit()
-            # -- check point 3
-            if rin.stop_chkpt == 3:
-                print('\nStop at check point 3: BO is ready\n')
-                os.remove('lock_cryspy')
-                raise SystemExit()
-            # -- maxgen
-            if 0 < rin.maxgen <= jobs.gen:
-                print('\nReached maxgen: {}\n'.format(rin.maxgen))
-                os.remove('lock_cryspy')
-                raise SystemExit()
-            # -- BO
-            bo_data = (jobs.descriptors, jobs.targets)
-            bo_id_data = (jobs.gen, jobs.non_error_id, jobs.id_to_calc, jobs.id_done)
-            bo_next_gen.next_gen(jobs.stat, bo_id_data, bo_data)
-
-# ---------- LAQA
-elif rin.algo == 'LAQA':
-    if jobs.logic_next_selection:
-        # ------ check job status
-        jobs.check_job()
-        # ------ next selection
-        if set(jobs.job_stat) == {'no_file'}:
-            # -- check point 3
-            if rin.stop_chkpt == 3:
-                print('\nStop at check point 3: LAQA is ready\n')
-                os.remove('lock_cryspy')
-                raise SystemExit()
-            # -- selection of LAQA
-            laqa_id_data = (jobs.id_to_calc, jobs.id_select_hist, jobs.id_done)
-            laqa_data = (jobs.tot_step_select, jobs.laqa_step, jobs.laqa_struc,
-                         jobs.laqa_energy, jobs.laqa_bias, jobs.laqa_score)
-            laqa_next_selection.next_selection(jobs.stat, laqa_id_data, laqa_data)
-
-# ----------  EA
-elif rin.algo == 'EA':
-    if jobs.logic_next_gen :
-        # ------ check job status
-        jobs.check_job()
-        # ------ next generation:
-        if set(jobs.job_stat) == {'no_file'}:
-            # -- log and out
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\nDone generation {}\n\n'.format(jobs.gen))
-            print('\nDone generation {}\n'.format(jobs.gen))
-            # -- check point 3
-            if rin.stop_chkpt == 3:
-                print('\nStop at check point 3: EA is ready\n')
-                os.remove('lock_cryspy')
-                raise SystemExit()
-            # -- maxgen
-            if 0 < rin.maxgen <= jobs.gen:
-                print('\nReached maxgen: {}\n'.format(rin.maxgen))
-                os.remove('lock_cryspy')
-                raise SystemExit()
-            # -- EA
-            ea_id_data = (jobs.gen, jobs.next_id, jobs.id_done)
-            ea_next_gen.next_gen(jobs.stat, jobs.init_struc_data, jobs.opt_struc_data, jobs.rslt_data, ea_id_data)
+# ---------- handle job
+jobs.handle_job()
 
 # ---------- unlock
 os.remove('lock_cryspy')

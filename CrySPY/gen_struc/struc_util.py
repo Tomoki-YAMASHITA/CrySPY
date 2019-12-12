@@ -91,7 +91,7 @@ def check_distance(struc, atype, mindist, check_all=False):
     atype (list): e.g. ['Li', 'Co, 'O']
     mindist (2d list) : e.g. [[2.0, 2.0, 1.2], [2.0, 2.0, 1.2], [1.2, 1.2, 1.5]]
     check_all (bool) : if True, check all atom pairs, and return True or False, dist_list
-                       if False, stop chekking once smaller distance (dist < mindist) is found
+                       if False, stop when smaller distance (dist < mindist) is found
     # ---------- return
     (check_all=False) True: nothing smaller than mindist
     (check_all=False) False: something smaller than mindst
