@@ -30,7 +30,7 @@ At least either one of
 - [LAMMPS](http://lammps.sandia.gov "LAMMPS")
 
 ### Others
-- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy")
+- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy"): find_wy can randomly select a combination of Wyckoff positions for a given chemical composition and space group.
 
 ## Document
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY "CrySPY documment")
@@ -40,7 +40,7 @@ At least either one of
 
 ## Reference
 ### Bayesian optimization
-T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2017).  
+T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2018).  
 https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
 
 ### LAQA
