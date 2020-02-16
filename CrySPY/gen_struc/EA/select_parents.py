@@ -1,14 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Select parents in evolutionary algorithm
+'''
 
 import numpy as np
-from pymatgen import Structure
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 
-class Select_parents(object):
+class Select_parents:
     '''
     select parents
 
@@ -45,12 +43,15 @@ class Select_parents(object):
     self.get_parents(n_parent)
     '''
 
-    def __init__(self, struc_data, fitness, elite_struc=None, elite_fitness=None,
+    def __init__(self, struc_data, fitness,
+                 elite_struc=None, elite_fitness=None,
                  fit_reverse=False, n_fittest=0):
         # ---------- check args
         # ------ data
-        self.struc_data, self.fitness = self._check_data(struc_data, fitness,
-                                                         elite_struc, elite_fitness)
+        self.struc_data, self.fitness = self._check_data(struc_data,
+                                                         fitness,
+                                                         elite_struc,
+                                                         elite_fitness)
         # ------ fit_reverse
         if not isinstance(fit_reverse, bool):
             raise TypeError('fit_reverse should be bool')
@@ -69,19 +70,27 @@ class Select_parents(object):
             if value is None or np.isnan(value):
                 self.fitness[key] = -np.inf if fit_reverse else np.inf
         # ---------- ranking of fitness: list of id
-        self.ranking = sorted(self.fitness, key=self.fitness.get, reverse=fit_reverse)
-        # ---------- remove duplicated structures and cut by survival of the fittest
+        self.ranking = sorted(self.fitness, key=self.fitness.get,
+                              reverse=fit_reverse)
+        # ---------- remove duplicated structures and
+        #                cut by survival of the fittest
         self._dedupe()    # get self.ranking_dedupe
 
     def _check_data(self, struc_data, fitness, elite_struc, elite_fitness):
         # ---------- struc_data and fitness
         if isinstance(struc_data, dict) and isinstance(fitness, dict):
             pass    # if dict, allow len(struc_data) != len(fitness)
-        elif isinstance(struc_data, dict) and (isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
-            raise TypeError('struc_data is dict, so fitness should also be dict')
-        elif isinstance(fitness, dict) and (isinstance(struc_data, list) or isinstance(struc_data, np.ndarray)):
-            raise TypeError('fitness is dict, so struc_data should also be dict')
-        elif isinstance(struc_data, list) and (isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
+        elif isinstance(struc_data, dict) and (
+                isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
+            raise TypeError('struc_data is dict,'
+                            ' so fitness should also be dict')
+        elif isinstance(fitness, dict) and (
+                isinstance(struc_data, list)
+                or isinstance(struc_data, np.ndarray)):
+            raise TypeError('fitness is dict,'
+                            ' so struc_data should also be dict')
+        elif isinstance(struc_data, list) and (
+                isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
             # ------ check number of data
             if not len(struc_data) == len(fitness):
                 raise ValueError('not len(struc_data) == len(fitness)')
@@ -97,7 +106,8 @@ class Select_parents(object):
                 raise ValueError('not len(elite_struc) == len(elite_fitness)')
             if None in elite_struc.values():
                 raise ValueError('elite_struc includes None')
-            if (None in elite_fitness.values()) or (np.nan in elite_fitness.values()):
+            if (None in elite_fitness.values()) or (
+                    np.nan in elite_fitness.values()):
                 raise ValueError('elite_fitness includes None or np.nan')
             # ------ add elite to data
             struc_data.update(elite_struc)
@@ -105,7 +115,8 @@ class Select_parents(object):
         elif elite_struc is elite_fitness is None:
             pass
         else:
-            raise TypeError('elite_struc and elite_fitness must be dict or None')
+            raise TypeError('elite_struc and elite_fitness'
+                            ' must be dict or None')
         # ---------- return
         return struc_data, fitness
 
@@ -139,7 +150,8 @@ class Select_parents(object):
         # ---------- log
         print('Remove duplicated data')
         if self.n_fittest > 0:
-            print('Survival of the fittest: top {0} structures survive'.format(self.n_fittest))
+            print('Survival of the fittest: top {0} structures survive'.format(
+                self.n_fittest))
 
     def set_tournament(self, t_size=3):
         '''
@@ -171,7 +183,8 @@ class Select_parents(object):
         '''
         parent_id = []
         while len(parent_id) < n_parent:
-            t_indx = np.random.choice(len(self.ranking_dedupe), self.t_size, replace=False)
+            t_indx = np.random.choice(len(self.ranking_dedupe), self.t_size,
+                                      replace=False)
             if parent_id:    # not allow the same parent in crossover
                 if parent_id[0] == self.ranking_dedupe[min(t_indx)]:
                     continue
@@ -190,7 +203,8 @@ class Select_parents(object):
         if not 0 < b < a:
             raise ValueError('must be 0 < b < a')
         # ---------- calculate cumulative fitness
-        fitness_dedupe = np.array([self.fitness[i] for i in self.ranking_dedupe])
+        fitness_dedupe = np.array(
+            [self.fitness[i] for i in self.ranking_dedupe])
         fitness_dedupe = self._linear_scaling(fitness_dedupe, a, b)
         self.cum_fit = np.cumsum(fitness_dedupe/fitness_dedupe.sum())
         # ---------- set self.get_parents()
@@ -209,8 +223,10 @@ class Select_parents(object):
         # ---------- select parents
         parent_id = []
         while len(parent_id) < n_parent:
-            indx_array = np.where(self.cum_fit < np.random.rand())[0]    # if all false, array is vacant
-            select_indx = indx_array[-1] + 1 if indx_array.size != 0 else 0    # consider vacant or not
+            # indx_array: if all false, array is vacant
+            indx_array = np.where(self.cum_fit < np.random.rand())[0]
+            # select_indx: consider vacant or not
+            select_indx = indx_array[-1] + 1 if indx_array.size != 0 else 0
             if parent_id:    # not allow same parent for crossover
                 if parent_id[0] == self.ranking_dedupe[select_indx]:
                     continue
@@ -238,6 +254,7 @@ class Select_parents(object):
         # ------ in case the same values
         if fmax == fmin:
             return fitness
-        fitness = (a - b)/(fmax - fmin)*fitness + (b*fmax - a*fmin)/(fmax - fmin)
+        fitness = (a - b)/(fmax - fmin)*fitness + (
+            (b*fmax - a*fmin)/(fmax - fmin))
         # ---------- return
         return fitness

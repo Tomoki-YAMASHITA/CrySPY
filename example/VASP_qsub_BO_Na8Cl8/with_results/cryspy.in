@@ -1,0 +1,32 @@
+[basic]
+algo = BO
+calc_code = VASP
+tot_struc = 10
+natot = 16
+atype = Na Cl
+nat = 8 8
+nstage = 2
+njob = 2
+jobcmd = qsub
+jobfile = job_cryspy
+
+[lattice]
+minlen = 5
+maxlen = 12
+dangle = 20
+mindist_1 = 2.2  1.8
+mindist_2 = 1.8  2.2
+
+[VASP]
+kppvol = 40 80
+
+[BO]
+nselect_bo = 2
+dscrpt = FP
+score = TS
+fp_rmin = 0.5
+fp_rmax = 5.0
+fp_npoints = 10
+fp_sigma = 1.0
+
+[option]

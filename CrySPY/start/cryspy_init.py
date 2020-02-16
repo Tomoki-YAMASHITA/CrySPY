@@ -1,17 +1,19 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Initialize CrySPY
+'''
 
-from __future__ import print_function
-
-import ConfigParser
 import os
 
 import pandas as pd
 
 from .. import utility
+from ..BO import bo_init
+from ..EA import ea_init
 from ..gen_struc.random.random_generation import Rnd_struc_gen
-from ..IO import pkl_data
+from ..IO import pkl_data, io_stat
 from ..IO import read_input as rin
+from ..LAQA import laqa_init
+from ..RS import rs_init
 
 
 def initialize():
@@ -25,9 +27,7 @@ def initialize():
         fout.write('Start cryspy.py\n\n')
 
     # ---------- initialize stat
-    stat = ConfigParser.ConfigParser()
-    stat.add_section('input')
-    stat.add_section('status')
+    stat = io_stat.stat_init()
 
     # ---------- read input
     print('Read input file, cryspy.in')
@@ -37,7 +37,7 @@ def initialize():
 
     # ---------- make data directory
     if not os.path.isdir('data/pkl_data'):
-        print('Make data directory')
+        print('Make data directory ./data/pkl_data')
         os.makedirs('data/pkl_data')
 
     # ---------- generate initial structures
@@ -50,15 +50,18 @@ def initialize():
                             rin.minlen, rin.maxlen, rin.dangle,
                             rin.mindist, rin.maxcnt, rin.symprec)
         if rin.spgnum == 0:
-            rsg.gen_wo_spg(rin.tot_struc, id_offset=0, init_pos_path='./data/init_POSCARS')
+            rsg.gen_wo_spg(rin.tot_struc, id_offset=0,
+                           init_pos_path='./data/init_POSCARS')
             init_struc_data = rsg.init_struc_data
         else:
             fwpath = utility.check_fwpath()
             rsg.gen_with_spg(rin.tot_struc, rin.spgnum, id_offset=0,
-                             init_pos_path='./data/init_POSCARS', fwpath=fwpath)
+                             init_pos_path='./data/init_POSCARS',
+                             fwpath=fwpath)
             init_struc_data = rsg.init_struc_data
         with open('cryspy.out', 'a') as fout:
-            fout.write('Generated structures up to ID {}\n\n'.format(len(init_struc_data)-1))
+            fout.write('Generated structures up to ID {}\n\n'.format(
+                len(init_struc_data)-1))
         # ------ save
         pkl_data.save_init_struc(init_struc_data)
     else:
@@ -71,32 +74,41 @@ def initialize():
         init_struc_data = pkl_data.load_init_struc()
         # -- check
         if not rin.tot_struc == len(init_struc_data):
-            raise ValueError('rin.tot_struc = {0}, len(init_struc_data) = {1}'.format(
-                             rin.tot_struc, len(init_struc_data)))
+            raise ValueError('rin.tot_struc = {0},'
+                             ' len(init_struc_data) = {1}'.format(
+                                 rin.tot_struc, len(init_struc_data)))
 
     # ---------- initialize opt_struc_data
     opt_struc_data = {}
     pkl_data.save_opt_struc(opt_struc_data)
 
     # ---------- initialize rslt_data
-    rslt_data = pd.DataFrame(columns=['Struc_ID', 'Spg_num', 'Spg_sym',
+    rslt_data = pd.DataFrame(columns=['Spg_num', 'Spg_sym',
                                       'Spg_num_opt', 'Spg_sym_opt',
                                       'E_eV_atom', 'Magmom', 'Opt'])
-    rslt_data[['Struc_ID', 'Spg_num', 'Spg_num_opt']] = rslt_data[
-                                   ['Struc_ID', 'Spg_num', 'Spg_num_opt']].astype(int)
+    rslt_data[['Spg_num', 'Spg_num_opt']] = rslt_data[
+                                   ['Spg_num', 'Spg_num_opt']].astype(int)
     pkl_data.save_rslt(rslt_data)
 
-    # ---------- return
-    return stat, init_struc_data, rslt_data
+    # ---------- initialize for each algorithm
+    if rin.algo == 'RS':
+        rs_init.initialize(stat)
+    elif rin.algo == 'BO':
+        bo_init.initialize(stat, init_struc_data, rslt_data)
+    elif rin.algo == 'LAQA':
+        laqa_init.initialize(stat)
+    elif rin.algo == "EA":
+        ea_init.initialize(stat, rslt_data)
 
-
-def rs_init(stat):
-    next_id = 0
-    stat.set('status', 'next_id', '{}'.format(next_id))
-    with open('cryspy.stat', 'w') as fstat:
-        stat.write(fstat)
-    rs_id_data = next_id
-    pkl_data.save_rs_id(rs_id_data)
+    # ---------- initialize etc
+    if rin.kpt_flag:
+        kpt_init()
+    if rin.energy_step_flag:
+        energy_step_init()
+    if rin.struc_step_flag:
+        struc_step_init()
+    if rin.fs_step_flag:
+        fs_step_init()
 
 
 def kpt_init():

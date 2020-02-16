@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
-
-import os
+'''
+Collect results in soiap
+'''
 
 import numpy as np
 from pymatgen.core.units import Energy
@@ -20,7 +17,8 @@ def collect_soiap(current_id, work_path):
         check_opt = 'not_yet'
         for i, line in enumerate(lines):
             if '*** QMD%loopc' in line:
-                if 'QMD%frc converged.' in lines[i-2] and 'QMD%strs converged.' in lines[i-1]:
+                if ('QMD%frc converged.' in lines[i-2]
+                        and 'QMD%strs converged.' in lines[i-1]):
                     check_opt = 'done'
                 break
     except:
@@ -36,7 +34,8 @@ def collect_soiap(current_id, work_path):
         energy = energy/float(rin.natot)    # eV/cell --> eV/atom
     except:
         energy = np.nan    # error
-        print('    Structure ID {0}, could not obtain energy from {1}'.format(current_id, rin.soiap_outfile))
+        print('    Structure ID {0}, could not obtain energy from {1}'.format(
+            current_id, rin.soiap_outfile))
 
     # ---------- collect the last structure
     try:
@@ -50,16 +49,6 @@ def collect_soiap(current_id, work_path):
     if opt_struc is None:
         energy = np.nan
         magmom = np.nan
-
-    # ---------- mv xxxxx fin_xxxxx
-    soiap_files = [rin.soiap_infile, rin.soiap_outfile, rin.soiap_cif,
-                   'log.struc', 'log.tote', 'log.frc', 'log.strs']
-    for f in soiap_files:
-        if os.path.isfile(work_path+f):
-            os.rename(work_path+f, work_path+'fin_'+f)
-
-    # ---------- clean stat file
-    os.remove(work_path+'stat_job')
 
     # ---------- return
     return opt_struc, energy, magmom, check_opt

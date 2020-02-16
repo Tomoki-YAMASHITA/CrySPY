@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Calculate Fingerprint
+'''
 
 import os
 import subprocess
@@ -7,7 +8,7 @@ import subprocess
 import numpy as np
 
 
-class Calc_FP(object):
+class Calc_FP:
     '''
     calculate fingerprint using cal_fingerprint program
 
@@ -44,7 +45,8 @@ class Calc_FP(object):
             if type(x) is float and x > 0:
                 pass
             else:
-                raise ValueError('fp_rmin, fp_rmax, and fp_sigma msut be positive float')
+                raise ValueError('fp_rmin, fp_rmax, and fp_sigma'
+                                 ' msut be positive float')
         self.fp_rmin = fp_rmin
         self.fp_rmax = fp_rmax
         self.fp_sigma = fp_sigma
@@ -56,7 +58,8 @@ class Calc_FP(object):
         self.fp_npoints = fp_npoints
         # ------ fppath
         if not os.path.isfile(fppath):
-            raise IOError('There is no cal_fingerprint program in {}'.format(fppath))
+            raise IOError('There is no cal_fingerprint program in {}'.format(
+                fppath))
         self.fppath = fppath
 
     def calc(self):

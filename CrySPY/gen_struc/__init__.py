@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import EA
-import random
+from . import EA
+from . import random
 
-import struc_util
+from . import struc_util

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0] - 2020-02-16
+### Added
+- CrySPY logo
+- recaluculation
+- manual select in BO
+### Changed
+- Migrated to Python 3
+- Several variable names
+- Several data formats
+- Unit of energy in output: eV/cell --> eV/atom
+- No. of working directories corresponds to structure ID
+
 ## [0.7.0] - 2018-12-05
 ### Added
 - Evolutionary algorithm is now available

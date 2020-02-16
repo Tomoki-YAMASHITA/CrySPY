@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Append structures by evolutionary algorithm
+'''
 
-from __future__ import print_function
-
-import ConfigParser
 import os
 
 import pandas as pd
@@ -16,22 +14,27 @@ from ..gen_struc.EA.strain import Strain
 from ..gen_struc.EA.ea_generation import EA_generation
 from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..IO import out_results
-from ..IO import pkl_data
+from ..IO import change_input, io_stat, pkl_data
 from ..IO import read_input as rin
 
 
-def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
+def append_struc(stat, init_struc_data):
     # ---------- append structures by EA
     print('\n# ---------- Append structures by EA')
     with open('cryspy.out', 'a') as fout:
         fout.write('\n# ---------- Append structures by EA\n')
 
+    # ---------- load data
+    opt_struc_data = pkl_data.load_opt_struc()
+    rslt_data = pkl_data.load_rslt()
+
     # ---------- fitness
-    fitness = dict(zip(rslt_data['Struc_ID'].values, rslt_data['E_eV_atom'].values))
+    fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
 
     # ---------- instantiate Seclect_parents class
     print('# ------ select parents')
-    sp = Select_parents(opt_struc_data, fitness, None, None, rin.fit_reverse, rin.n_fittest)
+    sp = Select_parents(opt_struc_data, fitness, None, None,
+                        rin.fit_reverse, rin.n_fittest)
     if rin.slct_func == 'TNM':
         sp.set_tournament(t_size=rin.t_size)
     else:
@@ -39,10 +42,12 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
 
     # ---------- generate offspring by EA
     print('# ------ Generate structures')
-    eagen = EA_generation(sp=sp, symprec=rin.symprec, id_start=rin.tot_struc, init_pos_path='./data/init_POSCARS')
+    eagen = EA_generation(sp=sp, symprec=rin.symprec, id_start=rin.tot_struc,
+                          init_pos_path='./data/init_POSCARS')
     # ------ instantiate Crossover class
     if rin.n_crsov > 0:
-        co = Crossover(rin.atype, rin.nat, rin.mindist, rin.crs_lat, rin.crs_func,
+        co = Crossover(rin.atype, rin.nat, rin.mindist,
+                       rin.crs_lat, rin.crs_func,
                        rin.nat_diff_tole, rin.maxcnt_ea)
         eagen.gen_crossover(rin.n_crsov, co=co)    # crossover
         with open('cryspy.out', 'a') as fout:
@@ -68,12 +73,14 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
                             rin.minlen, rin.maxlen, rin.dangle,
                             rin.mindist, rin.maxcnt, rin.symprec)
         if rin.spgnum == 0:
-            rsg.gen_wo_spg(rin.n_rand, id_offset=eagen.cID, init_pos_path='./data/init_POSCARS')
+            rsg.gen_wo_spg(rin.n_rand, id_offset=eagen.cid,
+                           init_pos_path='./data/init_POSCARS')
             init_struc_data.update(rsg.init_struc_data)
         else:
             fwpath = utility.check_fwpath()
-            rsg.gen_with_spg(rin.n_rand, rin.spgnum, id_offset=eagen.cID,
-                             init_pos_path='./data/init_POSCARS', fwpath=fwpath)
+            rsg.gen_with_spg(rin.n_rand, rin.spgnum, id_offset=eagen.cid,
+                             init_pos_path='./data/init_POSCARS',
+                             fwpath=fwpath)
             init_struc_data.update(rsg.init_struc_data)
     with open('cryspy.out', 'a') as fout:
         fout.write('{} structures by random\n'.format(rin.n_rand))
@@ -93,7 +100,8 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
                                         'crs_func', 'crs_lat', 'slct_func'])
         ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
         # -- ea_origin
-        ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID', 'Operation', 'Parent'])
+        ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID',
+                                          'Operation', 'Parent'])
         ea_origin.iloc[:, 0:2] = ea_origin.iloc[:, 0:2].astype(int)
 
     # ---------- ea_info
@@ -107,13 +115,15 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
 
     # ---------- ea_origin
     # ------ EA operation part
-    for cID in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
-        tmp_origin = pd.Series([rin.tot_struc, cID, eagen.operation[cID],
-                                eagen.parents[cID]], index=ea_origin.columns)
+    for cid in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
+        tmp_origin = pd.Series([rin.tot_struc, cid, eagen.operation[cid],
+                                eagen.parents[cid]], index=ea_origin.columns)
         ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
     # ------ random part
-    for cID in range(rin.tot_struc + rin.n_pop - rin.n_rand, rin.tot_struc + rin.n_pop):
-        tmp_origin = pd.Series([rin.tot_struc, cID, 'random', None], index=ea_origin.columns)
+    for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand,
+                     rin.tot_struc + rin.n_pop):
+        tmp_origin = pd.Series([rin.tot_struc, cid, 'random', None],
+                               index=ea_origin.columns)
         ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
     # ------  out ea_origin
     out_results.out_ea_origin(ea_origin)
@@ -123,26 +133,24 @@ def append_struc(stat, init_struc_data, opt_struc_data, rslt_data):
     pkl_data.save_ea_data(ea_data)
 
     # ---------- change variables in cryspy.in
-    config = ConfigParser.ConfigParser()
-    config.read('cryspy.in')
-    print('# -- changed cryspy.in')
+    config = change_input.config_read()
+    print('# -- Changed cryspy.in')
     # ------ tot_struc
-    config.set('basic', 'tot_struc', '{}'.format(rin.tot_struc + rin.n_pop))
-    print('Changed the value of tot_struc in cryspy.in from {} to {}'.format(
+    change_input.change_basic(config, 'tot_struc', rin.tot_struc + rin.n_pop)
+    print('Changed tot_struc in cryspy.in from {} to {}'.format(
           rin.tot_struc, rin.tot_struc + rin.n_pop))
-    # ------ append_struc_ea
-    config.set('option', 'append_struc_ea', '{}'.format(False))
-    print('Changed the value of append_struc_ea in cryspy.in from {} to {}'.format(
+    rin.tot_struc = rin.tot_struc + rin.n_pop
+    # ------ append_struc_ea: True --> False
+    change_input.change_option(config, 'append_struc_ea', False)
+    print('Changed append_struc_ea in cryspy.in from {} to {}'.format(
           True, False))
     # ------ write
-    with open('cryspy.in', 'w') as f:
-        config.write(f)
+    change_input.write_config(config)
 
     # ---------- status
-    stat.set('input', 'tot_struc', '{}'.format(rin.tot_struc + rin.n_pop))
-    stat.set('input', 'append_struc_ea', '{}'.format(False))
-    with open('cryspy.stat', 'w') as fstat:
-        stat.write(fstat)
+    io_stat.set_input_common(stat, 'tot_struc', rin.tot_struc + rin.n_pop)
+    io_stat.set_input_common(stat, 'append_struc_ea', False)
+    io_stat.write_stat(stat)
 
     # ---------- return
     return init_struc_data

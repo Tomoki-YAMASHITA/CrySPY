@@ -8,22 +8,31 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; CrySPY version 0.7.0 documentation</title>
+  <title>Installation &mdash; CrySPY version 0.8.0 documentation</title>
   
 
   
   
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
   
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/cryspy_theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="author" title="About these documents" href="about.html" />
@@ -31,27 +40,25 @@
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Tutorial" href="tutorial.html" />
     <link rel="prev" title="About" href="about.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
-            <a href="index.html" class="icon icon-home"> CrySPY
+            <a href="index.html">
           
 
+          
+            
+            <img src="_static/cryspy_logo.png" class="logo" alt="Logo"/>
           
           </a>
 
@@ -59,7 +66,7 @@
             
             
               <div class="version">
-                version 0.7.0
+                version 0.8.0
               </div>
             
           
@@ -182,28 +189,33 @@
   <div class="section" id="installation">
 <h1><a class="toc-backref" href="#id3">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
-<p class="topic-title first">Contents</p>
+<p class="topic-title">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#installation" id="id3">Installation</a><ul>
-<li><a class="reference internal" href="#system-requirements" id="id4">System requirements</a><ul>
-<li><a class="reference internal" href="#python" id="id5">Python</a></li>
-<li><a class="reference internal" href="#structure-optimizer" id="id6">Structure optimizer</a></li>
-<li><a class="reference internal" href="#others" id="id7">Others</a></li>
+<li><p><a class="reference internal" href="#installation" id="id3">Installation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#system-requirements" id="id4">System requirements</a></p>
+<ul>
+<li><p><a class="reference internal" href="#python" id="id5">Python</a></p></li>
+<li><p><a class="reference internal" href="#structure-optimizer" id="id6">Structure optimizer</a></p></li>
+<li><p><a class="reference internal" href="#others" id="id7">Others</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installation-of-find-wy" id="id8">Installation of find_wy</a><ul>
-<li><a class="reference internal" href="#m-tspace" id="id9">m_tspace</a></li>
-<li><a class="reference internal" href="#id1" id="id10">find_wy</a></li>
+<li><p><a class="reference internal" href="#installation-of-find-wy" id="id8">Installation of find_wy</a></p>
+<ul>
+<li><p><a class="reference internal" href="#m-tspace" id="id9">m_tspace</a></p></li>
+<li><p><a class="reference internal" href="#id1" id="id10">find_wy</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#download" id="id11">Download</a><ul>
-<li><a class="reference internal" href="#git" id="id12">Git</a></li>
-<li><a class="reference internal" href="#zip-or-tar-gz-file" id="id13">Zip or tar.gz file</a></li>
+<li><p><a class="reference internal" href="#download" id="id11">Download</a></p>
+<ul>
+<li><p><a class="reference internal" href="#git" id="id12">Git</a></p></li>
+<li><p><a class="reference internal" href="#zip-or-tar-gz-file" id="id13">Zip or tar.gz file</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#setup" id="id14">Setup</a><ul>
-<li><a class="reference internal" href="#id2" id="id15">find_wy</a></li>
-<li><a class="reference internal" href="#f-fingerprint" id="id16">f-fingerprint</a></li>
+<li><p><a class="reference internal" href="#setup" id="id14">Setup</a></p>
+<ul>
+<li><p><a class="reference internal" href="#id2" id="id15">find_wy</a></p></li>
+<li><p><a class="reference internal" href="#f-fingerprint" id="id16">f-fingerprint</a></p></li>
 </ul>
 </li>
 </ul>
@@ -215,23 +227,28 @@
 <div class="section" id="python">
 <span id="index-0"></span><h3><a class="toc-backref" href="#id5">Python</a><a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Python 2.7.x</li>
-<li><a class="reference external" href="https://github.com/tsudalab/combo">COMBO</a></li>
-<li>numpy</li>
-<li>pandas</li>
-<li><a class="reference external" href="http://pymatgen.org">pymatgen</a></li>
+<li><p>Python 3.x.x</p></li>
+<li><p><a class="reference external" href="https://github.com/tsudalab/combo3">COMBO</a></p></li>
+<li><p>numpy</p></li>
+<li><p>pandas</p></li>
+<li><p><a class="reference external" href="http://pymatgen.org">pymatgen</a></p></li>
 </ul>
+<p>Tested with Python 3.7.5 on Mac and Python 3.6.7 (miniconda3-4.3.30) on Linux (super computer).</p>
 </div>
 <div class="section" id="structure-optimizer">
 <h3><a class="toc-backref" href="#id6">Structure optimizer</a><a class="headerlink" href="#structure-optimizer" title="Permalink to this headline">¶</a></h3>
+<p>At least one optimizer is required.</p>
 <ul class="simple">
-<li><a class="reference external" href="https://www.vasp.at">VASP</a>, <a class="reference external" href="http://www.quantum-espresso.org">Quantum ESPRESSO</a>, <a class="reference external" href="https://github.com/nbsato/soiap">soiap</a>, or <a class="reference external" href="http://lammps.sandia.gov">LAMMPS</a></li>
+<li><p><a class="reference external" href="https://www.vasp.at">VASP</a></p></li>
+<li><p><a class="reference external" href="http://www.quantum-espresso.org">Quantum ESPRESSO</a></p></li>
+<li><p><a class="reference external" href="https://github.com/nbsato/soiap">soiap</a></p></li>
+<li><p><a class="reference external" href="http://lammps.sandia.gov">LAMMPS</a></p></li>
 </ul>
 </div>
 <div class="section" id="others">
 <span id="index-1"></span><h3><a class="toc-backref" href="#id7">Others</a><a class="headerlink" href="#others" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference external" href="https://github.com/nim-hrkn/find_wy">find_wy</a></li>
+<li><p><a class="reference external" href="https://github.com/nim-hrkn/find_wy">find_wy</a></p></li>
 </ul>
 </div>
 </div>
@@ -247,20 +264,20 @@ $ git clone https://github.com/nim-hrkn/m_tspace.git
 </pre></div>
 </div>
 <div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<div class="last line-block">
+<p class="admonition-title">See also</p>
+<div class="line-block">
 <div class="line"><a class="reference external" href="https://github.com/nim-hrkn/m_tspace">https://github.com/nim-hrkn/m_tspace</a></div>
 <div class="line"><a class="reference external" href="https://github.com/nim-hrkn/m_tspace/wiki">https://github.com/nim-hrkn/m_tspace/wiki</a></div>
 </div>
 </div>
 <p>Additional two files are required for <code class="docutils literal notranslate"><span class="pre">m_tspace</span></code>. Download the following files in <code class="docutils literal notranslate"><span class="pre">~/local/src/m_tspace</span></code>:</p>
 <ul class="simple">
-<li>tsp98.f: <a class="reference external" href="http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f">http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f</a></li>
-<li>prmtsp.f: <a class="reference external" href="http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f">http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f</a></li>
+<li><p>tsp98.f: <a class="reference external" href="http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f">http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f</a></p></li>
+<li><p>prmtsp.f: <a class="reference external" href="http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f">http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f</a></p></li>
 </ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> m_tspace
-$ wget http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f
-$ wget http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f
+$ wget http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f
+$ wget http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f
 </pre></div>
 </div>
 <p>Edit the <code class="docutils literal notranslate"><span class="pre">makefile</span></code> and run the <code class="docutils literal notranslate"><span class="pre">make</span></code> command. If you use <code class="docutils literal notranslate"><span class="pre">ifort</span></code>, you had better delete <code class="docutils literal notranslate"><span class="pre">-check</span> <span class="pre">all</span></code> option and use <code class="docutils literal notranslate"><span class="pre">-O2</span></code> option.</p>
@@ -327,8 +344,8 @@ $ git clone https://github.com/nim-hrkn/find_wy.git
 </pre></div>
 </div>
 <div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<div class="last line-block">
+<p class="admonition-title">See also</p>
+<div class="line-block">
 <div class="line"><a class="reference external" href="https://github.com/nim-hrkn/find_wy">https://github.com/nim-hrkn/find_wy</a></div>
 <div class="line"><a class="reference external" href="https://github.com/nim-hrkn/find_wy/wiki">https://github.com/nim-hrkn/find_wy/wiki</a></div>
 </div>
@@ -380,6 +397,7 @@ $ git clone https://github.com/Tomoki-YAMASHITA/CrySPY.git CrySPY-x.x.x
 │   ├── EA/
 │   ├── IO/
 │   ├── LAQA/
+│   ├── RS/
 │   ├── __init__.py
 │   ├── calc_dscrpt/
 │   ├── f-fingerprint/
@@ -415,8 +433,8 @@ $ make
 </div>
 <p>Make sure that the executable file of <code class="docutils literal notranslate"><span class="pre">cal_fingerprint</span></code> exists in <code class="docutils literal notranslate"><span class="pre">~/CrySPY_root/CrySPY-x.x.x/CrySPY/f-fingerprint/</span></code>.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Check <code class="docutils literal notranslate"><span class="pre">/your_cryspy_path/CrySPY/f-fingerprint/cal_fingerprint</span></code></p>
+<p class="admonition-title">Note</p>
+<p>Check <code class="docutils literal notranslate"><span class="pre">/your_cryspy_path/CrySPY/f-fingerprint/cal_fingerprint</span></code></p>
 </div>
 </div>
 </div>
@@ -433,7 +451,7 @@ $ make
         <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="about.html" class="btn btn-neutral" title="About" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="about.html" class="btn btn-neutral float-left" title="About" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -443,7 +461,9 @@ $ make
   <div role="contentinfo">
     <p>
         &copy; Copyright 2017, CrySPY Development Team
-      Last updated on Dec 05, 2018.
+      <span class="lastupdated">
+        Last updated on Feb 16, 2020.
+      </span>
 
     </p>
   </div> 
@@ -459,25 +479,16 @@ $ make
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Strain class
+'''
 
 import numpy as np
 from pymatgen import Structure
@@ -7,7 +8,7 @@ from pymatgen import Structure
 from ..struc_util import sort_by_atype, check_distance
 
 
-class Strain(object):
+class Strain:
     '''
     strain
 
@@ -30,9 +31,10 @@ class Strain(object):
         for i in range(len(mindist)):
             for j in range(i):
                 if not mindist[i][j] == mindist[j][i]:
-                    raise ValueError('mindist is not symmetric. ' + \
+                    raise ValueError('mindist is not symmetric. '
                                      '({}, {}): {}, ({}, {}): {}'.format(
-                                     i, j, mindist[i][j], j, i, mindist[j][i]))
+                                         i, j, mindist[i][j],
+                                         j, i, mindist[j][i]))
         self.atype = atype
         self.mindist = mindist
         # ------ sigma
@@ -69,21 +71,26 @@ class Strain(object):
                 for j in range(3):
                     if i <= j:
                         if i == j:
-                            strain_matrix[i][j] = 1.0 + np.random.normal(loc=0.0, scale=self.sigma)
+                            strain_matrix[i][j] = 1.0 + np.random.normal(
+                                loc=0.0, scale=self.sigma)
                         else:
-                            strain_matrix[i][j] = np.random.normal(loc=0.0, scale=self.sigma)/2.0
+                            strain_matrix[i][j] = np.random.normal(
+                                loc=0.0, scale=self.sigma)/2.0
                             strain_matrix[j][i] = strain_matrix[i][j]
             # ------ strained lattice
             strained_lattice = np.dot(strain_matrix, lat_mat).T
             # ------ child
-            self.child = Structure(strained_lattice, struc.species, struc.frac_coords)
+            self.child = Structure(strained_lattice, struc.species,
+                                   struc.frac_coords)
             # ------ scale lattice
             self.child.scale_lattice(struc.volume)
             # ------ check distance
-            if check_distance(self.child, self.atype, self.mindist):    # success
+            if check_distance(self.child, self.atype, self.mindist):
+                # -- success
                 self.child = sort_by_atype(self.child, self.atype)
                 return self.child
-            else:    # fail
+            else:
+                # -- failure
                 cnt += 1
                 if cnt >= self.maxcnt_ea:
                     self.child = None

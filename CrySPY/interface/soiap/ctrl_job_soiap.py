@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Control jobs in soiap
+'''
 
 import os
 import shutil
@@ -14,26 +13,27 @@ def next_stage_soiap(stage, work_path):
     # ---------- skip_flag
     skip_flag = False
 
-    # ---------- prepare soiap files
+    # ---------- rename soiap files at the current stage
     soiap_files = [rin.soiap_infile, rin.soiap_outfile, rin.soiap_cif,
                    'log.struc', 'log.tote', 'log.frc', 'log.strs']
     for f in soiap_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)
-        os.rename(work_path+f, work_path+'prev_'+f)
+        os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
 
-    # ---------- copy the input file from ./calc_in
-    finfile = './calc_in/'+rin.soiap_infile+'_{}'.format(stage)
+    # ---------- copy the input file from ./calc_in for the next stage
+    finfile = './calc_in/'+rin.soiap_infile+'_{}'.format(stage + 1)
     shutil.copyfile(finfile, work_path+rin.soiap_infile)
 
     # ---------- generate the CIF file
     try:
-        structure = soiap_structure.from_file(work_path+'prev_log.struc')
+        structure = soiap_structure.from_file(
+            work_path+'stage{}_log.struc'.format(stage))
     except ValueError:
         skip_flag = True
         print('    error in soiap,  skip this structure')
         return skip_flag
-    with open(work_path+'prev_'+rin.soiap_cif, 'r') as f:
+    with open(work_path+'stage{}_'.format(stage)+rin.soiap_cif, 'r') as f:
         lines = f.readlines()
     title = lines[0][5:]    # string following 'data_'
     soiap_structure.write(structure,
@@ -45,18 +45,17 @@ def next_stage_soiap(stage, work_path):
     return skip_flag
 
 
-def next_struc_soiap(structure, next_id, work_path):
+def next_struc_soiap(structure, current_id, work_path):
     # ---------- copy files
     calc_inputs = [rin.soiap_infile]
     for f in calc_inputs:
         ff = f+'_1' if f == rin.soiap_infile else f
         if not os.path.isfile('./calc_in/'+ff):
             raise IOError('Could not find ./calc_in/'+ff)
-        # ------ e.g. cp ./calc_in/xxxxx_1 work0001/xxxxx
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- generate the CIF file
     soiap_structure.write(structure,
                           work_path+rin.soiap_cif,
                           symprec=rin.symprec,
-                          title='ID_{0:d}'.format(next_id))
+                          title='ID_{0:d}'.format(current_id))

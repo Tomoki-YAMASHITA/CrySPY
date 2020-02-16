@@ -15,16 +15,24 @@ System requirements
 Python
 --------
 
-- Python 2.7.x
-- `COMBO <https://github.com/tsudalab/combo>`_
+- Python 3.x.x
+- `COMBO <https://github.com/tsudalab/combo3>`_
 - numpy
 - pandas
 - `pymatgen <http://pymatgen.org>`_
 
+Tested with Python 3.7.5 on Mac and Python 3.6.7 (miniconda3-4.3.30) on Linux (super computer).
+
+
 
 Structure optimizer
 --------------------
-- `VASP <https://www.vasp.at>`_, `Quantum ESPRESSO <http://www.quantum-espresso.org>`_, `soiap <https://github.com/nbsato/soiap>`_, or `LAMMPS <http://lammps.sandia.gov>`_
+At least one optimizer is required.
+
+- `VASP <https://www.vasp.at>`_
+- `Quantum ESPRESSO <http://www.quantum-espresso.org>`_
+- `soiap <https://github.com/nbsato/soiap>`_
+- `LAMMPS <http://lammps.sandia.gov>`_
 
 
 
@@ -60,15 +68,15 @@ For example:
 
 Additional two files are required for ``m_tspace``. Download the following files in ``~/local/src/m_tspace``:
 
-- tsp98.f: http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f
-- prmtsp.f: http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f
+- tsp98.f: http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f
+- prmtsp.f: http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f
 
 
 .. code-block:: bash
 
     $ cd m_tspace
-    $ wget http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f
-    $ wget http://aquarius.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f
+    $ wget http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/tsp98.f
+    $ wget http://phoenix.mp.es.osaka-u.ac.jp/~tspace/tspace_main/tsp07/prmtsp.f
 
 
 Edit the ``makefile`` and run the ``make`` command. If you use ``ifort``, you had better delete ``-check all`` option and use ``-O2`` option.
@@ -215,6 +223,7 @@ Directory tree in ``~/CrySPY_root/CrySPY-x.x.x/``::
     │   ├── EA/
     │   ├── IO/
     │   ├── LAQA/
+    │   ├── RS/
     │   ├── __init__.py
     │   ├── calc_dscrpt/
     │   ├── f-fingerprint/

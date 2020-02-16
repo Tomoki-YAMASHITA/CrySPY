@@ -1,0 +1,33 @@
+[input]
+algo = RS
+calc_code = VASP
+tot_struc = 10
+natot = 16
+atype = Na Cl
+nat = 8 8
+nstage = 2
+njob = 10
+jobcmd = qsub
+jobfile = job_cryspy
+minlen = 5.0
+maxlen = 12.0
+dangle = 20.0
+mindist_1 = 2.2 1.8
+mindist_2 = 1.8 2.2
+kppvol = 40 80
+force_gamma = False
+maxcnt = 50
+stop_chkpt = 0
+symprec = 0.001
+spgnum = all
+load_struc_flag = False
+stop_next_struc = False
+recalc = 
+append_struc_ea = False
+energy_step_flag = False
+struc_step_flag = False
+fs_step_flag = False
+
+[status]
+id_queueing = 
+

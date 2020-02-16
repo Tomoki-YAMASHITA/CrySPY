@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Structure file for Quantum ESPRESSO
+'''
 
 from pymatgen import Structure
 from pymatgen.core.units import Length
@@ -48,8 +49,10 @@ def from_lines(lines_cell, lines_atom):
     elif unit == 'angstrom':
         scale = 1.0    # in Ang
     else:
-        raise ValueError('unit "{0:s}" for CELL_PARAMETERS is not supported'.format(unit))
-    lattice = [[scale * float(x) for x in line.split()] for line in lines_cell[1:4]]
+        raise ValueError('unit "{0:s}" for CELL_PARAMETERS'
+                         ' is not supported'.format(unit))
+    lattice = [[scale * float(x) for x in line.split()]
+               for line in lines_cell[1:4]]
 
     # ---------- species & coordinates
     unit = lines_atom[0].split()[1]
@@ -64,7 +67,8 @@ def from_lines(lines_cell, lines_atom):
         if unit == 'crystal':
             pass    # 'coords' are already internal coordinates
         else:
-            raise ValueError('unit "{0:s}" for ATOMIC_POSITIONS is not supported yet'.format(unit))
+            raise ValueError('unit "{0:s}" for ATOMIC_POSITIONS'
+                             ' is not supported yet'.format(unit))
 
     structure = Structure(lattice, species, coords)
     return structure

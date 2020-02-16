@@ -13,14 +13,14 @@ Input file: ``cryspy.in``
 File format
 =================
 
-CrySPY uses the `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_ module to read input file, ``cryspy.in`` .
+CrySPY uses the `configparser <https://docs.python.org/3/library/configparser.html>`_ module to read input file, ``cryspy.in`` .
 ``cryspy.in``  consists of sections, led by a ``[section]`` header and followed by ``name = value`` or ``name : value`` entries.
 Section names and values are case sensitive, but names are not.
 Lines beginning with ``#`` or ``;`` are ignored and may be used to provide comments.
 Accepted bool values are ``1``, ``yes``, ``true``, and ``on``, which cause this method to return ``True``, and ``0``, ``no``, ``false``, and ``off``, which cause it to return False. These string values for bool are checked in a case-insensitive manner.
 Some values are given in a space-separated manner.
 
-.. seealso:: `ConfigParser <https://docs.python.org/2.7/library/configparser.html?highlight=config#module-ConfigParser>`_
+.. seealso:: `configparser <https://docs.python.org/3/library/configparser.html>`_
 .. attention::
    | section name: case sensitive
    | name: case insensitive
@@ -28,135 +28,174 @@ Some values are given in a space-separated manner.
 
 
 
-
 Example
 =================
 
-Random Search
+Random Search (RS)
 ----------------------------
 
-``cryspy.in`` of YCo\ `5`:sub: by Random Search::
+``cryspy.in`` in CrySPY-x.x.x/example/soiap_bash_RS_Si16/
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+soiap, bash, Si\ `16`:sub:::
+
+   [basic]
+   algo = RS
+   calc_code = soiap
+   tot_struc = 6
+   natot = 16
+   atype = Si
+   nat =  16
+   nstage = 1
+   njob = 1
+   jobcmd = bash
+   jobfile = job_cryspy
+
+   [lattice]
+   minlen = 5
+   maxlen = 10
+   dangle = 20
+   mindist_1 = 1.8
+
+   [soiap]
+   soiap_infile = soiap.in
+   soiap_outfile = soiap.out
+   soiap_cif = initial.cif
+
+
+``cryspy.in`` in CrySPY-x.x.x/example/VASP_qsub_RS_Na8Cl8/
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+VASP, qsub, Na\ `8`:sub: Cl\ `8`:sub:::
 
    [basic]
    algo = RS
    calc_code = VASP
    tot_struc = 10
-   natot = 6
-   atype = Y Co
-   nat = 1  5
-   nstage = 4
-   njob = 2
+   natot = 16
+   atype = Na Cl
+   nat = 8 8
+   nstage = 2
+   njob = 10
    jobcmd = qsub
    jobfile = job_cryspy
 
    [lattice]
-   minlen = 4
-   maxlen = 8
+   minlen = 5
+   maxlen = 12
    dangle = 20
-   mindist_1 = 2.0 1.8
-   mindist_2 = 1.8 1.5
+   mindist_1 = 2.2  1.8
+   mindist_2 = 1.8  2.2
 
    [VASP]
-   kppvol = 40 60 100 100
+   kppvol = 40 80
+
+
+``cryspy.in`` in CrySPY-x.x.x/example/QE_qsub_RS_Si16/
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+QE, qsub, Si\ `16`:sub:::
+
+   [basic]
+   algo = RS
+   calc_code = QE
+   tot_struc = 5
+   natot = 16
+   atype = Si
+   nat = 16
+   nstage = 2
+   njob = 5
+   jobcmd = qsub
+   jobfile = job_cryspy
+
+   [lattice]
+   minlen = 5
+   maxlen = 10
+   dangle = 20
+   mindist_1 = 1.8
+
+   [QE]
+   qe_infile = pwscf.in
+   qe_outfile = pwscf.out
+   kppvol = 40 80
 
 
 
-Bayesian Optimization
+Bayesian Optimization (BO)
 -----------------------------------
 
-``cryspy.in`` of YCo\ `5`:sub: by Bayesian Optimization::
+``cryspy.in`` in CrySPY-x.x.x/example/VASP_qsub_BO_Na8Cl8/
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+VASP, qsub, Na\ `8`:sub: Cl\ `8`:sub:::
 
    [basic]
    algo = BO
    calc_code = VASP
    tot_struc = 10
-   natot = 6
-   atype = Y Co
-   nat = 1  5
-   nstage = 4
+   natot = 16
+   atype = Na Cl
+   nat = 8 8
+   nstage = 2
    njob = 2
    jobcmd = qsub
    jobfile = job_cryspy
 
    [lattice]
-   minlen = 4
-   maxlen = 8
+   minlen = 5
+   maxlen = 12
    dangle = 20
-   mindist_1 = 2.0 1.8
-   mindist_2 = 1.8 1.5
+   mindist_1 = 2.2  1.8
+   mindist_2 = 1.8  2.2
 
    [VASP]
-   kppvol = 40 60 100 100
+   kppvol = 40 80
 
    [BO]
-   interval = 2
+   nselect_bo = 2
    dscrpt = FP
    score = TS
    fp_rmin = 0.5
    fp_rmax = 5.0
-   fp_npoints = 50
-   fp_sigma = 0.2
+   fp_npoints = 10
+   fp_sigma = 1.0
 
 
-
-Look Ahead based on Quadratic Approximation
+Look Ahead based on Quadratic Approximation (LAQA)
 -----------------------------------------------------------------------
 
-``cryspy.in`` of YCo\ `5`:sub: by Look Ahead based on Quadratic Approximation::
-
-   [basic]
-   algo = LAQA
-   calc_code = VASP
-   tot_struc = 10
-   natot = 6
-   atype = Y Co
-   nat = 1  5
-   nstage = 4
-   njob = 2
-   jobcmd = qsub
-   jobfile = job_cryspy
-
-   [lattice]
-   minlen = 4
-   maxlen = 8
-   dangle = 20
-   mindist_1 = 2.0 1.8
-   mindist_2 = 1.8 1.5
-
-   [VASP]
-   kppvol = 40 60 100 100
-
-   [LAQA]
-   nselect = 2
 
 
 
-Evolutionary Algorithm
+Evolutionary Algorithm (EA)
 -------------------------------------
 
-``cryspy.in`` of YCo\ `5`:sub: by Evolutionary Algorithm::
+``cryspy.in`` in CrySPY-x.x.x/example/VASP_qsub_EA_Na8Cl8/
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+VASP, qsub, Na\ `8`:sub: Cl\ `8`:sub:::
 
    [basic]
    algo = EA
    calc_code = VASP
    tot_struc = 10
-   natot = 6
-   atype = Y Co
-   nat = 1  5
-   nstage = 4
-   njob = 2
+   natot = 16
+   atype = Na Cl
+   nat = 8 8
+   nstage = 2
+   njob = 10
    jobcmd = qsub
    jobfile = job_cryspy
 
    [lattice]
-   minlen = 4
-   maxlen = 8
+   minlen = 5
+   maxlen = 12
    dangle = 20
-   mindist_1 = 2.0 1.8
-   mindist_2 = 1.8 1.5
+   mindist_1 = 2.2  1.8
+   mindist_2 = 1.8  2.2
 
    [VASP]
-   kppvol = 40 60 100 100
+   kppvol = 40 80
 
    [EA]
    n_pop = 10
@@ -164,9 +203,11 @@ Evolutionary Algorithm
    n_perm = 2
    n_strain = 2
    n_rand = 1
-   n_elite = 2
+   n_elite = 0
+   n_fittest = 5
    slct_func = TNM
    t_size = 2
+   maxgen_ea = 2
 
 
 .. index::
@@ -359,7 +400,7 @@ A mindist matrix should be a symmetric matrix.
    :widths: auto
 
    ``lammps_infile``, str,  ,  Specify your LAMMPS input file name
-   ``lammps_potential``,  "str, ``None``", ``None`` ,  "Specify your LAMMPS potential, if any"
+   ``lammps_potential``,  "str [str ...], ``None``", ``None`` ,  "Specify your LAMMPS potential, if any"
    ``lammps_outfile``,  str,  ,  Specify your LAMMPS output file name
    ``lammps_data``,  str,  ,  Specify your LAMMPS data file name
 
@@ -376,8 +417,8 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``interval``, int,  ,  Number of structures to calculate between learning data
-   ``score``, "``TS``, ``EI``, ``PI``",  ,  Acquisition function
+   ``nselect_bo``, int,  ,  Number of structures to be selected at once
+   ``score``, "``TS``, ``EI``, ``PI``",  , Acquisition function
    ``num_rand_basis``, int, 0, "If 0: Gaussian process, else: number of basis function"
    ``cdev``, float, 0.001, Cutoff of deviation for standardization
    ``dscrpt``, ``FP`` ,  , Descriptor for structure
@@ -385,7 +426,31 @@ A mindist matrix should be a symmetric matrix.
    ``fp_rmax``, float, 5.0, Maximum cutoff of *r* in *fingerprint*
    ``fp_npoints``, int, 50, Number of discretized *r* points for each pair in *fingerprint*
    ``fp_sigma``, float, 0.2, Sigma parameter in Gaussian smearing function in Angstrom unit
-   ``maxgen``, int, 0, Maximum generation
+   ``max_select_bo``, int, 0, Maximum generation
+   ``manual_select_bo``, int [int ...], , structure IDs to be selected manually
+
+
+.. index::
+   single: score
+
+``score``
+-----------------
+
+- ``TS``: Thompson Sampling
+- ``EI``: Expectation Improvement
+- ``PI``: Probability of Improvement
+
+
+.. index::
+   single: dscrpt
+
+``dscrpt``
+-----------------
+
+- ``FP``: *F*-fingerprint of Oganov and Valle (J. Chem. Phys. 130, 104504 (2009))
+
+
+
 
 
 .. index::
@@ -398,7 +463,7 @@ A mindist matrix should be a symmetric matrix.
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``nselect``, int,  ,  Number of structures to select at once
+   ``nselect_laqa``, int,  ,  Number of structures to select at once
    ``weight_laqa``, float, 1.0 ,  weight of bias
 
 
@@ -439,13 +504,13 @@ where :math:`c` is ``weight_laqa``, weight of bias.
    ``t_size``, int, 3, [Only if slct_func == TNM] Size in tournament selection
    ``a_rlt``, float, 2.0, [Only if slct_func == RLT] Parameter for linear scaling
    ``b_rlt``, float, 1.0, [Only if slct_func == RLT] Parameter for linear scaling
-   ``crs_lat``, "``equal``, ``random``", ``equal``, How to mix lattice vectors
    ``crs_func``, "``OP``, ``TP``", ``OP``, **O**\ne **P**\oint crossover or **T**\wo **P**\oint crossover
+   ``crs_lat``, "``equal``, ``random``", ``equal``, How to mix lattice vectors
    ``nat_diff_tole``, int, 4, Tolerance for difference in number of atoms in crossover
    ``ntimes``, int, 1, ntimes permutation
    ``sigma_st``, float, 0.5, Standard deviation for strain
-   ``maxcnt_EA``, int, 100, Maximum number of trials in EA
-   ``maxgen``, int, 0, Maximum generation
+   ``maxcnt_ea``, int, 100, Maximum number of trials in EA
+   ``maxgen_ea``, int, 0, Maximum generation
 ..   ``restart_gen``, int, 0, Restart from specified generation
 
 
@@ -529,12 +594,13 @@ where :math:`\eta_i` are given by normal distribution with a mean of zero and a 
    :header: Name, Value, Default value, Description
    :widths: auto
 
-   ``maxcnt``, int,  200,  Maximum number of trials to determine atom positions
+   ``maxcnt``, int,  50,  Maximum number of trials to determine atom positions
    ``stop_chkpt``, int , 0,  Program stops at a specified check point
    ``symprec``, float , 0.001 , Precision for symmetry finding
-   ``spgnum``, "``all``, space group number, 0", ``all`` , "Constraint on space group. If all, 1--230. If 0, without space group information. "
+   ``spgnum``, "``all``, space group number, 0", ``all`` , "Constraint on space group. If all, 1--230. If 0, without space group information "
    ``load_struc_flag``, bool, ``False``, "If True, load initial structures from ``./data/pkl_data/init_struc_data.pkl``"
    ``stop_next_struc``, bool, ``False``, "If True, not submit next structures, but submit next stage and collect results"
+   ``recalc``, int [int ...], , "Specify structure IDs if you recalculate or continue optimization" 
    ``append_struc_ea``, bool, ``False``, "If True, append structures by EA"
    ``energy_step_flag``, bool, ``False``, "If True, save energy_step_data in ``./data/pkl_data/energy_step_data.pkl``"
    ``struc_step_flag``, bool, ``False``, "If True, save struc_step_data in ``./data/pkl_data/struc_step_data.pkl``"

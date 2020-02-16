@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Structure files in soiap
+'''
 
 import itertools
 
@@ -18,15 +19,17 @@ def from_file(name):
     lines = lines[-(rin.natot+5):]
 
     # ---------- lattice
-    lattice = [[float(x) for x in line.split()] for line in lines[1:4]]    # in Bohr, each column is a lattice vector
-    lattice = np.array(LengthArray(lattice, 'bohr').to('ang'))    # Bohr --> Ang
+    lattice = [[float(x) for x in line.split()] for line in lines[1:4]]
+    #     in Bohr, each column is a lattice vector
+    lattice = np.array(LengthArray(lattice, 'bohr').to('ang'))  # Bohr --> Ang
     lattice = lattice.T    # each row is a lattice vector
 
     # ---------- internal coordinates
     coords = [[float(x) for x in line.split()] for line in lines[5:]]
 
     # ---------- species
-    species = [itertools.repeat(typ, times=num) for typ, num in zip(rin.atype, rin.nat)]
+    species = [itertools.repeat(typ, times=num) for typ, num in zip(
+        rin.atype, rin.nat)]
     species = list(itertools.chain.from_iterable(species))
 
     structure = Structure(lattice, species, coords)
@@ -42,7 +45,8 @@ def write(structure, output, symprec=0.001, title="soiap"):
     # ---------- get written data
     lattice = structure_sym.lattice
     symmetry_operations = structure_sym.spacegroup
-    site_indices_inequiv = [equiv[0] for equiv in structure_sym.equivalent_indices]
+    site_indices_inequiv = [equiv[0]
+                            for equiv in structure_sym.equivalent_indices]
     sites_inequiv = [structure_sym.sites[i] for i in site_indices_inequiv]
 
     # ---------- write

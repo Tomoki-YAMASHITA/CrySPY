@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Calculate score in LAQA
+'''
 
 import numpy as np
 

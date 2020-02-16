@@ -1,0 +1,320 @@
+2020/01/28 21:02:19
+CrySPY 0.8.0
+Start cryspy.py
+
+Read input file, cryspy.in
+Write input data in cryspy.out
+Save input data in cryspy.stat
+Make data directory ./data/pkl_data
+
+# --------- Generate initial structures
+Structure ID      0 was generated. Space group: 133 --> 133 P4_2/nbc
+Structure ID      1 was generated. Space group: 229 --> 229 Im-3m
+Structure ID      2 was generated. Space group: 130 --> 129 P4/nmm
+Structure ID      3 was generated. Space group: 129 --> 129 P4/nmm
+Structure ID      4 was generated. Space group: 102 --> 102 P4_2nm
+Structure ID      5 was generated. Space group: 156 --> 156 P3m1
+Structure ID      6 was generated. Space group: 147 --> 147 P-3
+Structure ID      7 was generated. Space group: 115 --> 115 P-4m2
+Structure ID      8 was generated. Space group: 132 --> 132 P4_2/mcm
+Structure ID      9 was generated. Space group:  75 -->  75 P4
+
+# ---------- Selection: 1
+Calculate descriptors: FingerPrint
+selected_id: 6 5
+
+
+
+2020/01/28 21:08:05
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      6: submit job, Stage 1
+ID      5: submit job, Stage 1
+
+
+
+2020/01/28 21:09:59
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      6: Stage 1 Done!
+    collect results: E = -4.057052953925473 eV/atom
+Calculate descriptors: FingerPrint
+ID      5: Stage 1 Done!
+    collect results: E = -3.8160906127991865 eV/atom
+Calculate descriptors: FingerPrint
+
+Done selection 1
+
+# ------ Bayesian optimization
+current best E = -4.057052953925473
+
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0-th epoch, marginal likelihood -1.3946463905352724
+50-th epoch, marginal likelihood -1.3946465284727054
+100-th epoch, marginal likelihood -1.3946465318637455
+150-th epoch, marginal likelihood -1.3946465318869181
+200-th epoch, marginal likelihood -1.394646531887071
+250-th epoch, marginal likelihood -1.3946465318870709
+300-th epoch, marginal likelihood -1.394646531887071
+350-th epoch, marginal likelihood -1.3946465318870713
+400-th epoch, marginal likelihood -1.394646531887071
+450-th epoch, marginal likelihood -1.3946465318870702
+500-th epoch, marginal likelihood -1.3946465318870707
+Done
+
+ Parameters of Gaussian kernel 
+ 
+ width  =  [3.]
+ scale  =  1.0
+ scale2 =  1.0
+ 
+
+0002-th multiple probe search (TS) 
+
+
+
+# ---------- Selection: 2
+selected_id: 9 1
+
+
+
+2020/01/28 21:11:22
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      9: submit job, Stage 1
+ID      1: submit job, Stage 1
+
+
+
+2020/01/28 21:11:47
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      9: Stage 1 Done!
+    collect results: E = -3.7855523219938267 eV/atom
+Calculate descriptors: FingerPrint
+ID      1: Stage 1 Done!
+    collect results: E = -2.25067385643626 eV/atom
+Calculate descriptors: FingerPrint
+
+Done selection 2
+
+# ------ Bayesian optimization
+current best E = -4.057052953925473
+
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0-th epoch, marginal likelihood 3.4589334663117492
+50-th epoch, marginal likelihood 3.189304020263737
+100-th epoch, marginal likelihood 3.031964069869689
+150-th epoch, marginal likelihood 2.940589041542603
+200-th epoch, marginal likelihood 2.884098602743437
+250-th epoch, marginal likelihood 2.8455702635443636
+300-th epoch, marginal likelihood 2.81642325160051
+350-th epoch, marginal likelihood 2.792617797724652
+400-th epoch, marginal likelihood 2.772359302617791
+450-th epoch, marginal likelihood 2.754846653483817
+500-th epoch, marginal likelihood 2.7396723677445367
+Done
+
+ Parameters of Gaussian kernel 
+ 
+ width  =  [3.]
+ scale  =  1.0
+ scale2 =  1.0
+ 
+
+0002-th multiple probe search (TS) 
+
+
+
+# ---------- Selection: 3
+selected_id: 2 8
+
+
+
+2020/01/28 21:14:10
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      2: submit job, Stage 1
+ID      8: submit job, Stage 1
+
+
+
+2020/01/28 21:14:19
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      2: Stage 1 Done!
+    collect results: E = -4.055380605053125 eV/atom
+Calculate descriptors: FingerPrint
+ID      8: Stage 1 Done!
+    collect results: E = -3.983963912149096 eV/atom
+Calculate descriptors: FingerPrint
+
+Done selection 3
+
+# ------ Bayesian optimization
+current best E = -4.057052953925473
+
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0-th epoch, marginal likelihood 4.029298413761159
+50-th epoch, marginal likelihood 3.840224957779746
+100-th epoch, marginal likelihood 3.7130536336706728
+150-th epoch, marginal likelihood 3.6268673704635934
+200-th epoch, marginal likelihood 3.5666052394848853
+250-th epoch, marginal likelihood 3.522964759708514
+300-th epoch, marginal likelihood 3.4901634730123616
+350-th epoch, marginal likelihood 3.4645884145734316
+400-th epoch, marginal likelihood 3.443985338239003
+450-th epoch, marginal likelihood 3.4269594153856007
+500-th epoch, marginal likelihood 3.4126583077609505
+Done
+
+ Parameters of Gaussian kernel 
+ 
+ width  =  [3.]
+ scale  =  1.0
+ scale2 =  1.0
+ 
+
+0002-th multiple probe search (TS) 
+
+
+
+# ---------- Selection: 4
+selected_id: 4 7
+
+
+
+2020/01/28 21:17:22
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      4: submit job, Stage 1
+ID      7: submit job, Stage 1
+
+
+
+2020/01/28 21:19:04
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      4: Stage 1 Done!
+    collect results: E = -3.409062515865766 eV/atom
+Calculate descriptors: FingerPrint
+ID      7: Stage 1 Done!
+    collect results: E = -3.0715657692396103 eV/atom
+Calculate descriptors: FingerPrint
+
+Done selection 4
+
+# ------ Bayesian optimization
+current best E = -4.057052953925473
+
+
+
+Start the initial hyper parameter searching ...
+Done
+
+Start the hyper parameter learning ...
+0-th epoch, marginal likelihood 7.535269542499718
+50-th epoch, marginal likelihood 7.354476239402316
+100-th epoch, marginal likelihood 7.232701223996326
+150-th epoch, marginal likelihood 7.1613989662681155
+200-th epoch, marginal likelihood 7.125135217419102
+250-th epoch, marginal likelihood 7.109213552295914
+300-th epoch, marginal likelihood 7.103190452950318
+350-th epoch, marginal likelihood 7.101225062833859
+400-th epoch, marginal likelihood 7.100670692905738
+450-th epoch, marginal likelihood 7.100535302549956
+500-th epoch, marginal likelihood 7.100506661130795
+Done
+
+ Parameters of Gaussian kernel 
+ 
+ width  =  [3.]
+ scale  =  1.0
+ scale2 =  1.0
+ 
+
+0002-th multiple probe search (TS) 
+
+
+
+# ---------- Selection: 5
+selected_id: 0 3
+
+
+
+2020/01/28 21:19:28
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      0: submit job, Stage 1
+ID      3: submit job, Stage 1
+
+
+
+2020/01/28 21:19:39
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      0: Stage 1 Done!
+    collect results: E = -3.8771704689600974 eV/atom
+Calculate descriptors: FingerPrint
+ID      3: Stage 1 Done!
+    collect results: E = -3.6520668109807906 eV/atom
+Calculate descriptors: FingerPrint
+
+Done selection 5
+
+Done all structures!

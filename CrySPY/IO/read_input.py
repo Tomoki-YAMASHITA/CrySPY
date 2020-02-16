@@ -1,18 +1,18 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Read input from cryspy.in
+'''
 
-from __future__ import print_function
-from __future__ import division
-
-import ConfigParser
+import configparser
 import os
+
+from . import io_stat
 
 
 def readin():
     # ---------- read cryspy.in
     if not os.path.isfile('cryspy.in'):
         raise IOError('Could not find cryspy.in file')
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read('cryspy.in')
 
     # ---------- basic
@@ -28,7 +28,8 @@ def readin():
         if not calc_code == 'VASP':
             raise NotImplementedError('LAQA: only VASP for now')
     if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS']:
-        raise NotImplementedError('calc_code must be VASP, QE, soiap, or LAMMPS')
+        raise NotImplementedError(
+            'calc_code must be VASP, QE, soiap, or LAMMPS')
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
@@ -58,15 +59,15 @@ def readin():
     # ---------- BO
     if algo == 'BO':
         # ------ global declaration
-        global interval, score, num_rand_basis, cdev, dscrpt
+        global nselect_bo, score, num_rand_basis, cdev, dscrpt
         global fp_rmin, fp_rmax, fp_npoints, fp_sigma
         global max_select_bo, manual_select_bo
         # ------ read intput variables
-        interval = config.getint('BO', 'interval')
-        if interval <= 0:
-            raise ValueError('interval <= 0, check interval')
-        elif tot_struc < interval:
-            raise ValueError('tot_struc < interval, check interval')
+        nselect_bo = config.getint('BO', 'nselect_bo')
+        if nselect_bo <= 0:
+            raise ValueError('nselect_bo <= 0, check nselect_bo')
+        elif tot_struc < nselect_bo:
+            raise ValueError('tot_struc < nselect_bo, check nselect_bo')
         score = config.get('BO', 'score')
         if score == 'TS' or score == 'EI' or score == 'PI':
             pass
@@ -74,11 +75,11 @@ def readin():
             raise ValueError('score must be TS, EI, or PI, check score')
         try:
             num_rand_basis = config.getint('BO', 'num_rand_basis')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             num_rand_basis = 0
         try:
             cdev = config.getfloat('BO', 'cdev')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             cdev = 0.001
         dscrpt = config.get('BO', 'dscrpt')
         if dscrpt == 'FP':
@@ -88,11 +89,11 @@ def readin():
         # -- parameters for f-fingerprint
         try:
             fp_rmin = config.getfloat('BO', 'fp_rmin')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             fp_rmin = 0.5
         try:
             fp_rmax = config.getfloat('BO', 'fp_rmax')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             fp_rmax = 5.0
         if fp_rmin < 0.0:
             raise ValueError('fp_rmin < 0, check fp_rmin')
@@ -100,47 +101,44 @@ def readin():
             raise ValueError('fp_rmax < fp_rmin, check fp_rmin and fp_rmax')
         try:
             fp_npoints = config.getint('BO', 'fp_npoints')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             fp_npoints = 50
         if fp_npoints <= 0:
             raise ValueError('fp_npoints <= 0, check fp_npoints')
         try:
             fp_sigma = config.getfloat('BO', 'fp_sigma')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             fp_sigma = 0.2
         if fp_sigma < 0:
             raise ValueError('fp_sigma < 0, check fp_sigma')
         # -- BO option
         try:
             max_select_bo = config.getint('BO', 'max_select_bo')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             max_select_bo = 0
         if max_select_bo < 0:
             raise ValueError('max_select_bo must be non-negative int')
         try:
             manual_select_bo = config.get('BO', 'manual_select_bo')
-            if manual_select_bo == 'None':    # here None is str
-                manual_select_bo = None
-            else:
-                manual_select_bo = [int(x) for x in manual_select_bo.split()]    # str --> integer
-                if len(manual_select_bo) == 0:
-                    manual_select_bo = None
-        except ConfigParser.NoOptionError:
-            manual_select_bo = None
-        if manual_select_bo is not None:
+            manual_select_bo = [int(x) for x in manual_select_bo.split()]
+        except configparser.NoOptionError:
+            manual_select_bo = []
+        if manual_select_bo:
             for i in manual_select_bo:
                 if not 0 <= i < tot_struc:
-                    raise ValueError('manual_select_bo must be non-negative int and less than tot_struc')
+                    raise ValueError('manual_select_bo must be'
+                                     ' non-negative int'
+                                     ' and less than tot_struc')
 
     # ---------- LAQA
     if algo == 'LAQA':
         # ------ global declaration
-        global nselect, weight_laqa
+        global nselect_laqa, weight_laqa
         # ------ read intput variables
-        nselect = config.getint('LAQA', 'nselect')
+        nselect_laqa = config.getint('LAQA', 'nselect_laqa')
         try:
             weight_laqa = config.getfloat('LAQA', 'weight_laqa')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             weight_laqa = 1.0
 
     # ---------- EA
@@ -171,8 +169,10 @@ def readin():
         for j in range(len(mindist)):
             if i < j:
                 if not mindist[i][j] == mindist[j][i]:
-                    raise ValueError('mindist is not symmetric. ({}, {}) --> {}, ({}, {}) --> {}'.format(
-                        i, j, mindist[i][j], j, i, mindist[j][i]))
+                    raise ValueError('mindist is not symmetric. ({}, {}) -->'
+                                     ' {}, ({}, {}) --> {}'.format(
+                                         i, j, mindist[i][j],
+                                         j, i, mindist[j][i]))
 
     # ---------- global declaration for comman part in calc_code
     global kppvol, kpt_flag, force_gamma
@@ -184,10 +184,11 @@ def readin():
         kppvol = config.get('VASP', 'kppvol')
         kppvol = [int(x) for x in kppvol.split()]    # character --> int
         if not len(kppvol) == nstage:
-            raise ValueError('not len(kppvol) == nstage, check kppvol and nstage')
+            raise ValueError('not len(kppvol) == nstage,'
+                             ' check kppvol and nstage')
         try:
             force_gamma = config.getboolean('VASP', 'force_gamma')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             force_gamma = False
 
     # ---------- QE
@@ -201,10 +202,11 @@ def readin():
         kppvol = config.get('QE', 'kppvol')
         kppvol = [int(x) for x in kppvol.split()]    # character --> int
         if not len(kppvol) == nstage:
-            raise ValueError('not len(kppvol) == nstage, check kppvol and nstage')
+            raise ValueError('not len(kppvol) == nstage,'
+                             ' check kppvol and nstage')
         try:
             force_gamma = config.getboolean('QE', 'force_gamma')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             force_gamma = False
 
     # ---------- soiap
@@ -228,36 +230,38 @@ def readin():
         try:
             lammps_potential = config.get('LAMMPS', 'lammps_potential')
             lammps_potential = lammps_potential.split()
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             lammps_potential = None
         lammps_data = config.get('LAMMPS', 'lammps_data')
         kpt_flag = False
         force_gamma = False
     else:
-        raise NotImplementedError('calc_code must be VASP, QE, soiap, or LAMMPS')
+        raise NotImplementedError('calc_code must be VASP, QE, soiap,'
+                                  ' or LAMMPS')
 
     # ---------- option
     # ------ global declaration
     global maxcnt, stop_chkpt, symprec, spgnum
-    global load_struc_flag, stop_next_struc, append_struc_ea
+    global load_struc_flag, stop_next_struc, recalc
+    global append_struc_ea
     global energy_step_flag, struc_step_flag, fs_step_flag
 
     # ------ read intput variables
     try:
         maxcnt = config.getint('option', 'maxcnt')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
-        maxcnt = 200
+    except (configparser.NoOptionError, configparser.NoSectionError):
+        maxcnt = 50
     try:
         stop_chkpt = config.getint('option', 'stop_chkpt')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         stop_chkpt = 0
     try:
         symprec = config.getfloat('option', 'symprec')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         symprec = 0.001
     try:
         spgnum = config.get('option', 'spgnum')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         spgnum = 'all'
     if spgnum == '0':
         spgnum = 0
@@ -267,36 +271,46 @@ def readin():
         spgnum = spglist(spgnum)
     try:
         load_struc_flag = config.getboolean('option', 'load_struc_flag')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         load_struc_flag = False
     try:
         stop_next_struc = config.getboolean('option', 'stop_next_struc')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         stop_next_struc = False
     try:
+        recalc = config.get('option', 'recalc')
+        recalc = [int(x) for x in recalc.split()]    # character --> integer
+    except (configparser.NoOptionError, configparser.NoSectionError):
+        recalc = []
+    if recalc:
+        for i in recalc:
+            if not 0 <= i < tot_struc:
+                raise ValueError('recalc must be non-negative int'
+                                 ' and less than tot_struc')
+    try:
         append_struc_ea = config.getboolean('option', 'append_struc_ea')
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         append_struc_ea = False
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
         # -- only VASP or QE for now
         if calc_code in ['soiap', 'LAMMPS']:
             energy_step_flag = False
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
         # -- only VASP or QE for now
         if calc_code in ['soiap', 'LAMMPS']:
             struc_step_flag = False
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         struc_step_flag = False
     try:
         fs_step_flag = config.getboolean('option', 'fs_step_flag')
         # -- only VASP or QE for now
         if calc_code in ['soiap', 'LAMMPS']:
             fs_step_flag = False
-    except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+    except (configparser.NoOptionError, configparser.NoSectionError):
         fs_step_flag = False
     if algo == 'LAQA':
         fs_step_flag = True
@@ -322,7 +336,8 @@ def readin():
         if n_perm < 0:
             raise ValueError('n_perm must be zero or positive int')
         if n_perm != 0 and len(atype) == 1:
-            raise ValueError('When the number of atom type is 1, n_perm must be 0')
+            raise ValueError('When the number of atom type is 1,'
+                             ' n_perm must be 0')
         n_strain = config.getint('EA', 'n_strain')
         if n_strain < 0:
             raise ValueError('n_strain must be zero or positive int')
@@ -330,18 +345,19 @@ def readin():
         if n_rand < 0:
             raise ValueError('n_rand must be zero or positive int')
         if n_crsov + n_perm + n_strain + n_rand != n_pop:
-            raise ValueError('n_crsov + n_perm + n_strain + n_rand must be n_pop')
+            raise ValueError('n_crsov + n_perm + n_strain + n_rand'
+                             ' must be n_pop')
         n_elite = config.getint('EA', 'n_elite')
         if n_elite < 0:
             raise ValueError('n_elite must be non-negative int')
         # -- fittest
         try:
             fit_reverse = config.getboolean('EA', 'fit_reverse')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             fit_reverse = False
         try:
             n_fittest = config.getint('EA', 'n_fittest')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             n_fittest = 0
         if n_fittest < 0:
             raise ValueError('n_fittest must be zero or positive int')
@@ -352,67 +368,67 @@ def readin():
         if slct_func == 'TNM':
             try:
                 t_size = config.getint('EA', 't_size')
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 t_size = 3
             if t_size < 2:
                 raise ValueError('t_size must be greater than or equal to 2')
         elif slct_func == 'RLT':
             try:
                 a_rlt = config.getfloat('EA', 'a_rlt')
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 a_rlt = 2.0
             try:
                 b_rlt = config.getfloat('EA', 'b_rlt')
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 b_rlt = 1.0
         # -- crossover
         try:
             crs_lat = config.get('EA', 'crs_lat')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             crs_lat = 'equal'
         if crs_lat not in ['equal', 'random']:
             raise ValueError('crs_lat must be equal or random')
         try:
             crs_func = config.get('EA', 'crs_func')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             crs_func = 'OP'
         if crs_func not in ['OP', 'TP']:
             raise ValueError('crs_func must be OP or TP')
         try:
             nat_diff_tole = config.getint('EA', 'nat_diff_tole')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             nat_diff_tole = 4
         if nat_diff_tole < 0:
             raise ValueError('nat_diff_tole must be nen-negative int')
         # -- permutation
         try:
             ntimes = config.getint('EA', 'ntimes')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             ntimes = 1
         if ntimes <= 0:
             raise ValueError('ntimes must be positive int')
         try:
             sigma_st = config.getfloat('EA', 'sigma_st')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             sigma_st = 0.5
         if sigma_st <= 0:
             raise ValueError('simga_st must be positive float')
         # -- common
         try:
             maxcnt_ea = config.getint('EA', 'maxcnt_ea')
-        except ConfigParser.NoOptionError:
-            maxcnt_ea = 100
+        except configparser.NoOptionError:
+            maxcnt_ea = 50
         # -- EA option
         try:
             maxgen_ea = config.getint('EA', 'maxgen_ea')
-        except ConfigParser.NoOptionError:
+        except configparser.NoOptionError:
             maxgen_ea = 0
         if maxgen_ea < 0:
             raise ValueError('maxgen_ea must be non-negative int')
         # # -- restart option
         # try:
         #     restart_gen = config.getint('EA', 'restart_gen')
-        # except ConfigParser.NoOptionError:
+        # except configparser.NoOptionError:
         #     restart_gen = 0
 
 
@@ -459,7 +475,7 @@ def writeout():
         # ------ BO
         if algo == 'BO':
             fout.write('# ------ BO section\n')
-            fout.write('interval = {}\n'.format(interval))
+            fout.write('nselect_bo = {}\n'.format(nselect_bo))
             fout.write('score = {}\n'.format(score))
             fout.write('num_rand_basis = {}\n'.format(num_rand_basis))
             fout.write('cdev = {}\n'.format(cdev))
@@ -469,14 +485,13 @@ def writeout():
             fout.write('fp_npoints = {}\n'.format(fp_npoints))
             fout.write('fp_sigma = {}\n'.format(fp_sigma))
             fout.write('max_select_bo = {}\n'.format(max_select_bo))
-            if manual_select_bo is None:
-                fout.write('manual_select_bo = \n')
-            else:
-                fout.write('manual_select_bo = {}\n'.format(' '.join(str(i) for i in manual_select_bo)))
+            fout.write('manual_select_bo = {}\n'.format(
+                ' '.join(str(x) for x in manual_select_bo)))
+
         # ------ LAQA
         if algo == 'LAQA':
             fout.write('# ------ LAQA section\n')
-            fout.write('nselect = {}\n'.format(nselect))
+            fout.write('nselect_laqa = {}\n'.format(nselect_laqa))
             fout.write('weight_laqa = {}\n'.format(weight_laqa))
 
         # ------ EA
@@ -511,12 +526,14 @@ def writeout():
         fout.write('maxlen = {}\n'.format(maxlen))
         fout.write('dangle = {}\n'.format(dangle))
         for i in range(len(atype)):
-            fout.write('mindist_{0} = {1}\n'.format(i+1, ' '.join(str(c) for c in mindist[i])))
+            fout.write('mindist_{0} = {1}\n'.format(
+                i+1, ' '.join(str(c) for c in mindist[i])))
 
         # ------ VASP
         if calc_code == 'VASP':
             fout.write('# ------ VASP section\n')
-            fout.write('kppvol = {}\n'.format(' '.join(str(c) for c in kppvol)))
+            fout.write('kppvol = {}\n'.format(
+                ' '.join(str(c) for c in kppvol)))
             fout.write('force_gamma = {}\n'.format(force_gamma))
 
         # ------- QE
@@ -524,7 +541,8 @@ def writeout():
             fout.write('# ------ QE section\n')
             fout.write('qe_infile = {}\n'.format(qe_infile))
             fout.write('qe_outfile = {}\n'.format(qe_outfile))
-            fout.write('kppvol = {}\n'.format(' '.join(str(c) for c in kppvol)))
+            fout.write('kppvol = {}\n'.format(
+                ' '.join(str(c) for c in kppvol)))
             fout.write('force_gamma = {}\n'.format(force_gamma))
 
         # ------ soiap
@@ -539,7 +557,8 @@ def writeout():
             fout.write('# ------ lammps section\n')
             fout.write('lammps_infile = {}\n'.format(lammps_infile))
             fout.write('lammps_outfile = {}\n'.format(lammps_outfile))
-            fout.write('lammps_potential = {}\n'.format(' '.join(lammps_potential)))
+            fout.write('lammps_potential = {}\n'.format(
+                ' '.join(lammps_potential)))
             fout.write('lammps_data = {}\n'.format(lammps_data))
 
         # ------ option
@@ -550,9 +569,11 @@ def writeout():
         if spgnum == 0 or spgnum == 'all':
             fout.write('spgnum = {}\n'.format(spgnum))
         else:
-            fout.write('spgnum = {}\n'.format(' '.join(str(d) for d in spgnum)))
+            fout.write('spgnum = {}\n'.format(
+                ' '.join(str(d) for d in spgnum)))
         fout.write('load_struc_flag = {}\n'.format(load_struc_flag))
         fout.write('stop_next_struc = {}\n'.format(stop_next_struc))
+        fout.write('recalc = {}\n'.format(' '.join(str(x) for x in recalc)))
         fout.write('append_struc_ea = {}\n'.format(append_struc_ea))
         fout.write('energy_step_flag = {}\n'.format(energy_step_flag))
         fout.write('struc_step_flag = {}\n'.format(struc_step_flag))
@@ -576,7 +597,7 @@ def save_stat(stat):
 
     # ---------- BO
     if algo == 'BO':
-        stat.set('input', 'interval', '{}'.format(interval))
+        stat.set('input', 'nselect_bo', '{}'.format(nselect_bo))
         stat.set('input', 'score', '{}'.format(score))
         stat.set('input', 'num_rand_basis', '{}'.format(num_rand_basis))
         stat.set('input', 'cdev', '{}'.format(cdev))
@@ -586,14 +607,12 @@ def save_stat(stat):
         stat.set('input', 'fp_npoints', '{}'.format(fp_npoints))
         stat.set('input', 'fp_sigma', '{}'.format(fp_sigma))
         stat.set('input', 'max_select_bo', '{}'.format(max_select_bo))
-        if manual_select_bo is None:
-            stat.set('input', 'manual_select_bo', 'None')
-        else:
-            stat.set('input', 'manual_select_bo', '{}'.format(' '.join(str(i) for i in manual_select_bo)))
+        stat.set('input', 'manual_select_bo', '{}'.format(
+            ' '.join(str(x) for x in manual_select_bo)))
 
     # ---------- LAQA
     if algo == 'LAQA':
-        stat.set('input', 'nselect', '{}'.format(nselect))
+        stat.set('input', 'nselect_laqa', '{}'.format(nselect_laqa))
         stat.set('input', 'weight_laqa', '{}'.format(weight_laqa))
 
     # ---------- EA
@@ -625,18 +644,21 @@ def save_stat(stat):
     stat.set('input', 'maxlen', '{}'.format(maxlen))
     stat.set('input', 'dangle', '{}'.format(dangle))
     for i in range(len(atype)):
-        stat.set('input', 'mindist_{}'.format(i+1), '{}'.format(' '.join(str(c) for c in mindist[i])))
+        stat.set('input', 'mindist_{}'.format(i+1),
+                 '{}'.format(' '.join(str(c) for c in mindist[i])))
 
     # ---------- VASP
     if calc_code == 'VASP':
-        stat.set('input', 'kppvol', '{}'.format(' '.join(str(c) for c in kppvol)))
+        stat.set('input', 'kppvol',
+                 '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('input', 'force_gamma', '{}'.format(force_gamma))
 
     # ---------- QE
     if calc_code == 'QE':
         stat.set('input', 'qe_infile', '{}'.format(qe_infile))
         stat.set('input', 'qe_outfile', '{}'.format(qe_outfile))
-        stat.set('input', 'kppvol', '{}'.format(' '.join(str(c) for c in kppvol)))
+        stat.set('input', 'kppvol',
+                 '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('input', 'force_gamma', '{}'.format(force_gamma))
 
     # ---------- soiap
@@ -649,7 +671,8 @@ def save_stat(stat):
     if calc_code == 'LAMMPS':
         stat.set('input', 'lammps_infile', '{}'.format(lammps_infile))
         stat.set('input', 'lammps_outfile', '{}'.format(lammps_outfile))
-        stat.set('input', 'lammps_potential', '{}'.format(' '.join(lammps_potential)))
+        stat.set('input', 'lammps_potential',
+                 '{}'.format(' '.join(lammps_potential)))
         stat.set('input', 'lammps_data', '{}'.format(lammps_data))
 
     # ---------- option
@@ -659,17 +682,18 @@ def save_stat(stat):
     if spgnum == 0 or spgnum == 'all':
         stat.set('input', 'spgnum', '{}'.format(spgnum))
     else:
-        stat.set('input', 'spgnum', '{}'.format(' '.join(str(d) for d in spgnum)))
+        stat.set('input', 'spgnum',
+                 '{}'.format(' '.join(str(d) for d in spgnum)))
     stat.set('input', 'load_struc_flag', '{}'.format(load_struc_flag))
     stat.set('input', 'stop_next_struc', '{}'.format(stop_next_struc))
+    stat.set('input', 'recalc', '{}'.format(' '.join(str(x) for x in recalc)))
     stat.set('input', 'append_struc_ea', '{}'.format(append_struc_ea))
     stat.set('input', 'energy_step_flag', '{}'.format(energy_step_flag))
     stat.set('input', 'struc_step_flag', '{}'.format(struc_step_flag))
     stat.set('input', 'fs_step_flag', '{}'.format(fs_step_flag))
 
     # ---------- write stat
-    with open('cryspy.stat', 'w') as fstat:
-        stat.write(fstat)
+    io_stat.write_stat(stat)
 
 
 def diffinstat(stat):
@@ -684,7 +708,7 @@ def diffinstat(stat):
     old_atype = stat.get('input', 'atype')
     old_atype = [a for a in old_atype.split()]    # list
     old_nat = stat.get('input', 'nat')
-    old_nat = [int(x) for x in old_nat.split()]    # character --> integer list
+    old_nat = [int(x) for x in old_nat.split()]    # str --> int list
     old_nstage = stat.getint('input', 'nstage')
     old_njob = stat.getint('input', 'njob')
     old_jobcmd = stat.get('input', 'jobcmd')
@@ -692,7 +716,7 @@ def diffinstat(stat):
 
     # ------ BO
     if old_algo == 'BO':
-        old_interval = stat.getint('input', 'interval')
+        old_nselect_bo = stat.getint('input', 'nselect_bo')
         old_score = stat.get('input', 'score')
         old_num_rand_basis = stat.getint('input', 'num_rand_basis')
         old_cdev = stat.getfloat('input', 'cdev')
@@ -703,14 +727,11 @@ def diffinstat(stat):
         old_fp_sigma = stat.getfloat('input', 'fp_sigma')
         old_max_select_bo = stat.getint('input', 'max_select_bo')
         old_manual_select_bo = stat.get('input', 'manual_select_bo')
-        if old_manual_select_bo == 'None':    # here None is str
-            old_manual_select_bo = None
-        else:
-            old_manual_select_bo = [int(x) for x in old_manual_select_bo.split()]    # str --> integer
+        old_manual_select_bo = [int(x) for x in old_manual_select_bo.split()]
 
     # ------ LAQA
     if old_algo == 'LAQA':
-        old_nselect = stat.getint('input', 'nselect')
+        old_nselect_laqa = stat.getint('input', 'nselect_laqa')
         old_weight_laqa = stat.getfloat('input', 'weight_laqa')
 
     # ------ EA
@@ -751,7 +772,7 @@ def diffinstat(stat):
     # ------ VASP
     if old_calc_code == 'VASP':
         old_kppvol = stat.get('input', 'kppvol')
-        old_kppvol = [int(x) for x in old_kppvol.split()]    # character --> int
+        old_kppvol = [int(x) for x in old_kppvol.split()]    # int list
         old_force_gamma = stat.getboolean('input', 'force_gamma')
 
     # ------ QE
@@ -759,7 +780,7 @@ def diffinstat(stat):
         old_qe_infile = stat.get('input', 'qe_infile')
         old_qe_outfile = stat.get('input', 'qe_outfile')
         old_kppvol = stat.get('input', 'kppvol')
-        old_kppvol = [int(x) for x in old_kppvol.split()]    # character --> int
+        old_kppvol = [int(x) for x in old_kppvol.split()]  # int list
         old_force_gamma = stat.getboolean('input', 'force_gamma')
 
     # ------ soiap
@@ -786,9 +807,11 @@ def diffinstat(stat):
     if old_spgnum == '0':
         old_spgnum = 0
     elif not old_spgnum == 'all':
-        old_spgnum = [int(x) for x in old_spgnum.split()]    # character --> integer list
+        old_spgnum = [int(x) for x in old_spgnum.split()]    # int list
     old_load_struc_flag = stat.getboolean('input', 'load_struc_flag')
     old_stop_next_struc = stat.getboolean('input', 'stop_next_struc')
+    old_recalc = stat.get('input', 'recalc')
+    old_recalc = [int(x) for x in old_recalc.split()]    # int list
     old_append_struc_ea = stat.getboolean('input', 'append_struc_ea')
     old_energy_step_flag = stat.getboolean('input', 'energy_step_flag')
     old_struc_step_flag = stat.getboolean('input', 'struc_step_flag')
@@ -798,16 +821,13 @@ def diffinstat(stat):
     # ------ basic
     if not old_algo == algo:
         raise ValueError('Do not change algo')
-        logic_change = True
     if not old_calc_code == calc_code:
         raise ValueError('Do not change calc code')
-        logic_change = True
     if not old_tot_struc == tot_struc:
         if algo == 'EA':
             raise ValueError('Do not change tot_struc in EA')
-        print('Changed tot_struc from {0} to {1}'.format(old_tot_struc, tot_struc))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed tot_struc from {0} to {1}\n'.format(old_tot_struc, tot_struc))
+        diff_out('tot_struc', old_tot_struc, tot_struc)
+        io_stat.set_input_common(stat, 'tot_struc', tot_struc)
         logic_change = True
     if not old_natot == natot:
         raise ValueError('Do not change natot')
@@ -816,55 +836,39 @@ def diffinstat(stat):
     if not old_nat == nat:
         raise ValueError('Do not change nat')
     if not old_nstage == nstage:
-        print('Changed nstage from {0} to {1}'.format(old_nstage, nstage))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed nstage from {0} to {1}\n'.format(old_nstage, nstage))
+        diff_out('nstage', old_nstage, nstage)
+        io_stat.set_input_common(stat, 'nstage', nstage)
         logic_change = True
     if not old_njob == njob:
-        print('Changed njob from {0} to {1}'.format(old_njob, njob))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed njob from {0} to {1}\n'.format(old_njob, njob))
+        diff_out('njob', old_njob, njob)
+        io_stat.set_input_common(stat, 'njob', njob)
         logic_change = True
     if not old_jobcmd == jobcmd:
-        print('Changed jobcmd from {0} to {1}'.format(old_jobcmd, jobcmd))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed jobcmd from {0} to {1}\n'.format(old_jobcmd, jobcmd))
+        diff_out('jobcmd', old_jobcmd, jobcmd)
+        io_stat.set_input_common(stat, 'jobcmd', jobcmd)
         logic_change = True
     if not old_jobfile == jobfile:
-        print('Changed jobfile from {0} to {1}'.format(old_jobfile, jobfile))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed jobfile from {0} to {1}\n'.format(old_jobfile, jobfile))
+        diff_out('jobfile', old_jobfile, jobfile)
+        io_stat.set_input_common(stat, 'jobfile', jobfile)
         logic_change = True
 
     # ------ BO
     if algo == 'BO':
-        if not old_interval == interval:
-            print('Changed interval from {0} to {1}'.format(old_interval, interval))
-            print('    This will be enabled in next selection')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed interval from {0} to {1}\n'.format(old_interval, interval))
-                fout.write('####     This will be enabled in next selection\n')
+        if not old_nselect_bo == nselect_bo:
+            diff_out('nselect_bo', old_nselect_bo, nselect_bo)
+            io_stat.set_input_common(stat, 'nselect_bo', nselect_bo)
             logic_change = True
         if not old_score == score:
-            print('Changed score from {0} to {1}'.format(old_score, score))
-            print('    This will be enabled in next selection')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed score from {0} to {1}\n'.format(old_score, score))
-                fout.write('####     This will be enabled in next selection\n')
+            diff_out('score', old_score, score)
+            io_stat.set_input_common(stat, 'score', score)
             logic_change = True
         if not old_num_rand_basis == num_rand_basis:
-            print('Changed num_rand_basis from {0} to {1}'.format(old_num_rand_basis, num_rand_basis))
-            print('    This will be enabled in next selection')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed num_rand_basis from {0} to {1}\n'.format(old_num_rand_basis, num_rand_basis))
-                fout.write('####     This will be enabled in next selection\n')
+            diff_out('num_rand_basis', old_num_rand_basis, num_rand_basis)
+            io_stat.set_input_common(stat, 'num_rand_basis', num_rand_basis)
             logic_change = True
         if not old_cdev == cdev:
-            print('Changed cdev from {0} to {1}'.format(old_cdev, cdev))
-            print('    This will be enabled in next BO')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed cdev from {0} to {1}\n'.format(old_cdev, cdev))
-                fout.write('####     This will be enabled in next selection\n')
+            diff_out('cdev', old_cdev, cdev)
+            io_stat.set_input_common(stat, 'cdev', cdev)
             logic_change = True
         if not old_dscrpt == dscrpt:
             raise ValueError('Do not change dscrpt')
@@ -877,194 +881,140 @@ def diffinstat(stat):
         if not old_fp_sigma == fp_sigma:
             raise ValueError('Do not change fp_sigma')
         if not old_max_select_bo == max_select_bo:
-            print('Changed max_select_bo from {0} to {1}'.format(old_max_select_bo, max_select_bo))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed max_select_bo from {0} to {1}\n'.format(
-                    old_max_select_bo, max_select_bo))
+            diff_out('max_select_bo', old_max_select_bo, max_select_bo)
+            io_stat.set_input_common(stat, 'max_select_bo', max_select_bo)
             logic_change = True
         if not old_manual_select_bo == manual_select_bo:
-            print('Changed manual_select_bo from {0} to {1}'.format(old_manual_select_bo, manual_select_bo))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed manual_select_bo from {0} to {1}\n'.format(
-                    old_manual_select_bo, manual_select_bo))
+            diff_out('manual_select_bo', old_manual_select_bo,
+                     manual_select_bo)
+            io_stat.set_input_common(stat, 'manual_select_bo',
+                                     '{}'.format(' '.join(
+                                         str(x) for x in manual_select_bo)))
             logic_change = True
 
     # ------ LAQA
     if algo == 'LAQA':
-        if not old_nselect == nselect:
-            print('Changed nselect from {0} to {1}'.format(old_nselect, nselect))
-            print('    This will be enabled in next selection')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed nselect from {0} to {1}\n'.format(old_nselect, nselect))
-                fout.write('####     This will be enabled in next selection\n')
+        if not old_nselect_laqa == nselect_laqa:
+            diff_out('nselect_laqa', old_nselect_laqa, nselect_laqa)
+            io_stat.set_input_common(stat, 'nselect_laqa', nselect_laqa)
             logic_change = True
         if not old_weight_laqa == weight_laqa:
-            print('Changed weight_laqa from {0} to {1}'.format(old_weight_laqa, weight_laqa))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed weight_laqa from {0} to {1}\n'.format(old_weight_laqa, weight_laqa))
+            diff_out('weight_laqa', old_weight_laqa, weight_laqa)
+            io_stat.set_input_common(stat, 'weight_laqa', weight_laqa)
             logic_change = True
 
     # ------ EA
     if algo == 'EA':
         if not old_n_pop == n_pop:
-            print('Changed n_pop from {0} to {1}'.format(old_n_pop, n_pop))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_pop from {0} to {1}\n'.format(old_n_pop, n_pop))
+            diff_out('n_pop', old_n_pop, n_pop)
+            io_stat.set_input_common(stat, 'n_pop', n_pop)
             logic_change = True
         if not old_n_crsov == n_crsov:
-            print('Changed n_crsov from {0} to {1}'.format(old_n_crsov, n_crsov))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_crsov from {0} to {1}\n'.format(old_n_crsov, n_crsov))
+            diff_out('n_crsov', old_n_crsov, n_crsov)
+            io_stat.set_input_common(stat, 'n_crsov', n_crsov)
             logic_change = True
         if not old_n_perm == n_perm:
-            print('Changed n_perm from {0} to {1}'.format(old_n_perm, n_perm))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_perm from {0} to {1}\n'.format(old_n_perm, n_perm))
+            diff_out('n_perm', old_n_perm, n_perm)
+            io_stat.set_input_common(stat, 'n_perm', n_perm)
             logic_change = True
         if not old_n_strain == n_strain:
-            print('Changed n_strain from {0} to {1}'.format(old_n_strain, n_strain))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_n_strain from {0} to {1}\n'.format(old_n_strain, n_strain))
+            diff_out('n_strain', old_n_strain, n_strain)
+            io_stat.set_input_common(stat, 'n_strain', n_strain)
             logic_change = True
         if not old_n_rand == n_rand:
-            print('Changed n_rand from {0} to {1}'.format(old_n_rand, n_rand))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_fittest from {0} to {1}\n'.format(old_n_rand, n_rand))
+            diff_out('n_rand', old_n_rand, n_rand)
+            io_stat.set_input_common(stat, 'n_rand', n_rand)
             logic_change = True
         if not old_n_elite == n_elite:
-            print('Changed n_elite from {0} to {1}'.format(old_n_elite, n_elite))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_elite from {0} to {1}\n'.format(old_n_elite, n_elite))
+            diff_out('n_elite', old_n_elite, n_elite)
+            io_stat.set_input_common(stat, 'n_elite', n_elite)
             logic_change = True
         if not old_fit_reverse == fit_reverse:
             raise ValueError('Do not change fit_reverse')
         if not old_n_fittest == n_fittest:
-            print('Changed n_fittest from {0} to {1}'.format(old_n_fittest, n_fittest))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed n_fittest from {0} to {1}\n'.format(old_n_fittest, n_fittest))
+            diff_out('n_fittest', old_n_fittest, n_fittest)
+            io_stat.set_input_common(stat, 'n_fittest', n_fittest)
             logic_change = True
         if not old_slct_func == slct_func:
-            print('Changed slct_func from {0} to {1}'.format(old_slct_func, slct_func))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed slct_func from {0} to {1}\n'.format(old_slct_func, slct_func))
+            diff_out('slct_func', old_slct_func, slct_func)
+            io_stat.set_input_common(stat, 'slct_func', slct_func)
             logic_change = True
         if old_slct_func == 'TNM' and slct_func == 'TNM':
             if not old_t_size == t_size:
-                print('Changed t_size from {0} to {1}'.format(old_t_size, t_size))
-                print('    This will be enabled in next generation')
-                with open('cryspy.out', 'a') as fout:
-                    fout.write('\n### Changed t_size from {0} to {1}\n'.format(old_t_size, t_size))
+                diff_out('t_size', old_t_size, t_size)
+                io_stat.set_input_common(stat, 't_size', t_size)
                 logic_change = True
         elif old_slct_func == 'RLT' and slct_func == 'RLT':
             if not old_a_rlt == a_rlt:
-                print('Changed a_rlt from {0} to {1}'.format(old_a_rlt, a_rlt))
-                print('    This will be enabled in next generation')
-                with open('cryspy.out', 'a') as fout:
-                    fout.write('\n### Changed a_rlt from {0} to {1}\n'.format(old_a_rlt, a_rlt))
+                diff_out('a_rlt', old_a_rlt, a_rlt)
+                io_stat.set_input_common(stat, 'a_rlt', a_rlt)
                 logic_change = True
             if not old_b_rlt == b_rlt:
-                print('Changed b_rlt from {0} to {1}'.format(old_b_rlt, b_rlt))
-                print('    This will be enabled in next generation')
-                with open('cryspy.out', 'a') as fout:
-                    fout.write('\n### Changed b_rlt from {0} to {1}\n'.format(old_b_rlt, b_rlt))
+                diff_out('b_rlt', old_b_rlt, b_rlt)
+                io_stat.set_input_common(stat, 'b_rlt', b_rlt)
                 logic_change = True
-        elif not old_slct_func == slct_func:
-            print('Changed slct_func from {0} to {1}'.format(old_slct_func, slct_func))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed slct_func from {0} to {1}\n'.format(old_slct_func, slct_func))
+        if not old_crs_func == crs_func:
+            diff_out('crs_func', old_crs_func, crs_func)
+            io_stat.set_input_common(stat, 'crs_func', crs_func)
             logic_change = True
         if not old_crs_lat == crs_lat:
-            print('Changed crs_lat from {0} to {1}'.format(old_crs_lat, crs_lat))
-            print('    This will be enabled in next generation')
-            with open('CrySPY.out', 'a') as fout:
-                fout.write('\n### Changed crs_lat from {0} to {1}\n'.format(old_crs_lat, crs_lat))
-            logic_change = True
-        if not old_crs_func == crs_func:
-            print('Changed crs_func from {0} to {1}'.format(old_crs_func, crs_func))
-            print('    This will be enabled in next generation')
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n### Changed crs_func from {0} to {1}\n'.format(old_crs_func, crs_func))
+            diff_out('crs_lat', old_crs_lat, crs_lat)
+            io_stat.set_input_common(stat, 'crs_lat', crs_lat)
             logic_change = True
         if not old_nat_diff_tole == nat_diff_tole:
-            print('Changed nat_diff_tole from {0} to {1}'.format(old_nat_diff_tole, nat_diff_tole))
-            print('    This will be enabled in next generation')
-            with open('CrySPY.out', 'a') as fout:
-                fout.write('\n### Changed nat_diff_tole from {0} to {1}\n'.format(old_nat_diff_tole, nat_diff_tole))
+            diff_out('nat_diff_tole', old_nat_diff_tole, nat_diff_tole)
+            io_stat.set_input_common(stat, 'nat_diff_tole', nat_diff_tole)
             logic_change = True
         if not old_ntimes == ntimes:
-            print('Changed ntimes from {0} to {1}'.format(old_ntimes, ntimes))
-            print('    This will be enabled in next generation')
-            with open('CrySPY.out', 'a') as fout:
-                fout.write('\n### Changed ntimes from {0} to {1}\n'.format(old_ntimes, ntimes))
+            diff_out('ntimes', old_ntimes, ntimes)
+            io_stat.set_input_common(stat, 'ntimes', ntimes)
             logic_change = True
         if not old_sigma_st == sigma_st:
-            print('Changed sigma_st from {0} to {1}'.format(old_sigma_st, sigma_st))
-            print('    This will be enabled in next generation')
-            with open('CrySPY.out', 'a') as fout:
-                fout.write('\n### Changed sigma_st from {0} to {1}\n'.format(old_sigma_st, sigma_st))
+            diff_out('sigma_st', old_sigma_st, sigma_st)
+            io_stat.set_input_common(stat, 'sigma_st', sigma_st)
             logic_change = True
         if not old_maxcnt_ea == maxcnt_ea:
-            print('Changed maxcnt_ea from {0} to {1}'.format(old_maxcnt_ea, maxcnt_ea))
-            print('    This will be enabled in next generation')
-            with open('CrySPY.out', 'a') as fout:
-                fout.write('\n### Changed maxcnt_ea from {0} to {1}\n'.format(old_maxcnt_ea, maxcnt_ea))
+            diff_out('maxcnt_ea', old_maxcnt_ea, maxcnt_ea)
+            io_stat.set_input_common(stat, 'maxcnt_ea', maxcnt_ea)
             logic_change = True
         if not old_maxgen_ea == maxgen_ea:
-            print('Changed maxgen_ea from {0} to {1}'.format(old_maxgen_ea, maxgen_ea))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed maxgen from {0} to {1}\n'.format(old_maxgen_ea, maxgen_ea))
+            diff_out('maxgen_ea', old_maxgen_ea, maxgen_ea)
+            io_stat.set_input_common(stat, 'maxgen_ea', maxgen_ea)
             logic_change = True
 
     # ------ lattice
     if not old_minlen == minlen:
-        print('Changed minlen from {0} to {1}'.format(old_minlen, minlen))
-        print('    This will be enabled in next structure generation')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed minlen from {0} to {1}\n'.format(old_minlen, minlen))
-            fout.write('####     This will be enabled in next structure generation\n')
+        diff_out('minlen', old_minlen, minlen)
+        io_stat.set_input_common(stat, 'minlen', minlen)
         logic_change = True
     if not old_maxlen == maxlen:
-        print('Changed maxlen from {0} to {1}'.format(old_maxlen, maxlen))
-        print('    This will be enabled in next structure generation')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed maxlen from {0} to {1}\n'.format(old_maxlen, maxlen))
-            fout.write('####     This will be enabled in next structure generation\n')
+        diff_out('maxlen', old_maxlen, maxlen)
+        io_stat.set_input_common(stat, 'maxlen', maxlen)
         logic_change = True
     if not old_dangle == dangle:
-        print('Changed dangle from {0} to {1}'.format(old_dangle, dangle))
-        print('    This will be enabled in next structure generation')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed dangle from {0} to {1}\n'.format(old_dangle, dangle))
-            fout.write('####     This will be enabled in next structure generation\n')
+        diff_out('dangle', old_dangle, dangle)
+        io_stat.set_input_common(stat, 'dangle', dangle)
         logic_change = True
     if not old_mindist == mindist:
-        print('Changed mindist from {0} to {1}'.format(old_mindist, mindist))
-        print('    This will be enabled in next structure generation')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed mindist from {0} to {1}\n'.format(old_mindist, mindist))
-            fout.write('####     This will be enabled in next structure generation\n')
+        diff_out('mindist', old_mindist, mindist)
+        io_stat.set_input_common(stat, 'mindist', mindist)
+
+        for i in range(len(atype)):
+            io_stat.set_input_common(stat, 'mindist_{}'.format(i+1),
+                                     '{}'.format(' '.join(
+                                         str(x) for x in mindist[i])))
         logic_change = True
 
     # ------ VASP
     if calc_code == 'VASP':
         if not old_kppvol == kppvol:
-            print('Changed kppvol from {0} to {1}'.format(old_kppvol, kppvol))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed kppvol from {0} to {1}\n'.format(old_kppvol, kppvol))
+            diff_out('kppvol', old_kppvol, kppvol)
+            io_stat.set_input_common(stat, 'kppvol', '{}'.format(
+                ' '.join(str(x) for x in kppvol)))
             logic_change = True
         if not old_force_gamma == force_gamma:
-            print('Changed force_gamma from {0} to {1}'.format(old_force_gamma, force_gamma))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed force_gamma from {0} to {1}\n'.format(old_force_gamma, force_gamma))
+            diff_out('force_gamma', old_force_gamma, force_gamma)
+            io_stat.set_input_common(stat, 'force_gamma', force_gamma)
             logic_change = True
 
     # ------ QE
@@ -1074,14 +1024,13 @@ def diffinstat(stat):
         if not old_qe_outfile == qe_outfile:
             raise ValueError('Do not change qe_outfile')
         if not old_kppvol == kppvol:
-            print('Changed kppvol from {0} to {1}'.format(old_kppvol, kppvol))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed kppvol from {0} to {1}\n'.format(old_kppvol, kppvol))
+            diff_out('kppvol', old_kppvol, kppvol)
+            io_stat.set_input_common(stat, 'kppvol', '{}'.format(
+                ' '.join(str(x) for x in kppvol)))
             logic_change = True
         if not old_force_gamma == force_gamma:
-            print('Changed force_gamma from {0} to {1}'.format(old_force_gamma, force_gamma))
-            with open('cryspy.out', 'a') as fout:
-                fout.write('\n#### Changed force_gamma from {0} to {1}\n'.format(old_force_gamma, force_gamma))
+            diff_out('force_gamma', old_force_gamma, force_gamma)
+            io_stat.set_input_common(stat, 'force_gamma', force_gamma)
             logic_change = True
 
     # ------ soiap
@@ -1106,43 +1055,41 @@ def diffinstat(stat):
 
     # ------ option
     if not old_maxcnt == maxcnt:
-        print('Changed maxcnt from {0} to {1}'.format(old_maxcnt, maxcnt))
-        print('    This will be enabled in next structure generation')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed maxcnt from {0} to {1}\n'.format(old_maxcnt, maxcnt))
-            fout.write('####     This will be enabled in next structure generation\n')
+        diff_out('maxcnt', old_maxcnt, maxcnt)
+        io_stat.set_input_common(stat, 'maxcnt', maxcnt)
         logic_change = True
     if not old_stop_chkpt == stop_chkpt:
-        print('Changed stop_chkpt from {0} to {1}'.format(old_stop_chkpt, stop_chkpt))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed stop_chkpt from {0} to {1}\n'.format(old_stop_chkpt, stop_chkpt))
+        diff_out('stop_chkpt', old_stop_chkpt, stop_chkpt)
+        io_stat.set_input_common(stat, 'stop_chkpt', stop_chkpt)
         logic_change = True
     if not old_symprec == symprec:
-        print('Changed symprec from {0} to {1}'.format(old_symprec, symprec))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed symprec from {0} to {1}\n'.format(old_symprec, symprec))
+        diff_out('symprec', old_symprec, symprec)
+        io_stat.set_input_common(stat, 'symprec', symprec)
         logic_change = True
     if not old_spgnum == spgnum:
-        print('Changed spgnum')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed spgnum}\n')
+        diff_out('spgnum', old_spgnum, spgnum)
+        if spgnum == 0 or spgnum == 'all':
+            io_stat.set_input_common(stat, 'spgnum', spgnum)
+        else:
+            io_stat.set_input_common(stat, 'spgnum', '{}'.format(
+                ' '.join(str(x) for x in spgnum)))
         logic_change = True
     if not old_load_struc_flag == load_struc_flag:
-        print('Changed load_struc_flag from {0} to {1}'.format(old_load_struc_flag, load_struc_flag))
-        print('    load_struc_flag is useless when you continue simulations')
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed load_struc_flag from {0} to {1}\n'.format(old_load_struc_flag, load_struc_flag))
-            fout.write('####    load_struc_flag is useless when you continue simulations\n')
+        diff_out('load_struc_flag', old_load_struc_flag, load_struc_flag)
+        io_stat.set_input_common(stat, 'load_struc_flag', load_struc_flag)
         logic_change = True
     if not old_stop_next_struc == stop_next_struc:
-        print('Changed stop_next_struc from {0} to {1}'.format(old_stop_next_struc, stop_next_struc))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed stop_next_struc from {0} to {1}\n'.format(old_stop_next_struc, stop_next_struc))
+        diff_out('stop_next_struc', old_stop_next_struc, stop_next_struc)
+        io_stat.set_input_common(stat, 'stop_next_struc', stop_next_struc)
+        logic_change = True
+    if not old_recalc == recalc:
+        diff_out('recalc', old_recalc, recalc)
+        io_stat.set_input_common(stat, 'recalc', '{}'.format(
+            ' '.join(str(x) for x in recalc)))
         logic_change = True
     if not old_append_struc_ea == append_struc_ea:
-        print('Changed append_struc_ea {0} to {1}'.format(old_append_struc_ea, append_struc_ea))
-        with open('cryspy.out', 'a') as fout:
-            fout.write('\n#### Changed append_struc_ea from {0} to {1}\n'.format(old_append_struc_ea, append_struc_ea))
+        diff_out('append_struc_ea', old_append_struc_ea, append_struc_ea)
+        io_stat.set_input_common(stat, 'append_struc_ea', append_struc_ea)
         logic_change = True
     if not old_energy_step_flag == energy_step_flag:
         raise ValueError('Do not change energy_step_flag')
@@ -1153,4 +1100,11 @@ def diffinstat(stat):
 
     # ---------- save stat if necessary
     if logic_change:
-        save_stat(stat)
+        io_stat.write_stat(stat)
+
+
+def diff_out(var_str, old_var, var):
+    print('Changed {0} from {1} to {2}'.format(var_str, old_var, var))
+    with open('cryspy.out', 'a') as fout:
+        fout.write('\n#### Changed {0} from {1} to {2}\n'.format(
+            var_str, old_var, var))

@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Initialize evolutionary algorithm
+'''
 
 import pandas as pd
 
 from ..IO import out_results
-from ..IO import pkl_data
+from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
 
@@ -21,8 +20,9 @@ def initialize(stat, rslt_data):
         fout.write('{} structures by random\n\n'.format(rin.tot_struc))
 
     # ---------- initialize
-    next_id = 0
     gen = 1
+    id_queueing = [i for i in range(rin.tot_struc)]
+    id_running = []
     # ------ ea_info
     ea_info = pd.DataFrame(columns=['Gen', 'Population',
                                     'Crossover', 'Permutation', 'Strain',
@@ -30,32 +30,35 @@ def initialize(stat, rslt_data):
                                     'crs_func', 'crs_lat', 'slct_func'])
     ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
     tmp_info = pd.Series([1, rin.tot_struc, 0, 0, 0, rin.tot_struc, 0,
-                          rin.crs_func, rin.crs_lat, rin.slct_func], index=ea_info.columns)
+                          rin.crs_func, rin.crs_lat, rin.slct_func],
+                         index=ea_info.columns)
     ea_info = ea_info.append(tmp_info, ignore_index=True)
     out_results.out_ea_info(ea_info)
     # ------ ea_origin
-    ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID', 'Operation', 'Parent'])
+    ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID',
+                                      'Operation', 'Parent'])
     ea_origin.iloc[:, 0:2] = ea_origin.iloc[:, 0:2].astype(int)
-    for cID in range(rin.tot_struc):
-        tmp_origin = pd.Series([1, cID, 'random', None], index=ea_origin.columns)
+    for cid in range(rin.tot_struc):
+        tmp_origin = pd.Series([1, cid, 'random', None],
+                               index=ea_origin.columns)
         ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
     # ------ elite
     elite_struc = None
     elite_fitness = None
     # ------ rslt_data
     rslt_data['Gen'] = pd.Series(dtype=int)
-    rslt_data = rslt_data[['Gen', 'Struc_ID', 'Spg_num', 'Spg_sym', 'Spg_num_opt',
+    rslt_data = rslt_data[['Gen', 'Spg_num',
+                           'Spg_sym', 'Spg_num_opt',
                            'Spg_sym_opt', 'E_eV_atom', 'Magmom', 'Opt']]
 
     # ---------- save
-    ea_id_data = (gen, next_id)
+    ea_id_data = (gen, id_queueing, id_running)
     pkl_data.save_ea_id(ea_id_data)
     ea_data = (elite_struc, elite_fitness, ea_info, ea_origin)
     pkl_data.save_ea_data(ea_data)
     pkl_data.save_rslt(rslt_data)
 
     # ---------- status
-    stat.set('status', 'generation', '{}'.format(gen))
-    stat.set('status', 'next_id', '{}'.format(next_id))
-    with open('cryspy.stat', 'w') as fstat:
-        stat.write(fstat)
+    io_stat.set_common(stat, 'generation', gen)
+    io_stat.set_id(stat, 'id_queueing', id_queueing)
+    io_stat.write_stat(stat)

@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Crossover class
+'''
 
 from collections import Counter
 
@@ -9,7 +10,7 @@ from pymatgen import Structure, Lattice
 from ..struc_util import origin_shift, sort_by_atype, check_distance
 
 
-class Crossover(object):
+class Crossover:
     '''
     crossover
 
@@ -29,7 +30,8 @@ class Crossover(object):
 
     crs_func ('OP' or 'TP'): one point or two point crossover
 
-    nat_diff_tole (int): tolerance for difference in number of atoms in crossover
+    nat_diff_tole (int): tolerance for difference in number of atoms
+                         in crossover
 
     maxcnt_ea (int): maximum number of trial in crossover
 
@@ -54,7 +56,8 @@ class Crossover(object):
                 if not mindist[i][j] == mindist[j][i]:
                     raise ValueError('mindist is not symmetric. ' +
                                      '({}, {}): {}, ({}, {}): {}'.format(
-                                         i, j, mindist[i][j], j, i, mindist[j][i]))
+                                         i, j, mindist[i][j],
+                                         j, i, mindist[j][i]))
         self.atype = atype
         self.nat = nat
         self.mindist = mindist
@@ -75,7 +78,8 @@ class Crossover(object):
             if type(x) is int and x > 0:
                 pass
             else:
-                raise ValueError('nat_diff_tole and maxcnt_ea must be positive int')
+                raise ValueError('nat_diff_tole and maxcnt_ea'
+                                 ' must be positive int')
         self.nat_diff_tole = nat_diff_tole
         self.maxcnt_ea = maxcnt_ea
 
@@ -101,7 +105,8 @@ class Crossover(object):
                 self._one_point_crossover()
             elif self.crs_func == 'TP':
                 self._two_point_crossover()
-            self.child = Structure(lattice=self.lattice, species=self.species, coords=self.coords)
+            self.child = Structure(lattice=self.lattice, species=self.species,
+                                   coords=self.coords)
             # ------ check nat_diff
             self._check_nat()    # get self._nat_diff
             if any([abs(n) > self.nat_diff_tole for n in self._nat_diff]):
@@ -110,7 +115,8 @@ class Crossover(object):
                     return self.child
                 continue    # slice again
             # ------ check mindist
-            dist_list = check_distance(self.child, self.atype, self.mindist, check_all=True)
+            dist_list = check_distance(self.child, self.atype,
+                                       self.mindist, check_all=True)
             # ------ something smaller than mindist
             if dist_list:
                 # -- remove atoms within mindist
@@ -152,12 +158,14 @@ class Crossover(object):
 
     def _lattice_crossover(self):
         # ---------- component --> self.w_lat
-        matrix = (self.w_lat[0]*self.parent_A.lattice.matrix
-                  + self.w_lat[1]*self.parent_B.lattice.matrix)/self.w_lat.sum()
+        matrix = ((self.w_lat[0]*self.parent_A.lattice.matrix
+                  + self.w_lat[1]*self.parent_B.lattice.matrix)
+                  / self.w_lat.sum())
         mat_len = np.sqrt((matrix**2).sum(axis=1))
         # ---------- absolute value of vector
-        lat_len = (np.array(self.parent_A.lattice.abc)*self.w_lat[0]
-                   + np.array(self.parent_B.lattice.abc)*self.w_lat[1])/self.w_lat.sum()
+        lat_len = ((np.array(self.parent_A.lattice.abc)*self.w_lat[0]
+                   + np.array(self.parent_B.lattice.abc)*self.w_lat[1])
+                   / self.w_lat.sum())
         # ---------- correction of vector length
         lat_array = np.empty([3, 3])
         for i in range(3):
@@ -168,7 +176,7 @@ class Crossover(object):
     def _one_point_crossover(self):
         # ---------- slice point
         while True:
-            self._slice_point = np.random.normal(loc=0.5, scale=0.1)    # normal distribution
+            self._slice_point = np.random.normal(loc=0.5, scale=0.1)
             if 0.3 <= self._slice_point <= 0.7:
                 break
         self._axis = np.random.choice([0, 1, 2])
@@ -210,7 +218,7 @@ class Crossover(object):
     def _two_point_crossover(self):
         # ---------- slice point
         while True:
-            self._slice_point = np.random.normal(loc=0.25, scale=0.1)    # normal distribution
+            self._slice_point = np.random.normal(loc=0.25, scale=0.1)
             if 0.1 <= self._slice_point <= 0.4:
                 break
         sp0 = self._slice_point
@@ -222,8 +230,8 @@ class Crossover(object):
         coords_A = []
         coords_B = []
         for i in range(self.parent_A.num_sites):
-            if (self.parent_A.frac_coords[i, self._axis]
-                <= sp0) or (sp1 <= self.parent_A.frac_coords[i, self._axis]):
+            if ((self.parent_A.frac_coords[i, self._axis] <= sp0) or
+                    (sp1 <= self.parent_A.frac_coords[i, self._axis])):
                 species_A.append(self.parent_A[i].species_string)
                 coords_A.append(self.parent_A[i].frac_coords)
             else:
@@ -256,7 +264,8 @@ class Crossover(object):
         self._nat_diff = []
         species_list = [a.species_string for a in self.child]
         for i in range(len(self.atype)):
-            self._nat_diff.append(species_list.count(self.atype[i]) - self.nat[i])
+            self._nat_diff.append(species_list.count(self.atype[i])
+                                  - self.nat[i])
 
     def _remove_within_mindist(self):
         '''
@@ -266,15 +275,18 @@ class Crossover(object):
         for itype in range(len(self.atype)):
             while self._nat_diff[itype] > 0:
                 # ---------- check dist
-                dist_list = check_distance(self.child, self.atype, self.mindist, check_all=True)
+                dist_list = check_distance(self.child, self.atype,
+                                           self.mindist, check_all=True)
                 if not dist_list:    # nothing within mindist
                     return
                 # ---------- appearance frequency
-                ij_within_dist = [isite[0] for isite in dist_list] + [jsite[1] for jsite in dist_list]
+                ij_within_dist = [isite[0] for isite in dist_list] + [
+                    jsite[1] for jsite in dist_list]
                 site_counter = Counter(ij_within_dist)
                 # ---------- get index for removing
                 rm_index = None
-                for site in site_counter.most_common():    # site[0]: index, site[1]: count
+                # ---- site[0]: index, site[1]: count
+                for site in site_counter.most_common():
                     if self.child[site[0]].species_string == self.atype[itype]:
                         rm_index = site[0]
                         break    # break for loop
@@ -286,7 +298,8 @@ class Crossover(object):
                     self.child.remove_sites([rm_index])
                     self._nat_diff[itype] -= 1
         # ---------- final check
-        dist_list = check_distance(self.child, self.atype, self.mindist, check_all=True)
+        dist_list = check_distance(self.child, self.atype,
+                                   self.mindist, check_all=True)
         if dist_list:    # still something within mindist
             self.child = None
 
@@ -299,14 +312,20 @@ class Crossover(object):
                       (coords_axis < (self._slice_point + 1.0)/2.0)
             near_one = (self._slice_point + 1.0)/2.0 <= coords_axis
             # -- distance from nearest boundary
-            coords_diff = np.where(near_sp, abs(coords_axis - self._slice_point), coords_axis)
+            coords_diff = np.where(near_sp,
+                                   abs(coords_axis - self._slice_point),
+                                   coords_axis)
             coords_diff = np.where(near_one, 1.0 - coords_diff, coords_diff)
         elif self.crs_func == 'TP':
-            # ------ two point crossover: boundary --> slice_point, slice_point + 0.5
+            # ------ two point crossover:
+            #            boundary --> slice_point, slice_point + 0.5
             # -- distance from nearst boundary
-            coords_diff = abs(self.child.frac_coords[:, self._axis] - self._slice_point)
-            coords_diff = np.where(0.5 < coords_diff, coords_diff - 0.5, coords_diff)
-            coords_diff = np.where(0.25 < coords_diff, 0.5 - coords_diff, coords_diff)
+            coords_diff = abs(self.child.frac_coords[:, self._axis]
+                              - self._slice_point)
+            coords_diff = np.where(0.5 < coords_diff, coords_diff - 0.5,
+                                   coords_diff)
+            coords_diff = np.where(0.25 < coords_diff, 0.5 - coords_diff,
+                                   coords_diff)
         else:
             raise ValueError('crs_func should be OP or TP')
         atom_border_indx = np.argsort(coords_diff)
@@ -334,7 +353,8 @@ class Crossover(object):
                 cnt += 1
                 coords = np.random.rand(3)
                 self._mean_choice()
-                coords[self._axis] = np.random.normal(loc=self._mean, scale=0.08)
+                coords[self._axis] = np.random.normal(loc=self._mean,
+                                                      scale=0.08)
                 self.child.append(species=self.atype[i], coords=coords)
                 if check_distance(self.child, self.atype, self.mindist):
                     cnt = 0    # reset
@@ -349,8 +369,10 @@ class Crossover(object):
     def _mean_choice(self):
         '''which boundary possesses more atoms'''
         if self.crs_func == 'OP':
-            n_zero = np.sum(np.abs(self.child.frac_coords[:, self._axis] - 0.0) < 0.1)
-            n_slice = np.sum(np.abs(self.child.frac_coords[:, self._axis] - self._slice_point) < 0.1)
+            n_zero = np.sum(np.abs(self.child.frac_coords[:, self._axis] - 0.0)
+                            < 0.1)
+            n_slice = np.sum(np.abs(self.child.frac_coords[:, self._axis]
+                                    - self._slice_point) < 0.1)
             if n_zero < n_slice:
                 self._mean = 0.0
             elif n_zero > n_slice:
@@ -358,13 +380,16 @@ class Crossover(object):
             else:
                 self._mean = np.random.choice([0.0, self._slice_point])
         elif self.crs_func == 'TP':
-            n_sp0 = np.sum(np.abs(self.child.frac_coords[:, self._axis] - self._slice_point) < 0.1)
-            n_sp1 = np.sum(np.abs(self.child.frac_coords[:, self._axis] - self._slice_point - 0.5) < 0.1)
+            n_sp0 = np.sum(np.abs(self.child.frac_coords[:, self._axis]
+                                  - self._slice_point) < 0.1)
+            n_sp1 = np.sum(np.abs(self.child.frac_coords[:, self._axis]
+                                  - self._slice_point - 0.5) < 0.1)
             if n_sp0 < n_sp1:
                 self._mean = self._slice_point
             elif n_sp0 > n_sp1:
                 self._mean = self._slice_point + 0.5
             else:
-                self._mean = np.random.choice([self._slice_point, self._slice_point + 0.5])
+                self._mean = np.random.choice([self._slice_point,
+                                               self._slice_point + 0.5])
         else:
             raise ValueError('crs_func must be OP or TP')

@@ -1,7 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Save data in ./data/pkl_data/xxx
+'''
 
-import cPickle as pickle
+import pickle
 
 
 def load_init_struc():

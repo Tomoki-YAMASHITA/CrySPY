@@ -1,0 +1,47 @@
+2020/01/28 19:54:40
+CrySPY 0.8.0
+Start cryspy.py
+
+# ---------- Read cryspy.in (at 1st run)
+# ------ basic section
+algo = RS
+calc_code = soiap
+tot_struc = 5
+natot = 16
+atype = Si
+nat = 16
+nstage = 1
+njob = 1
+jobcmd = bash
+jobfile = job_cryspy
+# ------ lattice section
+minlen = 5.0
+maxlen = 10.0
+dangle = 20.0
+mindist_1 = 1.8
+# ------ soiap section
+soiap_infile = soiap.in
+soiap_outfile = soiap.out
+soiap_cif = initial.cif
+# ------ option section
+maxcnt = 50
+stop_chkpt = 0
+symprec = 0.001
+spgnum = all
+load_struc_flag = False
+stop_next_struc = False
+recalc = 
+append_struc_ea = False
+energy_step_flag = False
+struc_step_flag = False
+fs_step_flag = False
+
+
+# ---------- Generate initial structures
+Generated structures up to ID 4
+
+Done! ID      0: E = -4.0553805695082525 eV/atom
+Done! ID      1: E = -3.891756223526888 eV/atom
+Done! ID      2: E = -3.5984027917691264 eV/atom
+Done! ID      3: E = -1.680160412683843 eV/atom
+Done! ID      4: E = -4.217573557286639 eV/atom

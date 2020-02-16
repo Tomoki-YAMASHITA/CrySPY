@@ -1,13 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Initialize LAQA
+'''
 
-from __future__ import print_function
-
-from ..IO import pkl_data
+from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
 
-def initialize(stat, init_struc_data):
+def initialize(stat):
     print('\n# ---------- Initialize LAQA')
     with open('cryspy.out', 'a') as fout:
         fout.write('\n# ---------- Initilalize LAQA\n')
@@ -25,37 +24,34 @@ def initialize(stat, init_struc_data):
         laqa_energy[i] = []
         laqa_bias[i] = []
         laqa_score[i] = [float('inf')]
-    id_to_calc = [i for i in range(rin.tot_struc)]
+    id_queueing = [i for i in range(rin.tot_struc)]
     id_select_hist = []
-    id_done = []
+    id_running = []
 
     # ---------- save for LAQA
-    laqa_id_data = (id_to_calc, id_select_hist, id_done)
+    laqa_id_data = (id_queueing, id_running, id_select_hist)
     pkl_data.save_laqa_id(laqa_id_data)
-    laqa_data = (tot_step_select, laqa_step, laqa_struc, laqa_energy, laqa_bias, laqa_score)
+    laqa_data = (tot_step_select, laqa_step, laqa_struc,
+                 laqa_energy, laqa_bias, laqa_score)
     pkl_data.save_laqa_data(laqa_data)
 
     # ---------- status
-    stat.set('status', 'LAQA_selection', '0')
-    stat.set('status', 'total step', '0')
-    if len(id_to_calc) > 30:
-        stat.set('status', 'selected_id', '{} IDs'.format(len(id_to_calc)))
-        stat.set('status', 'id_to_calc', '{} IDs'.format(len(id_to_calc)))
-    else:
-        stat.set('status', 'selected_id', '{}'.format(' '.join(str(a) for a in id_to_calc)))
-        stat.set('status', 'id_to_calc', '{}'.format(' '.join(str(a) for a in id_to_calc)))
-    with open('cryspy.stat', 'w') as fstat:
-        stat.write(fstat)
+    io_stat.set_common(stat, 'selection', 0)
+    io_stat.set_common(stat, 'total_step', 0)
+    io_stat.set_id(stat, 'selected_id', id_queueing)    # all IDs
+    io_stat.set_id(stat, 'id_queueing', id_queueing)    # all IDs
+    io_stat.write_stat(stat)
 
     # ---------- out and log
-    print('# ---------- LAQA selection 0')
+    print('# ---------- Selection 0')
     with open('cryspy.out', 'a') as fout:
-        fout.write('# ---------- LAQA selection 0\n')
-    if len(id_to_calc) > 30:
-        print('selected_id: {} IDs'.format(len(id_to_calc)))
+        fout.write('# ---------- Selection 0\n')
+    if len(id_queueing) > 30:
+        print('selected_id: {} IDs'.format(len(id_queueing)))
         with open('cryspy.out', 'a') as fout:
-            fout.write('selected_id: {} IDs\n\n'.format(len(id_to_calc)))
+            fout.write('selected_id: {} IDs\n\n'.format(len(id_queueing)))
     else:
-        print('selected_id: {}'.format(' '.join(str(a) for a in id_to_calc)))
+        print('selected_id: {}'.format(' '.join(str(a) for a in id_queueing)))
         with open('cryspy.out', 'a') as fout:
-            fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in id_to_calc)))
+            fout.write('selected_id: {}\n\n'.format(
+                ' '.join(str(a) for a in id_queueing)))

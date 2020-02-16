@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Control jobs in VASP
+'''
 
 import os
 import shutil
@@ -16,19 +17,23 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     # ---------- skip_flag
     skip_flag = False
 
-    # ---------- prepare vasp files
-    vasp_files = ['CONTCAR', 'OUTCAR', 'OSZICAR', 'vasprun.xml', 'POSCAR']
+    # ---------- rename VASP files at the current stage
+    vasp_files = ['POSCAR', 'KPOINTS', 'CONTCAR',
+                  'OUTCAR', 'OSZICAR', 'vasprun.xml']
     for f in vasp_files:
         if not os.path.isfile(work_path+f):
             raise IOError('Not found '+work_path+f)
-        os.rename(work_path+f, work_path+'prev_'+f)
-    shutil.copyfile(work_path+'prev_CONTCAR', work_path+'POSCAR')
+        os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
+
+    # ---------- cp CONTCAR POSCAR
+    shutil.copyfile(work_path+'stage{}_CONTCAR'.format(stage),
+                    work_path+'POSCAR')
 
     # ---------- remove STOPCAR
     if os.path.isfile(work_path+'STOPCAR'):
         os.remove(work_path+'STOPCAR')
 
-    # ---------- KPOINTS using pymatgen
+    # ---------- KPOINTS for the next stage using pymatgen
     try:
         structure = Structure.from_file(work_path+'POSCAR')
     except ValueError:
@@ -39,8 +44,10 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
         print('    error in VASP,  skip this structure')
         return skip_flag, kpt_data
     mitparamset = MITRelaxSet(structure)
+    # kppvol[0]: <--> stage 1, kppvol[1] <--> stage2, ...
+    #   so (stage - 1): current stage, stage: next stage in kppvol
     kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
-                                                           rin.kppvol[stage-1],
+                                                           rin.kppvol[stage],
                                                            rin.force_gamma)
     kpoints.write_file(work_path+'KPOINTS')
 
@@ -49,15 +56,15 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 
-    # ---------- cp INCAR_? from ./calc_in
-    fincar = './calc_in/INCAR_{}'.format(stage)
+    # ---------- cp INCAR_? from ./calc_in for the next stage: (stage + 1)
+    fincar = './calc_in/INCAR_{}'.format(stage + 1)
     shutil.copyfile(fincar, work_path+'INCAR')
 
     # ---------- return
     return skip_flag, kpt_data
 
 
-def next_struc_vasp(structure, next_id, work_path, kpt_data):
+def next_struc_vasp(structure, current_id, work_path, kpt_data):
     # ---------- copy files
     calc_inputs = ['POTCAR', 'INCAR']
     for f in calc_inputs:
@@ -75,7 +82,7 @@ def next_struc_vasp(structure, next_id, work_path, kpt_data):
     # ---------- Change the title of POSCAR
     with open(work_path+'POSCAR', 'r') as f:
         lines = f.readlines()
-    lines[0] = 'ID_{}\n'.format(next_id)
+    lines[0] = 'ID_{}\n'.format(current_id)
     with open(work_path+'POSCAR', 'w') as f:
         for line in lines:
             f.write(line)
@@ -88,8 +95,8 @@ def next_struc_vasp(structure, next_id, work_path, kpt_data):
     kpoints.write_file(work_path+'KPOINTS')
 
     # ---------- kpt_data
-    kpt_data[next_id] = []    # initialize
-    kpt_data[next_id].append(kpoints.kpts[0])
+    kpt_data[current_id] = []    # initialize
+    kpt_data[current_id].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 

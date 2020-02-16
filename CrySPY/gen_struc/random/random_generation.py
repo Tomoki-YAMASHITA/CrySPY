@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Random structure generation
+'''
 
 import json
 import math
@@ -16,7 +15,7 @@ from ..struc_util import check_distance
 from ..struc_util import out_poscar
 
 
-class Rnd_struc_gen(object):
+class Rnd_struc_gen:
     '''
     Random structure generation
 
@@ -47,7 +46,7 @@ class Rnd_struc_gen(object):
     '''
 
     def __init__(self, natot, atype, nat, minlen, maxlen, dangle, mindist,
-                 maxcnt=200, symprec=0.001):
+                 maxcnt=50, symprec=0.001):
         # ---------- check args
         # ------ int
         for i in [natot, maxcnt]:
@@ -67,9 +66,10 @@ class Rnd_struc_gen(object):
         for i in range(len(mindist)):
             for j in range(i):
                 if not mindist[i][j] == mindist[j][i]:
-                    raise ValueError('mindist is not symmetric. ' +
+                    raise ValueError('mindist is not symmetric. '
                                      '({}, {}): {}, ({}, {}): {}'.format(
-                                         i, j, mindist[i][j], j, i, mindist[j][i]))
+                                         i, j, mindist[i][j],
+                                         j, i, mindist[j][i]))
         self.atype = atype
         self.nat = nat
         self.mindist = mindist
@@ -82,7 +82,8 @@ class Rnd_struc_gen(object):
             if type(x) is float and x > 0.0:
                 pass
             else:
-                raise ValueError('minlen, maxlen, dangle, and symprec must be positive float')
+                raise ValueError('minlen, maxlen, dangle, and symprec'
+                                 ' must be positive float')
         self.minlen = minlen
         self.maxlen = maxlen
         self.dangle = dangle
@@ -99,9 +100,9 @@ class Rnd_struc_gen(object):
                          e.g. nstruc = 3, id_offset = 10
                               you obtain ID 10, ID 11, ID 12
 
-        init_pos_path (str): specify a path of file
+        init_pos_path (str): specify a path of file,
                              if you write POSCAR data of init_struc_data
-                             ATTENSION: date are appended to the specified file
+                             ATTENSION: data are appended to the specified file
 
         # ---------- comment
         generated init_struc_data is saved in self.init_struc_data
@@ -116,30 +117,35 @@ class Rnd_struc_gen(object):
         if init_pos_path is None or type(init_pos_path) is str:
             pass
         else:
-            raise ValueError('init_pos_path is wrong. init_pos_path = {}'.format(init_pos_path))
+            raise ValueError('init_pos_path is wrong.'
+                             ' init_pos_path = {}'.format(init_pos_path))
         # ---------- initialize
         init_struc_data = {}
         self._get_atomlist()    # get self.atomlist
         # ---------- generate structures
         while len(init_struc_data) < nstruc:
-            self._gen_lattice(spgnum=0)    # get spg, a, b, c, alpha, beta, gamma in self.*
-            self._calc_latvec()    # get va, vb, and vc in self.*
+            # ------ get spg, a, b, c, alpha, beta, gamma in self.*
+            self._gen_lattice(spgnum=0)
+            # ------ get va, vb, and vc in self.*
+            self._calc_latvec()
+            # ------ get structure
             tmp_struc = self._gen_struc_wo_spg()
             if tmp_struc is not None:    # success of generation
                 # ------ check actual space group using pymatgen
                 try:
-                    spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=self.symprec)
+                    spg_sym, spg_num = tmp_struc.get_space_group_info(
+                        symprec=self.symprec)
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
                 # ------ register the structure in pymatgen format
-                cID = len(init_struc_data) + id_offset
-                init_struc_data[cID] = tmp_struc
-                print('Structure ID {0:>8} was generated. Space group: {1:>3} {2}'.format(
-                       cID, spg_num, spg_sym))
+                cid = len(init_struc_data) + id_offset
+                init_struc_data[cid] = tmp_struc
+                print('Structure ID {0:>6} was generated.'
+                      ' Space group: {1:>3} {2}'.format(cid, spg_num, spg_sym))
                 # ------ save poscar
                 if init_pos_path is not None:
-                    out_poscar(tmp_struc, cID, init_pos_path)
+                    out_poscar(tmp_struc, cid, init_pos_path)
         self.init_struc_data = init_struc_data
 
     def gen_with_spg(self, nstruc, spgnum='all', id_offset=0,
@@ -161,7 +167,7 @@ class Rnd_struc_gen(object):
 
         init_pos_path (str): specify a path of file
                              if you write POSCAR data of init_struc_data
-                             ATTENSION: date are appended to the specified file
+                             ATTENSION: data are appended to the specified file
 
         fwpath (str): specify a path for a executable file of find_wy program
 
@@ -182,7 +188,8 @@ class Rnd_struc_gen(object):
         if init_pos_path is None or type(init_pos_path) is str:
             pass
         else:
-            raise ValueError('init_pos_path is wrong. init_pos_path = {}'.format(init_pos_path))
+            raise ValueError('init_pos_path is wrong.'
+                             ' init_pos_path = {}'.format(init_pos_path))
         if not os.path.isfile(fwpath):
             raise IOError('There is no find_wy program in {}'.format(fwpath))
         # ---------- initialize
@@ -194,9 +201,12 @@ class Rnd_struc_gen(object):
 
         # ---------- generate structures
         while len(init_struc_data) < nstruc:
-            self._gen_lattice(spgnum)    # get spg, a, b, c, alpha, beta, gamma in self.*
-            self._calc_cos()    # get cosa, cosb, and cosg in self.*
-            self._fw_input()    # write an input file for find_wy
+            # ------ get spg, a, b, c, alpha, beta, gamma in self.*
+            self._gen_lattice(spgnum)
+            # ------ get cosa, cosb, and cosg in self.*
+            self._calc_cos()
+            # ------ write an input file for find_wy
+            self._fw_input()
             # ------ loop for same fw_input
             cnt = 0
             while cnt <= self.maxcnt:
@@ -215,24 +225,27 @@ class Rnd_struc_gen(object):
                 else:    # Success
                     self._rm_files()    # rm input POS_WY_SKEL_ALL.json
                     break         # break fw_input loop
-            if wyflag is False:    # maximum trial or no POS_WY_SKEL_ALL.json file
+            if wyflag is False:
+                # -- maximum trial or no POS_WY_SKEL_ALL.json file
                 self._rm_files()    # clean
                 continue      # to new fw_input
             # ------ check actual space group using pymatgen
             try:
-                spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=self.symprec)
+                spg_sym, spg_num = tmp_struc.get_space_group_info(
+                    symprec=self.symprec)
             except TypeError:
                 spg_num = 0
                 spg_sym = None
             # ------ register the structure in pymatgen format
-            cID = len(init_struc_data) + id_offset
-            init_struc_data[cID] = tmp_struc
-            print('Structure ID {0:>8} was generated. Space group: {1:>3} --> {2:>3} {3}'.format(
-                   cID, self.spg, spg_num, spg_sym))
+            cid = len(init_struc_data) + id_offset
+            init_struc_data[cid] = tmp_struc
+            print('Structure ID {0:>6} was generated.'
+                  ' Space group: {1:>3} --> {2:>3} {3}'.format(
+                   cid, self.spg, spg_num, spg_sym))
             # ------ save poscar
             if init_pos_path is not None:
-                os.chdir('../')    # temporarily go back to .. for init_pos_path
-                out_poscar(tmp_struc, cID, init_pos_path)
+                os.chdir('../')    # temporarily go back to ../
+                out_poscar(tmp_struc, cid, init_pos_path)
                 os.chdir('tmp_gen_struc')
             # ------ clean
             self._rm_files()
@@ -331,7 +344,8 @@ class Rnd_struc_gen(object):
             gamma = 120.0
         elif csys == 'Rhombohedral':
             a = b = c = random.uniform(self.minlen, self.maxlen)
-            alpha = beta = gamma = 90 + random.uniform(-self.dangle, self.dangle)
+            alpha = beta = gamma = 90 + random.uniform(-self.dangle,
+                                                       self.dangle)
         elif csys == 'Hexagonal':
             a = b = random.uniform(self.minlen, self.maxlen)
             c = random.uniform(self.minlen, self.maxlen)
@@ -357,7 +371,8 @@ class Rnd_struc_gen(object):
         bx = self.b*math.cos(gamma_rad)
         by = self.b*math.sin(gamma_rad)
         cx = self.c*math.cos(beta_rad)
-        cy = (self.c*math.cos(alpha_rad) - cx*math.cos(gamma_rad))/math.sin(gamma_rad)
+        cy = (self.c*math.cos(alpha_rad)
+              - cx*math.cos(gamma_rad))/math.sin(gamma_rad)
         cz = math.sqrt(self.c*self.c - cx*cx - cy*cy)
         # ---------- lattice vector as list
         self.va = [self.a, 0.0, 0.0]
@@ -433,11 +448,14 @@ class Rnd_struc_gen(object):
         n_uniq, wydata_eq_atom = self._get_wydata_eq_atom(wydata)
         eq_atomnames = {}
         eq_positions = {}
-        for key, value in sorted(n_uniq.items(), key=lambda x: x[1]):    # equivalent atom loop
-            # ------ distribute eq atoms. first, special (num_uniqvar = 0), then, others
+        # ---------- equivalent atom loop
+        for key, value in sorted(n_uniq.items(), key=lambda x: x[1]):
+            # ------ distribute eq atoms. first, special (num_uniqvar = 0),
+            #            then, others
             cnt = 0
             while True:
-                eq_atomnames[key], eq_positions[key] = self._gen_eq_atoms(wydata_eq_atom[key])
+                eq_atomnames[key], eq_positions[key] = self._gen_eq_atoms(
+                    wydata_eq_atom[key])
                 # -- sort in original order
                 atomnames = []
                 positions = []
@@ -453,7 +471,8 @@ class Rnd_struc_gen(object):
                         v += p[i] * a
                     cart.append(v)
                 # -- check minimum distance
-                spgstruc = Structure(plat, atomnames, cart, coords_are_cartesian=True)
+                spgstruc = Structure(plat, atomnames, cart,
+                                     coords_are_cartesian=True)
                 if check_distance(spgstruc, self.atype, self.mindist) is False:
                     # num_uniqvar = 0 --> value == 0
                     cnt = self.maxcnt + 1 if value == 0 else cnt + 1

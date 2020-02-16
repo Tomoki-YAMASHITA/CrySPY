@@ -1,0 +1,99 @@
+2020/02/16 01:06:54
+CrySPY 0.8.0
+Start cryspy.py
+
+# ---------- Read cryspy.in (at 1st run)
+# ------ basic section
+algo = EA
+calc_code = VASP
+tot_struc = 10
+natot = 16
+atype = Na Cl
+nat = 8 8
+nstage = 2
+njob = 10
+jobcmd = qsub
+jobfile = job_cryspy
+# ------ EA section
+n_pop = 10
+n_crsov = 5
+n_perm = 2
+n_strain = 2
+n_rand = 1
+n_elite = 1
+fit_reverse = False
+n_fittest = 5
+slct_func = TNM
+t_size = 2
+crs_lat = equal
+crs_func = OP
+nat_diff_tole = 4
+ntimes = 1
+sigma_st = 0.5
+maxcnt_ea = 50
+maxgen_ea = 2
+# ------ lattice section
+minlen = 5.0
+maxlen = 12.0
+dangle = 20.0
+mindist_1 = 2.2 1.8
+mindist_2 = 1.8 2.2
+# ------ VASP section
+kppvol = 40 80
+force_gamma = False
+# ------ option section
+maxcnt = 50
+stop_chkpt = 0
+symprec = 0.001
+spgnum = all
+load_struc_flag = False
+stop_next_struc = False
+recalc = 
+append_struc_ea = False
+energy_step_flag = False
+struc_step_flag = False
+fs_step_flag = False
+
+
+# ---------- Generate initial structures
+Generated structures up to ID 9
+
+
+# ---------- Initilalize evolutionary algorithm
+# ------ Generation 1
+10 structures by random
+
+Done! Structure ID      0: E = -3.372850625 eV/atom
+Done! Structure ID      1: E = -2.7955575 eV/atom
+Done! Structure ID      2: E = -3.1431115625 eV/atom
+Done! Structure ID      3: E = -3.071862875 eV/atom
+Done! Structure ID      5: E = -3.2312754375 eV/atom
+Done! Structure ID      6: E = -2.7715485625 eV/atom
+Done! Structure ID      8: E = -1.949975625 eV/atom
+Done! Structure ID      4: E = -3.2302738125 eV/atom
+Done! Structure ID      7: E = -3.0828105625 eV/atom
+Done! Structure ID      9: E = -3.036913625 eV/atom
+
+Done generation 1
+
+# ---------- Evolutionary algorithm
+
+# ------ Generation 2
+5 structures by crossover
+2 structures by permutation
+2 structures by strain
+1 structures by random
+1 structures keeps as the elite
+Done! Structure ID     10: E = -3.32346975 eV/atom
+Done! Structure ID     11: E = -3.359817125 eV/atom
+Done! Structure ID     12: E = -3.362621 eV/atom
+Done! Structure ID     13: E = -3.391828875 eV/atom
+Done! Structure ID     14: E = -3.3932775625 eV/atom
+Done! Structure ID     15: E = -2.883481875 eV/atom
+Done! Structure ID     16: E = -3.1755973125 eV/atom
+Done! Structure ID     18: E = -2.9740985625 eV/atom
+Done! Structure ID     19: E = -2.240145 eV/atom
+ID     17: Skip
+
+Done generation 2
+

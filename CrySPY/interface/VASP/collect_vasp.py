@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Collect results in VASP
+'''
 
 import os
 import xml.etree.ElementTree as ET
@@ -19,7 +18,8 @@ def collect_vasp(current_id, work_path):
     # ---------- obtain energy and magmom
     energy, magmom = get_energy_magmom_vasp(work_path)
     if np.isnan(energy):
-        print('    Structure ID {0}, could not obtain energy from OSZICAR'.format(current_id))
+        print('    Structure ID {0},'
+              ' could not obtain energy from OSZICAR'.format(current_id))
     # ---------- collect CONTCAR
     opt_struc = get_opt_struc_vasp(work_path+'CONTCAR')
     # ---------- check
@@ -28,16 +28,9 @@ def collect_vasp(current_id, work_path):
     if opt_struc is None:
         energy = np.nan
         magmom = np.nan
-    # ---------- mv xxxxx fin_xxxxx
-    vasp_files = ['POSCAR', 'CONTCAR', 'OUTCAR', 'OSZICAR', 'WAVECAR', 'CHGCAR', 'vasprun.xml']
-    for f in vasp_files:
-        if os.path.isfile(work_path+f):
-            os.rename(work_path+f, work_path+'fin_'+f)
     # ---------- remove STOPCAR
     if os.path.isfile(work_path+'STOPCAR'):
         os.remove(work_path+'STOPCAR')
-    # ---------- clean stat file
-    os.remove(work_path+'stat_job')
     # ---------- return
     return opt_struc, energy, magmom, check_opt
 
@@ -67,7 +60,7 @@ def get_energy_magmom_vasp(work_path):
             energy = energy/float(rin.natot)       # eV/atom
             if 'mag=' in oszi[-1]:
                 magmom = float(oszi[-1].split()[-1])    # total magnetic moment
-    except:
+    except FileNotFoundError:
         pass
     # ---------- return
     return energy, magmom
@@ -107,7 +100,8 @@ def get_energy_step_vasp(energy_step_data, current_id, filename):
         energy_step = np.array(energy_step, dtype='float')/float(rin.natot)
     except:
         energy_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(current_id))
+        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
+            current_id))
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -142,19 +136,20 @@ def get_struc_step_vasp(struc_step_data, current_id, filename):
             basis = cal.findall("structure/crystal/varray[@name='basis']/v")
             lattice = []
             for a in basis:
-                lattice.append([float(x) for x in a.text.split()])    # char --> float
+                lattice.append([float(x) for x in a.text.split()])
             # -- positions
             positions = cal.findall("structure/varray/[@name='positions']/v")
             incoord = []
             for a in positions:
-                incoord.append([float(x) for x in a.text.split()])    # char --> float
+                incoord.append([float(x) for x in a.text.split()])
             # -- structure in pymatgen format
             struc = Structure(lattice, atomlist, incoord)
             # -- append
             struc_step.append(struc)
     except:
         struc_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(current_id))
+        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
+            current_id))
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -205,7 +200,8 @@ def get_fs_step_vasp(fs_step_data, current_id, filename):
     except:
         force_step = None
         stress_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(current_id))
+        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
+            current_id))
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:

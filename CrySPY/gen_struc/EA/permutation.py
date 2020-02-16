@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Permutaion class
+'''
 
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -7,7 +8,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from ..struc_util import sort_by_atype, check_distance
 
 
-class Permutation(object):
+class Permutation:
     '''
     permutation
 
@@ -42,9 +43,10 @@ class Permutation(object):
         for i in range(len(mindist)):
             for j in range(i):
                 if not mindist[i][j] == mindist[j][i]:
-                    raise ValueError('mindist is not symmetric. ' + \
+                    raise ValueError('mindist is not symmetric. '
                                      '({}, {}): {}, ({}, {}): {}'.format(
-                                     i, j, mindist[i][j], j, i, mindist[j][i]))
+                                         i, j, mindist[i][j],
+                                         j, i, mindist[j][i]))
         self.atype = atype
         self.mindist = mindist
         # ------ ntimes, maxcnt_ea
@@ -78,16 +80,20 @@ class Permutation(object):
                 indx_each_type = []
                 for a in self.atype:
                     indx_each_type.append(
-                        [i for i, site in enumerate(self.child) if site.species_string == a])
+                        [i for i, site in enumerate(self.child)
+                         if site.species_string == a])
                 # ------ choose two atom type
-                type_choice = np.random.choice(len(self.atype), 2, replace=False)
+                type_choice = np.random.choice(len(self.atype), 2,
+                                               replace=False)
                 # ------ choose index
                 indx_choice = []
                 for tc in type_choice:
                     indx_choice.append(np.random.choice(indx_each_type[tc]))
                 # ------ replace each other
-                self.child.replace(indx_choice[0], species=self.atype[type_choice[1]])
-                self.child.replace(indx_choice[1], species=self.atype[type_choice[0]])
+                self.child.replace(indx_choice[0],
+                                   species=self.atype[type_choice[1]])
+                self.child.replace(indx_choice[1],
+                                   species=self.atype[type_choice[0]])
                 # ------ compare to original one
                 if smatcher.fit(self.child, struc):
                     n = self.ntimes    # back to the start

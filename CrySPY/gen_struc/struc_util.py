@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Utility for structures
+'''
 
 import os
 
@@ -8,13 +9,13 @@ from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
 
 
-def out_poscar(struc, cID, fpath):
+def out_poscar(struc, cid, fpath):
     # ---------- poscar format
     pos = struc.to(fmt='poscar')
     pos = pos.split('\n')
     blank_indx = pos.index('')    # cut unnecessary parts
     pos = pos[:blank_indx]
-    pos[0] = 'ID_{}'.format(cID)    # replace with ID
+    pos[0] = 'ID_{}'.format(cid)    # replace with ID
     lines = [line+'\n' for line in pos]
 
     # ---------- append POSCAR
@@ -23,19 +24,21 @@ def out_poscar(struc, cID, fpath):
             f.write(line)
 
 
-def out_cif(struc, cID, tmp_path, fpath, symprec=0.1):
+def out_cif(struc, cid, tmp_path, fpath, symprec=0.1):
     # ---------- opt_CIFS
     cif = CifWriter(struc, symprec=symprec)
     cif.write_file(tmp_path+'tmp.cif')
 
-    # ---------- correct title for VESTA (need to delete '_chemical_formula_sum')
+    # ---------- correct title for VESTA
+    #                (need to delete '_chemical_formula_sum')
     with open(tmp_path+'tmp.cif', 'r') as fcif:
         ciflines = fcif.readlines()
-    ciflines[1] = 'data_ID_{}\n'.format(cID)
+    ciflines[1] = 'data_ID_{}\n'.format(cid)
     if ciflines[11][:21] == '_chemical_formula_sum':
         ciflines.pop(11)
     else:
-        raise ValueError('ciflines[11] is not _chemical_formula_sum, have to fix bag')
+        raise ValueError('ciflines[11] is not _chemical_formula_sum,'
+                         ' have to fix bag')
 
     # ---------- cif --> opt_cifs
     with open(fpath, 'a') as foptcif:
@@ -56,7 +59,7 @@ def frac_coord_zero_one(struc_in):
     '''
     struc = struc_in.copy()
     for i in range(struc.num_sites):
-        struc[i] = struc[i].to_unit_cell
+        struc[i] = struc[i].to_unit_cell()
     return struc
 
 
@@ -81,7 +84,8 @@ def sort_by_atype(struc, atype):
     '''
     return a structre sorted by atype order as a new structure
     '''
-    return struc.get_sorted_structure(key=lambda x: atype.index(x.species_string))
+    return struc.get_sorted_structure(
+        key=lambda x: atype.index(x.species_string))
 
 
 def check_distance(struc, atype, mindist, check_all=False):
@@ -89,13 +93,17 @@ def check_distance(struc, atype, mindist, check_all=False):
     # ---------- args
     struc: structure data in pymatgen format
     atype (list): e.g. ['Li', 'Co, 'O']
-    mindist (2d list) : e.g. [[2.0, 2.0, 1.2], [2.0, 2.0, 1.2], [1.2, 1.2, 1.5]]
-    check_all (bool) : if True, check all atom pairs, and return True or False, dist_list
-                       if False, stop when smaller distance (dist < mindist) is found
+    mindist (2d list) : e.g. [[2.0, 2.0, 1.2],
+                              [2.0, 2.0, 1.2],
+                              [1.2, 1.2, 1.5]]
+    check_all (bool) : if True, check all atom pairs,
+                           and return True, False, or dist_list
+                       if False, stop when (dist < mindist) is found
     # ---------- return
     (check_all=False) True: nothing smaller than mindist
     (check_all=False) False: something smaller than mindst
-    (check_all=True) dist_list: if dist_list is vacant, nothing smaller than mindist
+    (check_all=True) dist_list: if dist_list is vacant,
+                                    nothing smaller than mindist
     '''
 
     # ---------- initialize

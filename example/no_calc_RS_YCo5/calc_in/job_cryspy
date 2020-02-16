@@ -1,9 +1,0 @@
-#!/bin/bash
-
-cp POSCAR CONTCAR
-touch OSZICAR
-touch OUTCAR
-
-
-sed -i -e '3 s/^.*$/done/' stat_job
-

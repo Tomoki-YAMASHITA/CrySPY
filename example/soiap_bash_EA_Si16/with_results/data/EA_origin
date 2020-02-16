@@ -1,0 +1,23 @@
+ Gen  Struc_ID  Operation  Parent
+   1         0     random    None
+   1         1     random    None
+   1         2     random    None
+   1         3     random    None
+   1         4     random    None
+   1         5     random    None
+   1         6     random    None
+   1         7     random    None
+   1         8     random    None
+   1         9     random    None
+   2        10  crossover  (9, 5)
+   2        11  crossover  (9, 4)
+   2        12  crossover  (7, 4)
+   2        13  crossover  (4, 5)
+   2        14  crossover  (9, 7)
+   2        15     strain    (0,)
+   2        16     strain    (4,)
+   2        17     strain    (9,)
+   2        18     random    None
+   2        19     random    None
+   2         4      elite   elite
+   2         0      elite   elite

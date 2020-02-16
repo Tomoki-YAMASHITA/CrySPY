@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
-
-import os
+'''
+Collect results in Quantum ESPRESSO
+'''
 
 import numpy as np
 from pymatgen.core.units import Energy
@@ -39,23 +36,27 @@ def collect_qe(current_id, work_path):
     except:
         energy = np.nan    # error
         magmom = np.nan    # error
-        print('    Structure ID {0}, could not obtain energy from {1}'.format(current_id, rin.qe_outfile))
+        print('    Structure ID {0}, could not obtain energy from {1}'.format(
+            current_id, rin.qe_outfile))
 
     # ---------- collect the last structure
     try:
-        lines_cell = qe_structure.extract_cell_parameters(work_path+rin.qe_outfile)
+        lines_cell = qe_structure.extract_cell_parameters(
+            work_path+rin.qe_outfile)
         if lines_cell is None:
-            lines_cell = qe_structure.extract_cell_parameters(work_path+rin.qe_infile)
-        lines_atom = qe_structure.extract_atomic_positions(work_path+rin.qe_outfile)
+            lines_cell = qe_structure.extract_cell_parameters(
+                work_path+rin.qe_infile)
+        lines_atom = qe_structure.extract_atomic_positions(
+            work_path+rin.qe_outfile)
         if lines_atom is None:
-            lines_atom = qe_structure.extract_atomic_positions(work_path+rin.qe_infile)
+            lines_atom = qe_structure.extract_atomic_positions(
+                work_path+rin.qe_infile)
         opt_struc = qe_structure.from_lines(lines_cell, lines_atom)
 
         # ------ opt_qe-structure
         with open('./data/opt_qe-structure', 'a') as fstruc:
             fstruc.write('# ID {0:d}\n'.format(current_id))
         qe_structure.write(opt_struc, './data/opt_qe-structure', mode='a')
-
     except:
         opt_struc = None
 
@@ -65,15 +66,6 @@ def collect_qe(current_id, work_path):
     if opt_struc is None:
         energy = np.nan
         magmom = np.nan
-
-    # ---------- mv xxxxx fin_xxxxx
-    qe_files = [rin.qe_infile, rin.qe_outfile]
-    for f in qe_files:
-        if os.path.isfile(work_path+f):
-            os.rename(work_path+f, work_path+'fin_'+f)
-
-    # ---------- clean stat file
-    os.remove(work_path+'stat_job')
 
     # ---------- return
     return opt_struc, energy, magmom, check_opt

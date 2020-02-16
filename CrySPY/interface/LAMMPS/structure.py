@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Structure file for LAMMPS
+'''
 
 import itertools
 
@@ -40,7 +41,8 @@ def from_file(name):
     coords = [[float(x) for x in line.split()][2:] for line in lines[9:]]
 
     # ---------- species
-    species = [itertools.repeat(typ, times=num) for typ, num in zip(rin.atype, rin.nat)]
+    species = [itertools.repeat(typ, times=num) for typ, num in zip(
+        rin.atype, rin.nat)]
     species = list(itertools.chain.from_iterable(species))
 
     structure = Structure(lattice, species, coords)
@@ -65,7 +67,8 @@ def write(structure, output, title="LAMMPS"):
 
     # ---------- coordinates
     index = range(1, rin.natot+1)
-    species = [itertools.repeat(typ, times=num) for typ, num in zip(index, rin.nat)]
+    species = [itertools.repeat(typ, times=num) for typ, num in zip(
+        index, rin.nat)]
     species = list(itertools.chain.from_iterable(species))
     sites = structure.sites
 
@@ -80,10 +83,12 @@ def write(structure, output, title="LAMMPS"):
         f.write('0.000000  {0:10.6f}   ylo yhi\n'.format(ly))
         f.write('0.000000  {0:10.6f}   zlo zhi\n'.format(lz))
         f.write('\n')
-        f.write('{0:10.6f}  {1:10.6f}  {2:10.6f}   xy xz yz\n'.format(xy, xz, yz))
+        f.write('{0:10.6f}  {1:10.6f}  {2:10.6f}   xy xz yz\n'.format(
+            xy, xz, yz))
         f.write('\n')
         f.write('Atoms\n')
         f.write('\n')
 
         for i, k, site in zip(index, species, sites):
-            f.write('{0:4d}  {1:<4d}   {2[0]:7f} {2[1]:7f} {2[2]:7f}\n'.format(i, k, site.coords))
+            f.write('{0:4d}  {1:<4d}   {2[0]:7f} {2[1]:7f} {2[2]:7f}\n'.format(
+                i, k, site.coords))

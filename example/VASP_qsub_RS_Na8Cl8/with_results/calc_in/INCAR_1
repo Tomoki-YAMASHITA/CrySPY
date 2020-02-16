@@ -1,0 +1,21 @@
+SYSTEM = NaCl
+!NPAR = 2
+PREC = Normal
+LREAL = Auto
+Algo = Fast
+NSW = 60
+
+LWAVE = .FALSE.
+!LCHARG = .FALSE.
+
+ISPIN =  1
+
+ISMEAR = 0
+SIGMA = 0.1
+
+IBRION = 2
+POTIM = 0.1
+ISIF = 2
+
+EDIFF = 1e-5
+EDIFFG = -0.01

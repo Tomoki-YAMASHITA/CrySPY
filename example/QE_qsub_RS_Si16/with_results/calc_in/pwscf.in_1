@@ -1,0 +1,30 @@
+ &control
+    title = 'Si16'
+    calculation = 'relax'
+    nstep = 100
+    restart_mode = 'from_scratch',
+    wf_collect = .true.
+    pseudo_dir = '/path/to/QE/pslibrary.1.0.0/pbe/PSEUDOPOTENTIALS/',
+    outdir='./out.d/'
+ /
+
+ &system
+    ibrav = 0
+    nat = 16
+    ntyp = 1
+    ecutwfc = 44.0
+    occupations = 'smearing'
+    degauss = 0.01
+ /
+
+ &electrons
+ /
+
+ &ions
+ /
+
+ &cell
+ /
+
+ATOMIC_SPECIES
+  Si  28.086  Si.pbe-n-kjpaw_psl.1.0.0.UPF

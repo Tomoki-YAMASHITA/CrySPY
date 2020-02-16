@@ -1,19 +1,19 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Structure generation by evolutionary algorithm
+'''
 
 from ..struc_util import out_poscar
 
 
-class EA_generation(object):
+class EA_generation:
     '''
     generate structures by evolutionary algorithm
 
     # ---------- args
     sp: instance of Select_parents class
     symprec (float): precision for symmetry finding
-    id_start (int or None): starting id, if None, id_start = max(self.fitness.keys()) + 1
+    id_start (int or None): starting id
+                            if None, id_start = max(self.fitness.keys()) + 1
     init_pos_path (str or None): if not None, structure data in POSCAR format
                                      is appended to init_pos_path
 
@@ -42,12 +42,13 @@ class EA_generation(object):
             raise TypeError('symprec must be float')
         # ------ id_offset
         if id_start is None:
-            self.cID = max(sp.fitness.keys()) + 1
+            self.cid = max(sp.fitness.keys()) + 1
         elif isinstance(id_start, int):
             if id_start < (max(sp.fitness.keys()) + 1):
-                raise ValueError('id_start is already included structure ID of the data')
+                raise ValueError('id_start is already included'
+                                 ' structure ID of the data')
             else:
-                self.cID = id_start
+                self.cid = id_start
         else:
             raise TypeError('id_start must be int or None')
         # ------ init_pos_path
@@ -85,23 +86,26 @@ class EA_generation(object):
             # ------ select parents
             pid_A, pid_B = self.sp.get_parents(n_parent=2)
             # ------ generate child
-            child = co.gen_child(self.sp.struc_data[pid_A], self.sp.struc_data[pid_B])
+            child = co.gen_child(self.sp.struc_data[pid_A],
+                                 self.sp.struc_data[pid_B])
             # ------ success
             if child is not None:
-                self.offspring[self.cID] = child
-                self.parents[self.cID] = (pid_A, pid_B)
-                self.operation[self.cID] = 'crossover'
+                self.offspring[self.cid] = child
+                self.parents[self.cid] = (pid_A, pid_B)
+                self.operation[self.cid] = 'crossover'
                 try:
-                    spg_sym, spg_num = child.get_space_group_info(symprec=self.symprec)
+                    spg_sym, spg_num = child.get_space_group_info(
+                        symprec=self.symprec)
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>8} was generated'.format(self.cID) +
-                      ' from {0:>8} and {1:>8} by crossover.'.format(pid_A, pid_B) +
-                      ' Space group: {0:>3} {1}'.format(spg_num, spg_sym))
+                print('Structure ID {0:>6} was generated'
+                      ' from {1:>6} and {2:>6} by crossover.'
+                      ' Space group: {3:>3} {4}'.format(self.cid, pid_A, pid_B,
+                                                        spg_num, spg_sym))
                 if self.init_pos_path is not None:
-                    out_poscar(child, self.cID, self.init_pos_path)
-                self.cID += 1
+                    out_poscar(child, self.cid, self.init_pos_path)
+                self.cid += 1
                 struc_cnt += 1
 
     def gen_permutation(self, n_perm, pm):
@@ -131,20 +135,22 @@ class EA_generation(object):
             child = pm.gen_child(self.sp.struc_data[pid])
             # ------ success
             if child is not None:
-                self.offspring[self.cID] = child
-                self.parents[self.cID] = (pid, )    # tuple
-                self.operation[self.cID] = 'permutation'
+                self.offspring[self.cid] = child
+                self.parents[self.cid] = (pid, )    # tuple
+                self.operation[self.cid] = 'permutation'
                 try:
-                    spg_sym, spg_num = child.get_space_group_info(symprec=self.symprec)
+                    spg_sym, spg_num = child.get_space_group_info(
+                        symprec=self.symprec)
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>8} was generated'.format(self.cID) +
-                      ' from {0:>8} by permutation.'.format(pid) +
-                      ' Space group: {0:>3} {1}'.format(spg_num, spg_sym))
+                print('Structure ID {0:>6} was generated'
+                      ' from {1:>6} by permutation.'
+                      ' Space group: {2:>3} {3}'.format(self.cid, pid,
+                                                        spg_num, spg_sym))
                 if self.init_pos_path is not None:
-                    out_poscar(child, self.cID, self.init_pos_path)
-                self.cID += 1
+                    out_poscar(child, self.cid, self.init_pos_path)
+                self.cid += 1
                 struc_cnt += 1
 
     def gen_strain(self, n_strain, st):
@@ -174,18 +180,20 @@ class EA_generation(object):
             child = st.gen_child(self.sp.struc_data[pid])
             # ------ success
             if child is not None:
-                self.offspring[self.cID] = child
-                self.parents[self.cID] = (pid, )    # tuple
-                self.operation[self.cID] = 'strain'
+                self.offspring[self.cid] = child
+                self.parents[self.cid] = (pid, )    # tuple
+                self.operation[self.cid] = 'strain'
                 try:
-                    spg_sym, spg_num = child.get_space_group_info(symprec=self.symprec)
+                    spg_sym, spg_num = child.get_space_group_info(
+                        symprec=self.symprec)
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>8} was generated'.format(self.cID) +
-                      ' from {0:>8} by strain.'.format(pid) +
-                      ' Space group: {0:>3} {1}'.format(spg_num, spg_sym))
+                print('Structure ID {0:>6} was generated'
+                      ' from {1:>6} by strain.'
+                      ' Space group: {2:>3} {3}'.format(self.cid, pid,
+                                                        spg_num, spg_sym))
                 if self.init_pos_path is not None:
-                    out_poscar(child, self.cID, self.init_pos_path)
-                self.cID += 1
+                    out_poscar(child, self.cid, self.init_pos_path)
+                self.cid += 1
                 struc_cnt += 1

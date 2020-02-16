@@ -1,0 +1,1671 @@
+# generated using pymatgen
+data_ID_0
+_symmetry_space_group_name_H-M   Fm-3m
+_cell_length_a   5.61336358
+_cell_length_b   5.61336358
+_cell_length_c   5.61336358
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   225
+_chemical_formula_structural   NaCl
+_cell_volume   176.87624809
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+  49  'x+1/2, y+1/2, z'
+  50  '-x+1/2, -y+1/2, -z'
+  51  '-y+1/2, x+1/2, z'
+  52  'y+1/2, -x+1/2, -z'
+  53  '-x+1/2, -y+1/2, z'
+  54  'x+1/2, y+1/2, -z'
+  55  'y+1/2, -x+1/2, z'
+  56  '-y+1/2, x+1/2, -z'
+  57  'x+1/2, -y+1/2, -z'
+  58  '-x+1/2, y+1/2, z'
+  59  '-y+1/2, -x+1/2, -z'
+  60  'y+1/2, x+1/2, z'
+  61  '-x+1/2, y+1/2, -z'
+  62  'x+1/2, -y+1/2, z'
+  63  'y+1/2, x+1/2, -z'
+  64  '-y+1/2, -x+1/2, z'
+  65  'z+1/2, x+1/2, y'
+  66  '-z+1/2, -x+1/2, -y'
+  67  'z+1/2, -y+1/2, x'
+  68  '-z+1/2, y+1/2, -x'
+  69  'z+1/2, -x+1/2, -y'
+  70  '-z+1/2, x+1/2, y'
+  71  'z+1/2, y+1/2, -x'
+  72  '-z+1/2, -y+1/2, x'
+  73  '-z+1/2, x+1/2, -y'
+  74  'z+1/2, -x+1/2, y'
+  75  '-z+1/2, -y+1/2, -x'
+  76  'z+1/2, y+1/2, x'
+  77  '-z+1/2, -x+1/2, y'
+  78  'z+1/2, x+1/2, -y'
+  79  '-z+1/2, y+1/2, x'
+  80  'z+1/2, -y+1/2, -x'
+  81  'y+1/2, z+1/2, x'
+  82  '-y+1/2, -z+1/2, -x'
+  83  'x+1/2, z+1/2, -y'
+  84  '-x+1/2, -z+1/2, y'
+  85  '-y+1/2, z+1/2, -x'
+  86  'y+1/2, -z+1/2, x'
+  87  '-x+1/2, z+1/2, y'
+  88  'x+1/2, -z+1/2, -y'
+  89  '-y+1/2, -z+1/2, x'
+  90  'y+1/2, z+1/2, -x'
+  91  '-x+1/2, -z+1/2, -y'
+  92  'x+1/2, z+1/2, y'
+  93  'y+1/2, -z+1/2, -x'
+  94  '-y+1/2, z+1/2, x'
+  95  'x+1/2, -z+1/2, y'
+  96  '-x+1/2, z+1/2, -y'
+  97  'x+1/2, y, z+1/2'
+  98  '-x+1/2, -y, -z+1/2'
+  99  '-y+1/2, x, z+1/2'
+  100  'y+1/2, -x, -z+1/2'
+  101  '-x+1/2, -y, z+1/2'
+  102  'x+1/2, y, -z+1/2'
+  103  'y+1/2, -x, z+1/2'
+  104  '-y+1/2, x, -z+1/2'
+  105  'x+1/2, -y, -z+1/2'
+  106  '-x+1/2, y, z+1/2'
+  107  '-y+1/2, -x, -z+1/2'
+  108  'y+1/2, x, z+1/2'
+  109  '-x+1/2, y, -z+1/2'
+  110  'x+1/2, -y, z+1/2'
+  111  'y+1/2, x, -z+1/2'
+  112  '-y+1/2, -x, z+1/2'
+  113  'z+1/2, x, y+1/2'
+  114  '-z+1/2, -x, -y+1/2'
+  115  'z+1/2, -y, x+1/2'
+  116  '-z+1/2, y, -x+1/2'
+  117  'z+1/2, -x, -y+1/2'
+  118  '-z+1/2, x, y+1/2'
+  119  'z+1/2, y, -x+1/2'
+  120  '-z+1/2, -y, x+1/2'
+  121  '-z+1/2, x, -y+1/2'
+  122  'z+1/2, -x, y+1/2'
+  123  '-z+1/2, -y, -x+1/2'
+  124  'z+1/2, y, x+1/2'
+  125  '-z+1/2, -x, y+1/2'
+  126  'z+1/2, x, -y+1/2'
+  127  '-z+1/2, y, x+1/2'
+  128  'z+1/2, -y, -x+1/2'
+  129  'y+1/2, z, x+1/2'
+  130  '-y+1/2, -z, -x+1/2'
+  131  'x+1/2, z, -y+1/2'
+  132  '-x+1/2, -z, y+1/2'
+  133  '-y+1/2, z, -x+1/2'
+  134  'y+1/2, -z, x+1/2'
+  135  '-x+1/2, z, y+1/2'
+  136  'x+1/2, -z, -y+1/2'
+  137  '-y+1/2, -z, x+1/2'
+  138  'y+1/2, z, -x+1/2'
+  139  '-x+1/2, -z, -y+1/2'
+  140  'x+1/2, z, y+1/2'
+  141  'y+1/2, -z, -x+1/2'
+  142  '-y+1/2, z, x+1/2'
+  143  'x+1/2, -z, y+1/2'
+  144  '-x+1/2, z, -y+1/2'
+  145  'x, y+1/2, z+1/2'
+  146  '-x, -y+1/2, -z+1/2'
+  147  '-y, x+1/2, z+1/2'
+  148  'y, -x+1/2, -z+1/2'
+  149  '-x, -y+1/2, z+1/2'
+  150  'x, y+1/2, -z+1/2'
+  151  'y, -x+1/2, z+1/2'
+  152  '-y, x+1/2, -z+1/2'
+  153  'x, -y+1/2, -z+1/2'
+  154  '-x, y+1/2, z+1/2'
+  155  '-y, -x+1/2, -z+1/2'
+  156  'y, x+1/2, z+1/2'
+  157  '-x, y+1/2, -z+1/2'
+  158  'x, -y+1/2, z+1/2'
+  159  'y, x+1/2, -z+1/2'
+  160  '-y, -x+1/2, z+1/2'
+  161  'z, x+1/2, y+1/2'
+  162  '-z, -x+1/2, -y+1/2'
+  163  'z, -y+1/2, x+1/2'
+  164  '-z, y+1/2, -x+1/2'
+  165  'z, -x+1/2, -y+1/2'
+  166  '-z, x+1/2, y+1/2'
+  167  'z, y+1/2, -x+1/2'
+  168  '-z, -y+1/2, x+1/2'
+  169  '-z, x+1/2, -y+1/2'
+  170  'z, -x+1/2, y+1/2'
+  171  '-z, -y+1/2, -x+1/2'
+  172  'z, y+1/2, x+1/2'
+  173  '-z, -x+1/2, y+1/2'
+  174  'z, x+1/2, -y+1/2'
+  175  '-z, y+1/2, x+1/2'
+  176  'z, -y+1/2, -x+1/2'
+  177  'y, z+1/2, x+1/2'
+  178  '-y, -z+1/2, -x+1/2'
+  179  'x, z+1/2, -y+1/2'
+  180  '-x, -z+1/2, y+1/2'
+  181  '-y, z+1/2, -x+1/2'
+  182  'y, -z+1/2, x+1/2'
+  183  '-x, z+1/2, y+1/2'
+  184  'x, -z+1/2, -y+1/2'
+  185  '-y, -z+1/2, x+1/2'
+  186  'y, z+1/2, -x+1/2'
+  187  '-x, -z+1/2, -y+1/2'
+  188  'x, z+1/2, y+1/2'
+  189  'y, -z+1/2, -x+1/2'
+  190  '-y, z+1/2, x+1/2'
+  191  'x, -z+1/2, y+1/2'
+  192  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.000000  0.000000  0.500000  1
+  Cl  Cl1  4  0.000000  0.000000  0.000000  1
+# generated using pymatgen
+data_ID_1
+_symmetry_space_group_name_H-M   Fm-3m
+_cell_length_a   12.64515007
+_cell_length_b   12.64515007
+_cell_length_c   12.64515007
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   225
+_chemical_formula_structural   NaCl
+_cell_volume   2021.95722550
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+  49  'x+1/2, y+1/2, z'
+  50  '-x+1/2, -y+1/2, -z'
+  51  '-y+1/2, x+1/2, z'
+  52  'y+1/2, -x+1/2, -z'
+  53  '-x+1/2, -y+1/2, z'
+  54  'x+1/2, y+1/2, -z'
+  55  'y+1/2, -x+1/2, z'
+  56  '-y+1/2, x+1/2, -z'
+  57  'x+1/2, -y+1/2, -z'
+  58  '-x+1/2, y+1/2, z'
+  59  '-y+1/2, -x+1/2, -z'
+  60  'y+1/2, x+1/2, z'
+  61  '-x+1/2, y+1/2, -z'
+  62  'x+1/2, -y+1/2, z'
+  63  'y+1/2, x+1/2, -z'
+  64  '-y+1/2, -x+1/2, z'
+  65  'z+1/2, x+1/2, y'
+  66  '-z+1/2, -x+1/2, -y'
+  67  'z+1/2, -y+1/2, x'
+  68  '-z+1/2, y+1/2, -x'
+  69  'z+1/2, -x+1/2, -y'
+  70  '-z+1/2, x+1/2, y'
+  71  'z+1/2, y+1/2, -x'
+  72  '-z+1/2, -y+1/2, x'
+  73  '-z+1/2, x+1/2, -y'
+  74  'z+1/2, -x+1/2, y'
+  75  '-z+1/2, -y+1/2, -x'
+  76  'z+1/2, y+1/2, x'
+  77  '-z+1/2, -x+1/2, y'
+  78  'z+1/2, x+1/2, -y'
+  79  '-z+1/2, y+1/2, x'
+  80  'z+1/2, -y+1/2, -x'
+  81  'y+1/2, z+1/2, x'
+  82  '-y+1/2, -z+1/2, -x'
+  83  'x+1/2, z+1/2, -y'
+  84  '-x+1/2, -z+1/2, y'
+  85  '-y+1/2, z+1/2, -x'
+  86  'y+1/2, -z+1/2, x'
+  87  '-x+1/2, z+1/2, y'
+  88  'x+1/2, -z+1/2, -y'
+  89  '-y+1/2, -z+1/2, x'
+  90  'y+1/2, z+1/2, -x'
+  91  '-x+1/2, -z+1/2, -y'
+  92  'x+1/2, z+1/2, y'
+  93  'y+1/2, -z+1/2, -x'
+  94  '-y+1/2, z+1/2, x'
+  95  'x+1/2, -z+1/2, y'
+  96  '-x+1/2, z+1/2, -y'
+  97  'x+1/2, y, z+1/2'
+  98  '-x+1/2, -y, -z+1/2'
+  99  '-y+1/2, x, z+1/2'
+  100  'y+1/2, -x, -z+1/2'
+  101  '-x+1/2, -y, z+1/2'
+  102  'x+1/2, y, -z+1/2'
+  103  'y+1/2, -x, z+1/2'
+  104  '-y+1/2, x, -z+1/2'
+  105  'x+1/2, -y, -z+1/2'
+  106  '-x+1/2, y, z+1/2'
+  107  '-y+1/2, -x, -z+1/2'
+  108  'y+1/2, x, z+1/2'
+  109  '-x+1/2, y, -z+1/2'
+  110  'x+1/2, -y, z+1/2'
+  111  'y+1/2, x, -z+1/2'
+  112  '-y+1/2, -x, z+1/2'
+  113  'z+1/2, x, y+1/2'
+  114  '-z+1/2, -x, -y+1/2'
+  115  'z+1/2, -y, x+1/2'
+  116  '-z+1/2, y, -x+1/2'
+  117  'z+1/2, -x, -y+1/2'
+  118  '-z+1/2, x, y+1/2'
+  119  'z+1/2, y, -x+1/2'
+  120  '-z+1/2, -y, x+1/2'
+  121  '-z+1/2, x, -y+1/2'
+  122  'z+1/2, -x, y+1/2'
+  123  '-z+1/2, -y, -x+1/2'
+  124  'z+1/2, y, x+1/2'
+  125  '-z+1/2, -x, y+1/2'
+  126  'z+1/2, x, -y+1/2'
+  127  '-z+1/2, y, x+1/2'
+  128  'z+1/2, -y, -x+1/2'
+  129  'y+1/2, z, x+1/2'
+  130  '-y+1/2, -z, -x+1/2'
+  131  'x+1/2, z, -y+1/2'
+  132  '-x+1/2, -z, y+1/2'
+  133  '-y+1/2, z, -x+1/2'
+  134  'y+1/2, -z, x+1/2'
+  135  '-x+1/2, z, y+1/2'
+  136  'x+1/2, -z, -y+1/2'
+  137  '-y+1/2, -z, x+1/2'
+  138  'y+1/2, z, -x+1/2'
+  139  '-x+1/2, -z, -y+1/2'
+  140  'x+1/2, z, y+1/2'
+  141  'y+1/2, -z, -x+1/2'
+  142  '-y+1/2, z, x+1/2'
+  143  'x+1/2, -z, y+1/2'
+  144  '-x+1/2, z, -y+1/2'
+  145  'x, y+1/2, z+1/2'
+  146  '-x, -y+1/2, -z+1/2'
+  147  '-y, x+1/2, z+1/2'
+  148  'y, -x+1/2, -z+1/2'
+  149  '-x, -y+1/2, z+1/2'
+  150  'x, y+1/2, -z+1/2'
+  151  'y, -x+1/2, z+1/2'
+  152  '-y, x+1/2, -z+1/2'
+  153  'x, -y+1/2, -z+1/2'
+  154  '-x, y+1/2, z+1/2'
+  155  '-y, -x+1/2, -z+1/2'
+  156  'y, x+1/2, z+1/2'
+  157  '-x, y+1/2, -z+1/2'
+  158  'x, -y+1/2, z+1/2'
+  159  'y, x+1/2, -z+1/2'
+  160  '-y, -x+1/2, z+1/2'
+  161  'z, x+1/2, y+1/2'
+  162  '-z, -x+1/2, -y+1/2'
+  163  'z, -y+1/2, x+1/2'
+  164  '-z, y+1/2, -x+1/2'
+  165  'z, -x+1/2, -y+1/2'
+  166  '-z, x+1/2, y+1/2'
+  167  'z, y+1/2, -x+1/2'
+  168  '-z, -y+1/2, x+1/2'
+  169  '-z, x+1/2, -y+1/2'
+  170  'z, -x+1/2, y+1/2'
+  171  '-z, -y+1/2, -x+1/2'
+  172  'z, y+1/2, x+1/2'
+  173  '-z, -x+1/2, y+1/2'
+  174  'z, x+1/2, -y+1/2'
+  175  '-z, y+1/2, x+1/2'
+  176  'z, -y+1/2, -x+1/2'
+  177  'y, z+1/2, x+1/2'
+  178  '-y, -z+1/2, -x+1/2'
+  179  'x, z+1/2, -y+1/2'
+  180  '-x, -z+1/2, y+1/2'
+  181  '-y, z+1/2, -x+1/2'
+  182  'y, -z+1/2, x+1/2'
+  183  '-x, z+1/2, y+1/2'
+  184  'x, -z+1/2, -y+1/2'
+  185  '-y, -z+1/2, x+1/2'
+  186  'y, z+1/2, -x+1/2'
+  187  '-x, -z+1/2, -y+1/2'
+  188  'x, z+1/2, y+1/2'
+  189  'y, -z+1/2, -x+1/2'
+  190  '-y, z+1/2, x+1/2'
+  191  'x, -z+1/2, y+1/2'
+  192  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  32  0.159733  0.159733  0.159733  1
+  Cl  Cl1  32  0.139067  0.139067  0.360933  1
+# generated using pymatgen
+data_ID_2
+_symmetry_space_group_name_H-M   P4/nmm
+_cell_length_a   5.79448787
+_cell_length_b   5.79448787
+_cell_length_c   4.93646462
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   129
+_chemical_formula_structural   NaCl
+_cell_volume   165.74717897
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-y, -x, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'y, x, -z'
+  9  '-x+1/2, -y+1/2, -z'
+  10  'y, -x, -z'
+  11  'x+1/2, y+1/2, -z'
+  12  '-y, x, -z'
+  13  '-x, y, z'
+  14  'y+1/2, x+1/2, z'
+  15  'x, -y, z'
+  16  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  2  0.000000  0.000000  0.000000  1
+  Na  Na1  2  0.000000  0.500000  0.499052  1
+  Cl  Cl2  2  0.000000  0.000000  0.500000  1
+  Cl  Cl3  2  0.000000  0.500000  0.998908  1
+# generated using pymatgen
+data_ID_3
+_symmetry_space_group_name_H-M   Fd-3m
+_cell_length_a   12.09288065
+_cell_length_b   12.09288065
+_cell_length_c   12.09288065
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   227
+_chemical_formula_structural   NaCl
+_cell_volume   1768.43580690
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/4, x+3/4, z+3/4'
+  3  '-x, -y, z'
+  4  'y+1/4, -x+3/4, z+3/4'
+  5  'x, -y, -z'
+  6  '-y+1/4, -x+3/4, -z+3/4'
+  7  '-x, y, -z'
+  8  'y+1/4, x+3/4, -z+3/4'
+  9  'z, x, y'
+  10  'z+1/4, -y+3/4, x+3/4'
+  11  'z, -x, -y'
+  12  'z+1/4, y+3/4, -x+3/4'
+  13  '-z, x, -y'
+  14  '-z+1/4, -y+3/4, -x+3/4'
+  15  '-z, -x, y'
+  16  '-z+1/4, y+3/4, x+3/4'
+  17  'y, z, x'
+  18  'x+1/4, z+3/4, -y+3/4'
+  19  '-y, z, -x'
+  20  '-x+1/4, z+3/4, y+3/4'
+  21  '-y, -z, x'
+  22  '-x+1/4, -z+3/4, -y+3/4'
+  23  'y, -z, -x'
+  24  'x+1/4, -z+3/4, y+3/4'
+  25  '-x+1/4, -y+3/4, -z+3/4'
+  26  'y, -x, -z'
+  27  'x+1/4, y+3/4, -z+3/4'
+  28  '-y, x, -z'
+  29  '-x+1/4, y+3/4, z+3/4'
+  30  'y, x, z'
+  31  'x+1/4, -y+3/4, z+3/4'
+  32  '-y, -x, z'
+  33  '-z+1/4, -x+3/4, -y+3/4'
+  34  '-z, y, -x'
+  35  '-z+1/4, x+3/4, y+3/4'
+  36  '-z, -y, x'
+  37  'z+1/4, -x+3/4, y+3/4'
+  38  'z, y, x'
+  39  'z+1/4, x+3/4, -y+3/4'
+  40  'z, -y, -x'
+  41  '-y+1/4, -z+3/4, -x+3/4'
+  42  '-x, -z, y'
+  43  'y+1/4, -z+3/4, x+3/4'
+  44  'x, -z, -y'
+  45  'y+1/4, z+3/4, -x+3/4'
+  46  'x, z, y'
+  47  '-y+1/4, z+3/4, x+3/4'
+  48  '-x, z, -y'
+  49  'x+1/2, y+1/2, z'
+  50  '-y+3/4, x+1/4, z+3/4'
+  51  '-x+1/2, -y+1/2, z'
+  52  'y+3/4, -x+1/4, z+3/4'
+  53  'x+1/2, -y+1/2, -z'
+  54  '-y+3/4, -x+1/4, -z+3/4'
+  55  '-x+1/2, y+1/2, -z'
+  56  'y+3/4, x+1/4, -z+3/4'
+  57  'z+1/2, x+1/2, y'
+  58  'z+3/4, -y+1/4, x+3/4'
+  59  'z+1/2, -x+1/2, -y'
+  60  'z+3/4, y+1/4, -x+3/4'
+  61  '-z+1/2, x+1/2, -y'
+  62  '-z+3/4, -y+1/4, -x+3/4'
+  63  '-z+1/2, -x+1/2, y'
+  64  '-z+3/4, y+1/4, x+3/4'
+  65  'y+1/2, z+1/2, x'
+  66  'x+3/4, z+1/4, -y+3/4'
+  67  '-y+1/2, z+1/2, -x'
+  68  '-x+3/4, z+1/4, y+3/4'
+  69  '-y+1/2, -z+1/2, x'
+  70  '-x+3/4, -z+1/4, -y+3/4'
+  71  'y+1/2, -z+1/2, -x'
+  72  'x+3/4, -z+1/4, y+3/4'
+  73  '-x+3/4, -y+1/4, -z+3/4'
+  74  'y+1/2, -x+1/2, -z'
+  75  'x+3/4, y+1/4, -z+3/4'
+  76  '-y+1/2, x+1/2, -z'
+  77  '-x+3/4, y+1/4, z+3/4'
+  78  'y+1/2, x+1/2, z'
+  79  'x+3/4, -y+1/4, z+3/4'
+  80  '-y+1/2, -x+1/2, z'
+  81  '-z+3/4, -x+1/4, -y+3/4'
+  82  '-z+1/2, y+1/2, -x'
+  83  '-z+3/4, x+1/4, y+3/4'
+  84  '-z+1/2, -y+1/2, x'
+  85  'z+3/4, -x+1/4, y+3/4'
+  86  'z+1/2, y+1/2, x'
+  87  'z+3/4, x+1/4, -y+3/4'
+  88  'z+1/2, -y+1/2, -x'
+  89  '-y+3/4, -z+1/4, -x+3/4'
+  90  '-x+1/2, -z+1/2, y'
+  91  'y+3/4, -z+1/4, x+3/4'
+  92  'x+1/2, -z+1/2, -y'
+  93  'y+3/4, z+1/4, -x+3/4'
+  94  'x+1/2, z+1/2, y'
+  95  '-y+3/4, z+1/4, x+3/4'
+  96  '-x+1/2, z+1/2, -y'
+  97  'x+1/2, y, z+1/2'
+  98  '-y+3/4, x+3/4, z+1/4'
+  99  '-x+1/2, -y, z+1/2'
+  100  'y+3/4, -x+3/4, z+1/4'
+  101  'x+1/2, -y, -z+1/2'
+  102  '-y+3/4, -x+3/4, -z+1/4'
+  103  '-x+1/2, y, -z+1/2'
+  104  'y+3/4, x+3/4, -z+1/4'
+  105  'z+1/2, x, y+1/2'
+  106  'z+3/4, -y+3/4, x+1/4'
+  107  'z+1/2, -x, -y+1/2'
+  108  'z+3/4, y+3/4, -x+1/4'
+  109  '-z+1/2, x, -y+1/2'
+  110  '-z+3/4, -y+3/4, -x+1/4'
+  111  '-z+1/2, -x, y+1/2'
+  112  '-z+3/4, y+3/4, x+1/4'
+  113  'y+1/2, z, x+1/2'
+  114  'x+3/4, z+3/4, -y+1/4'
+  115  '-y+1/2, z, -x+1/2'
+  116  '-x+3/4, z+3/4, y+1/4'
+  117  '-y+1/2, -z, x+1/2'
+  118  '-x+3/4, -z+3/4, -y+1/4'
+  119  'y+1/2, -z, -x+1/2'
+  120  'x+3/4, -z+3/4, y+1/4'
+  121  '-x+3/4, -y+3/4, -z+1/4'
+  122  'y+1/2, -x, -z+1/2'
+  123  'x+3/4, y+3/4, -z+1/4'
+  124  '-y+1/2, x, -z+1/2'
+  125  '-x+3/4, y+3/4, z+1/4'
+  126  'y+1/2, x, z+1/2'
+  127  'x+3/4, -y+3/4, z+1/4'
+  128  '-y+1/2, -x, z+1/2'
+  129  '-z+3/4, -x+3/4, -y+1/4'
+  130  '-z+1/2, y, -x+1/2'
+  131  '-z+3/4, x+3/4, y+1/4'
+  132  '-z+1/2, -y, x+1/2'
+  133  'z+3/4, -x+3/4, y+1/4'
+  134  'z+1/2, y, x+1/2'
+  135  'z+3/4, x+3/4, -y+1/4'
+  136  'z+1/2, -y, -x+1/2'
+  137  '-y+3/4, -z+3/4, -x+1/4'
+  138  '-x+1/2, -z, y+1/2'
+  139  'y+3/4, -z+3/4, x+1/4'
+  140  'x+1/2, -z, -y+1/2'
+  141  'y+3/4, z+3/4, -x+1/4'
+  142  'x+1/2, z, y+1/2'
+  143  '-y+3/4, z+3/4, x+1/4'
+  144  '-x+1/2, z, -y+1/2'
+  145  'x, y+1/2, z+1/2'
+  146  '-y+1/4, x+1/4, z+1/4'
+  147  '-x, -y+1/2, z+1/2'
+  148  'y+1/4, -x+1/4, z+1/4'
+  149  'x, -y+1/2, -z+1/2'
+  150  '-y+1/4, -x+1/4, -z+1/4'
+  151  '-x, y+1/2, -z+1/2'
+  152  'y+1/4, x+1/4, -z+1/4'
+  153  'z, x+1/2, y+1/2'
+  154  'z+1/4, -y+1/4, x+1/4'
+  155  'z, -x+1/2, -y+1/2'
+  156  'z+1/4, y+1/4, -x+1/4'
+  157  '-z, x+1/2, -y+1/2'
+  158  '-z+1/4, -y+1/4, -x+1/4'
+  159  '-z, -x+1/2, y+1/2'
+  160  '-z+1/4, y+1/4, x+1/4'
+  161  'y, z+1/2, x+1/2'
+  162  'x+1/4, z+1/4, -y+1/4'
+  163  '-y, z+1/2, -x+1/2'
+  164  '-x+1/4, z+1/4, y+1/4'
+  165  '-y, -z+1/2, x+1/2'
+  166  '-x+1/4, -z+1/4, -y+1/4'
+  167  'y, -z+1/2, -x+1/2'
+  168  'x+1/4, -z+1/4, y+1/4'
+  169  '-x+1/4, -y+1/4, -z+1/4'
+  170  'y, -x+1/2, -z+1/2'
+  171  'x+1/4, y+1/4, -z+1/4'
+  172  '-y, x+1/2, -z+1/2'
+  173  '-x+1/4, y+1/4, z+1/4'
+  174  'y, x+1/2, z+1/2'
+  175  'x+1/4, -y+1/4, z+1/4'
+  176  '-y, -x+1/2, z+1/2'
+  177  '-z+1/4, -x+1/4, -y+1/4'
+  178  '-z, y+1/2, -x+1/2'
+  179  '-z+1/4, x+1/4, y+1/4'
+  180  '-z, -y+1/2, x+1/2'
+  181  'z+1/4, -x+1/4, y+1/4'
+  182  'z, y+1/2, x+1/2'
+  183  'z+1/4, x+1/4, -y+1/4'
+  184  'z, -y+1/2, -x+1/2'
+  185  '-y+1/4, -z+1/4, -x+1/4'
+  186  '-x, -z+1/2, y+1/2'
+  187  'y+1/4, -z+1/4, x+1/4'
+  188  'x, -z+1/2, -y+1/2'
+  189  'y+1/4, z+1/4, -x+1/4'
+  190  'x, z+1/2, y+1/2'
+  191  '-y+1/4, z+1/4, x+1/4'
+  192  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  16  0.125000  0.125000  0.125000  1
+  Na  Na1  8  0.000000  0.000000  0.000000  1
+  Na  Na2  8  0.000000  0.000000  0.500000  1
+  Cl  Cl3  32  0.118583  0.118583  0.881417  1
+# generated using pymatgen
+data_ID_5
+_symmetry_space_group_name_H-M   Pm-3m
+_cell_length_a   3.48603057
+_cell_length_b   3.48603057
+_cell_length_c   3.48603057
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   221
+_chemical_formula_structural   NaCl
+_cell_volume   42.36366980
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.500000  0.500000  0.500000  1
+  Cl  Cl1  1  0.000000  0.000000  0.000000  1
+# generated using pymatgen
+data_ID_6
+_symmetry_space_group_name_H-M   Fm-3m
+_cell_length_a   12.51939004
+_cell_length_b   12.51939004
+_cell_length_c   12.51939004
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   225
+_chemical_formula_structural   NaCl
+_cell_volume   1962.22818829
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+  49  'x+1/2, y+1/2, z'
+  50  '-x+1/2, -y+1/2, -z'
+  51  '-y+1/2, x+1/2, z'
+  52  'y+1/2, -x+1/2, -z'
+  53  '-x+1/2, -y+1/2, z'
+  54  'x+1/2, y+1/2, -z'
+  55  'y+1/2, -x+1/2, z'
+  56  '-y+1/2, x+1/2, -z'
+  57  'x+1/2, -y+1/2, -z'
+  58  '-x+1/2, y+1/2, z'
+  59  '-y+1/2, -x+1/2, -z'
+  60  'y+1/2, x+1/2, z'
+  61  '-x+1/2, y+1/2, -z'
+  62  'x+1/2, -y+1/2, z'
+  63  'y+1/2, x+1/2, -z'
+  64  '-y+1/2, -x+1/2, z'
+  65  'z+1/2, x+1/2, y'
+  66  '-z+1/2, -x+1/2, -y'
+  67  'z+1/2, -y+1/2, x'
+  68  '-z+1/2, y+1/2, -x'
+  69  'z+1/2, -x+1/2, -y'
+  70  '-z+1/2, x+1/2, y'
+  71  'z+1/2, y+1/2, -x'
+  72  '-z+1/2, -y+1/2, x'
+  73  '-z+1/2, x+1/2, -y'
+  74  'z+1/2, -x+1/2, y'
+  75  '-z+1/2, -y+1/2, -x'
+  76  'z+1/2, y+1/2, x'
+  77  '-z+1/2, -x+1/2, y'
+  78  'z+1/2, x+1/2, -y'
+  79  '-z+1/2, y+1/2, x'
+  80  'z+1/2, -y+1/2, -x'
+  81  'y+1/2, z+1/2, x'
+  82  '-y+1/2, -z+1/2, -x'
+  83  'x+1/2, z+1/2, -y'
+  84  '-x+1/2, -z+1/2, y'
+  85  '-y+1/2, z+1/2, -x'
+  86  'y+1/2, -z+1/2, x'
+  87  '-x+1/2, z+1/2, y'
+  88  'x+1/2, -z+1/2, -y'
+  89  '-y+1/2, -z+1/2, x'
+  90  'y+1/2, z+1/2, -x'
+  91  '-x+1/2, -z+1/2, -y'
+  92  'x+1/2, z+1/2, y'
+  93  'y+1/2, -z+1/2, -x'
+  94  '-y+1/2, z+1/2, x'
+  95  'x+1/2, -z+1/2, y'
+  96  '-x+1/2, z+1/2, -y'
+  97  'x+1/2, y, z+1/2'
+  98  '-x+1/2, -y, -z+1/2'
+  99  '-y+1/2, x, z+1/2'
+  100  'y+1/2, -x, -z+1/2'
+  101  '-x+1/2, -y, z+1/2'
+  102  'x+1/2, y, -z+1/2'
+  103  'y+1/2, -x, z+1/2'
+  104  '-y+1/2, x, -z+1/2'
+  105  'x+1/2, -y, -z+1/2'
+  106  '-x+1/2, y, z+1/2'
+  107  '-y+1/2, -x, -z+1/2'
+  108  'y+1/2, x, z+1/2'
+  109  '-x+1/2, y, -z+1/2'
+  110  'x+1/2, -y, z+1/2'
+  111  'y+1/2, x, -z+1/2'
+  112  '-y+1/2, -x, z+1/2'
+  113  'z+1/2, x, y+1/2'
+  114  '-z+1/2, -x, -y+1/2'
+  115  'z+1/2, -y, x+1/2'
+  116  '-z+1/2, y, -x+1/2'
+  117  'z+1/2, -x, -y+1/2'
+  118  '-z+1/2, x, y+1/2'
+  119  'z+1/2, y, -x+1/2'
+  120  '-z+1/2, -y, x+1/2'
+  121  '-z+1/2, x, -y+1/2'
+  122  'z+1/2, -x, y+1/2'
+  123  '-z+1/2, -y, -x+1/2'
+  124  'z+1/2, y, x+1/2'
+  125  '-z+1/2, -x, y+1/2'
+  126  'z+1/2, x, -y+1/2'
+  127  '-z+1/2, y, x+1/2'
+  128  'z+1/2, -y, -x+1/2'
+  129  'y+1/2, z, x+1/2'
+  130  '-y+1/2, -z, -x+1/2'
+  131  'x+1/2, z, -y+1/2'
+  132  '-x+1/2, -z, y+1/2'
+  133  '-y+1/2, z, -x+1/2'
+  134  'y+1/2, -z, x+1/2'
+  135  '-x+1/2, z, y+1/2'
+  136  'x+1/2, -z, -y+1/2'
+  137  '-y+1/2, -z, x+1/2'
+  138  'y+1/2, z, -x+1/2'
+  139  '-x+1/2, -z, -y+1/2'
+  140  'x+1/2, z, y+1/2'
+  141  'y+1/2, -z, -x+1/2'
+  142  '-y+1/2, z, x+1/2'
+  143  'x+1/2, -z, y+1/2'
+  144  '-x+1/2, z, -y+1/2'
+  145  'x, y+1/2, z+1/2'
+  146  '-x, -y+1/2, -z+1/2'
+  147  '-y, x+1/2, z+1/2'
+  148  'y, -x+1/2, -z+1/2'
+  149  '-x, -y+1/2, z+1/2'
+  150  'x, y+1/2, -z+1/2'
+  151  'y, -x+1/2, z+1/2'
+  152  '-y, x+1/2, -z+1/2'
+  153  'x, -y+1/2, -z+1/2'
+  154  '-x, y+1/2, z+1/2'
+  155  '-y, -x+1/2, -z+1/2'
+  156  'y, x+1/2, z+1/2'
+  157  '-x, y+1/2, -z+1/2'
+  158  'x, -y+1/2, z+1/2'
+  159  'y, x+1/2, -z+1/2'
+  160  '-y, -x+1/2, z+1/2'
+  161  'z, x+1/2, y+1/2'
+  162  '-z, -x+1/2, -y+1/2'
+  163  'z, -y+1/2, x+1/2'
+  164  '-z, y+1/2, -x+1/2'
+  165  'z, -x+1/2, -y+1/2'
+  166  '-z, x+1/2, y+1/2'
+  167  'z, y+1/2, -x+1/2'
+  168  '-z, -y+1/2, x+1/2'
+  169  '-z, x+1/2, -y+1/2'
+  170  'z, -x+1/2, y+1/2'
+  171  '-z, -y+1/2, -x+1/2'
+  172  'z, y+1/2, x+1/2'
+  173  '-z, -x+1/2, y+1/2'
+  174  'z, x+1/2, -y+1/2'
+  175  '-z, y+1/2, x+1/2'
+  176  'z, -y+1/2, -x+1/2'
+  177  'y, z+1/2, x+1/2'
+  178  '-y, -z+1/2, -x+1/2'
+  179  'x, z+1/2, -y+1/2'
+  180  '-x, -z+1/2, y+1/2'
+  181  '-y, z+1/2, -x+1/2'
+  182  'y, -z+1/2, x+1/2'
+  183  '-x, z+1/2, y+1/2'
+  184  'x, -z+1/2, -y+1/2'
+  185  '-y, -z+1/2, x+1/2'
+  186  'y, z+1/2, -x+1/2'
+  187  '-x, -z+1/2, -y+1/2'
+  188  'x, z+1/2, y+1/2'
+  189  'y, -z+1/2, -x+1/2'
+  190  '-y, z+1/2, x+1/2'
+  191  'x, -z+1/2, y+1/2'
+  192  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  32  0.158903  0.158903  0.841097  1
+  Cl  Cl1  32  0.138366  0.138366  0.361634  1
+# generated using pymatgen
+data_ID_8
+_symmetry_space_group_name_H-M   Pm-3m
+_cell_length_a   9.82683424
+_cell_length_b   9.82683424
+_cell_length_c   9.82683424
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   221
+_chemical_formula_structural   NaCl
+_cell_volume   948.94467140
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x, -y, -z'
+  10  '-x, y, z'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x, y, -z'
+  14  'x, -y, z'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+  17  'z, x, y'
+  18  '-z, -x, -y'
+  19  'z, -y, x'
+  20  '-z, y, -x'
+  21  'z, -x, -y'
+  22  '-z, x, y'
+  23  'z, y, -x'
+  24  '-z, -y, x'
+  25  '-z, x, -y'
+  26  'z, -x, y'
+  27  '-z, -y, -x'
+  28  'z, y, x'
+  29  '-z, -x, y'
+  30  'z, x, -y'
+  31  '-z, y, x'
+  32  'z, -y, -x'
+  33  'y, z, x'
+  34  '-y, -z, -x'
+  35  'x, z, -y'
+  36  '-x, -z, y'
+  37  '-y, z, -x'
+  38  'y, -z, x'
+  39  '-x, z, y'
+  40  'x, -z, -y'
+  41  '-y, -z, x'
+  42  'y, z, -x'
+  43  '-x, -z, -y'
+  44  'x, z, y'
+  45  'y, -z, -x'
+  46  '-y, z, x'
+  47  'x, -z, y'
+  48  '-x, z, -y'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  8  0.318500  0.318500  0.318500  1
+  Cl  Cl1  8  0.178249  0.178249  0.178249  1
+# generated using pymatgen
+data_ID_4
+_symmetry_space_group_name_H-M   P4_1
+_cell_length_a   9.25665504
+_cell_length_b   9.25665504
+_cell_length_c   7.65721682
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   76
+_chemical_formula_structural   NaCl
+_cell_volume   656.11369678
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z+1/4'
+  3  '-x, -y, z+1/2'
+  4  'y, -x, z+3/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.017232  0.521201  0.033925  1
+  Na  Na1  4  0.228768  0.270336  0.787539  1
+  Cl  Cl2  4  0.066688  0.701481  0.307845  1
+  Cl  Cl3  4  0.201283  0.565006  0.763483  1
+# generated using pymatgen
+data_ID_7
+_symmetry_space_group_name_H-M   P6_3/mmc
+_cell_length_a   8.11183673
+_cell_length_b   8.11183673
+_cell_length_c   10.46469999
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   194
+_chemical_formula_structural   NaCl
+_cell_volume   596.34257433
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z+1/2'
+  4  '-x+y, -x, -z+1/2'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z+1/2'
+  8  'x, y, -z+1/2'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z+1/2'
+  12  '-y, x-y, -z+1/2'
+  13  '-y, -x, -z+1/2'
+  14  'y, x, z+1/2'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z+1/2'
+  18  'x-y, -y, z+1/2'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z+1/2'
+  22  '-x, -x+y, z+1/2'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.333333  0.666667  0.898203  1
+  Na  Na1  2  0.000000  0.000000  0.250000  1
+  Na  Na2  2  0.333333  0.666667  0.250000  1
+  Cl  Cl3  6  0.025793  0.512896  0.750000  1
+  Cl  Cl4  2  0.000000  0.000000  0.000000  1
+# generated using pymatgen
+data_ID_9
+_symmetry_space_group_name_H-M   P6_3
+_cell_length_a   7.52112543
+_cell_length_b   7.52112543
+_cell_length_c   11.49166953
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   173
+_chemical_formula_structural   NaCl
+_cell_volume   562.96244273
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  2  0.000000  0.000000  0.211213  1
+  Na  Na1  2  0.000000  0.000000  0.470902  1
+  Na  Na2  2  0.333333  0.666667  0.120481  1
+  Na  Na3  2  0.333333  0.666667  0.561626  1
+  Cl  Cl4  6  0.000143  0.705278  0.090670  1
+  Cl  Cl5  2  0.333333  0.666667  0.340994  1
+# generated using pymatgen
+data_ID_10
+_symmetry_space_group_name_H-M   P1
+_cell_length_a   7.11814071
+_cell_length_b   7.12269332
+_cell_length_c   8.48478160
+_cell_angle_alpha   90.10775425
+_cell_angle_beta   90.08263086
+_cell_angle_gamma   98.26861189
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   NaCl
+_cell_volume   425.70801141
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.000363  0.325010  0.746142  1
+  Na  Na1  1  0.000439  0.825215  0.917982  1
+  Na  Na2  1  0.253613  0.576260  0.246360  1
+  Na  Na3  1  0.254703  0.077315  0.417518  1
+  Na  Na4  1  0.500386  0.825010  0.746052  1
+  Na  Na5  1  0.500394  0.325206  0.917922  1
+  Na  Na6  1  0.753646  0.076265  0.246291  1
+  Na  Na7  1  0.754653  0.577241  0.417438  1
+  Cl  Cl8  1  0.004075  0.826872  0.243765  1
+  Cl  Cl9  1  0.004313  0.327061  0.420722  1
+  Cl  Cl10  1  0.250149  0.074536  0.743304  1
+  Cl  Cl11  1  0.250626  0.575422  0.920976  1
+  Cl  Cl12  1  0.503848  0.326731  0.243743  1
+  Cl  Cl13  1  0.504505  0.827097  0.420640  1
+  Cl  Cl14  1  0.750107  0.574507  0.743338  1
+  Cl  Cl15  1  0.750596  0.075356  0.920974  1
+# generated using pymatgen
+data_ID_11
+_symmetry_space_group_name_H-M   P1
+_cell_length_a   7.37445361
+_cell_length_b   7.38055895
+_cell_length_c   8.30526298
+_cell_angle_alpha   90.05635724
+_cell_angle_beta   90.06704236
+_cell_angle_gamma   99.79116012
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   NaCl
+_cell_volume   445.45053788
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.075380  0.888265  0.863762  1
+  Na  Na1  1  0.075850  0.388490  0.030724  1
+  Na  Na2  1  0.323923  0.136003  0.363496  1
+  Na  Na3  1  0.323940  0.635926  0.530445  1
+  Na  Na4  1  0.575567  0.388494  0.863679  1
+  Na  Na5  1  0.575730  0.888415  0.030575  1
+  Na  Na6  1  0.823632  0.635693  0.363622  1
+  Na  Na7  1  0.823779  0.135768  0.530955  1
+  Cl  Cl8  1  0.073485  0.385650  0.362530  1
+  Cl  Cl9  1  0.073762  0.886099  0.531620  1
+  Cl  Cl10  1  0.324921  0.637941  0.862616  1
+  Cl  Cl11  1  0.325367  0.138520  0.030920  1
+  Cl  Cl12  1  0.573439  0.885863  0.362302  1
+  Cl  Cl13  1  0.573895  0.386320  0.531392  1
+  Cl  Cl14  1  0.825028  0.137763  0.862642  1
+  Cl  Cl15  1  0.825697  0.638371  0.031468  1
+# generated using pymatgen
+data_ID_12
+_symmetry_space_group_name_H-M   P1
+_cell_length_a   6.80625452
+_cell_length_b   6.81645470
+_cell_length_c   7.91749817
+_cell_angle_alpha   90.04730756
+_cell_angle_beta   90.04201560
+_cell_angle_gamma   90.01950455
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   NaCl
+_cell_volume   367.32832618
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.369638  0.797249  0.087043  1
+  Na  Na1  1  0.370181  0.797266  0.586850  1
+  Na  Na2  1  0.370255  0.296967  0.086508  1
+  Na  Na3  1  0.370364  0.297030  0.586614  1
+  Na  Na4  1  0.869519  0.797025  0.839371  1
+  Na  Na5  1  0.869538  0.796998  0.339614  1
+  Na  Na6  1  0.870491  0.296920  0.839259  1
+  Na  Na7  1  0.870520  0.296884  0.339247  1
+  Cl  Cl8  1  0.035835  0.046964  0.088966  1
+  Cl  Cl9  1  0.035896  0.046946  0.588996  1
+  Cl  Cl10  1  0.203897  0.547583  0.337276  1
+  Cl  Cl11  1  0.204031  0.547653  0.837237  1
+  Cl  Cl12  1  0.535946  0.047194  0.837303  1
+  Cl  Cl13  1  0.536024  0.047367  0.337011  1
+  Cl  Cl14  1  0.703833  0.547243  0.088198  1
+  Cl  Cl15  1  0.704320  0.546745  0.588126  1
+# generated using pymatgen
+data_ID_13
+_symmetry_space_group_name_H-M   P1
+_cell_length_a   6.94408857
+_cell_length_b   6.98875063
+_cell_length_c   7.94792068
+_cell_angle_alpha   90.09897604
+_cell_angle_beta   106.00081102
+_cell_angle_gamma   99.52481618
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   NaCl
+_cell_volume   365.20539705
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.070800  0.335250  0.558841  1
+  Na  Na1  1  0.070923  0.835037  0.309510  1
+  Na  Na2  1  0.071131  0.835532  0.809221  1
+  Na  Na3  1  0.071219  0.335235  0.059001  1
+  Na  Na4  1  0.570636  0.085081  0.183762  1
+  Na  Na5  1  0.570807  0.585360  0.934131  1
+  Na  Na6  1  0.570919  0.584843  0.433911  1
+  Na  Na7  1  0.571224  0.085374  0.684106  1
+  Cl  Cl8  1  0.321195  0.210249  0.872214  1
+  Cl  Cl9  1  0.321222  0.210382  0.372074  1
+  Cl  Cl10  1  0.321660  0.710163  0.622332  1
+  Cl  Cl11  1  0.321675  0.710478  0.122281  1
+  Cl  Cl12  1  0.820985  0.460118  0.747186  1
+  Cl  Cl13  1  0.821087  0.460642  0.247064  1
+  Cl  Cl14  1  0.821236  0.960177  0.997038  1
+  Cl  Cl15  1  0.821263  0.960382  0.497192  1
+# generated using pymatgen
+data_ID_14
+_symmetry_space_group_name_H-M   P1
+_cell_length_a   6.94787365
+_cell_length_b   6.96891932
+_cell_length_c   8.01857261
+_cell_angle_alpha   90.03052810
+_cell_angle_beta   106.31502149
+_cell_angle_gamma   99.47946688
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   NaCl
+_cell_volume   367.08073295
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.096069  0.410849  0.888205  1
+  Na  Na1  1  0.096147  0.410752  0.387666  1
+  Na  Na2  1  0.096250  0.910346  0.138443  1
+  Na  Na3  1  0.096603  0.910600  0.639014  1
+  Na  Na4  1  0.595745  0.660378  0.762420  1
+  Na  Na5  1  0.596147  0.160556  0.513767  1
+  Na  Na6  1  0.596235  0.660380  0.262996  1
+  Na  Na7  1  0.596615  0.159717  0.013836  1
+  Cl  Cl8  1  0.346100  0.285512  0.200858  1
+  Cl  Cl9  1  0.346185  0.785393  0.450094  1
+  Cl  Cl10  1  0.346275  0.785163  0.950645  1
+  Cl  Cl11  1  0.346326  0.285288  0.701077  1
+  Cl  Cl12  1  0.845506  0.535644  0.075247  1
+  Cl  Cl13  1  0.846169  0.035636  0.825979  1
+  Cl  Cl14  1  0.846459  0.035302  0.326416  1
+  Cl  Cl15  1  0.846622  0.535790  0.575504  1
+# generated using pymatgen
+data_ID_15
+_symmetry_space_group_name_H-M   F-43m
+_cell_length_a   11.83105714
+_cell_length_b   11.83105714
+_cell_length_c   11.83105714
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   216
+_chemical_formula_structural   NaCl
+_cell_volume   1656.03936401
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x, -y, -z'
+  6  'y, x, z'
+  7  '-x, y, -z'
+  8  '-y, -x, z'
+  9  'z, x, y'
+  10  '-z, y, -x'
+  11  'z, -x, -y'
+  12  '-z, -y, x'
+  13  '-z, x, -y'
+  14  'z, y, x'
+  15  '-z, -x, y'
+  16  'z, -y, -x'
+  17  'y, z, x'
+  18  '-x, -z, y'
+  19  '-y, z, -x'
+  20  'x, -z, -y'
+  21  '-y, -z, x'
+  22  'x, z, y'
+  23  'y, -z, -x'
+  24  '-x, z, -y'
+  25  'x+1/2, y+1/2, z'
+  26  'y+1/2, -x+1/2, -z'
+  27  '-x+1/2, -y+1/2, z'
+  28  '-y+1/2, x+1/2, -z'
+  29  'x+1/2, -y+1/2, -z'
+  30  'y+1/2, x+1/2, z'
+  31  '-x+1/2, y+1/2, -z'
+  32  '-y+1/2, -x+1/2, z'
+  33  'z+1/2, x+1/2, y'
+  34  '-z+1/2, y+1/2, -x'
+  35  'z+1/2, -x+1/2, -y'
+  36  '-z+1/2, -y+1/2, x'
+  37  '-z+1/2, x+1/2, -y'
+  38  'z+1/2, y+1/2, x'
+  39  '-z+1/2, -x+1/2, y'
+  40  'z+1/2, -y+1/2, -x'
+  41  'y+1/2, z+1/2, x'
+  42  '-x+1/2, -z+1/2, y'
+  43  '-y+1/2, z+1/2, -x'
+  44  'x+1/2, -z+1/2, -y'
+  45  '-y+1/2, -z+1/2, x'
+  46  'x+1/2, z+1/2, y'
+  47  'y+1/2, -z+1/2, -x'
+  48  '-x+1/2, z+1/2, -y'
+  49  'x+1/2, y, z+1/2'
+  50  'y+1/2, -x, -z+1/2'
+  51  '-x+1/2, -y, z+1/2'
+  52  '-y+1/2, x, -z+1/2'
+  53  'x+1/2, -y, -z+1/2'
+  54  'y+1/2, x, z+1/2'
+  55  '-x+1/2, y, -z+1/2'
+  56  '-y+1/2, -x, z+1/2'
+  57  'z+1/2, x, y+1/2'
+  58  '-z+1/2, y, -x+1/2'
+  59  'z+1/2, -x, -y+1/2'
+  60  '-z+1/2, -y, x+1/2'
+  61  '-z+1/2, x, -y+1/2'
+  62  'z+1/2, y, x+1/2'
+  63  '-z+1/2, -x, y+1/2'
+  64  'z+1/2, -y, -x+1/2'
+  65  'y+1/2, z, x+1/2'
+  66  '-x+1/2, -z, y+1/2'
+  67  '-y+1/2, z, -x+1/2'
+  68  'x+1/2, -z, -y+1/2'
+  69  '-y+1/2, -z, x+1/2'
+  70  'x+1/2, z, y+1/2'
+  71  'y+1/2, -z, -x+1/2'
+  72  '-x+1/2, z, -y+1/2'
+  73  'x, y+1/2, z+1/2'
+  74  'y, -x+1/2, -z+1/2'
+  75  '-x, -y+1/2, z+1/2'
+  76  '-y, x+1/2, -z+1/2'
+  77  'x, -y+1/2, -z+1/2'
+  78  'y, x+1/2, z+1/2'
+  79  '-x, y+1/2, -z+1/2'
+  80  '-y, -x+1/2, z+1/2'
+  81  'z, x+1/2, y+1/2'
+  82  '-z, y+1/2, -x+1/2'
+  83  'z, -x+1/2, -y+1/2'
+  84  '-z, -y+1/2, x+1/2'
+  85  '-z, x+1/2, -y+1/2'
+  86  'z, y+1/2, x+1/2'
+  87  '-z, -x+1/2, y+1/2'
+  88  'z, -y+1/2, -x+1/2'
+  89  'y, z+1/2, x+1/2'
+  90  '-x, -z+1/2, y+1/2'
+  91  '-y, z+1/2, -x+1/2'
+  92  'x, -z+1/2, -y+1/2'
+  93  '-y, -z+1/2, x+1/2'
+  94  'x, z+1/2, y+1/2'
+  95  'y, -z+1/2, -x+1/2'
+  96  '-x, z+1/2, -y+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  24  0.000000  0.000000  0.223249  1
+  Na  Na1  4  0.000000  0.000000  0.500000  1
+  Na  Na2  4  0.250000  0.250000  0.250000  1
+  Cl  Cl3  24  0.023176  0.250000  0.250000  1
+  Cl  Cl4  4  0.000000  0.000000  0.000000  1
+  Cl  Cl5  4  0.250000  0.250000  0.750000  1
+# generated using pymatgen
+data_ID_16
+_symmetry_space_group_name_H-M   R3m
+_cell_length_a   10.44091848
+_cell_length_b   10.44091848
+_cell_length_c   12.53456873
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   160
+_chemical_formula_structural   NaCl
+_cell_volume   1183.36150525
+_cell_formula_units_Z   24
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-y+2/3, x-y+1/3, z+1/3'
+  9  '-x+y+2/3, -x+1/3, z+1/3'
+  10  '-y+2/3, -x+1/3, z+1/3'
+  11  '-x+y+2/3, y+1/3, z+1/3'
+  12  'x+2/3, x-y+1/3, z+1/3'
+  13  'x+1/3, y+2/3, z+2/3'
+  14  '-y+1/3, x-y+2/3, z+2/3'
+  15  '-x+y+1/3, -x+2/3, z+2/3'
+  16  '-y+1/3, -x+2/3, z+2/3'
+  17  '-x+y+1/3, y+2/3, z+2/3'
+  18  'x+1/3, x-y+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  9  0.184556  0.369112  0.048792  1
+  Na  Na1  9  0.185658  0.371315  0.612946  1
+  Na  Na2  3  0.000000  0.000000  0.538349  1
+  Na  Na3  3  0.000000  0.000000  0.781293  1
+  Cl  Cl4  9  0.045491  0.522745  0.501367  1
+  Cl  Cl5  9  0.201573  0.798427  0.275172  1
+  Cl  Cl6  3  0.000000  0.000000  0.025105  1
+  Cl  Cl7  3  0.000000  0.000000  0.340422  1
+# generated using pymatgen
+data_ID_18
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   3.03924445
+_cell_length_b   3.53255640
+_cell_length_c   3.56118929
+_cell_angle_alpha   83.28708832
+_cell_angle_beta   83.39540420
+_cell_angle_gamma   83.81754114
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   NaCl
+_cell_volume   37.54735955
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.500000  0.500000  0.500000  1
+  Cl  Cl1  1  0.000000  0.000000  0.000000  1
+# generated using pymatgen
+data_ID_19
+_symmetry_space_group_name_H-M   Pn-3m
+_cell_length_a   10.00234597
+_cell_length_b   10.00234597
+_cell_length_c   10.00234597
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   224
+_chemical_formula_structural   NaCl
+_cell_volume   1000.70395662
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+1/2'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z+1/2'
+  5  'x, -y, -z'
+  6  '-y+1/2, -x+1/2, -z+1/2'
+  7  '-x, y, -z'
+  8  'y+1/2, x+1/2, -z+1/2'
+  9  'z, x, y'
+  10  'z+1/2, -y+1/2, x+1/2'
+  11  'z, -x, -y'
+  12  'z+1/2, y+1/2, -x+1/2'
+  13  '-z, x, -y'
+  14  '-z+1/2, -y+1/2, -x+1/2'
+  15  '-z, -x, y'
+  16  '-z+1/2, y+1/2, x+1/2'
+  17  'y, z, x'
+  18  'x+1/2, z+1/2, -y+1/2'
+  19  '-y, z, -x'
+  20  '-x+1/2, z+1/2, y+1/2'
+  21  '-y, -z, x'
+  22  '-x+1/2, -z+1/2, -y+1/2'
+  23  'y, -z, -x'
+  24  'x+1/2, -z+1/2, y+1/2'
+  25  '-x+1/2, -y+1/2, -z+1/2'
+  26  'y, -x, -z'
+  27  'x+1/2, y+1/2, -z+1/2'
+  28  '-y, x, -z'
+  29  '-x+1/2, y+1/2, z+1/2'
+  30  'y, x, z'
+  31  'x+1/2, -y+1/2, z+1/2'
+  32  '-y, -x, z'
+  33  '-z+1/2, -x+1/2, -y+1/2'
+  34  '-z, y, -x'
+  35  '-z+1/2, x+1/2, y+1/2'
+  36  '-z, -y, x'
+  37  'z+1/2, -x+1/2, y+1/2'
+  38  'z, y, x'
+  39  'z+1/2, x+1/2, -y+1/2'
+  40  'z, -y, -x'
+  41  '-y+1/2, -z+1/2, -x+1/2'
+  42  '-x, -z, y'
+  43  'y+1/2, -z+1/2, x+1/2'
+  44  'x, -z, -y'
+  45  'y+1/2, z+1/2, -x+1/2'
+  46  'x, z, y'
+  47  '-y+1/2, z+1/2, x+1/2'
+  48  '-x, z, -y'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  8  0.117365  0.117365  0.882635  1
+  Cl  Cl1  4  0.250000  0.250000  0.250000  1
+  Cl  Cl2  4  0.250000  0.250000  0.750000  1

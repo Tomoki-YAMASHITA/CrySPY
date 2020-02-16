@@ -22,11 +22,11 @@ Jupyter Notebook to visualize results for Random Search.
    single: cryspy_analyzer_BO.ipynb
 
 cryspy_analyzer_BO.ipynb
-==========================
+=================================
 
 [github] https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/utility/cryspy_analyzer_BO.ipynb
 
-Jupyter Notebook to visualize results for Bayesian Optimization.
+Jupyter Notebook to visualize results for Bayesian Optimization
 
 
 .. index::
@@ -41,6 +41,17 @@ Jupyter Notebook to visualize results for LAQA.
 
 
 .. index::
+   single: cryspy_analyzer_EA.ipynb
+
+cryspy_analyzer_EA.ipynb
+=================================
+
+[github] https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/utility/cryspy_analyzer_EA.ipynb
+
+Jupyter Notebook to visualize results for Evolutionary algorithm
+
+
+.. index::
    single: pkl_data.ipynb
 
 pkl_data.ipynb
@@ -50,6 +61,34 @@ pkl_data.ipynb
 
 Jupyter Notebook to analyze pickled data in CrySPY.
 
+
+
+.. index::
+   single: only_structure_generation
+
+only_structure_generation
+==============================================
+
+``only_structure_generation`` directory includes:
+
+- ``structure_generation.ipynb``
+- ``sample_data_Si16_for_EA`` directory
+
+
+structure_generation.ipynb
+-----------------------------
+
+[github] https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/utility/only_structure_generation/structure_generation.ipynb
+
+Jupyter Notebook for tutorial to generate structures using CrySPY.
+You can generate crystal structures with RS and EA partly using CrySPY  
+(Here no CSP, only structure generation) 
+
+
+sample_data_Si16_for_EA
+---------------------------
+
+Sample data used in ``structure_generation.ipynb`` for parents in EA.
 
 
 .. index::
@@ -163,7 +202,7 @@ You can change a tolerance value for checking the space group with ``-t`` or ``-
 
 struc2cif.py
 ===================
-``struc2cif.py`` can covert a structure file to a cif file using pymatgen. Structure.from_file() in pymatgen is used in this code. Supported formats include CIF, POSCAR/CONTCAR, ... etc. XXX.vasp file (POSCAR format) is also supported in this code. (input file name + '.cif') file is generated.
+``struc2cif.py`` can convert a structure file to a cif file using pymatgen. Structure.from_file() in pymatgen is used in this code. Supported formats include CIF, POSCAR/CONTCAR, ... etc. XXX.vasp file (POSCAR format) is also supported in this code. (input file name + '.cif') file is generated.
 
 .. seealso::
    `pymatgen <http://pymatgen.org/>`_
@@ -180,3 +219,22 @@ You can change a tolerance value for checking the space group with ``-t`` or ``-
 
 
 
+.. index::
+   single: qe2vasp_cif.py
+
+qe2vasp_cif.py
+===================
+``qe2vasp_cif.py`` can generate structure data in VASP and cif formats from an input and output of QE.
+
+
+You can obtain input structure data (``in_struc.vasp`` and ``in_struc.cif``) from an input of QE (pwscf.in)
+
+.. code-block:: bash
+
+   $ python qe2vasp_cif.py pwscf.in
+
+You can obtain optimized structure data (``out_struc.vasp`` and ``out_struc.cif``) from an output of QE (pwscf.out). The input of QE (pwscf.in) is also required as a first argument.
+
+.. code-block:: bash
+
+   $ python qe2vasp_cif.py pwscf.in pwscf.out

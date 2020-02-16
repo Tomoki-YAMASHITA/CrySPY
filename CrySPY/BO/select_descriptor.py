@@ -1,7 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
+'''
+Select descriptors
+    - FP: FingerPrint
+'''
 
 from .. import utility
 from ..calc_dscrpt.FP.calc_FP import Calc_FP

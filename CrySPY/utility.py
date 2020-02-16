@@ -1,6 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
+'''
+Utility for CrySPY
+'''
 
 from datetime import datetime
 import os
@@ -24,7 +24,9 @@ def check_fwpath():
 
 def check_fppath():
     # ---------- check cal_fingerprint executable file
-    fppath = os.path.dirname(os.path.abspath(__file__)) + '/f-fingerprint/cal_fingerprint'
+    fppath = os.path.dirname(
+        os.path.abspath(__file__)) + '/f-fingerprint/cal_fingerprint'
     if not os.path.isfile(fppath):
-        raise IOError('There is no cal_fingerprint program in {}'.format(fppath))
+        raise IOError('There is no cal_fingerprint program in {}'.format(
+            fppath))
     return fppath

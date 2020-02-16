@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Calculation files in VASP
+'''
 
 import os
 
@@ -20,15 +21,3 @@ def check_input_vasp():
         else:
             if not os.path.isfile('./calc_in/' + f):
                 raise IOError('Could not find ./calc_in/' + f)
-
-
-def clean_calc_files_vasp(work_path):
-    # ---------- clean input files
-    vasp_files = ['POSCAR', 'tmp.cif', 'WAVECAR', 'CHGCAR', 'STOPCAR']
-    for f in vasp_files:
-        if os.path.isfile(work_path+f):
-            os.remove(work_path+f)
-
-    # ---------- clear stat file
-    if os.path.isfile(work_path+'stat_job'):
-        os.remove(work_path+'stat_job')

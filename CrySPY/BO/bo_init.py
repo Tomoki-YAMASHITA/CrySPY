@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+'''
+Initialize Bayesian optimization
+'''
 
-from __future__ import print_function
-
-import ConfigParser
+import configparser
 import random
 
 import pandas as pd
 
 from .select_descriptor import select_descriptor
-from ..IO import pkl_data
+from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
 
@@ -25,52 +24,63 @@ def initialize(stat, init_struc_data, rslt_data):
 
     # ---------- initialize
     n_selection = 1
+    id_running = []
+    id_select_hist = []
+    bo_mean = {}
+    bo_var = {}
+    bo_score = {}
 
     # ---------- rslt_data, add and sort
     rslt_data['Select'] = pd.Series(dtype=int)
-    rslt_data = rslt_data[['Select', 'Struc_ID', 'Spg_num', 'Spg_sym', 'Spg_num_opt',
+    rslt_data = rslt_data[['Select', 'Spg_num',
+                           'Spg_sym', 'Spg_num_opt',
                            'Spg_sym_opt', 'E_eV_atom', 'Magmom', 'Opt']]
     pkl_data.save_rslt(rslt_data)
 
     # ---------- random select
     all_id = [i for i in range(len(init_struc_data))]
-    if rin.manual_select_bo is not None:
+    if rin.manual_select_bo:
         # ------ manual select bo
-        print('Manual select: {}'.format(' '.join(str(i) for i in rin.manual_select_bo)))
+        print('Manual select: {}'.format(
+            ' '.join(str(i) for i in rin.manual_select_bo)))
         with open('cryspy.out', 'a') as fout:
-            fout.write('Manual select: {}\n'.format(' '.join(str(i) for i in rin.manual_select_bo)))
-        nselect = rin.interval - len(rin.manual_select_bo)
-        id_to_calc = rin.manual_select_bo
+            fout.write('Manual select: {}\n'.format(
+                ' '.join(str(i) for i in rin.manual_select_bo)))
+        nselect = rin.nselect_bo - len(rin.manual_select_bo)
+        id_queueing = rin.manual_select_bo[:]    # shallow copy
         if 0 < nselect:
-            diff_id = list(set(all_id) - set(id_to_calc))
-            id_to_calc.extend(random.sample(diff_id, nselect))
-        # -- delete the value for manual_select_bo in cryspy.in
-        config = ConfigParser.ConfigParser()
+            diff_id = list(set(all_id) - set(id_queueing))
+            id_queueing.extend(random.sample(diff_id, nselect))
+        # ------ delete the value for manual_select_bo in cryspy.in
+        config = configparser.ConfigParser()
         config.read('cryspy.in')
         config.set('BO', 'manual_select_bo', '')
         with open('cryspy.in', 'w') as f:
             config.write(f)
     else:
-        id_to_calc = random.sample(all_id, rin.interval)
+        id_queueing = random.sample(all_id, rin.nselect_bo)
+
+    # ---------- id_select_hist
+    id_select_hist.append(id_queueing[:])    # append shallow copy
 
     # ---------- calc descriptor
     init_dscrpt_data = select_descriptor(init_struc_data)
     opt_dscrpt_data = {}  # initialize in dict
 
     # ---------- save for BO
-    bo_id_data = (n_selection, id_to_calc)
+    bo_id_data = (n_selection, id_queueing, id_running, id_select_hist)
     pkl_data.save_bo_id(bo_id_data)
-    bo_data = (init_dscrpt_data, opt_dscrpt_data)
+    bo_data = (init_dscrpt_data, opt_dscrpt_data, bo_mean, bo_var, bo_score)
     pkl_data.save_bo_data(bo_data)
 
     # ---------- status
-    stat.set('status', 'selection', '{}'.format(n_selection))
-    stat.set('status', 'selected_id', '{}'.format(' '.join(str(a) for a in id_to_calc)))
-    stat.set('status', 'id_to_calc', '{}'.format(' '.join(str(a) for a in id_to_calc)))
-    with open('cryspy.stat', 'w') as fstat:
-        stat.write(fstat)
+    io_stat.set_common(stat, 'selection', n_selection)
+    io_stat.set_id(stat, 'selected_id', id_queueing)
+    io_stat.set_id(stat, 'id_queueing', id_queueing)
+    io_stat.write_stat(stat)
 
     # ---------- out and log
-    print('selected_id: {}'.format(' '.join(str(a) for a in id_to_calc)))
+    print('selected_id: {}'.format(' '.join(str(a) for a in id_queueing)))
     with open('cryspy.out', 'a') as fout:
-        fout.write('selected_id: {}\n\n'.format(' '.join(str(a) for a in id_to_calc)))
+        fout.write('selected_id: {}\n\n'.format(
+            ' '.join(str(a) for a in id_queueing)))
