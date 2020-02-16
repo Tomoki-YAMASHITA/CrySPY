@@ -52,7 +52,7 @@ At least one optimizer is required.
 ## Reference
 ### Bayesian optimization
 * T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2018).
-    -https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
+    - https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
 
 ### LAQA
 * K.Terayama, T. Yamashita, T. Oguchi, and K. Tsuda, npj Comput. Mater. **4**, 32 (2018).
