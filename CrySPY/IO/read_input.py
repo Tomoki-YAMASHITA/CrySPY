@@ -27,9 +27,9 @@ def readin():
     if algo == 'LAQA':
         if not calc_code == 'VASP':
             raise NotImplementedError('LAQA: only VASP for now')
-    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS']:
+    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX']:
         raise NotImplementedError(
-            'calc_code must be VASP, QE, soiap, or LAMMPS')
+            'calc_code must be VASP, QE, OMX, soiap, or LAMMPS')
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
@@ -206,6 +206,32 @@ def readin():
                              ' check kppvol and nstage')
         try:
             force_gamma = config.getboolean('QE', 'force_gamma')
+        except configparser.NoOptionError:
+            force_gamma = False
+    
+    # ---------- OpenMX
+    elif calc_code == 'OMX':
+        # ------ global declaration
+        global OMX_infile, OMX_outfile
+        global upSpin, downSpin
+        upSpin   = {}
+        downSpin = {}
+        # ------ read intput variables
+        kpt_flag   = True
+        OMX_infile  = config.get('OMX', 'OMX_infile')
+        OMX_outfile = config.get('OMX', 'OMX_outfile')
+        ValenceElec = config.get('OMX', 'ValenceElectrons')
+        ValElecIn = ValenceElec.split()
+        for i in range(0, len(ValElecIn), 3):
+            upSpin[ValElecIn[i]]   = ValElecIn[i+1]
+            downSpin[ValElecIn[i]] = ValElecIn[i+2]
+        kppvol = config.get('OMX', 'kppvol')
+        kppvol = [int(x) for x in kppvol.split()]    # character --> int
+        if not len(kppvol) == nstage:
+            raise ValueError('not len(kppvol) == nstage,'
+                            ' check kppvol and nstage')
+        try:
+            force_gamma = config.getboolean('OMX', 'force_gamma')
         except configparser.NoOptionError:
             force_gamma = False
 
@@ -545,6 +571,15 @@ def writeout():
                 ' '.join(str(c) for c in kppvol)))
             fout.write('force_gamma = {}\n'.format(force_gamma))
 
+        # ------- OMX
+        if calc_code == 'OMX':
+            fout.write('# ------ OMX section\n')
+            fout.write('OMX_infile = {}\n'.format(OMX_infile))
+            fout.write('OMX_outfile = {}\n'.format(OMX_outfile))
+            fout.write('kppvol = {}\n'.format(
+                ' '.join(str(c) for c in kppvol)))
+            fout.write('force_gamma = {}\n'.format(force_gamma))
+
         # ------ soiap
         if calc_code == 'soiap':
             fout.write('# ------ soiap section\n')
@@ -657,6 +692,14 @@ def save_stat(stat):
     if calc_code == 'QE':
         stat.set('input', 'qe_infile', '{}'.format(qe_infile))
         stat.set('input', 'qe_outfile', '{}'.format(qe_outfile))
+        stat.set('input', 'kppvol',
+                 '{}'.format(' '.join(str(c) for c in kppvol)))
+        stat.set('input', 'force_gamma', '{}'.format(force_gamma))
+    
+    # ---------- OMX
+    if calc_code == 'OMX':
+        stat.set('input', 'OMX_infile', '{}'.format(OMX_infile))
+        stat.set('input', 'OMX_outfile', '{}'.format(OMX_outfile))
         stat.set('input', 'kppvol',
                  '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('input', 'force_gamma', '{}'.format(force_gamma))
@@ -779,6 +822,13 @@ def diffinstat(stat):
     if old_calc_code == 'QE':
         old_qe_infile = stat.get('input', 'qe_infile')
         old_qe_outfile = stat.get('input', 'qe_outfile')
+        old_kppvol = stat.get('input', 'kppvol')
+        old_kppvol = [int(x) for x in old_kppvol.split()]  # int list
+        old_force_gamma = stat.getboolean('input', 'force_gamma')
+    
+    if old_calc_code == 'OMX':
+        old_OMX_infile = stat.get('input', 'OMX_infile')
+        old_OMX_outfile = stat.get('input', 'OMX_outfile')
         old_kppvol = stat.get('input', 'kppvol')
         old_kppvol = [int(x) for x in old_kppvol.split()]  # int list
         old_force_gamma = stat.getboolean('input', 'force_gamma')
@@ -1023,6 +1073,21 @@ def diffinstat(stat):
             raise ValueError('Do not change qe_infile')
         if not old_qe_outfile == qe_outfile:
             raise ValueError('Do not change qe_outfile')
+        if not old_kppvol == kppvol:
+            diff_out('kppvol', old_kppvol, kppvol)
+            io_stat.set_input_common(stat, 'kppvol', '{}'.format(
+                ' '.join(str(x) for x in kppvol)))
+            logic_change = True
+        if not old_force_gamma == force_gamma:
+            diff_out('force_gamma', old_force_gamma, force_gamma)
+            io_stat.set_input_common(stat, 'force_gamma', force_gamma)
+            logic_change = True
+    # ------ OMX
+    if calc_code == 'OMX':
+        if not old_OMX_infile == OMX_infile:
+            raise ValueError('Do not change OMX_infile')
+        if not old_OMX_outfile == OMX_outfile:
+            raise ValueError('Do not change OMX_outfile')
         if not old_kppvol == kppvol:
             diff_out('kppvol', old_kppvol, kppvol)
             io_stat.set_input_common(stat, 'kppvol', '{}'.format(
