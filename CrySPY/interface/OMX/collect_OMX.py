@@ -6,6 +6,7 @@ info at hikaruri.jp
 
 import numpy as np
 import re
+import sys
 from pymatgen.core.units import Energy
 
 from . import structure as OMX_structure
@@ -33,7 +34,12 @@ def collect_OMX(current_id, work_path):
                 energy = float(Energy(energy, 'Ha').to('eV'))
                 energy = energy / float(rin.natot)
                 break	
-        magmom = np.nan # not implement (2020/03/05)
+        magmom = np.nan # implemented (2020/10/03)
+        for line in lines:
+            if line.find("muB") >= 0:
+                muB = line.split()
+                magmom = float(muB[4])
+                break
     except:
         energy = np.nan    # error
         magmom = np.nan    # error
