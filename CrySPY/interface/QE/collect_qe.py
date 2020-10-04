@@ -32,7 +32,12 @@ def collect_qe(current_id, work_path):
                 energy = float(Energy(energy, 'Ry').to('eV'))    # Ry --> eV
                 energy = energy/float(rin.natot)    # eV/cell --> eV/atom
                 break
-        magmom = np.nan    # not implemented yet...
+        magmom = np.nan    # implemented by H. Sawahata 2020/10/04
+        for line in reversed(lines):
+            if line.find("total magnetization") >= 0:
+                muB = line.split()
+                magmom = float(muB[3])
+                break
     except:
         energy = np.nan    # error
         magmom = np.nan    # error
