@@ -6,7 +6,6 @@ info at hikaruri.jp
 
 import numpy as np
 import re
-import sys
 from pymatgen.core.units import Energy
 
 from . import structure as OMX_structure
