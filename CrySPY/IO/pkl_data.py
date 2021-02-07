@@ -71,15 +71,26 @@ def save_struc_step(struc_step_data):
         pickle.dump(struc_step_data, f)
 
 
-def load_fs_step():
-    with open('./data/pkl_data/fs_step_data.pkl', 'rb') as f:
-        fs_step_data = pickle.load(f)
-    return fs_step_data
+def load_force_step():
+    with open('./data/pkl_data/force_step_data.pkl', 'rb') as f:
+        force_step_data = pickle.load(f)
+    return force_step_data
 
 
-def save_fs_step(fs_step_data):
-    with open('./data/pkl_data/fs_step_data.pkl', 'wb') as f:
-        pickle.dump(fs_step_data, f)
+def save_force_step(force_step_data):
+    with open('./data/pkl_data/force_step_data.pkl', 'wb') as f:
+        pickle.dump(force_step_data, f)
+
+
+def load_stress_step():
+    with open('./data/pkl_data/stress_step_data.pkl', 'rb') as f:
+        stress_step_data = pickle.load(f)
+    return stress_step_data
+
+
+def save_stress_step(stress_step_data):
+    with open('./data/pkl_data/stress_step_data.pkl', 'wb') as f:
+        pickle.dump(stress_step_data, f)
 
 
 def load_rs_id():

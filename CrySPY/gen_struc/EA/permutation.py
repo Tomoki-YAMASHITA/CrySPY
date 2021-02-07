@@ -2,6 +2,8 @@
 Permutaion class
 '''
 
+import sys
+
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
@@ -101,11 +103,21 @@ class Permutation:
                 else:
                     n -= 1
             # ------ check distance
-            if check_distance(self.child, self.atype, self.mindist):
+            success, mindist_ij, dist = check_distance(self.child,
+                                                       self.atype,
+                                                       self.mindist)
+            if success:
                 self.child = sort_by_atype(self.child, self.atype)
                 return self.child
-            else:    # fail
+            else:
+                sys.stderr.write('mindist in permutation: {} - {}, {}. retry.\n'.format(
+                    self.atype[mindist_ij[0]],
+                    self.atype[mindist_ij[1]],
+                    dist))
                 cnt += 1
                 if cnt >= self.maxcnt_ea:
+                    print('Permutatin: could not satisfy min_dist' +
+                          ' in {} times'.format(self.maxcnt_ea))
+                    print('Change parent')
                     self.child = None
                     return None    # change parent

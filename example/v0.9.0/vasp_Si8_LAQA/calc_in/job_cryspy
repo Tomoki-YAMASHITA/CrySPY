@@ -1,0 +1,12 @@
+#!/bin/sh
+#$ -cwd
+#$ -V -S /bin/bash
+####$ -V -S /bin/zsh
+#$ -N Si_CrySPY_ID
+#$ -pe smp 10
+####$ -q ibis1.q
+####$ -q ibis2.q
+
+mpirun -np $NSLOTS vasp_std
+
+sed -i -e '3 s/^.*$/done/' stat_job

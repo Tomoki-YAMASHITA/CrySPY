@@ -1,0 +1,70 @@
+2020/03/17 15:13:33
+CrySPY 0.8.0
+Start cryspy.py
+
+Read input file, cryspy.in
+Write input data in cryspy.out
+Save input data in cryspy.stat
+Make data directory ./data/pkl_data
+
+# --------- Generate initial structures
+Structure ID      0 was generated. Space group: 149 --> 187 P-6m2
+Structure ID      1 was generated. Space group: 209 --> 225 Fm-3m
+Structure ID      2 was generated. Space group: 132 --> 132 P4_2/mcm
+Structure ID      3 was generated. Space group: 103 --> 103 P4cc
+Structure ID      4 was generated. Space group: 163 --> 163 P-31c
+
+
+
+2020/03/17 15:26:11
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      0: submit job, Stage 1
+ID      1: submit job, Stage 1
+ID      2: submit job, Stage 1
+ID      3: submit job, Stage 1
+ID      4: submit job, Stage 1
+
+
+
+2020/03/17 16:52:36
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      0: Stage 1 Done!
+    submitted job, ID      0 Stage 2
+ID      1: Stage 1 Done!
+    submitted job, ID      1 Stage 2
+ID      2: Stage 1 Done!
+    submitted job, ID      2 Stage 2
+ID      3: Stage 1 Done!
+    submitted job, ID      3 Stage 2
+ID      4: Stage 1 Done!
+    submitted job, ID      4 Stage 2
+
+
+
+2020/03/17 18:57:21
+CrySPY 0.8.0
+Restart cryspy.py
+
+
+
+# ---------- job status
+ID      0: Stage 2 Done!
+    collect results: E = -110.75576526205661 eV/atom
+ID      1: Stage 2 Done!
+    collect results: E = -110.78703353911466 eV/atom
+ID      2: Stage 2 Done!
+    collect results: E = -110.77947412965476 eV/atom
+ID      3: Stage 2 Done!
+    collect results: E = -110.8606835533829 eV/atom
+ID      4: Stage 2 Done!
+    collect results: E = -110.50333555911145 eV/atom

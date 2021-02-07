@@ -59,8 +59,10 @@ class Ctrl_job:
             self.energy_step_data = pkl_data.load_energy_step()
         if rin.struc_step_flag:
             self.struc_step_data = pkl_data.load_struc_step()
-        if rin.fs_step_flag:
-            self.fs_step_data = pkl_data.load_fs_step()
+        if rin.force_step_flag:
+            self.force_step_data = pkl_data.load_force_step()
+        if rin.stress_step_flag:
+            self.stress_step_data = pkl_data.load_stress_step()
 
     def check_job(self):
         # ---------- option: recalc
@@ -124,7 +126,7 @@ class Ctrl_job:
         change_input.change_option(config, 'recalc', '')    # clear
         change_input.write_config(config)
         print('Clear recalc in cryspy.in')
-        io_stat.set_input_common(self.stat, 'recalc', '')
+        io_stat.set_input_common(self.stat, 'option', 'recalc', '')
         io_stat.write_stat(self.stat)
 
     def handle_job(self):
@@ -173,10 +175,14 @@ class Ctrl_job:
         if rin.struc_step_flag:
             self.struc_step_data = select_code.get_struc_step(
                 self.struc_step_data, self.current_id, self.work_path)
-        # ---------- fs step
-        if rin.fs_step_flag:
-            self.fs_step_data = select_code.get_fs_step(
-                self.fs_step_data, self.current_id, self.work_path)
+        # ---------- force step
+        if rin.force_step_flag:
+            self.force_step_data = select_code.get_force_step(
+                self.force_step_data, self.current_id, self.work_path)
+        # ---------- stress step
+        if rin.stress_step_flag:
+            self.stress_step_data = select_code.get_stress_step(
+                self.stress_step_data, self.current_id, self.work_path)
         # ---------- next stage
         if rin.kpt_flag:
             skip_flag, self.kpt_data = select_code.next_stage(
@@ -221,10 +227,14 @@ class Ctrl_job:
         if rin.struc_step_flag:
             self.struc_step_data = select_code.get_struc_step(
                 self.struc_step_data, self.current_id, self.work_path)
-        # ---------- fs step
-        if rin.fs_step_flag:
-            self.fs_step_data = select_code.get_fs_step(
-                self.fs_step_data, self.current_id, self.work_path)
+        # ---------- force step
+        if rin.force_step_flag:
+            self.force_step_data = select_code.get_force_step(
+                self.force_step_data, self.current_id, self.work_path)
+        # ---------- stress step
+        if rin.stress_step_flag:
+            self.stress_step_data = select_code.get_stress_step(
+                self.stress_step_data, self.current_id, self.work_path)
         # ---------- each algo
         if rin.algo == 'RS':
             self.ctrl_collect_rs()
@@ -306,15 +316,14 @@ class Ctrl_job:
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.current_id, self.work_path)
         # ---------- total step and laqa_step
-        #     fs_step_data[0] <-- force_step_data
         #     force_step_data[key][stage][step][atom]
-        if self.fs_step_data[0][self.current_id][-1] is None:
+        if self.force_step_data[self.current_id][-1] is None:
             self.laqa_step[self.current_id].append(0)
         else:
             self.tot_step_select[-1] += len(
-                self.fs_step_data[0][self.current_id][-1])
+                self.force_step_data[self.current_id][-1])
             self.laqa_step[self.current_id].append(
-                len(self.fs_step_data[0][self.current_id][-1]))
+                len(self.force_step_data[self.current_id][-1]))
         # ------ save status
         io_stat.set_common(self.stat, 'total_step', sum(self.tot_step_select))
         io_stat.write_stat(self.stat)
@@ -323,10 +332,9 @@ class Ctrl_job:
         # ---------- append laqa energy
         self.laqa_energy[self.current_id].append(energy)
         # ---------- append laqa bias
-        #     fs_step_data[0] <-- force_step_data
         #     force_step_data[key][stage][step][atom]
         tmp_laqa_bias = calc_laqa_bias(
-            self.fs_step_data[0][self.current_id][-1], c=rin.weight_laqa)
+            self.force_step_data[self.current_id][-1], c=rin.weight_laqa)
         self.laqa_bias[self.current_id].append(tmp_laqa_bias)
         # ---------- append laqa score
         if check_opt == 'done' or np.isnan(energy) or np.isnan(tmp_laqa_bias):

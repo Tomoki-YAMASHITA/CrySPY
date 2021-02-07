@@ -27,8 +27,10 @@ def next_stage_soiap(stage, work_path):
 
     # ---------- generate the CIF file
     try:
-        structure = soiap_structure.from_file(
-            work_path+'stage{}_log.struc'.format(stage))
+        with open(work_path+'stage{}_log.struc'.format(stage), 'r') as f:
+            lines = f.readlines()
+            lines = lines[-(rin.natot+5):]
+        structure = soiap_structure.from_file(lines)
     except ValueError:
         skip_flag = True
         print('    error in soiap,  skip this structure')

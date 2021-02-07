@@ -1,12 +1,29 @@
-![cryspy_logo](./docs/_images/cryspy_fix-03.png)
+![cryspy_logo](./cryspy_fix-03.png)
 
 # CrySPY
-CrySPY is a crystal structure prediction tool written in Python.
+CrySPY is a crystal structure prediction tool written in Python.  
+Document site is moved to https://tomoki-yamashita.github.io/CrySPY_doc/
 
 ## Latest version
-version 0.8.0 (2020 February 16)
+version 0.9.0 (2021 Feb 7)
 
 ## Important changes
+* version 0.9.0 (2021 Feb 7)
+    - Interfaced with OpenMX
+    - Employ PyXtal library to generate initial structures
+    - If you use PyXtal (default), find_wy program is not required
+    - LAQA can be used with soiap
+    - Change the section name in the input file: [lattice] section –> [structure] section
+    - Several input variables move to [structure] section
+        + natot: [basic] –> [structure]
+        + atype: [basic] –> [structure]
+        + nat: [basic] –> [structure]
+        + maxcnt: [option] –> [structure]
+        + symprec: [option] –> [structure]
+        + spgnum: [option] –> [structure]
+    - New features
+        + Molecular crystal structure generation
+        + Scale volume
 * version 0.8.0
     - Migrated to Python 3
     - Several variable names
@@ -23,38 +40,42 @@ version 0.8.0 (2020 February 16)
 
 ## System requirements
 ### Python
-- Python 3.x.x
+- Python 3.8.x (3.7.x may work, PyXtal (numba) does not support Python 3.9)
 - [COMBO](https://github.com/tsudalab/combo3 "COMBO")
-- numpy
-- pandas
 - [pymatgen](http://pymatgen.org "pymatgen")
+- [PyXtal >= 0.1.6](https://pyxtal.readthedocs.io/en/latest "PyXtal")
+
+PyXtal requires SciPy, but the latest version of SciPy (v1.6.0) might include a bug for deepcopy.
+You should use SciPy v1.5.4 for a while (2021 Feb 7).
 
 ### Structure optimizer
 At least one optimizer is required.
 
-- [VASP](https://www.vasp.at "VASP") (tested with version 5.4.1)
-- [Quantum ESPRESSO](http://www.quantum-espresso.org "Quantum ESPRESSO") (tested with version 6.1, version 5.x does not work)
+- [VASP](https://www.vasp.at "VASP") (tested with version 5.4.4)
+- [QUANTUM ESPRESSO](http://www.quantum-espresso.org "Quantum ESPRESSO") (tested with version 6.x, version 5.x does not work)
+- [OpenMX](http://www.openmx-square.org "OpenMX")
 - [soiap](https://github.com/nbsato/soiap "soiap") (tested with version 0.2.2)
 - [LAMMPS](http://lammps.sandia.gov "LAMMPS")
 
 ### Others
-- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy"): find_wy can randomly select a combination of Wyckoff positions for a given chemical composition and space group.
+- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy"): find_wy can randomly select a combination of Wyckoff positions for a given chemical composition and space group. (optional)
 
-## Document
-[CrySPY document](https://tomoki-yamashita.github.io/CrySPY "CrySPY documment")
+## Document (English/Japanese)
+[CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc "CrySPY documment")
 
 ## Google group
 [Google gruop of CrySPY](https://groups.google.com/forum/#!forum/cryspy-user "Google group")
 
 
-## Tutorial (written in Japanese)
-[チュートリアルと解説](https://tomoki-yamashita.github.io/cryspy/tutorial/outline.html "tutorial")
-
 
 ## Reference
 ### Bayesian optimization
 * T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2018).
-    - https://link.aps.org/doi/10.1103/PhysRevMaterials.2.013803
+    - https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.2.013803
+
+* N. Sato, T. Yamashita, T. Oguchi, K. Hukushima, and T. Miyake, Phys. Rev. Mater. **4**, 033801 (2020).
+    - https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.4.033801
+
 
 ### LAQA
 * K.Terayama, T. Yamashita, T. Oguchi, and K. Tsuda, npj Comput. Mater. **4**, 32 (2018).

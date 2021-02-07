@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/home/k0362/k036200/CrySPY/0.8.0/cryspy.py", line 50, in <module>
+    jobs.handle_job()
+  File "/home/k0362/k036200/CrySPY/0.8.0/CrySPY/job/ctrl_job.py", line 140, in handle_job
+    self.ctrl_done()
+  File "/home/k0362/k036200/CrySPY/0.8.0/CrySPY/job/ctrl_job.py", line 162, in ctrl_done
+    self.ctrl_collect()
+  File "/home/k0362/k036200/CrySPY/0.8.0/CrySPY/job/ctrl_job.py", line 245, in ctrl_collect
+    self.work_path+'prev_stat_job')
+FileNotFoundError: [Errno 2] No such file or directory: './work/000004/stat_job' -> './work/000004/prev_stat_job'
+Traceback (most recent call last):
+  File "/home/k0362/k036200/CrySPY/0.8.0/cryspy.py", line 50, in <module>
+    jobs.handle_job()
+  File "/home/k0362/k036200/CrySPY/0.8.0/CrySPY/job/ctrl_job.py", line 140, in handle_job
+    self.ctrl_done()
+  File "/home/k0362/k036200/CrySPY/0.8.0/CrySPY/job/ctrl_job.py", line 162, in ctrl_done
+    self.ctrl_collect()
+  File "/home/k0362/k036200/CrySPY/0.8.0/CrySPY/job/ctrl_job.py", line 245, in ctrl_collect
+    self.work_path+'prev_stat_job')
+FileNotFoundError: [Errno 2] No such file or directory: './work/000008/stat_job' -> './work/000008/prev_stat_job'
+lock_cryspy file exists

@@ -1,0 +1,23 @@
+#!/bin/sh
+#QSUB -queue F4cpu
+#QSUB -node 1
+#QSUB -mpi 24
+#QSUB -omp 1
+#PBS -N Si_CrySPY_ID
+#PBS -l walltime=02:00:00
+
+# ---------- setting for sekirei
+
+cd ${PBS_O_WORKDIR}
+. /etc/profile.d/modules.sh
+
+# Load necessary modules (Intel compilers and SGI MPT)
+module load intel intel-mkl mpt
+
+# Add openmx to PATH
+source /home/issp/materiapps/openmx/openmxvars.sh
+
+mpijob openmx omx.in > scf.std
+
+# ---------- for cryspy
+sed -i -e '3 s/^.*$/done/' stat_job

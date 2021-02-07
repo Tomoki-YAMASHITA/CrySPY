@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0] - 2021-02-07
+### Added
+- Interface with OpenMX
+- Employ PyXtal
+  + Molecular crystal structure generation
+- Scale volume
+- LAQA with soiap
+
+### Changed
+- find_wy is optional
+- In cryspy.in, [lattice] section --> [structure] section
+  + natot: [basic] –> [structure]
+  + atype: [basic] –> [structure]
+  + nat: [basic] –> [structure]
+  + maxcnt: [option] –> [structure]
+  + symprec: [option] –> [structure]
+  + spgnum: [option] –> [structure]
+
 ## [0.8.0] - 2020-02-16
 ### Added
 - CrySPY logo

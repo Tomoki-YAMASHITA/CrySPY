@@ -1,0 +1,36 @@
+[basic]
+algo = EA
+calc_code = VASP
+tot_struc = 10
+natot = 16
+atype = Na Cl
+nat = 8 8
+nstage = 2
+njob = 10
+jobcmd = qsub
+jobfile = job_cryspy
+
+[lattice]
+minlen = 5
+maxlen = 12
+dangle = 20
+mindist_1 = 2.2  1.8
+mindist_2 = 1.8  2.2
+
+[VASP]
+kppvol = 40 80
+
+[EA]
+n_pop = 10
+n_crsov = 5
+n_perm = 2
+n_strain = 2
+n_rand = 1
+n_elite = 1
+n_fittest = 5
+slct_func = TNM
+t_size = 2
+maxgen_ea = 2
+
+[option]
+

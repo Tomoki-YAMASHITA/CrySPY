@@ -1,0 +1,20 @@
+#!/bin/sh -l
+#QSUB -queue F4cpu
+#QSUB -node 1
+#QSUB -mpi 24
+#QSUB -omp 1
+#PBS -l walltime=02:00:00
+#PBS -N Si_CrySPY_ID
+cd $PBS_O_WORKDIR
+
+
+EXEPATH='/path/to/QE/qe-6.1/bin'
+EXE='pw.x'
+
+mpijob ${EXEPATH}/$EXE -npool 4 < pwscf.in > pwscf.out
+
+if [ -e "CRASH" ]; then
+    exit 1
+fi
+
+sed -i -e '3 s/^.*$/done/' stat_job

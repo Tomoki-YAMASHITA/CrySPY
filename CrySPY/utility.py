@@ -6,8 +6,14 @@ from datetime import datetime
 import os
 
 
+# ---------- parameters
+bohr2ang = 0.529177210903
+hrt2ev = 27.211386245988
+kbar2ev_ang3 = 0.0006241509073
+
+# ---------- functions
 def get_version():
-    return 'CrySPY 0.8.0'
+    return 'CrySPY 0.9.0'
 
 
 def get_date():

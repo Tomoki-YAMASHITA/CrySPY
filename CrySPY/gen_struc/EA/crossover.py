@@ -3,6 +3,7 @@ Crossover class
 '''
 
 from collections import Counter
+import sys
 
 import numpy as np
 from pymatgen import Structure, Lattice
@@ -28,8 +29,6 @@ class Crossover:
 
     crs_lat ('equal' or 'random') how to mix lattice vectors
 
-    crs_func ('OP' or 'TP'): one point or two point crossover
-
     nat_diff_tole (int): tolerance for difference in number of atoms
                          in crossover
 
@@ -41,7 +40,7 @@ class Crossover:
         if fail, return None
     '''
 
-    def __init__(self, atype, nat, mindist, crs_lat='equal', crs_func='OP',
+    def __init__(self, atype, nat, mindist, crs_lat='equal',
                  nat_diff_tole=4, maxcnt_ea=100):
         # ---------- check args
         # ------ atype, nat, mindist
@@ -68,11 +67,6 @@ class Crossover:
             self.w_lat = np.random.choice([0.0, 1.0], size=2, replace=False)
         else:
             raise ValueError('crs_lat must be equal or random')
-        # ------ crs_func
-        if crs_func not in ['OP', 'TP']:
-            raise ValueError('crs_func must be OP or TP')
-        else:
-            self.crs_func = crs_func
         # ------ nat_diff_tole, maxcnt_ea
         for x in [nat_diff_tole, maxcnt_ea]:
             if type(x) is int and x > 0:
@@ -101,10 +95,7 @@ class Crossover:
         while True:
             count += 1
             # ------ coordinate crossover
-            if self.crs_func == 'OP':
-                self._one_point_crossover()
-            elif self.crs_func == 'TP':
-                self._two_point_crossover()
+            self._one_point_crossover()
             self.child = Structure(lattice=self.lattice, species=self.species,
                                    coords=self.coords)
             # ------ check nat_diff
@@ -150,7 +141,7 @@ class Crossover:
         # ---------- final check for nat
         self._check_nat()
         if not all([n == 0 for n in self._nat_diff]):
-            raise ValueError('There is a bug: final check for nat')
+            return None    # failure
         # ---------- sort by atype
         self.child = sort_by_atype(self.child, self.atype)
         # ---------- return
@@ -193,51 +184,6 @@ class Crossover:
                 species_B.append(self.parent_A[i].species_string)
                 coords_B.append(self.parent_A[i].frac_coords)
             if self.parent_B.frac_coords[i, self._axis] >= self._slice_point:
-                species_A.append(self.parent_B[i].species_string)
-                coords_A.append(self.parent_B[i].frac_coords)
-            else:
-                species_B.append(self.parent_B[i].species_string)
-                coords_B.append(self.parent_B[i].frac_coords)
-        # ---------- adopt a structure with more atoms
-        if len(species_A) > len(species_B):
-            species = species_A
-            coords = coords_A
-        elif len(species_A) < len(species_B):
-            species = species_B
-            coords = coords_B
-        else:
-            if np.random.choice([0, 1]):
-                species = species_A
-                coords = coords_A
-            else:
-                species = species_B
-                coords = coords_B
-        # ---------- set instance variables
-        self.species, self.coords = species, coords
-
-    def _two_point_crossover(self):
-        # ---------- slice point
-        while True:
-            self._slice_point = np.random.normal(loc=0.25, scale=0.1)
-            if 0.1 <= self._slice_point <= 0.4:
-                break
-        sp0 = self._slice_point
-        sp1 = self._slice_point + 0.5
-        self._axis = np.random.choice([0, 1, 2])
-        # ---------- crossover
-        species_A = []
-        species_B = []
-        coords_A = []
-        coords_B = []
-        for i in range(self.parent_A.num_sites):
-            if ((self.parent_A.frac_coords[i, self._axis] <= sp0) or
-                    (sp1 <= self.parent_A.frac_coords[i, self._axis])):
-                species_A.append(self.parent_A[i].species_string)
-                coords_A.append(self.parent_A[i].frac_coords)
-            else:
-                species_B.append(self.parent_A[i].species_string)
-                coords_B.append(self.parent_A[i].frac_coords)
-            if sp0 <= self.parent_B.frac_coords[i, self._axis] <= sp1:
                 species_A.append(self.parent_B[i].species_string)
                 coords_A.append(self.parent_B[i].frac_coords)
             else:
@@ -306,28 +252,15 @@ class Crossover:
     def _remove_border_line(self):
         # ---------- rank atoms from border line
         coords_axis = self.child.frac_coords[:, self._axis]
-        if self.crs_func == 'OP':
-            # ------ one point crossover: boundary --> 0.0, slice_point, 1.0
-            near_sp = (self._slice_point/2.0 < coords_axis) & \
-                      (coords_axis < (self._slice_point + 1.0)/2.0)
-            near_one = (self._slice_point + 1.0)/2.0 <= coords_axis
-            # -- distance from nearest boundary
-            coords_diff = np.where(near_sp,
-                                   abs(coords_axis - self._slice_point),
-                                   coords_axis)
-            coords_diff = np.where(near_one, 1.0 - coords_diff, coords_diff)
-        elif self.crs_func == 'TP':
-            # ------ two point crossover:
-            #            boundary --> slice_point, slice_point + 0.5
-            # -- distance from nearst boundary
-            coords_diff = abs(self.child.frac_coords[:, self._axis]
-                              - self._slice_point)
-            coords_diff = np.where(0.5 < coords_diff, coords_diff - 0.5,
-                                   coords_diff)
-            coords_diff = np.where(0.25 < coords_diff, 0.5 - coords_diff,
-                                   coords_diff)
-        else:
-            raise ValueError('crs_func should be OP or TP')
+        # ------ one point crossover: boundary --> 0.0, slice_point, 1.0
+        near_sp = (self._slice_point/2.0 < coords_axis) & \
+            (coords_axis < (self._slice_point + 1.0)/2.0)
+        near_one = (self._slice_point + 1.0)/2.0 <= coords_axis
+        # -- distance from nearest boundary
+        coords_diff = np.where(near_sp,
+                               abs(coords_axis - self._slice_point),
+                               coords_axis)
+        coords_diff = np.where(near_one, 1.0 - coords_diff, coords_diff)
         atom_border_indx = np.argsort(coords_diff)
         # ---------- remove list
         rm_list = []
@@ -356,10 +289,17 @@ class Crossover:
                 coords[self._axis] = np.random.normal(loc=self._mean,
                                                       scale=0.08)
                 self.child.append(species=self.atype[i], coords=coords)
-                if check_distance(self.child, self.atype, self.mindist):
+                success, mindist_ij, dist = check_distance(self.child,
+                                                           self.atype,
+                                                           self.mindist)
+                if success:
                     cnt = 0    # reset
                     self._nat_diff[i] += 1
                 else:
+                    sys.stderr.write('mindist in _add_border_line: {} - {}, {}. retry.\n'.format(
+                        self.atype[mindist_ij[0]],
+                        self.atype[mindist_ij[1]],
+                        dist))
                     self.child.pop()    # cancel
                 # ------ fail
                 if cnt == self.maxcnt_ea:
@@ -368,28 +308,13 @@ class Crossover:
 
     def _mean_choice(self):
         '''which boundary possesses more atoms'''
-        if self.crs_func == 'OP':
-            n_zero = np.sum(np.abs(self.child.frac_coords[:, self._axis] - 0.0)
-                            < 0.1)
-            n_slice = np.sum(np.abs(self.child.frac_coords[:, self._axis]
-                                    - self._slice_point) < 0.1)
-            if n_zero < n_slice:
-                self._mean = 0.0
-            elif n_zero > n_slice:
-                self._mean = self._slice_point
-            else:
-                self._mean = np.random.choice([0.0, self._slice_point])
-        elif self.crs_func == 'TP':
-            n_sp0 = np.sum(np.abs(self.child.frac_coords[:, self._axis]
-                                  - self._slice_point) < 0.1)
-            n_sp1 = np.sum(np.abs(self.child.frac_coords[:, self._axis]
-                                  - self._slice_point - 0.5) < 0.1)
-            if n_sp0 < n_sp1:
-                self._mean = self._slice_point
-            elif n_sp0 > n_sp1:
-                self._mean = self._slice_point + 0.5
-            else:
-                self._mean = np.random.choice([self._slice_point,
-                                               self._slice_point + 0.5])
+        n_zero = np.sum(np.abs(self.child.frac_coords[:, self._axis] - 0.0)
+                        < 0.1)
+        n_slice = np.sum(np.abs(self.child.frac_coords[:, self._axis]
+                                - self._slice_point) < 0.1)
+        if n_zero < n_slice:
+            self._mean = 0.0
+        elif n_zero > n_slice:
+            self._mean = self._slice_point
         else:
-            raise ValueError('crs_func must be OP or TP')
+            self._mean = np.random.choice([0.0, self._slice_point])

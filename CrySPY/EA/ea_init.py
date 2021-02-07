@@ -27,10 +27,10 @@ def initialize(stat, rslt_data):
     ea_info = pd.DataFrame(columns=['Gen', 'Population',
                                     'Crossover', 'Permutation', 'Strain',
                                     'Random', 'Elite',
-                                    'crs_func', 'crs_lat', 'slct_func'])
+                                    'crs_lat', 'slct_func'])
     ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
     tmp_info = pd.Series([1, rin.tot_struc, 0, 0, 0, rin.tot_struc, 0,
-                          rin.crs_func, rin.crs_lat, rin.slct_func],
+                          rin.crs_lat, rin.slct_func],
                          index=ea_info.columns)
     ea_info = ea_info.append(tmp_info, ignore_index=True)
     out_results.out_ea_info(ea_info)

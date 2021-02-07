@@ -1,0 +1,6 @@
+you do not have to prepare the molecular structure file of benzene.
+This will be loaded from PyXtal's database.
+See, https://pyxtal.readthedocs.io/en/latest/Others.html
+
+Edit pseudo_dir in pwscf.in_*
+Set your appropriate path to pw.x in job_cryspy

@@ -1,6 +1,7 @@
 '''
 Strain class
 '''
+import sys
 
 import numpy as np
 from pymatgen import Structure
@@ -85,12 +86,17 @@ class Strain:
             # ------ scale lattice
             self.child.scale_lattice(struc.volume)
             # ------ check distance
-            if check_distance(self.child, self.atype, self.mindist):
-                # -- success
+            success, mindist_ij, dist = check_distance(self.child,
+                                                       self.atype,
+                                                       self.mindist)
+            if success:
                 self.child = sort_by_atype(self.child, self.atype)
                 return self.child
             else:
-                # -- failure
+                sys.stderr.write('mindist in permutation: {} - {}, {}. retry.\n'.format(
+                    self.atype[mindist_ij[0]],
+                    self.atype[mindist_ij[1]],
+                    dist))
                 cnt += 1
                 if cnt >= self.maxcnt_ea:
                     self.child = None

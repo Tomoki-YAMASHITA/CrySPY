@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Main script
 '''
@@ -6,63 +6,72 @@ Main script
 import os
 
 from CrySPY.interface import select_code
-from CrySPY.job import ctrl_job
+from CrySPY.job.ctrl_job import Ctrl_job
 from CrySPY.IO import read_input as rin
 from CrySPY.start import cryspy_init, cryspy_restart
 
 
-# ---------- lock
-if os.path.isfile('lock_cryspy'):
-    raise SystemExit('lock_cryspy file exists')
-else:
-    with open('lock_cryspy', 'w') as f:
-        pass    # create vacant file
+def main():
+    # ---------- lock
+    if os.path.isfile('lock_cryspy'):
+        raise SystemExit('lock_cryspy file exists')
+    else:
+        with open('lock_cryspy', 'w') as f:
+            pass    # create vacant file
 
-# ---------- initialize
-if not os.path.isfile('cryspy.stat'):
-    cryspy_init.initialize()
-    os.remove('lock_cryspy')
-    raise SystemExit()
-# ---------- restart
-else:
-    stat, init_struc_data = cryspy_restart.restart()
+    # ---------- initialize
+    if not os.path.isfile('cryspy.stat'):
+        cryspy_init.initialize()
+        os.remove('lock_cryspy')
+        raise SystemExit()
+    # ---------- restart
+    else:
+        stat, init_struc_data = cryspy_restart.restart()
 
-# ---------- check point 1
-if rin.stop_chkpt == 1:
-    print('Stop at check point 1')
-    os.remove('lock_cryspy')
-    raise SystemExit()
+    # ---------- check point 1
+    if rin.stop_chkpt == 1:
+        print('Stop at check point 1')
+        os.remove('lock_cryspy')
+        raise SystemExit()
 
-# ---------- check calc files in ./calc_in
-select_code.check_calc_files()
+    # ---------- check calc files in ./calc_in
+    select_code.check_calc_files()
 
-# os.makedirs('work/fin', exist_ok=True)    # python3.2 or later
-if not os.path.isdir('work/fin'):
-    os.makedirs('work/fin')
+    # ---------- mkdir work/fin
+    os.makedirs('work/fin', exist_ok=True)
 
-# ---------- instantiate Ctrl_job class
-jobs = ctrl_job.Ctrl_job(stat, init_struc_data)
+    # ---------- instantiate Ctrl_job class
+    jobs = Ctrl_job(stat, init_struc_data)
 
-# ---------- check job status
-jobs.check_job()
+    # ---------- check job status
+    jobs.check_job()
 
-# ---------- handle job
-jobs.handle_job()
+    # ---------- handle job
+    jobs.handle_job()
 
-# ---------- recheck for skip and done
-if jobs.id_queueing:
-    cnt_recheck = 0
-    while jobs.recheck:
-        cnt_recheck += 1
-        jobs.recheck = False    # True --> False
-        print('\n\n recheck {}\n'.format(cnt_recheck))
-        jobs.check_job()
-        jobs.handle_job()
+    # ---------- recheck for skip and done
+    if jobs.id_queueing:
+        cnt_recheck = 0
+        while jobs.recheck:
+            cnt_recheck += 1
+            jobs.recheck = False    # True --> False
+            print('\n\n recheck {}\n'.format(cnt_recheck))
+            jobs.check_job()
+            jobs.handle_job()
 
-# ---------- next selection or generation
-if rin.algo in ['BO', 'LAQA', 'EA']:
     if not (jobs.id_queueing or jobs.id_running):
-        jobs.next_sg()
+        # ---------- next selection or generation
+        if rin.algo in ['BO', 'LAQA', 'EA']:
+            jobs.next_sg()
+        # ---------- for RS
+        else:
+            with open('cryspy.out', 'a') as fout:
+                fout.write('\nDone all structures!\n')
+                print('Done all structures!')
 
-# ---------- unlock
-os.remove('lock_cryspy')
+    # ---------- unlock
+    os.remove('lock_cryspy')
+
+
+if __name__ == '__main__':
+    main()

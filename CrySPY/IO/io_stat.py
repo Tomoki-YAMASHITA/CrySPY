@@ -3,10 +3,33 @@ I/O for cryspy.stat
 '''
 import configparser
 
+from . import read_input as rin
+
 
 def stat_init():
     stat = configparser.ConfigParser()
-    stat.add_section('input')
+    stat.add_section('basic')
+    stat.add_section('structure')
+    # ---------- algo
+    if rin.algo == 'BO':
+        stat.add_section('BO')
+    if rin.algo == 'LAQA':
+        stat.add_section('LAQA')
+    if rin.algo == 'EA':
+        stat.add_section('EA')
+    # ---------- calc_code
+    if rin.calc_code == 'VASP':
+        stat.add_section('VASP')
+    if rin.calc_code == 'QE':
+        stat.add_section('QE')
+    if rin.calc_code == 'soiap':
+        stat.add_section('soiap')
+    if rin.calc_code == 'LAMMPS':
+        stat.add_section('LAMMPS')
+    if rin.calc_code == 'OMX':
+        stat.add_section('OMX')
+    # ----------
+    stat.add_section('option')
     stat.add_section('status')
     return stat
 
@@ -23,8 +46,8 @@ def write_stat(stat):
 
 
 # ---------- input section
-def set_input_common(stat, var_str, var):
-    stat.set('input', var_str, '{}'.format(var))
+def set_input_common(stat, sec, var_str, var):
+    stat.set(sec, var_str, '{}'.format(var))
 
 
 # ---------- status section

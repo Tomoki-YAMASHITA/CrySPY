@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 from pymatgen import Structure
 
+from ... import utility
 from ...IO import pkl_data
 from ...IO import read_input as rin
 
@@ -60,7 +61,7 @@ def get_energy_magmom_vasp(work_path):
             energy = energy/float(rin.natot)       # eV/atom
             if 'mag=' in oszi[-1]:
                 magmom = float(oszi[-1].split()[-1])    # total magnetic moment
-    except FileNotFoundError:
+    except:
         pass
     # ---------- return
     return energy, magmom
@@ -163,10 +164,8 @@ def get_struc_step_vasp(struc_step_data, current_id, filename):
     return struc_step_data
 
 
-def get_fs_step_vasp(fs_step_data, current_id, filename):
-    force_step_data, stress_step_data = fs_step_data
-
-    # ---------- get force and stress step from vasprun
+def get_force_step_vasp(force_step_data, current_id, filename):
+    # ---------- get force step from vasprun
     try:
         # ------ read file
         tree = ET.parse(filename)
@@ -175,13 +174,11 @@ def get_fs_step_vasp(fs_step_data, current_id, filename):
         cals = root.findall('calculation')
         # ------ init.
         force_step = []
-        stress_step = []
         # ------ loop for ralaxation step
         for cal in cals:
             varrays = cal.findall('varray')
             # -- init
             force = []
-            stress = []
             # -- varrays[0]: force, varrays[1]: stress
             for varray in varrays:
                 vs = varray.findall('v')
@@ -189,17 +186,12 @@ def get_fs_step_vasp(fs_step_data, current_id, filename):
                 for v in vs:
                     if varray.attrib['name'] == 'forces':
                         force.append(v.text.split())
-                    if varray.attrib['name'] == 'stress':
-                        stress.append(v.text.split())
             # -- list, str --> array
             force = np.array(force, dtype='float')
-            stress = np.array(stress, dtype='float')
-            # -- appned force_step and stress_step
+            # -- appned force_step
             force_step.append(force)
-            stress_step.append(stress)
     except:
         force_step = None
-        stress_step = None
         print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
             current_id))
 
@@ -208,14 +200,53 @@ def get_fs_step_vasp(fs_step_data, current_id, filename):
         force_step_data[current_id] = []    # initialize
     force_step_data[current_id].append(force_step)
 
+    # ---------- save force_step_data
+    pkl_data.save_force_step(force_step_data)
+
+    # ---------- return
+    return force_step_data
+
+
+def get_stress_step_vasp(stress_step_data, current_id, filename):
+    # ---------- get stress step from vasprun
+    try:
+        # ------ read file
+        tree = ET.parse(filename)
+        root = tree.getroot()
+        # ------ children nodes: calculation
+        cals = root.findall('calculation')
+        # ------ init.
+        stress_step = []
+        # ------ loop for ralaxation step
+        for cal in cals:
+            varrays = cal.findall('varray')
+            # -- init
+            stress = []
+            # -- varrays[0]: force, varrays[1]: stress
+            for varray in varrays:
+                vs = varray.findall('v')
+                # loop for v
+                for v in vs:
+                    if varray.attrib['name'] == 'stress':
+                        stress.append(v.text.split())
+            # -- list, str --> array
+            stress = np.array(stress, dtype='float')
+            # -- kbar --> eV/ang**3
+            stress = stress * utility.kbar2ev_ang3
+            # -- appned stress_step
+            stress_step.append(stress)
+    except:
+        stress_step = None
+        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
+            current_id))
+
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:
         stress_step_data[current_id] = []    # initialize
     stress_step_data[current_id].append(stress_step)
 
-    # ---------- save fs_step_data
-    fs_step_data = (force_step_data, stress_step_data)
-    pkl_data.save_fs_step(fs_step_data)
+    # ---------- save stress_step_data
+    pkl_data.save_stress_step(stress_step_data)
 
     # ---------- return
-    return fs_step_data
+    return stress_step_data

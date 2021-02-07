@@ -1,0 +1,15 @@
+#!/bin/sh
+#$ -cwd
+#$ -V -S /bin/bash
+####$ -V -S /bin/zsh
+#$ -N bz_CrySPY_ID
+#$ -pe smp 8
+
+mpirun -np $NSLOTS pw.x -nk 4 -nb 2 < pwscf.in > pwscf.out
+
+# for QE
+if [ -e "CRASH" ]; then
+    exit 1
+fi
+
+sed -i -e '3 s/^.*$/done/' stat_job

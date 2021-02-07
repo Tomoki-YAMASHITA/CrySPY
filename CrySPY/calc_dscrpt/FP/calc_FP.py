@@ -60,7 +60,7 @@ class Calc_FP:
         if not os.path.isfile(fppath):
             raise IOError('There is no cal_fingerprint program in {}'.format(
                 fppath))
-        self.fppath = fppath
+        self.fppath = os.path.abspath(fppath)
 
     def calc(self):
         '''

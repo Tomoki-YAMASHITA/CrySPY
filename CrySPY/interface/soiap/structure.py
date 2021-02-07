@@ -6,22 +6,17 @@ import itertools
 
 import numpy as np
 from pymatgen import Structure
-from pymatgen.core.units import LengthArray
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
+from ... import utility
 from ...IO import read_input as rin
 
 
-def from_file(name):
-    # ---------- last structure
-    with open(name, 'r') as f:
-        lines = f.readlines()
-    lines = lines[-(rin.natot+5):]
-
+def from_file(lines):
     # ---------- lattice
     lattice = [[float(x) for x in line.split()] for line in lines[1:4]]
     #     in Bohr, each column is a lattice vector
-    lattice = np.array(LengthArray(lattice, 'bohr').to('ang'))  # Bohr --> Ang
+    lattice = np.array(lattice) * utility.bohr2ang  # Bohr --> Ang
     lattice = lattice.T    # each row is a lattice vector
 
     # ---------- internal coordinates

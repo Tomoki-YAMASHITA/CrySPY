@@ -1,0 +1,11 @@
+   Spg_num Spg_sym  Spg_num_opt Spg_sym_opt  E_eV_atom  Magmom      Opt
+0      117   P-4b2          117       P-4b2  -3.321734     NaN     done
+6       31  Pmn2_1           31      Pmn2_1  -3.317501     NaN     done
+1        4    P2_1            4        P2_1  -3.311716     NaN     done
+2       90  P42_12          129      P4/nmm  -3.045123     NaN  not_yet
+9      148     R-3          148         R-3  -3.055297     NaN     done
+4       85    P4/n          129      P4/nmm  -3.121548     NaN     done
+7      225   Fm-3m          225       Fm-3m  -3.038309     NaN     done
+5      216   F-43m          216       F-43m  -2.885542     NaN     done
+3      224   Pn-3m          224       Pn-3m  -2.687269     NaN     done
+8      105  P4_2mc          105      P4_2mc  -2.665089     NaN     done

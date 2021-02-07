@@ -1,0 +1,31 @@
+ &control
+    title = 'Na8Cl8'
+    calculation = 'vc-relax'
+    nstep = 150
+    restart_mode = 'from_scratch',
+    pseudo_dir = '/usr/local/pslibrary.1.0.0/pbe/PSEUDOPOTENTIALS/'
+    outdir='./outdir/' 
+ /
+
+ &system
+    ibrav = 0
+    nat = 16
+    ntyp = 2
+    ecutwfc = 66.0
+    ecutrho = 323
+    occupations = 'smearing'
+    degauss = 0.01
+ /
+
+ &electrons
+ /
+
+ &ions
+ /
+
+ &cell
+ /
+
+ATOMIC_SPECIES
+  Na  22.99  Na.pbe-spn-kjpaw_psl.1.0.0.UPF
+  Cl  35.45  Cl.pbe-nl-kjpaw_psl.1.0.0.UPF

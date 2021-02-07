@@ -1,0 +1,21 @@
+[basic]
+algo = LAQA
+calc_code = VASP
+tot_struc = 10
+nstage = 1
+njob = 10
+jobcmd = qsub
+jobfile = job_cryspy
+
+[structure]
+natot = 8
+atype = Si
+nat = 8
+
+[VASP]
+kppvol = 80
+
+[LAQA]
+nselect_laqa = 2
+
+[option]
