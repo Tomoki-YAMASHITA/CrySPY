@@ -23,7 +23,7 @@ def out_kpts(kpt_data):
 
 
 # ---------- BO
-def out_bo_status(bo_mean, bo_var, bo_score, n_selection, tot_struc):
+def out_bo_status(bo_mean, bo_var, bo_score, n_selection):
     with open('./data/BO_status', 'w') as f:
         # ------ label
         f.write('{0:>10}{1:>14}{2:>14}{3:>14}\n'.format('Struc_ID', 'Score',
@@ -33,8 +33,8 @@ def out_bo_status(bo_mean, bo_var, bo_score, n_selection, tot_struc):
                                  key=lambda x: -x[1]):
             f.write('{0:>10d}'.format(cid))
             f.write('{0:>14.8f}'.format(value))
-            f.write('{0:>14.8f}'.format(value))
-            f.write('{0:>14.8f}'.format(value))
+            f.write('{0:>14.8f}'.format(bo_mean[n_selection][cid]))
+            f.write('{0:>14.8f}'.format(bo_var[n_selection][cid]))
             f.write('\n')
 
 

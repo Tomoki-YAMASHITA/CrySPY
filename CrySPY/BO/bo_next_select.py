@@ -102,7 +102,7 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
         out_results.out_bo_common('BO_var', bo_var, rin.tot_struc)
         out_results.out_bo_common('BO_score', bo_score, rin.tot_struc)
         out_results.out_bo_status(bo_mean, bo_var, bo_score,
-                                  n_selection, rin.tot_struc)
+                                  n_selection)
         # ------ save bo_data
         bo_data = (init_dscrpt_data, opt_dscrpt_data,
                    bo_mean, bo_var, bo_score)
