@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.9.1] - 2021-02-25
+### Fixed
+- minor bug fix for bo_status
+
 ## [0.9.0] - 2021-02-07
 ### Added
 - Interface with OpenMX
