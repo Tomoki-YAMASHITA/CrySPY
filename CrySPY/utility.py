@@ -14,7 +14,7 @@ kbar2ev_ang3 = 0.0006241509073
 
 # ---------- functions
 def get_version():
-    return 'CrySPY 0.9.1'
+    return 'CrySPY 0.9.2'
 
 
 def get_date():

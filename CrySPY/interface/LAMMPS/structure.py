@@ -5,7 +5,7 @@ Structure file for LAMMPS
 import itertools
 
 import numpy as np
-from pymatgen import Structure
+from pymatgen.core import Structure
 
 from ...IO import read_input as rin
 

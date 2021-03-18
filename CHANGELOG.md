@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.9.2] - 2021-03-18
+### Changed
+- support pymatgen major change (v2022)
+
 ## [0.9.1] - 2021-02-25
 ### Fixed
 - minor bug fix for bo_status

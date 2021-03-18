@@ -149,8 +149,8 @@ def readin():
     except (configparser.NoOptionError, configparser.NoSectionError):
         spgnum = 'all'
     if spgnum == '0':
-        if struc_mode == 'mol':
-            raise ValueError('spgnum = 0 is not allow when struc_mode is  mol')
+        if struc_mode in ['mol', 'mol_bs']:
+            raise ValueError('spgnum = 0 is not allow when struc_mode is mol or mol_bs')
         spgnum = 0
     elif spgnum == 'all':
         pass
@@ -1109,12 +1109,12 @@ def diffinstat(stat):
     # ------ structure
     sec = 'structure'
     if not old_struc_mode == struc_mode:
-        if old_struc_mode in ['crystal', 'mol'] and struc_mode in ['crystal', 'mol']:
+        if old_struc_mode in ['crystal', 'mol', 'mol_bs'] and struc_mode in ['crystal', 'mol', 'mol_bs']:
             diff_out('struc_mode', old_struc_mode, struc_mode)
             io_stat.set_input_common(stat, sec, 'struc_mode', struc_mode)
             logic_change = True
         else:
-            raise ValueError('Do not change struc_mode except for crystal <--> mol')
+            raise ValueError('Do not change struc_mode: host')
     if not old_natot == natot:
         raise ValueError('Do not change natot')
     if not old_atype == atype:

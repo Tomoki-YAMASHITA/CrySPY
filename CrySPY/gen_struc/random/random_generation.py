@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 import numpy as np
-from pymatgen import Structure
+from pymatgen.core import Structure
 
 from ..struc_util import check_distance
 from ..struc_util import out_poscar

@@ -2,7 +2,7 @@
 Structure file for Quantum ESPRESSO
 '''
 
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.core.units import Length
 
 from ...IO import read_input as rin

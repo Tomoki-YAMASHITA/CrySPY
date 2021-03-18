@@ -5,7 +5,7 @@ Structure files in soiap
 import itertools
 
 import numpy as np
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from ... import utility

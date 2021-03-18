@@ -5,9 +5,15 @@ CrySPY is a crystal structure prediction tool written in Python.
 Document site is moved to https://tomoki-yamashita.github.io/CrySPY_doc/
 
 ## Latest version
-version 0.9.1 (2021 Feb 25)
+version 0.9.2 (2021 March 18)
+
+This version supports pymatgen v2022.
+If you use pymatgen v2021 or older, use CrySPY 0.9.1.
+
 
 ## Important changes
+* version 0.9.2 (2021 Mar 18)
+    - support pymatgen major change (v2022)
 * version 0.9.0 (2021 Feb 7)
     - Interfaced with OpenMX
     - Employ PyXtal library to generate initial structures
@@ -40,13 +46,18 @@ version 0.9.1 (2021 Feb 25)
 
 ## System requirements
 ### Python
-- Python 3.8.x (3.7.x may work, PyXtal (numba) does not support Python 3.9)
+- Python 3.8.x, 3.9.x (3.7.x may work)
 - [COMBO](https://github.com/tsudalab/combo3 "COMBO")
-- [pymatgen](http://pymatgen.org "pymatgen")
-- [PyXtal >= 0.1.6](https://pyxtal.readthedocs.io/en/latest "PyXtal")
+- [pymatgen >= 2022.0.4](http://pymatgen.org "pymatgen")
+- [PyXtal >= 0.2.2](https://pyxtal.readthedocs.io/en/latest "PyXtal")
 
-PyXtal requires SciPy, but the latest version of SciPy (v1.6.0) might include a bug for deepcopy.
-You should use SciPy v1.5.4 for a while (2021 Feb 7).
+There is a breaking change in pymatgen v2022.  
+PyXtal v0.2.2 and CrySPY 0.9.2 support this change in pymatgen.  
+If you use pymatgen v2021 or older, choose PyXtal v0.2.1 or older and CrySPY 0.9.1.
+
+
+PyXtal requires SciPy, but SciPy v1.6.0 includes a bug for deepcopy. (2021 Feb 7)  
+This bug has already been fixed in SciPy v1.6.1 (2021 March 7).
 
 ### Structure optimizer
 At least one optimizer is required.
