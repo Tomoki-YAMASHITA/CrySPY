@@ -9,7 +9,9 @@ import random
 import sys
 
 import numpy as np
-from pymatgen import DummySpecie, Structure, Molecule
+from pymatgen.core import Structure, Molecule
+from pymatgen.core.periodic_table import DummySpecie
+
 from pyxtal import pyxtal
 from pyxtal.database.collection import Collection
 

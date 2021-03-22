@@ -6,7 +6,7 @@ import os
 import xml.etree.ElementTree as ET
 
 import numpy as np
-from pymatgen import Structure
+from pymatgen.core import Structure
 
 from ... import utility
 from ...IO import pkl_data

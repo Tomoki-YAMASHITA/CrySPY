@@ -5,7 +5,7 @@ Utility for structures
 import os
 
 import numpy as np
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.cif import CifWriter
 
 

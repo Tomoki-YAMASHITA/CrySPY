@@ -6,7 +6,7 @@ from collections import Counter
 import sys
 
 import numpy as np
-from pymatgen import Structure, Lattice
+from pymatgen.core import Structure, Lattice
 
 from ..struc_util import origin_shift, sort_by_atype, check_distance
 

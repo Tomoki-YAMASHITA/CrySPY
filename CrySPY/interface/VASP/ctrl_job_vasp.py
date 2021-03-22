@@ -5,7 +5,7 @@ Control jobs in VASP
 import os
 import shutil
 
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp.sets import MITRelaxSet
 
 from ...IO.out_results import out_kpts

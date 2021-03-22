@@ -4,7 +4,7 @@ written by H. Sawahata 2020/03/09
 info at hikaruri.jp
 '''
 
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.core.units import Length
 
 from ...IO import read_input as rin
