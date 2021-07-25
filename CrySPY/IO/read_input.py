@@ -28,8 +28,8 @@ def readin():
     if algo not in ['RS', 'BO', 'LAQA', 'EA']:
         raise NotImplementedError('algo must be RS, BO, LAQA, or EA')
     if algo == 'LAQA':
-        if calc_code in ['QE', 'LAMMPS']:
-            raise NotImplementedError('LAQA: only VASP or soiap for now')
+        if calc_code not in ['VASP', 'QE', 'soiap']:
+            raise NotImplementedError('LAQA: only VASP, QE, and soiap for now')
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
@@ -238,32 +238,28 @@ def readin():
         append_struc_ea = False
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
-        # -- only VASP or soaip for now
-        if calc_code in ['QE', 'LAMMPS', 'OMX']:
-            energy_step_flag = False
+        if calc_code in ['LAMMPS', 'OMX']:
+            raise NotImplementedError('energy_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
-        # -- only VASP or soiap for now
-        if calc_code in ['QE', 'LAMMPS', 'OMX']:
-            struc_step_flag = False
+        if calc_code in ['LAMMPS', 'OMX']:
+            raise NotImplementedError('struc_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         struc_step_flag = False
     try:
         force_step_flag = config.getboolean('option', 'force_step_flag')
-        # -- only VASP or soiap for now
-        if calc_code in ['QE', 'LAMMPS', 'OMX']:
-            force_step_flag = False
+        if calc_code in ['LAMMPS', 'OMX']:
+            raise NotImplementedError('force_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         force_step_flag = False
     if algo == 'LAQA':
         force_step_flag = True
     try:
         stress_step_flag = config.getboolean('option', 'stress_step_flag')
-        # -- only VASP or soiap for now
-        if calc_code in ['QE', 'LAMMPS', 'OMX']:
-            stress_step_flag = False
+        if calc_code in ['LAMMPS', 'OMX']:
+            raise NotImplementedError('stress_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         stress_step_flag = False
     if algo == 'LAQA':
@@ -274,7 +270,7 @@ def readin():
         # ------ global declaration
         global nselect_bo, score, num_rand_basis, cdev, dscrpt
         global fp_rmin, fp_rmax, fp_npoints, fp_sigma
-        global max_select_bo, manual_select_bo
+        global max_select_bo, manual_select_bo, emax_bo, emin_bo
         # ------ read intput variables
         nselect_bo = config.getint('BO', 'nselect_bo')
         if nselect_bo <= 0:
@@ -342,6 +338,17 @@ def readin():
                     raise ValueError('manual_select_bo must be'
                                      ' non-negative int'
                                      ' and less than tot_struc')
+        try:
+            emax_bo = config.getfloat('BO', 'emax_bo')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            emax_bo = None
+        try:
+            emin_bo = config.getfloat('BO', 'emin_bo')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            emin_bo = None
+        if emax_bo is not None and emin_bo is not None:
+            if emin_bo > emax_bo:
+                raise ValueError('emax_bo < emin_bo, check emax_bo and emin_bo')
 
     # ---------- LAQA
     if algo == 'LAQA':
@@ -362,7 +369,7 @@ def readin():
         global mindist_ea
         global slct_func, t_size, a_rlt, b_rlt
         global crs_lat, nat_diff_tole, ntimes, sigma_st,  maxcnt_ea
-        global maxgen_ea
+        global maxgen_ea, emax_ea, emin_ea
         # global restart_gen
         # ------ read intput variables
         # -- number of structures
@@ -481,6 +488,17 @@ def readin():
         #     restart_gen = config.getint('EA', 'restart_gen')
         # except configparser.NoOptionError:
         #     restart_gen = 0
+        try:
+            emax_ea = config.getfloat('EA', 'emax_ea')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            emax_ea = None
+        try:
+            emin_ea = config.getfloat('EA', 'emin_ea')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            emin_ea = None
+        if emax_ea is not None and emin_ea is not None:
+            if emin_ea > emax_ea:
+                raise ValueError('emax_ea < emin_ea, check emax_ea and emin_ea')
 
     # ---------- global declaration for comman part in calc_code
     global kppvol, kpt_flag, force_gamma
@@ -664,7 +682,8 @@ def writeout():
             fout.write('max_select_bo = {}\n'.format(max_select_bo))
             fout.write('manual_select_bo = {}\n'.format(
                 ' '.join(str(x) for x in manual_select_bo)))
-
+            fout.write('emax_bo = {}\n'.format(emax_bo))
+            fout.write('emin_bo = {}\n'.format(emin_bo))
         # ------ LAQA
         if algo == 'LAQA':
             fout.write('# ------ LAQA section\n')
@@ -698,6 +717,8 @@ def writeout():
             fout.write('maxcnt_ea = {}\n'.format(maxcnt_ea))
             fout.write('maxgen_ea = {}\n'.format(maxgen_ea))
 #            fout.write('restart_gen = {}\n'.format(restart_gen))
+            fout.write('emax_ea = {}\n'.format(emax_ea))
+            fout.write('emin_ea = {}\n'.format(emin_ea))
 
         # ------ VASP
         if calc_code == 'VASP':
@@ -815,6 +836,8 @@ def save_stat(stat):    # only 1st run
         stat.set('BO', 'max_select_bo', '{}'.format(max_select_bo))
         stat.set('BO', 'manual_select_bo', '{}'.format(
             ' '.join(str(x) for x in manual_select_bo)))
+        stat.set('BO', 'emax_bo', '{}'.format(emax_bo))
+        stat.set('BO', 'emin_bo', '{}'.format(emin_bo))
 
     # ---------- LAQA
     if algo == 'LAQA':
@@ -846,6 +869,8 @@ def save_stat(stat):    # only 1st run
         stat.set('EA', 'sigma_st', '{}'.format(sigma_st))
         stat.set('EA', 'maxcnt_ea', '{}'.format(maxcnt_ea))
         stat.set('EA', 'maxgen_ea', '{}'.format(maxgen_ea))
+        stat.set('EA', 'emax_ea', '{}'.format(emax_ea))
+        stat.set('EA', 'emin_ea', '{}'.format(emin_ea))
 
     # ---------- VASP
     if calc_code == 'VASP':
@@ -992,6 +1017,16 @@ def diffinstat(stat):
         old_max_select_bo = stat.getint('BO', 'max_select_bo')
         old_manual_select_bo = stat.get('BO', 'manual_select_bo')
         old_manual_select_bo = [int(x) for x in old_manual_select_bo.split()]
+        old_emax_bo = stat.get('BO', 'emax_bo')
+        if old_emax_bo == 'None':
+            old_emax_bo = None    # char --> None
+        else:
+            old_emax_bo = float(old_emax_bo)    # char --> float
+        old_emin_bo = stat.get('BO', 'emin_bo')
+        if old_emin_bo == 'None':
+            old_emin_bo = None    # char --> None
+        else:
+            old_emin_bo = float(old_emin_bo)    # char --> float
 
     # ------ LAQA
     if old_algo == 'LAQA':
@@ -1026,6 +1061,16 @@ def diffinstat(stat):
         old_maxcnt_ea = stat.getint('EA', 'maxcnt_ea')
         old_maxgen_ea = stat.getint('EA', 'maxgen_ea')
         # old_restart_gen = stat.get('EA', 'restart_gen')
+        old_emax_ea = stat.get('EA', 'emax_ea')
+        if old_emax_ea == 'None':
+            old_emax_ea = None    # char --> None
+        else:
+            old_emax_ea = float(old_emax_ea)    # char --> float
+        old_emin_ea = stat.get('EA', 'emin_ea')
+        if old_emin_ea == 'None':
+            old_emin_ea = None    # char --> None
+        else:
+            old_emin_ea = float(old_emin_ea)    # char --> float
 
     # ------ VASP
     if old_calc_code == 'VASP':
@@ -1247,6 +1292,14 @@ def diffinstat(stat):
                                      '{}'.format(' '.join(
                                          str(x) for x in manual_select_bo)))
             logic_change = True
+        if not old_emax_bo == emax_bo:
+            diff_out('emax_bo', old_emax_bo, emax_bo)
+            io_stat.set_input_common(stat, sec, 'emax_bo', emax_bo)
+            logic_change = True
+        if not old_emin_bo == emin_bo:
+            diff_out('emin_bo', old_emin_bo, emin_bo)
+            io_stat.set_input_common(stat, sec, 'emin_bo', emin_bo)
+            logic_change = True
 
     # ------ LAQA
     sec = 'LAQA'
@@ -1341,6 +1394,14 @@ def diffinstat(stat):
         if not old_maxgen_ea == maxgen_ea:
             diff_out('maxgen_ea', old_maxgen_ea, maxgen_ea)
             io_stat.set_input_common(stat, sec, 'maxgen_ea', maxgen_ea)
+            logic_change = True
+        if not old_emax_ea == emax_ea:
+            diff_out('emax_ea', old_emax_ea, emax_ea)
+            io_stat.set_input_common(stat, sec, 'emax_ea', emax_ea)
+            logic_change = True
+        if not old_emin_ea == emin_ea:
+            diff_out('emin_ea', old_emin_ea, emin_ea)
+            io_stat.set_input_common(stat, sec, 'emin_ea', emin_ea)
             logic_change = True
 
     # ------ VASP

@@ -71,7 +71,7 @@ class Ctrl_job:
         # ---------- temporarily append
         self.tmp_running = self.id_running[:]    # shallow copy
         self.tmp_queueing = self.id_queueing[:]
-        if not rin.stop_next_struc:    # option: stop_next_struc
+        if not rin.stop_next_struc:    # if true --> option: stop_next_struc
             while len(self.tmp_running) < rin.njob and self.tmp_queueing:
                 self.tmp_running.append(self.tmp_queueing.pop(0))
         # ---------- initialize
@@ -113,6 +113,8 @@ class Ctrl_job:
                     tid))
         # ---------- append IDs to the head of id_queueing
         self.id_queueing = rin.recalc + self.id_queueing
+        io_stat.set_id(self.stat, 'id_queueing', self.id_queueing)
+        self.save_id_data()
         # ---------- log and out
         print('# -- Recalc')
         print('Append {} to the head of id_queueing'.format(rin.recalc))
@@ -305,9 +307,7 @@ class Ctrl_job:
             # ------ update descriptors and non_error_id
             self.opt_dscrpt_data[self.current_id] = None
         # ---------- save bo_data
-        bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
-                   self.bo_mean, self.bo_var, self.bo_score)
-        pkl_data.save_bo_data(bo_data)
+        self.save_data()
 
     def ctrl_collect_laqa(self):
         # ---------- flag for finish
@@ -341,18 +341,14 @@ class Ctrl_job:
             self.laqa_score[self.current_id].append(-float('inf'))
         else:
             self.laqa_score[self.current_id].append(-energy + tmp_laqa_bias)
-        # ---------- save laqa data
-        laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,
-                     self.laqa_energy, self.laqa_bias, self.laqa_score)
-        pkl_data.save_laqa_data(laqa_data)
-        # ---------- out laqa data
+        # ---------- save and out laqa data
+        self.save_data()
         out_laqa_status(self.laqa_step, self.laqa_score,
                         self.laqa_energy, self.laqa_bias)
         out_laqa_step(self.laqa_step)
         out_laqa_score(self.laqa_score)
         out_laqa_energy(self.laqa_energy)
         out_laqa_bias(self.laqa_bias)
-        pkl_data.save_laqa_data(laqa_data)
         # ---------- case of 'done' or error
         if check_opt == 'done' or np.isnan(energy) or np.isnan(tmp_laqa_bias):
             self.fin_laqa = True
@@ -389,8 +385,7 @@ class Ctrl_job:
         out_rslt(self.rslt_data)
         # ------ success
         if opt_struc is not None:
-            ea_id_data = (self.gen, self.id_queueing, self.id_running)
-            pkl_data.save_ea_id(ea_id_data)
+            self.save_id_data()
 
     def regist_opt(self, opt_struc):
         '''
@@ -530,12 +525,8 @@ class Ctrl_job:
             # ------ update descriptors
             self.opt_dscrpt_data[self.current_id] = None
             # ------ save
-            bo_id_data = (self.n_selection, self.id_queueing,
-                          self.id_running, self.id_select_hist)
-            pkl_data.save_bo_id(bo_id_data)
-            bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
-                       self.bo_mean, self.bo_var, self.bo_score)
-            pkl_data.save_bo_data(bo_data)
+            self.save_id_data()
+            self.save_data()
         # ---------- LAQA
         elif rin.algo == 'LAQA':
             # ------ save rslt
@@ -550,11 +541,8 @@ class Ctrl_job:
             self.laqa_energy[self.current_id].append(energy)
             self.laqa_bias[self.current_id].append(np.nan)
             self.laqa_score[self.current_id].append(-float('inf'))
-            # ---------- save laqa data
-            laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,
-                         self.laqa_energy, self.laqa_bias, self.laqa_score)
-            pkl_data.save_laqa_data(laqa_data)
-            # ---------- out laqa data
+            # ---------- save and out laqa data
+            self.save_data()
             out_laqa_status(self.laqa_step, self.laqa_score,
                             self.laqa_energy, self.laqa_bias)
             out_laqa_step(self.laqa_step)
@@ -593,20 +581,7 @@ class Ctrl_job:
         io_stat.set_id(self.stat, 'id_queueing', self.id_queueing)
         io_stat.write_stat(self.stat)
         # ---------- save id_data
-        if rin.algo == 'RS':
-            rs_id_data = (self.id_queueing, self.id_running)
-            pkl_data.save_rs_id(rs_id_data)
-        elif rin.algo == 'BO':
-            bo_id_data = (self.n_selection, self.id_queueing,
-                          self.id_running, self.id_select_hist)
-            pkl_data.save_bo_id(bo_id_data)
-        elif rin.algo == 'LAQA':
-            laqa_id_data = (self.id_queueing, self.id_running,
-                            self.id_select_hist)
-            pkl_data.save_laqa_id(laqa_id_data)
-        if rin.algo == 'EA':
-            ea_id_data = (self.gen, self.id_queueing, self.id_running)
-            pkl_data.save_ea_id(ea_id_data)
+        self.save_id_data()
 
     def prepare_jobfile(self):
         if not os.path.isfile('./calc_in/' + rin.jobfile):
@@ -704,3 +679,32 @@ class Ctrl_job:
         ea_id_data = (self.gen, self.id_queueing, self.id_running)
         ea_next_gen.next_gen(self.stat, self.init_struc_data,
                              self.opt_struc_data, self.rslt_data, ea_id_data)
+
+    def save_id_data(self):
+        # ---------- save id_data
+        if rin.algo == 'RS':
+            rs_id_data = (self.id_queueing, self.id_running)
+            pkl_data.save_rs_id(rs_id_data)
+        if rin.algo == 'BO':
+            bo_id_data = (self.n_selection, self.id_queueing,
+                          self.id_running, self.id_select_hist)
+            pkl_data.save_bo_id(bo_id_data)
+        if rin.algo == 'LAQA':
+            laqa_id_data = (self.id_queueing, self.id_running,
+                            self.id_select_hist)
+            pkl_data.save_laqa_id(laqa_id_data)
+        if rin.algo == 'EA':
+            ea_id_data = (self.gen, self.id_queueing, self.id_running)
+            pkl_data.save_ea_id(ea_id_data)
+
+    def save_data(self):
+        # ---------- save ??_data
+        if rin.algo == 'BO':
+            bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
+                       self.bo_mean, self.bo_var, self.bo_score)
+            pkl_data.save_bo_data(bo_data)
+        if rin.algo == 'LAQA':
+            laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,
+                         self.laqa_energy, self.laqa_bias, self.laqa_score)
+            pkl_data.save_laqa_data(laqa_data)
+        # ea_data is used only in ea_next_gen.py

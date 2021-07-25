@@ -9,12 +9,13 @@ import os
 # ---------- parameters
 bohr2ang = 0.529177210903
 hrt2ev = 27.211386245988
+ry2ev = 13.605693122994
 kbar2ev_ang3 = 0.0006241509073
 
 
 # ---------- functions
 def get_version():
-    return 'CrySPY 0.9.2'
+    return 'CrySPY 0.10.0'
 
 
 def get_date():

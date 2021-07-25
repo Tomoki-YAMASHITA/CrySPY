@@ -29,7 +29,8 @@ def append_struc(stat, init_struc_data):
     # ---------- instantiate Seclect_parents class
     print('# ------ select parents')
     sp = Select_parents(opt_struc_data, fitness, None, None,
-                        rin.fit_reverse, rin.n_fittest)
+                        rin.fit_reverse, rin.n_fittest,
+                        rin.emax_ea, rin.emin_ea)
     if rin.slct_func == 'TNM':
         sp.set_tournament(t_size=rin.t_size)
     else:

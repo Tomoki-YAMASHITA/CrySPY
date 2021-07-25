@@ -65,10 +65,22 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
                 # -- already done
                 if opt_dscrpt_data[i] is None:    # find error
                     non_error_id.remove(i)
-                else:
-                    s_act.append(len(descriptors))
-                    done_id.append(i)
-                    descriptors.append(opt_dscrpt_data[i])
+                    continue
+                if rin.emax_bo is not None:
+                    if rslt_data.loc[i]['E_eV_atom'] > rin.emax_bo:
+                        non_error_id.remove(i)
+                        print('Eliminate ID {}: {} > emax_bo'.format(
+                              i, rslt_data.loc[i]['E_eV_atom']))
+                        continue
+                if rin.emin_bo is not None:
+                    if rslt_data.loc[i]['E_eV_atom'] < rin.emin_bo:
+                        non_error_id.remove(i)
+                        print('Eliminate ID {}: {} < emin_bo'.format(
+                              i, rslt_data.loc[i]['E_eV_atom']))
+                        continue
+                s_act.append(len(descriptors))
+                done_id.append(i)
+                descriptors.append(opt_dscrpt_data[i])
             else:
                 # -- not yet
                 if i in rin.manual_select_bo:

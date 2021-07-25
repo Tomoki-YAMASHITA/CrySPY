@@ -2,6 +2,8 @@
 Collect results in soiap
 '''
 
+import sys
+
 import numpy as np
 
 from . import structure as soiap_structure
@@ -22,7 +24,7 @@ def collect_soiap(current_id, work_path):
                         and 'QMD%strs converged.' in lines[i-1]):
                     check_opt = 'done'
                 break
-    except:
+    except Exception:
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom
@@ -30,12 +32,11 @@ def collect_soiap(current_id, work_path):
     try:
         with open(work_path+'log.tote') as f:
             lines = f.readlines()
-        energy = float(lines[-1].split()[2])    # in Hartree
-        energy = energy * utility.hrt2ev        # Hartree to eV
-        energy = energy/rin.natot               # eV/cell --> eV/atom
-    except:
+        energy = float(lines[-1].split()[4])    # in Hartree/atom
+        energy = energy * utility.hrt2ev        # Hartree/atom to eV/atom
+    except Exception as e:
         energy = np.nan    # error
-        print('    Structure ID {0}, could not obtain energy from {1}'.format(
+        print(e, '    Structure ID {0}, could not obtain energy from {1}'.format(
             current_id, rin.soiap_outfile))
 
     # ---------- collect the last structure
@@ -44,7 +45,7 @@ def collect_soiap(current_id, work_path):
             lines = f.readlines()
             lines = lines[-(rin.natot+5):]
         opt_struc = soiap_structure.from_file(lines)
-    except:
+    except Exception:
         opt_struc = None
 
     # ---------- check
@@ -58,22 +59,31 @@ def collect_soiap(current_id, work_path):
     return opt_struc, energy, magmom, check_opt
 
 
-def get_energy_step_soiap(energy_step_data, current_id, filename):
+def get_energy_step_soiap(energy_step_data, current_id, work_path):
     '''
     get energy step data in eV/atom
 
     energy_step_data[ID][stage][step]
     energy_step_data[ID][0] <-- stage 1
     energy_step_data[ID][1] <-- stage 2
+
+    In soiap, collect energy step data only when loopa == 1.
+        This is because other data (struc, force, stress)
+        are output only when loopa == 1
+        see, https://github.com/nbsato/soiap/blob/master/doc/instructions.md
     '''
     try:
-        log_np = np.loadtxt(filename)
-        energy_step = log_np[:, 4]    # collumn 4: Hartree/atom
-        energy_step = energy_step * utility.hrt2ev    # eV/atom
-    except:
+        energy_step = []
+        with open(work_path+'log.tote') as f:
+            lines = f.readlines()
+        for line in lines:
+            if line.split()[1] == '1':
+                energy_step.append(line.split()[4])    # collumn 4: Hartree/atom
+        energy_step = np.array(energy_step, dtype='float') * utility.hrt2ev
+    except Exception as e:
         energy_step = None
-        print('\n#### ID: {0}: failed to parse log.tote\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse log.tote\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -87,7 +97,7 @@ def get_energy_step_soiap(energy_step_data, current_id, filename):
     return energy_step_data
 
 
-def get_struc_step_soiap(struc_step_data, current_id, filename):
+def get_struc_step_soiap(struc_step_data, current_id, work_path):
     '''
     get structure step data
 
@@ -101,7 +111,7 @@ def get_struc_step_soiap(struc_step_data, current_id, filename):
     # ---------- get struc step from log.struc
     try:
         # ------ read file
-        with open(filename, 'r') as f:
+        with open(work_path+'log.struc', 'r') as f:
             lines = f.readlines()
         # ------ init.
         struc_step = []
@@ -113,10 +123,10 @@ def get_struc_step_soiap(struc_step_data, current_id, filename):
                 struc = soiap_structure.from_file(tmp_lines)
                 struc_step.append(struc)
                 tmp_lines = []    # clear
-    except:
+    except Exception as e:
         struc_step = None
-        print('\n#### ID: {0}: failed to parse log.struc\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse log.struc\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -130,9 +140,9 @@ def get_struc_step_soiap(struc_step_data, current_id, filename):
     return struc_step_data
 
 
-def get_force_step_soiap(force_step_data, current_id, filename):
+def get_force_step_soiap(force_step_data, current_id, work_path):
     '''
-    get force step data
+    get force step data in eV/angstrom
 
     # ---------- args
     force_step_data: (dict) the key is structure ID
@@ -144,7 +154,7 @@ def get_force_step_soiap(force_step_data, current_id, filename):
     # ---------- get force step from log.frc
     try:
         # ------ read file
-        with open(filename, 'r') as f:
+        with open(work_path+'log.frc', 'r') as f:
             lines = f.readlines()
         # ------ init
         force_step = []
@@ -159,10 +169,10 @@ def get_force_step_soiap(force_step_data, current_id, filename):
                     tmp_lines = tmp_lines * utility.hrt2ev / utility.bohr2ang
                     force_step.append(tmp_lines)
                     tmp_lines = []    # clear
-    except:
+    except Exception as e:
         force_step = None
-        print('\n#### ID: {0}: failed to parse log.frc\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse log.frc\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -176,9 +186,9 @@ def get_force_step_soiap(force_step_data, current_id, filename):
     return force_step_data
 
 
-def get_stress_step_soiap(stress_step_data, current_id, filename):
+def get_stress_step_soiap(stress_step_data, current_id, work_path):
     '''
-    get stress step data
+    get stress step data in eV/ang**3
 
     # ---------- args
     stress_step_data: (dict) the key is structure ID
@@ -190,7 +200,7 @@ def get_stress_step_soiap(stress_step_data, current_id, filename):
     # ---------- get stress step from log.strs
     try:
         # ------ read file
-        with open(filename, 'r') as f:
+        with open(work_path+'log.strs', 'r') as f:
             lines = f.readlines()
         # ------ init
         stress_step = []
@@ -205,10 +215,10 @@ def get_stress_step_soiap(stress_step_data, current_id, filename):
                     tmp_lines = tmp_lines * utility.hrt2ev / utility.bohr2ang**3
                     stress_step.append(tmp_lines)
                     tmp_lines = []    # clear
-    except:
+    except Exception as e:
         stress_step = None
-        print('\n#### ID: {0}: failed to parse log.strs\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse log.strs\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

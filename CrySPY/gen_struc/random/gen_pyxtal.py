@@ -220,8 +220,8 @@ class Rnd_struc_gen_pyxtal:
                 tmp_crystal.from_random(dim=3, group=spg, species=self.atype,
                                         numIons=self.nat, factor=rand_vol,
                                         conventional=False)
-            except RuntimeError:
-                sys.stderr.write('RuntimeError in spg = {} retry.\n'.format(spg))
+            except Exception as e:
+                print(e, ':spg = {} retry.'.format(spg), file=sys.stderr)
                 self.spg_error.append(spg)
                 continue
             if tmp_crystal.valid:
@@ -247,10 +247,10 @@ class Rnd_struc_gen_pyxtal:
                                                                self.atype,
                                                                self.mindist)
                     if not success:
-                        sys.stderr.write('mindist in gen_struc: {} - {}, {}. retry.\n'.format(
+                        print('mindist in gen_struc: {} - {}, {}. retry.'.format(
                             self.atype[mindist_ij[0]],
                             self.atype[mindist_ij[1]],
-                            dist))
+                            dist), file=sys.stderr)
                         continue    # failure
                 # -- check actual space group
                 try:
@@ -333,7 +333,8 @@ class Rnd_struc_gen_pyxtal:
                 # Process.close() available from python 3.7
                 p.close()
             if q.empty():
-                sys.stderr.write('timeout for molecular structure generation. retry.\n')
+                print('timeout for molecular structure generation. retry.',
+                      file=sys.stderr)
                 continue
             else:
                 tmp_struc = q.get()
@@ -348,7 +349,7 @@ class Rnd_struc_gen_pyxtal:
                     vol = vol * tmp_struc.num_sites / self.natot    # for conv. cell
                     tmp_struc = scale_cell_mol(tmp_struc, self.mol_data, vol)
                     if not tmp_struc:    # case: scale_cell_mol returns False
-                        sys.stderr.write('failed scale cell. retry.\n')
+                        print('failed scale cell. retry.', file=sys.stderr)
                         continue
                 # -- check nat
                 if not self._check_nat(tmp_struc):
@@ -358,7 +359,7 @@ class Rnd_struc_gen_pyxtal:
                     tmp_struc = tmp_struc.get_primitive_structure()
                     # recheck nat
                     if not self._check_nat(tmp_struc):    # failure
-                        sys.stderr.write('different num. of atoms. retry.\n')
+                        print('different num. of atoms. retry.', file=sys.stderr)
                         continue
                 # -- sort, necessary in molecular crystal
                 tmp_struc = sort_by_atype(tmp_struc, self.atype)
@@ -368,10 +369,10 @@ class Rnd_struc_gen_pyxtal:
                                                                self.atype,
                                                                self.mindist)
                     if not success:
-                        sys.stderr.write('mindist in gen_struc_mol: {} - {}, {}. retry.\n'.format(
+                        print('mindist in gen_struc_mol: {} - {}, {}. retry.'.format(
                             self.atype[mindist_ij[0]],
                             self.atype[mindist_ij[1]],
-                            dist))
+                            dist), file=sys.stderr)
                         continue    # failure
                 # -- check actual space group
                 try:
@@ -454,8 +455,8 @@ class Rnd_struc_gen_pyxtal:
                 tmp_crystal.from_random(dim=3, group=spg, species=tmp_atype,
                                         numIons=self.nmol, factor=rand_vol,
                                         conventional=False)
-            except RuntimeError:
-                sys.stderr.write('RuntimeError in spg = {} retry.\n'.format(spg))
+            except Exception as e:
+                print(e, ':spg = {} retry.'.format(spg), file=sys.stderr)
                 self.spg_error.append(spg)
                 continue
             if tmp_crystal.valid:
@@ -540,10 +541,10 @@ class Rnd_struc_gen_pyxtal:
                                                                self.atype,
                                                                self.mindist)
                     if not success:
-                        sys.stderr.write('mindist: {} - {}, {}. retry.\n'.format(
+                        print('mindist: {} - {}, {}. retry.'.format(
                             self.atype[mindist_ij[0]],
                             self.atype[mindist_ij[1]],
-                            dist))
+                            dist), file=sys.stderr)
                         continue    # failure
                 # -- check actual space group
                 try:
@@ -588,11 +589,7 @@ class Rnd_struc_gen_pyxtal:
             else:
                 q.put(None)
                 q.put(tmp_crystal.valid)
-        except np.linalg.LinAlgError:
-            sys.stderr.write('np.linalg.LinAlgError in spg = {} retry.\n'.format(spg))
-            q.put('error')
-            q.put(None)
-        except RuntimeError:
-            sys.stderr.write('RuntimeError in spg = {} retry.\n'.format(spg))
+        except Exception as e:
+            print(e, ':spg = {} retry.'.format(spg), file=sys.stderr)
             q.put('error')
             q.put(None)

@@ -19,7 +19,8 @@ def collect_OMX(current_id, work_path):
         with open(work_path+rin.OMX_outfile, 'r') as fpout:
             lines = fpout.readlines()
         check_opt = 'done'
-    except:
+    except Exception as e:
+        print(e)
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom (done)
@@ -32,16 +33,17 @@ def collect_OMX(current_id, work_path):
                 energy = float(re.search(r"-\d.+", line).group())
                 energy = float(Energy(energy, 'Ha').to('eV'))
                 energy = energy / float(rin.natot)
-                break	
+                break
         magmom = np.nan # implemented (2020/10/03)
         for line in lines:
             if line.find("muB") >= 0:
                 muB = line.split()
                 magmom = float(muB[4])
                 break
-    except:
+    except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
+        print(e)
         print(' Structure ID {0}, could not obtain energy from {1}'.format(
             current_id, rin.OMX_outfile))
 
@@ -62,7 +64,8 @@ def collect_OMX(current_id, work_path):
         with open('./data/opt_OMX-structure', 'a') as fstruc:
             fstruc.write('# ID {0:d}\n'.format(current_id))
         OMX_structure.write(opt_struc, './data/opt_OMX-structure', mode='a')
-    except:
+    except Exception as e:
+        print(e)
         opt_struc = None
 
     # ---------- check

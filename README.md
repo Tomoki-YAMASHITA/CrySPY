@@ -5,15 +5,16 @@ CrySPY is a crystal structure prediction tool written in Python.
 Document site is moved to https://tomoki-yamashita.github.io/CrySPY_doc/
 
 ## Latest version
-version 0.9.2 (2021 March 18)
-
-This version supports pymatgen v2022.
-If you use pymatgen v2021 or older, use CrySPY 0.9.1.
+version 0.10.0 (2021 July 25)
 
 
 ## Important changes
+* version 0.10.0 (2021 July 25)
+    - Support PyXtal 0.2.9 or later
+    - Step data and LAQA for QE
+    - Upper and lower limits of energy for EA and BO
 * version 0.9.2 (2021 Mar 18)
-    - support pymatgen major change (v2022)
+    - Support pymatgen major change (v2022)
 * version 0.9.0 (2021 Feb 7)
     - Interfaced with OpenMX
     - Employ PyXtal library to generate initial structures
@@ -48,16 +49,10 @@ If you use pymatgen v2021 or older, use CrySPY 0.9.1.
 ### Python
 - Python 3.8.x, 3.9.x (3.7.x may work)
 - [COMBO](https://github.com/tsudalab/combo3 "COMBO")
-- [pymatgen >= 2022.0.4](http://pymatgen.org "pymatgen")
 - [PyXtal >= 0.2.2](https://pyxtal.readthedocs.io/en/latest "PyXtal")
+- (PyXtal requires pymatgen) [pymatgen >= 2022.0.4](http://pymatgen.org "pymatgen")
 
-There is a breaking change in pymatgen v2022.  
-PyXtal v0.2.2 and CrySPY 0.9.2 support this change in pymatgen.  
-If you use pymatgen v2021 or older, choose PyXtal v0.2.1 or older and CrySPY 0.9.1.
-
-
-PyXtal requires SciPy, but SciPy v1.6.0 includes a bug for deepcopy. (2021 Feb 7)  
-This bug has already been fixed in SciPy v1.6.1 (2021 March 7).
+See [CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc/installation/requirements/ "CrySPY document") in detail.
 
 ### Structure optimizer
 At least one optimizer is required.
@@ -80,6 +75,11 @@ At least one optimizer is required.
 
 
 ## Reference
+### CrySPY (software)
+* T. Yamashita, S. Kanehira, N. Sato, H. Kino, H. Sawahata, T. Sato, F. Utsuno, K. Tsuda, T. Miyake, and T. Oguchi, Sci. Technol. Adv. Mater.:Methods **1**, 87 (2021).
+    - https://www.tandfonline.com/doi/full/10.1080/27660400.2021.1943171
+
+
 ### Bayesian optimization
 * T. Yamashita, N. Sato, H. Kino, T. Miyake, K. Tsuda, and T. Oguchi, Phys. Rev. Mater. **2**, 013803 (2018).
     - https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.2.013803

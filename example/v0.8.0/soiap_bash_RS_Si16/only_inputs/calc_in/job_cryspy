@@ -1,6 +1,0 @@
-#!/bin/bash
-
-soiap_root=/path/to/soiap/root
-$soiap_root/src/soiap soiap.in 2>&1 > soiap.out
-
-sed -i -e '3 s/^.*$/done/' stat_job

@@ -63,7 +63,7 @@ class Permutation:
 
     def gen_child(self, struc):
         '''
-        generate child struture
+        generate child structure
 
         # ---------- return
         (if success) self.child:
@@ -110,10 +110,10 @@ class Permutation:
                 self.child = sort_by_atype(self.child, self.atype)
                 return self.child
             else:
-                sys.stderr.write('mindist in permutation: {} - {}, {}. retry.\n'.format(
+                print('mindist in permutation: {} - {}, {}. retry.'.format(
                     self.atype[mindist_ij[0]],
                     self.atype[mindist_ij[1]],
-                    dist))
+                    dist), file=sys.stderr)
                 cnt += 1
                 if cnt >= self.maxcnt_ea:
                     print('Permutatin: could not satisfy min_dist' +

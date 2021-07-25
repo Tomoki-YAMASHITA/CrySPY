@@ -3,6 +3,7 @@ Collect results in VASP
 '''
 
 import os
+import sys
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -44,7 +45,7 @@ def check_opt_vasp(file_path):
         for line in lines:
             if 'reached required accuracy' in line:
                 check_opt = 'done'
-    except:
+    except Exception:
         check_opt = 'no_file'
     return check_opt
 
@@ -61,7 +62,7 @@ def get_energy_magmom_vasp(work_path):
             energy = energy/float(rin.natot)       # eV/atom
             if 'mag=' in oszi[-1]:
                 magmom = float(oszi[-1].split()[-1])    # total magnetic moment
-    except:
+    except Exception:
         pass
     # ---------- return
     return energy, magmom
@@ -70,19 +71,23 @@ def get_energy_magmom_vasp(work_path):
 def get_opt_struc_vasp(file_name):
     try:
         opt_struc = Structure.from_file(file_name)
-    except:
+    except Exception:
         opt_struc = None
     return opt_struc
 
 
-def get_energy_step_vasp(energy_step_data, current_id, filename):
+def get_energy_step_vasp(energy_step_data, current_id, work_path):
     '''
     get energy step data in eV/atom
+
+    energy_step_data[ID][stage][step]
+    energy_step_data[ID][0] <-- stage 1
+    energy_step_data[ID][1] <-- stage 2
     '''
     # ---------- get energy step from vasprun
     try:
         # ------ read file
-        tree = ET.parse(filename)
+        tree = ET.parse(work_path+'vasprun.xml')
         root = tree.getroot()
         # ------ children nodes: calculation
         cals = root.findall('calculation')
@@ -99,10 +104,10 @@ def get_energy_step_vasp(energy_step_data, current_id, filename):
                 raise ValueError('bug')
         # ------ list, str --> array
         energy_step = np.array(energy_step, dtype='float')/float(rin.natot)
-    except:
+    except Exception as e:
         energy_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse in energy_step\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -116,11 +121,21 @@ def get_energy_step_vasp(energy_step_data, current_id, filename):
     return energy_step_data
 
 
-def get_struc_step_vasp(struc_step_data, current_id, filename):
+def get_struc_step_vasp(struc_step_data, current_id, work_path):
+    '''
+    get structure step data
+
+    # ---------- args
+    struc_step_data: (dict) the key is structure ID
+
+    struc_step_data[ID][stage][step]
+    struc_step_data[ID][0] <-- stage 1
+    struc_step_data[ID][1] <-- stage 2
+    '''
     # ---------- get struc step from vasprun
     try:
         # ------ read file
-        tree = ET.parse(filename)
+        tree = ET.parse(work_path+'vasprun.xml')
         root = tree.getroot()
         # ------ get atom list
         atoms = root.findall("atominfo/array[@name='atoms']/set/rc")
@@ -147,10 +162,10 @@ def get_struc_step_vasp(struc_step_data, current_id, filename):
             struc = Structure(lattice, atomlist, incoord)
             # -- append
             struc_step.append(struc)
-    except:
+    except Exception as e:
         struc_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse in struc_step\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -164,11 +179,21 @@ def get_struc_step_vasp(struc_step_data, current_id, filename):
     return struc_step_data
 
 
-def get_force_step_vasp(force_step_data, current_id, filename):
+def get_force_step_vasp(force_step_data, current_id, work_path):
+    '''
+    get force step data in eV/angstrom
+
+    # ---------- args
+    force_step_data: (dict) the key is structure ID
+
+    force_step_data[ID][stage][step]
+    force_step_data[ID][0] <-- stage 1
+    force_step_data[ID][1] <-- stage 2
+    '''
     # ---------- get force step from vasprun
     try:
         # ------ read file
-        tree = ET.parse(filename)
+        tree = ET.parse(work_path+'vasprun.xml')
         root = tree.getroot()
         # ------ children nodes: calculation
         cals = root.findall('calculation')
@@ -190,10 +215,10 @@ def get_force_step_vasp(force_step_data, current_id, filename):
             force = np.array(force, dtype='float')
             # -- appned force_step
             force_step.append(force)
-    except:
+    except Exception as e:
         force_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse in force_step\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -207,11 +232,21 @@ def get_force_step_vasp(force_step_data, current_id, filename):
     return force_step_data
 
 
-def get_stress_step_vasp(stress_step_data, current_id, filename):
+def get_stress_step_vasp(stress_step_data, current_id, work_path):
+    '''
+    get stress step data in eV/ang**3
+
+    # ---------- args
+    stress_step_data: (dict) the key is structure ID
+
+    stress_step_data[ID][stage][step]
+    stress_step_data[ID][0] <-- stage 1
+    stress_step_data[ID][1] <-- stage 2
+    '''
     # ---------- get stress step from vasprun
     try:
         # ------ read file
-        tree = ET.parse(filename)
+        tree = ET.parse(work_path+'vasprun.xml')
         root = tree.getroot()
         # ------ children nodes: calculation
         cals = root.findall('calculation')
@@ -235,10 +270,10 @@ def get_stress_step_vasp(stress_step_data, current_id, filename):
             stress = stress * utility.kbar2ev_ang3
             # -- appned stress_step
             stress_step.append(stress)
-    except:
+    except Exception as e:
         stress_step = None
-        print('\n#### ID: {0}: failed to parse vasprun.xml\n\n'.format(
-            current_id))
+        print(e, '#### ID: {0}: failed to parse in stress_step\n'.format(
+            current_id), file=sys.stderr)
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

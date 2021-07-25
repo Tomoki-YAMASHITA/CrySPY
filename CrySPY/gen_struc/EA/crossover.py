@@ -296,10 +296,10 @@ class Crossover:
                     cnt = 0    # reset
                     self._nat_diff[i] += 1
                 else:
-                    sys.stderr.write('mindist in _add_border_line: {} - {}, {}. retry.\n'.format(
+                    print('mindist in _add_border_line: {} - {}, {}. retry.'.format(
                         self.atype[mindist_ij[0]],
                         self.atype[mindist_ij[1]],
-                        dist))
+                        dist), file=sys.stderr)
                     self.child.pop()    # cancel
                 # ------ fail
                 if cnt == self.maxcnt_ea:

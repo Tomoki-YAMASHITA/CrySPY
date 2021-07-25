@@ -32,7 +32,8 @@ def next_gen(stat, init_struc_data, opt_struc_data, rslt_data, ea_id_data):
     # ---------- instantiate Seclect_parents class
     print('# -- select parents')
     sp = Select_parents(opt_struc_data, c_fitness, elite_struc, elite_fitness,
-                        rin.fit_reverse, rin.n_fittest)
+                        rin.fit_reverse, rin.n_fittest,
+                        rin.emax_ea, rin.emin_ea)
     if rin.slct_func == 'TNM':
         sp.set_tournament(t_size=rin.t_size)
     else:
@@ -51,7 +52,8 @@ def next_gen(stat, init_struc_data, opt_struc_data, rslt_data, ea_id_data):
         elite_fitness = {}
         # ------ Select_parents class also works for selecting elite structures
         se = Select_parents(opt_struc_data, all_fitness, None, None,
-                            rin.fit_reverse, rin.n_elite)
+                            rin.fit_reverse, rin.n_elite,
+                            rin.emax_ea, rin.emin_ea)
         for cid in se.ranking_dedupe:
             print('Structure ID {0:>6} keeps as the elite'.format(cid))
             elite_struc[cid] = opt_struc_data[cid]

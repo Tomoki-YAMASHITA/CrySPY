@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0] - 2021-07-25
+### Added
+- step_data for QE
+- LAQA for QE
+- Upper and lower limits of energy in EA and BO
+
+### Changed
+- support PyXtal 0.2.9 or later
+
+### Fixed
+- bug fix for recalc
+
 ## [0.9.2] - 2021-03-18
 ### Changed
 - support pymatgen major change (v2022)

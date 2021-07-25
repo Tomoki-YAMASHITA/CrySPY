@@ -161,10 +161,10 @@ class Rnd_struc_gen:
                                                                self.atype,
                                                                self.mindist)
                     if not success:
-                        sys.stderr.write('mindist in gen_wo_spg: {} - {}, {}. retry.\n'.format(
+                        print('mindist in gen_wo_spg: {} - {}, {}. retry.'.format(
                             self.atype[mindist_ij[0]],
                             self.atype[mindist_ij[1]],
-                            dist))
+                            dist), file=sys.stderr)
                         continue    # failure
                 # --
                 # ------ check actual space group using pymatgen
@@ -273,10 +273,10 @@ class Rnd_struc_gen:
                                                            self.atype,
                                                            self.mindist)
                 if not success:
-                    sys.stderr.write('mindist in gen_with_find_wy: {} - {}, {}. retry.\n'.format(
+                    print('mindist in gen_with_find_wy: {} - {}, {}. retry.'.format(
                         self.atype[mindist_ij[0]],
                         self.atype[mindist_ij[1]],
-                        dist))
+                        dist), file=sys.stderr)
                     continue    # failure
             # ------ check actual space group using pymatgen
             try:
@@ -456,10 +456,10 @@ class Rnd_struc_gen:
                                                        self.atype,
                                                        self.mindist)
             if not success:
-                sys.stderr.write('mindist in _gen_struc_wo_spg: {} - {}, {}. retry.\n'.format(
+                print('mindist in _gen_struc_wo_spg: {} - {}, {}. retry.'.format(
                     self.atype[mindist_ij[0]],
                     self.atype[mindist_ij[1]],
-                    dist))
+                    dist), file=sys.stderr)
                 incoord.pop(-1)    # cancel
                 cnt += 1
                 if self.maxcnt < cnt:
@@ -533,10 +533,10 @@ class Rnd_struc_gen:
                                                            self.atype,
                                                            self.mindist)
                 if not success:
-                    sys.stderr.write('mindist in _gen_struc_with_spg: {} - {}, {}. retry.\n'.format(
+                    print('mindist in _gen_struc_with_spg: {} - {}, {}. retry.'.format(
                         self.atype[mindist_ij[0]],
                         self.atype[mindist_ij[1]],
-                        dist))
+                        dist), file=sys.stderr)
                     # failure
                     # num_uniqvar = 0 --> value == 0
                     cnt = self.maxcnt + 1 if value == 0 else cnt + 1

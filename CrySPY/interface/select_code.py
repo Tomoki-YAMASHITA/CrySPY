@@ -73,7 +73,7 @@ def collect(current_id, work_path):
         opt_struc, energy, magmom, check_opt = \
             collect_lammps.collect_lammps(current_id, work_path)
     else:
-        raise NotImplementedError('now only VASP, QE, OMX, soiap, or LAMMPS')
+        raise NotImplementedError('only VASP, QE, OMX, soiap, LAMMPS for now')
 
     # ---------- return
     return opt_struc, energy, magmom, check_opt
@@ -98,72 +98,72 @@ def next_struc(structure, current_id, work_path, *args):
     elif rin.calc_code == 'LAMMPS':
         ctrl_job_lammps.next_struc_lammps(structure, current_id, work_path)
     else:
-        raise NotImplementedError('now only VASP, QE, OMX, soiap, or LAMMPS')
+        raise NotImplementedError('only VASP, QE, OMX, soiap, LAMMPS for now')
 
 
 def get_energy_step(energy_step_data, current_id, work_path):
     if rin.calc_code == 'VASP':
         energy_step_data = collect_vasp.get_energy_step_vasp(
-            energy_step_data, current_id, work_path+'vasprun.xml')
+            energy_step_data, current_id, work_path)
         return energy_step_data
     elif rin.calc_code == 'QE':
-        raise NotImplementedError('now only VASP')
+        energy_step_data = collect_qe.get_energy_step_qe(energy_step_data,
+                                                         current_id, work_path)
+        return energy_step_data
     elif rin.calc_code == 'soiap':
         energy_step_data = collect_soiap.get_energy_step_soiap(
-            energy_step_data, current_id, work_path+'log.tote')
+            energy_step_data, current_id, work_path)
         return energy_step_data
-    elif rin.calc_code == 'LAMMPS':
-        raise NotImplementedError('now only VASP')
     else:
-        raise NotImplementedError('now only VASP')
+        raise NotImplementedError('only VASP, QE, soiap for now')
 
 
 def get_struc_step(struc_step_data, current_id, work_path):
     if rin.calc_code == 'VASP':
         struc_step_data = collect_vasp.get_struc_step_vasp(
-            struc_step_data, current_id, work_path+'vasprun.xml')
+            struc_step_data, current_id, work_path)
         return struc_step_data
     elif rin.calc_code == 'QE':
-        raise NotImplementedError('now only VASP')
+        struc_step_data = collect_qe.get_struc_step_qe(
+            struc_step_data, current_id, work_path)
+        return struc_step_data
     elif rin.calc_code == 'soiap':
         struc_step_data = collect_soiap.get_struc_step_soiap(
-            struc_step_data, current_id, work_path+'log.struc')
+            struc_step_data, current_id, work_path)
         return struc_step_data
-    elif rin.calc_code == 'LAMMPS':
-        raise NotImplementedError('now only VASP')
     else:
-        raise NotImplementedError('now only VASP')
+        raise NotImplementedError('only VASP, QE, soiap for now')
 
 
 def get_force_step(force_step_data, current_id, work_path):
     if rin.calc_code == 'VASP':
         force_step_data = collect_vasp.get_force_step_vasp(
-            force_step_data, current_id, work_path+'vasprun.xml')
+            force_step_data, current_id, work_path)
         return force_step_data
     elif rin.calc_code == 'QE':
-        raise NotImplementedError('now only VASP')
+        force_step_data = collect_qe.get_force_step_qe(
+            force_step_data, current_id, work_path)
+        return force_step_data
     elif rin.calc_code == 'soiap':
         force_step_data = collect_soiap.get_force_step_soiap(
-            force_step_data, current_id, work_path+'log.frc')
+            force_step_data, current_id, work_path)
         return force_step_data
-    elif rin.calc_code == 'LAMMPS':
-        raise NotImplementedError('now only VASP')
     else:
-        raise NotImplementedError('now only VASP')
+        raise NotImplementedError('only VASP, QE, soiap for now')
 
 
 def get_stress_step(stress_step_data, current_id, work_path):
     if rin.calc_code == 'VASP':
         stress_step_data = collect_vasp.get_stress_step_vasp(
-            stress_step_data, current_id, work_path+'vasprun.xml')
+            stress_step_data, current_id, work_path)
         return stress_step_data
     elif rin.calc_code == 'QE':
-        raise NotImplementedError('now only VASP')
+        stress_step_data = collect_qe.get_stress_step_qe(
+            stress_step_data, current_id, work_path)
+        return stress_step_data
     elif rin.calc_code == 'soiap':
         stress_step_data = collect_soiap.get_stress_step_soiap(
-            stress_step_data, current_id, work_path+'log.strs')
+            stress_step_data, current_id, work_path)
         return stress_step_data
-    elif rin.calc_code == 'LAMMPS':
-        raise NotImplementedError('now only VASP')
     else:
-        raise NotImplementedError('now only VASP')
+        raise NotImplementedError('only VASP, QE, soiap for now')

@@ -45,7 +45,8 @@ class Select_parents:
 
     def __init__(self, struc_data, fitness,
                  elite_struc=None, elite_fitness=None,
-                 fit_reverse=False, n_fittest=0):
+                 fit_reverse=False, n_fittest=0,
+                 emax_ea=None, emin_ea=None):
         # ---------- check args
         # ------ data
         self.struc_data, self.fitness = self._check_data(struc_data,
@@ -69,9 +70,22 @@ class Select_parents:
         for key, value in self.fitness.items():
             if value is None or np.isnan(value):
                 self.fitness[key] = -np.inf if fit_reverse else np.inf
+            # ---- emax_ea
+            if emax_ea is not None:
+                if value > emax_ea:
+                    self.fitness[key] = -np.inf if fit_reverse else np.inf
+                    print('Eliminate ID {}: {} > emax_ea'.format(
+                          key, value))
+            # ---- emin_ea
+            if emin_ea is not None:
+                if value < emin_ea:
+                    self.fitness[key] = -np.inf if fit_reverse else np.inf
+                    print('Eliminate ID {}: {} < emin_ea'.format(
+                          key, value))
         # ---------- ranking of fitness: list of id
         self.ranking = sorted(self.fitness, key=self.fitness.get,
                               reverse=fit_reverse)
+        print('ranking', self.ranking)
         # ---------- remove duplicated structures and
         #                cut by survival of the fittest
         self._dedupe()    # get self.ranking_dedupe

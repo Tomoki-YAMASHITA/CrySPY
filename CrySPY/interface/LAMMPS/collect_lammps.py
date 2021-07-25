@@ -25,7 +25,8 @@ def collect_lammps(current_id, work_path):
                 energy = float(lines[i+3].split()[2])  # in eV (units is metal)
                 energy = energy/float(rin.natot)    # eV/cell --> eV/atom
                 check_opt = 'done'
-    except:
+    except Exception as e:
+        print(e)
         print('    Structure ID {0}, could not obtain energy from {1}'.format(
             current_id, rin.lammps_outfile))
         energy = np.nan    # error
@@ -37,7 +38,8 @@ def collect_lammps(current_id, work_path):
     # ---------- collect the last structure
     try:
         opt_struc = lammps_structure.from_file(work_path+'log.struc')
-    except:
+    except Exception as e:
+        print(e)
         opt_struc = None
 
     # ---------- return
