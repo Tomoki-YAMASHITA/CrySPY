@@ -2,7 +2,6 @@
 Random structure generation using PyXtal(https://github.com/qzhu2017/PyXtal)
 '''
 
-from contextlib import redirect_stdout
 from multiprocessing import Process, Queue
 import os
 import random
@@ -576,7 +575,7 @@ class Rnd_struc_gen_pyxtal:
     def _mp_mc(self, spg, rand_vol, q):
         '''multiprocess part'''
         try:
-            np.random.seed(random.randint(0, 10000000000))
+            np.random.seed(random.randint(0, 100000000))
             tmp_crystal = pyxtal(molecular=True)
             tmp_crystal.from_random(dim=3, group=spg,
                                     species=self.mol_data, numIons=self.nmol,
