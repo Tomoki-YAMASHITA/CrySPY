@@ -248,6 +248,7 @@ class Crossover:
                                    self.mindist, check_all=True)
         if dist_list:    # still something within mindist
             self.child = None
+            print('some atoms within mindist. retry.', file=sys.stderr)
 
     def _remove_border_line(self):
         # ---------- rank atoms from border line

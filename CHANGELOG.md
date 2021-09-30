@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10.1] - 2021-09-30
+### Fixed
+- bug fix for np.random.seed in multiprocessing
+
 ## [0.10.0] - 2021-07-25
 ### Added
 - step_data for QE

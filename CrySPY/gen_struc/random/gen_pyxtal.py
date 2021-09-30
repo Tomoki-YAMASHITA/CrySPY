@@ -576,13 +576,12 @@ class Rnd_struc_gen_pyxtal:
     def _mp_mc(self, spg, rand_vol, q):
         '''multiprocess part'''
         try:
-            # ---------- temporarily stdout --> devnull
-            with redirect_stdout(open(os.devnull, 'w')):
-                tmp_crystal = pyxtal(molecular=True)
-                tmp_crystal.from_random(dim=3, group=spg,
-                                        species=self.mol_data, numIons=self.nmol,
-                                        factor=rand_vol, conventional=False)
-                # ---------- queue
+            np.random.seed(random.randint(0, 10000000000))
+            tmp_crystal = pyxtal(molecular=True)
+            tmp_crystal.from_random(dim=3, group=spg,
+                                    species=self.mol_data, numIons=self.nmol,
+                                    factor=rand_vol, conventional=False)
+            # ---------- queue
             if tmp_crystal.valid:
                 q.put(tmp_crystal.to_pymatgen(resort=False))
                 q.put(tmp_crystal.valid)
