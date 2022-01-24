@@ -392,7 +392,7 @@ class Rnd_struc_gen_pyxtal:
             else:
                 self.spg_error.append(spg)
 
-    def gen_struc_mol_break_sym(self, nstruc, rot_mol=None,
+    def gen_struc_mol_break_sym(self, nstruc, rot_mol=None, nrot=20,
                                 id_offset=0, init_pos_path=None):
         '''
         Generate random molecular crystal structures
@@ -404,7 +404,8 @@ class Rnd_struc_gen_pyxtal:
 
         rot_mol (str): default: None
                        None, 'random', 'random_mol', or 'random_wyckoff'
-
+        nrot (int): default: 20
+                      maximum number of times to rotate the molecule
         id_offset (int): default: 0
                          structure ID starts from id_offset
                          e.g. nstruc = 3, id_offset = 10
@@ -480,78 +481,89 @@ class Rnd_struc_gen_pyxtal:
                 if self.vol_mu is not None:
                     vol = random.gauss(mu=self.vol_mu, sigma=self.vol_sigma)
                     tmp_struc.scale_lattice(volume=vol)
-                # -- rotate molecules
-                if rot_mol == 'random_mol':
-                    # each mol_data
-                    mol_angles = []    # [angles of mol 1, angles of mol 2, ...]
-                    for i in range(len(self.mol_data)):
-                        mol_angles.append(2 * np.pi * np.random.rand(3))
-                if rot_mol == 'random_wyckoff':
-                    # each Wyckoff
-                    dum_angles = {}    # e.g.
-                                       # {DummySpecie X00+: array([ , , ]),
-                                       #  DummySpecie X10+: array([ , , ]),
-                                       #  DummySpecie X20+: array([ , , ]),
-                                       #  DummySpecie X30+: array([ , , ])}
-                    angles = 2 * np.pi * np.random.rand(len(dums), 3)
-                    for (dum, angle) in zip(dums, angles):
-                        dum_angles[dum] = angle
-                # -- replace dummy with mol
+                # -- save dummy coords
                 dum_species = tmp_struc.species
                 dum_coords = tmp_struc.cart_coords
-                for (dum_specie, dum_coord) in zip(dum_species, dum_coords):
-                    mol_index = tmp_atype.index(dum_type[dum_specie])
-                    mol = self.mol_data[mol_index]
-                    # rotation option
-                    if rot_mol is None:
-                        rot_mol_coord = mol.cart_coords
-                    if rot_mol == 'random':
-                        angle = 2 * np.pi * np.random.rand(3)
-                        R = rot_mat(angle)
-                        rot_mol_coord = np.matmul(mol.cart_coords, R)
-                    if rot_mol == 'random_mol':
-                        angle = mol_angles[mol_index]
-                        R = rot_mat(angle)
-                        rot_mol_coord = np.matmul(mol.cart_coords, R)
-                    if rot_mol == 'random_wyckoff':
-                        angle = dum_angles[dum_specie]
-                        R = rot_mat(angle)
-                        rot_mol_coord = np.matmul(mol.cart_coords, R)
-                    # rotate coord
-                    coord = rot_mol_coord + dum_coord
-                    # append mol
-                    for i, ms in enumerate(mol.species):
-                        tmp_struc.append(ms, coord[i], coords_are_cartesian=True)
                 # -- remove dummy
                 tmp_struc.remove_sites(range(0, len(dum_species)))
-                # -- check nat
-                if not self._check_nat(tmp_struc):
-                    # pyxtal returns conventional cell,
-                    # too many atoms if centering
-                    tmp_struc = tmp_struc.get_primitive_structure()
-                    # recheck nat
-                    if not self._check_nat(tmp_struc):    # failure
-                        continue
-                # -- sort, necessary in molecular crystal
-                tmp_struc = sort_by_atype(tmp_struc, self.atype)
-                # -- check minimum distance
-                if self.mindist is not None:
-                    success, mindist_ij, dist = check_distance(tmp_struc,
-                                                               self.atype,
-                                                               self.mindist)
-                    if not success:
-                        print('mindist: {} - {}, {}. retry.'.format(
-                            self.atype[mindist_ij[0]],
-                            self.atype[mindist_ij[1]],
-                            dist), file=sys.stderr)
-                        continue    # failure
-                # -- check actual space group
-                try:
-                    spg_sym, spg_num = tmp_struc.get_space_group_info(
-                        symprec=self.symprec)
-                except TypeError:
-                    spg_num = 0
-                    spg_sym = None
+                tmp_struc_ori = tmp_struc.copy()
+                rot_success = False
+                # -- rotate molecules
+                for nrel in range(nrot):
+                    tmp_struc = tmp_struc_ori.copy()
+                    for (dum_specie, dum_coord) in zip(dum_species, dum_coords):
+                        mol_index = tmp_atype.index(dum_type[dum_specie])
+                        mol = self.mol_data[mol_index]
+                        # rotation option
+                        if rot_mol is None:
+                            rot_mol_coord = mol.cart_coords
+                        if rot_mol == 'random':
+                            angle = 2 * np.pi * np.random.rand(3)
+                            R = rot_mat(angle)
+                            rot_mol_coord = np.matmul(mol.cart_coords, R)
+                        if rot_mol == 'random_mol':
+                            # each mol_data
+                            mol_angles = []    # [angles of mol 1, angles of mol 2, ...]
+                            for i in range(len(self.mol_data)):
+                                mol_angles.append(2 * np.pi * np.random.rand(3))
+                            angle = mol_angles[mol_index]
+                            R = rot_mat(angle)
+                            rot_mol_coord = np.matmul(mol.cart_coords, R)
+                        if rot_mol == 'random_wyckoff':
+                            # each Wyckoff
+                            dum_angles = {}    # e.g.
+                                               # {DummySpecie X00+: array([ , , ]),
+                                               #  DummySpecie X10+: array([ , , ]),
+                                               #  DummySpecie X20+: array([ , , ]),
+                                               #  DummySpecie X30+: array([ , , ])}
+                            angles = 2 * np.pi * np.random.rand(len(dums), 3)
+                            for (dum, angle) in zip(dums, angles):
+                                dum_angles[dum] = angle
+                            angle = dum_angles[dum_specie]
+                            R = rot_mat(angle)
+                            rot_mol_coord = np.matmul(mol.cart_coords, R)
+                        # rotate coord
+                        coord = rot_mol_coord + dum_coord
+                        # append mol
+                        for i, ms in enumerate(mol.species):
+                            tmp_struc.append(ms, coord[i], coords_are_cartesian=True)
+                    # -- check nat
+                    if not self._check_nat(tmp_struc):
+                        # pyxtal returns conventional cell,
+                        # too many atoms if centering
+                        tmp_struc = tmp_struc.get_primitive_structure()
+                        # recheck nat
+                        if not self._check_nat(tmp_struc):    # failure
+                            if rot_mol is None:
+                                break    # go back to the while loop
+                            continue
+                    # -- sort, necessary in molecular crystal
+                    tmp_struc = sort_by_atype(tmp_struc, self.atype)
+                    # -- check minimum distance
+                    if self.mindist is not None:
+                        success, mindist_ij, dist = check_distance(tmp_struc,
+                                                                   self.atype,
+                                                                   self.mindist)
+                        if not success:
+                            print('mindist: {} - {}, {}. retry.'.format(
+                                self.atype[mindist_ij[0]],
+                                self.atype[mindist_ij[1]],
+                                dist), file=sys.stderr)
+                            if rot_mol is None:
+                                break    # go back to the while loop
+                            continue    # failure
+                    # -- check actual space group (success)
+                    try:
+                        spg_sym, spg_num = tmp_struc.get_space_group_info(
+                            symprec=self.symprec)
+                    except TypeError:
+                        spg_num = 0
+                        spg_sym = None
+                    rot_success = True
+                    break
+                # -- reach maximum times to rotate (failure)
+                if not rot_success:
+                    continue    # go back to the while loop
                 # -- register the structure in pymatgen format
                 cid = len(self.init_struc_data) + id_offset
                 self.init_struc_data[cid] = tmp_struc

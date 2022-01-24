@@ -99,6 +99,7 @@ def append_struc(init_struc_data):
             rsgx.set_mol(mol_file=rin.mol_file, nmol=rin.nmol)
             rsgx.gen_struc_mol_break_sym(nstruc=nstruc,
                                          rot_mol=rin.rot_mol,
+                                         nrot=rin.nrot,
                                          id_offset=id_offset,
                                          init_pos_path='./data/init_POSCARS')
         # ------ update

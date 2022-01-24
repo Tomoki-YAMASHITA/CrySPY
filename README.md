@@ -5,9 +5,11 @@ CrySPY is a crystal structure prediction tool written in Python.
 Document site is moved to https://tomoki-yamashita.github.io/CrySPY_doc/
 
 ## Latest version
-version 0.10.1 (2021 September 30)
+version 0.10.2 (2022 January 24)
 
 ## Important changes
+* version 0.10.2 (2022 January 24)
+    - Added nrot: maximum number of times to rotate molecules in mol_bs mode
 * version 0.10.1 (2021 September 30)
     - Bug fixed for numpy.random.seed in multiprocessing
 * version 0.10.0 (2021 July 25)
@@ -49,7 +51,7 @@ version 0.10.1 (2021 September 30)
 ## System requirements
 ### Python
 - Python 3.8.x, 3.9.x (3.7.x may work)
-- [COMBO](https://github.com/tsudalab/combo3 "COMBO")
+- [COMBO](https://github.com/Tomoki-YAMASHITA/combo3 "COMBO")
 - [PyXtal >= 0.2.2](https://pyxtal.readthedocs.io/en/latest "PyXtal")
 - (PyXtal requires pymatgen) [pymatgen >= 2022.0.4](http://pymatgen.org "pymatgen")
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10.2] - 2022-01-24
+### Added
+- nrot: maximum number of times to rotate molecules in mol_bs
+
 ## [0.10.1] - 2021-09-30
 ### Fixed
 - bug fix for np.random.seed in multiprocessing

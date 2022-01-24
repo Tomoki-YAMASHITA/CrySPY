@@ -48,7 +48,7 @@ def readin():
     # ---------- structure
     # ------ global declaration
     global struc_mode, natot, atype, nat
-    global mol_file, nmol, timeout_mol, rot_mol
+    global mol_file, nmol, timeout_mol, rot_mol, nrot
     global vol_factor, vol_mu, vol_sigma, mindist
     global maxcnt, symprec, spgnum, use_find_wy
     global minlen, maxlen, dangle
@@ -86,19 +86,29 @@ def readin():
         if timeout_mol <= 0:
             raise ValueError('timeout_mol must be positive')
         if struc_mode == 'mol_bs':
+            # rot_mol
             try:
                 rot_mol = config.get('structure', 'rot_mol')
             except (configparser.NoOptionError, configparser.NoSectionError):
                 rot_mol = 'random_wyckoff'
             if rot_mol not in ['random', 'random_mol', 'random_wyckoff']:
                 raise ValueError('rot_mol is wrong')
+            # nrot
+            try:
+                nrot = config.getint('structure', 'nrot')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                nrot = 20
+            if nrot <= 0:
+                raise ValueError('nrot <=0, check nrot')
         else:
             rot_mol = None
+            nrot = None
     else:
         mol_file = None
         nmol = None
         timeout_mol = 120.0
         rot_mol = None
+        nrot = None
     # -- volume
     try:
         vol_mu = config.getfloat('structure', 'vol_mu')
@@ -646,6 +656,7 @@ def writeout():
             fout.write('nmol = {}\n'.format(' '.join(str(b) for b in nmol)))
         fout.write('timeout_mol = {}\n'.format(timeout_mol))
         fout.write('rot_mol = {}\n'.format(rot_mol))
+        fout.write('nrot = {}\n'.format(nrot))
         fout.write('vol_factor = {}\n'.format(' '.join(str(b) for b in vol_factor)))
         fout.write('vol_mu = {}\n'.format(vol_mu))
         fout.write('vol_sigma = {}\n'.format(vol_sigma))
@@ -801,6 +812,7 @@ def save_stat(stat):    # only 1st run
         stat.set('structure', 'nmol', '{}'.format(' '.join(str(b) for b in nmol)))
     stat.set('structure', 'timeout_mol', '{}'.format(timeout_mol))
     stat.set('structure', 'rot_mol', '{}'.format(rot_mol))
+    stat.set('structure', 'nrot', '{}'.format(nrot))
     stat.set('structure', 'vol_factor', '{}'.format(' '.join(str(b) for b in vol_factor)))
     stat.set('structure', 'vol_mu', '{}'.format(vol_mu))
     stat.set('structure', 'vol_sigma', '{}'.format(vol_sigma))
@@ -957,6 +969,11 @@ def diffinstat(stat):
     old_rot_mol = stat.get('structure', 'rot_mol')
     if old_rot_mol == 'None':
         old_rot_mol = None    # character --> None
+    old_nrot = stat.get('structure', 'nrot')
+    if old_nrot == 'None':
+        old_nrot = None    # character --> None
+    else:
+        old_nrot = int(old_nrot)    # character --> int
     old_vol_factor = stat.get('structure', 'vol_factor')
     old_vol_factor = [float(x) for x in old_vol_factor.split()]    # str --> float list
     old_vol_mu = stat.get('structure', 'vol_mu')
@@ -1184,6 +1201,10 @@ def diffinstat(stat):
     if not old_rot_mol == rot_mol:
         diff_out('rot_mol', old_rot_mol, rot_mol)
         io_stat.set_input_common(stat, sec, 'rot_mol', rot_mol)
+        logic_change = True
+    if not old_nrot == nrot:
+        diff_out('nrot', old_nrot, nrot)
+        io_stat.set_input_common(stat, sec, 'nrot', nrot)
         logic_change = True
     if not old_vol_factor == vol_factor:
         diff_out('vol_factor', old_vol_factor, vol_factor)
