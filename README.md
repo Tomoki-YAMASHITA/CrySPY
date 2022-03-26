@@ -73,7 +73,7 @@ At least one optimizer is required.
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc "CrySPY documment")
 
 ## Google group
-[Google gruop of CrySPY](https://groups.google.com/forum/#!forum/cryspy-user "Google group")
+[Google group of CrySPY](https://groups.google.com/forum/#!forum/cryspy-user "Google group")
 
 
 
