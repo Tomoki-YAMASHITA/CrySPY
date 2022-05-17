@@ -3,7 +3,6 @@ SYSTEM = Y2Co17
 !!!!NPAR = 2
 KPAR = 4
 
-!!!!PREC = High
 Algo = Fast
 !!!!LREAL = Auto
 

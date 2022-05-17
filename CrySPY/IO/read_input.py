@@ -141,7 +141,7 @@ def readin():
         else:
             raise ValueError('len(vol_factor) must be 1 or 2')
     except (configparser.NoOptionError, configparser.NoSectionError):
-        vol_factor = [1.0, 1.0]
+        vol_factor = [1.1, 1.1]
     try:
         maxcnt = config.getint('structure', 'maxcnt')
     except (configparser.NoOptionError, configparser.NoSectionError):
@@ -768,8 +768,12 @@ def writeout():
             fout.write('# ------ lammps section\n')
             fout.write('lammps_infile = {}\n'.format(lammps_infile))
             fout.write('lammps_outfile = {}\n'.format(lammps_outfile))
-            fout.write('lammps_potential = {}\n'.format(
-                ' '.join(lammps_potential)))
+            if lammps_potential is None:
+                fout.write('lammps_potential = {}\n'.format(
+                    lammps_potential))
+            else:
+                fout.write('lammps_potential = {}\n'.format(
+                    ' '.join(lammps_potential)))
             fout.write('lammps_data = {}\n'.format(lammps_data))
 
         # ------ option
@@ -916,8 +920,12 @@ def save_stat(stat):    # only 1st run
     if calc_code == 'LAMMPS':
         stat.set('LAMMPS', 'lammps_infile', '{}'.format(lammps_infile))
         stat.set('LAMMPS', 'lammps_outfile', '{}'.format(lammps_outfile))
-        stat.set('LAMMPS', 'lammps_potential',
-                 '{}'.format(' '.join(lammps_potential)))
+        if lammps_potential is None:
+            stat.set('LAMMPS', 'lammps_potential',
+                     '{}'.format(lammps_potential))
+        else:
+            stat.set('LAMMPS', 'lammps_potential',
+                     '{}'.format(' '.join(lammps_potential)))
         stat.set('LAMMPS', 'lammps_data', '{}'.format(lammps_data))
 
     # ---------- option
@@ -1121,9 +1129,10 @@ def diffinstat(stat):
         old_lammps_infile = stat.get('LAMMPS', 'lammps_infile')
         old_lammps_outfile = stat.get('LAMMPS', 'lammps_outfile')
         old_lammps_potential = stat.get('LAMMPS', 'lammps_potential')
-        old_lammps_potential = old_lammps_potential.split()    # str --> list
         if old_lammps_potential == 'None':    # 'None' is just character here
             old_lammps_potential = None
+        else:
+            old_lammps_potential = old_lammps_potential.split()    # str --> list
         old_lammps_data = stat.get('LAMMPS', 'lammps_data')
 
     # ------ option

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.3] - 2022-05-17
+### Changed
+- update LAMMPS example
+- default vol_factor value: 1.1
+
+### Fixed
+- bug fix for LAMMPS IO
+- parse force data in QE
+
 ## [0.10.2] - 2022-01-24
 ### Added
 - nrot: maximum number of times to rotate molecules in mol_bs

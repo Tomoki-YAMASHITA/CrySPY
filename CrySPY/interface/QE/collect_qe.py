@@ -229,7 +229,7 @@ def get_force_step_qe(force_step_data, current_id, work_path):
         final_flag = False   # End final coordinates
         vc_flag = False      # in case of vc-relax
         for line in lines:
-            if 'atom    1 type  1   force' in line:
+            if 'atom    1 type' in line:
                 read_force = True
                 force = []
             if read_force:

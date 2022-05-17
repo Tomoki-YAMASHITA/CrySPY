@@ -1,9 +1,9 @@
 [basic]
 algo = RS
 calc_code = LAMMPS
-tot_struc = 20
+tot_struc = 5
 nstage = 2
-njob = 4
+njob = 2
 jobcmd = bash
 jobfile = job_cryspy
 
@@ -11,7 +11,6 @@ jobfile = job_cryspy
 natot = 16
 atype = Si
 nat = 16
-
 
 [LAMMPS]
 lammps_infile = in.si

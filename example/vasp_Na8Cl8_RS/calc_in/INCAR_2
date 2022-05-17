@@ -1,8 +1,9 @@
 SYSTEM = NaCl
-PREC = High
 LREAL = Auto
 Algo = Fast
 NSW = 200
+
+ENCUT = 341
 
 !!LWAVE = .FALSE.
 !!LCHARG = .FALSE.

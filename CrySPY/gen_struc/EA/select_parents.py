@@ -85,7 +85,7 @@ class Select_parents:
         # ---------- ranking of fitness: list of id
         self.ranking = sorted(self.fitness, key=self.fitness.get,
                               reverse=fit_reverse)
-        print('ranking', self.ranking)
+        #print('ranking', self.ranking)
         # ---------- remove duplicated structures and
         #                cut by survival of the fittest
         self._dedupe()    # get self.ranking_dedupe

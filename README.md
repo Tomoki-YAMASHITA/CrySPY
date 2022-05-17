@@ -5,9 +5,11 @@ CrySPY is a crystal structure prediction tool written in Python.
 Document site is moved to https://tomoki-yamashita.github.io/CrySPY_doc/
 
 ## Latest version
-version 0.10.2 (2022 January 24)
+version 0.10.3 (2022 May 17)
 
 ## Important changes
+* version 0.10.3 (2022 May 17)
+    - Bug fixed for LAMMPS IO
 * version 0.10.2 (2022 January 24)
     - Added nrot: maximum number of times to rotate molecules in mol_bs mode
 * version 0.10.1 (2021 September 30)
@@ -79,7 +81,7 @@ At least one optimizer is required.
 
 ## Reference
 ### CrySPY (software)
-* T. Yamashita, S. Kanehira, N. Sato, H. Kino, H. Sawahata, T. Sato, F. Utsuno, K. Tsuda, T. Miyake, and T. Oguchi, Sci. Technol. Adv. Mater.:Methods **1**, 87 (2021).
+* T. Yamashita, S. Kanehira, N. Sato, H. Kino, H. Sawahata, T. Sato, F. Utsuno, K. Tsuda, T. Miyake, and T. Oguchi, Sci. Technol. Adv. Mater. Meth. **1**, 87 (2021).
     - https://www.tandfonline.com/doi/full/10.1080/27660400.2021.1943171
 
 
@@ -90,10 +92,16 @@ At least one optimizer is required.
 * N. Sato, T. Yamashita, T. Oguchi, K. Hukushima, and T. Miyake, Phys. Rev. Mater. **4**, 033801 (2020).
     - https://journals.aps.org/prmaterials/abstract/10.1103/PhysRevMaterials.4.033801
 
+### Baysian optimization and evolutionary algorithm
+* T. Yamashita, H. Kino, K. Tsuda, T. Miyake, and T. Oguchi, Sci. Technol. Adv. Mater. Meth. **2**, 67 (2022).
+    - https://www.tandfonline.com/doi/full/10.1080/27660400.2022.2055987
 
 ### LAQA
 * K.Terayama, T. Yamashita, T. Oguchi, and K. Tsuda, npj Comput. Mater. **4**, 32 (2018).
     - https://www.nature.com/articles/s41524-018-0090-y
+
+* T. Yamashita and H. Sekine, Sci. Technol. Adv. Mater. Meth. **2**, 84 (2022).
+    - https://www.tandfonline.com/doi/full/10.1080/27660400.2022.2059335
 
 
 ## License

@@ -1,6 +1,5 @@
 SYSTEM = NaCl
 !NPAR = 2
-PREC = Normal
 LREAL = Auto
 Algo = Fast
 NSW = 60
