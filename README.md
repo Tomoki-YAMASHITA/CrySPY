@@ -53,9 +53,12 @@ version 0.10.3 (2022 May 17)
 ## System requirements
 ### Python
 - Python 3.8.x, 3.9.x (3.7.x may work)
-- [COMBO](https://github.com/Tomoki-YAMASHITA/combo3 "COMBO")
 - [PyXtal >= 0.2.2](https://pyxtal.readthedocs.io/en/latest "PyXtal")
 - (PyXtal requires pymatgen) [pymatgen >= 2022.0.4](http://pymatgen.org "pymatgen")
+
+(optional)
+- [COMBO](https://github.com/Tomoki-YAMASHITA/combo3 "COMBO") (required if algo = BO)
+
 
 See [CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc/installation/requirements/ "CrySPY document") in detail.
 
@@ -69,7 +72,8 @@ At least one optimizer is required.
 - [LAMMPS](http://lammps.sandia.gov "LAMMPS")
 
 ### Others
-- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy"): find_wy can randomly select a combination of Wyckoff positions for a given chemical composition and space group. (optional)
+(optional)
+- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy"): find_wy can randomly select a combination of Wyckoff positions for a given chemical composition and space group. 
 
 ## Document (English/Japanese)
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc "CrySPY documment")

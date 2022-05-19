@@ -6,7 +6,7 @@ Main script
 import os
 
 from CrySPY.interface import select_code
-from CrySPY.job.ctrl_job import Ctrl_job
+# from CrySPY.job.ctrl_job import Ctrl_job    # import later
 from CrySPY.IO import read_input as rin
 from CrySPY.start import cryspy_init, cryspy_restart
 
@@ -16,7 +16,7 @@ def main():
     if os.path.isfile('lock_cryspy'):
         raise SystemExit('lock_cryspy file exists')
     else:
-        with open('lock_cryspy', 'w') as f:
+        with open('lock_cryspy', 'w'):
             pass    # create vacant file
 
     # ---------- initialize
@@ -41,6 +41,7 @@ def main():
     os.makedirs('work/fin', exist_ok=True)
 
     # ---------- instantiate Ctrl_job class
+    from CrySPY.job.ctrl_job import Ctrl_job
     jobs = Ctrl_job(stat, init_struc_data)
 
     # ---------- check job status

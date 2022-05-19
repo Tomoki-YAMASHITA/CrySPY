@@ -9,18 +9,22 @@ import subprocess
 
 import numpy as np
 
-from ..BO.select_descriptor import select_descriptor
-from ..BO import bo_next_select
-from ..EA import ea_next_gen
 from ..gen_struc.struc_util import out_poscar, out_cif
 from ..interface import select_code
 from ..IO import read_input as rin
 from ..IO import change_input, io_stat, pkl_data
 from ..IO.out_results import out_rslt
-from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
-from ..IO.out_results import out_laqa_energy, out_laqa_bias
-from ..LAQA.calc_score import calc_laqa_bias
-from ..LAQA import laqa_next_selection
+
+if rin.algo == 'BO':
+    from ..BO.select_descriptor import select_descriptor
+    from ..BO import bo_next_select
+if rin.algo == 'EA':
+    from ..EA import ea_next_gen
+if rin.algo == 'LAQA':
+    from ..LAQA.calc_score import calc_laqa_bias
+    from ..LAQA import laqa_next_selection
+    from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
+    from ..IO.out_results import out_laqa_energy, out_laqa_bias
 
 
 class Ctrl_job:
