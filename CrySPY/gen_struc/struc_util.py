@@ -7,6 +7,42 @@ import os
 import numpy as np
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifWriter
+from pyxtal.tolerance import Tol_matrix
+
+from ..IO import read_input as rin
+
+
+def set_mindist():
+    if rin.mindist is None:
+        # ---------- Tol matrix
+        if rin.struc_mode in ['crystal']:
+            tolmat = Tol_matrix(prototype='atomic', factor=rin.mindist_factor)
+        elif rin.struc_mode in ['mol', 'mol_bs']:
+            tolmat = Tol_matrix(prototype='molecular', factor=rin.mindist_factor)
+        else:
+            raise ValueError('struc_mode')
+        # ---------- set mindist
+        mindist = []
+        for i, itype in enumerate(rin.atype):
+            tmp = []
+            for j, jtype in enumerate(rin.atype):
+                tmp.append(tolmat.get_tol(itype, jtype))
+            mindist.append(tmp)
+    else:
+        tmp_array = rin.mindist_factor * np.array(rin.mindist)
+        mindist = tmp_array.tolist()
+
+    # ---------- print
+    for i, itype in enumerate(rin.atype):
+        for j, jtype in enumerate(rin.atype):
+            if i <= j:
+                print(itype, '-', jtype, mindist[i][j])
+    if rin.struc_mode == 'mol':
+        print('When struc_mode is mol (only random structure, not EA part),')
+        print('- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)')
+        print('- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
+    # ---------- return
+    return mindist
 
 
 def out_poscar(struc, cid, fpath):

@@ -49,7 +49,7 @@ def readin():
     # ------ global declaration
     global struc_mode, natot, atype, nat
     global mol_file, nmol, timeout_mol, rot_mol, nrot
-    global vol_factor, vol_mu, vol_sigma, mindist
+    global vol_factor, vol_mu, vol_sigma, mindist, mindist_factor
     global maxcnt, symprec, spgnum, use_find_wy
     global minlen, maxlen, dangle
 
@@ -195,6 +195,13 @@ def readin():
         if spgnum == 0 or use_find_wy:
             raise ValueError('need mindist in spgnum == 0 or use_find_wy')
         mindist = None
+    # ------ mindist_factor
+    try:
+        mindist_factor = config.getfloat('structure', 'mindist_factor')
+        if mindist_factor <= 0.0:
+            raise ValueError('mindist_factor must be positive')
+    except (configparser.NoOptionError, configparser.NoSectionError):
+        mindist_factor = 1.0
     # ------ spgnum == 0 or use_find_wy
     minlen = None
     maxlen = None
@@ -376,7 +383,6 @@ def readin():
         # ------ global declaration
         global n_pop, n_crsov, n_perm, n_strain, n_rand, n_elite
         global fit_reverse, n_fittest
-        global mindist_ea
         global slct_func, t_size, a_rlt, b_rlt
         global crs_lat, nat_diff_tole, ntimes, sigma_st,  maxcnt_ea
         global maxgen_ea, emax_ea, emin_ea
@@ -418,23 +424,6 @@ def readin():
             n_fittest = 0
         if n_fittest < 0:
             raise ValueError('n_fittest must be zero or positive int')
-        # -- mindist_ea
-        mindist_ea = []
-        for i in range(len(atype)):
-            tmp = config.get('EA', 'mindist_ea_{}'.format(i+1))
-            tmp = [float(x) for x in tmp.split()]    # character --> float
-            if not len(tmp) == len(atype):
-                raise ValueError('not len(mindist_ea_{}) == len(atype)'.format(i+1))
-            mindist_ea.append(tmp)
-        # -- check symmetric matrix
-        for i in range(len(mindist_ea)):
-            for j in range(len(mindist_ea)):
-                if i < j:
-                    if not mindist_ea[i][j] == mindist_ea[j][i]:
-                        raise ValueError('mindist_ea is not symmetric. ({}, {}) -->'
-                                         ' {}, ({}, {}) --> {}'.format(
-                                             i, j, mindist_ea[i][j],
-                                             j, i, mindist_ea[j][i]))
         # -- select function
         slct_func = config.get('EA', 'slct_func')
         if slct_func not in ['TNM', 'RLT']:
@@ -666,6 +655,7 @@ def writeout():
             for i in range(len(atype)):
                 fout.write('mindist_{0} = {1}\n'.format(
                     i+1, ' '.join(str(c) for c in mindist[i])))
+        fout.write('mindist_factor = {}\n'.format(mindist_factor))
         fout.write('maxcnt = {}\n'.format(maxcnt))
         fout.write('symprec = {}\n'.format(symprec))
         if spgnum == 0 or spgnum == 'all':
@@ -712,9 +702,6 @@ def writeout():
             fout.write('n_elite = {}\n'.format(n_elite))
             fout.write('fit_reverse = {}\n'.format(fit_reverse))
             fout.write('n_fittest = {}\n'.format(n_fittest))
-            for i in range(len(atype)):
-                fout.write('mindist_ea_{0} = {1}\n'.format(
-                    i+1, ' '.join(str(c) for c in mindist_ea[i])))
             fout.write('slct_func = {}\n'.format(slct_func))
             if slct_func == 'TNM':
                 fout.write('t_size = {}\n'.format(t_size))
@@ -826,6 +813,7 @@ def save_stat(stat):    # only 1st run
         for i in range(len(atype)):
             stat.set('structure', 'mindist_{}'.format(i+1),
                      '{}'.format(' '.join(str(c) for c in mindist[i])))
+    stat.set('structure', 'mindist_factor', '{}'.format(mindist_factor))
     stat.set('structure', 'maxcnt', '{}'.format(maxcnt))
     stat.set('structure', 'symprec', '{}'.format(symprec))
     if spgnum == 0 or spgnum == 'all':
@@ -870,9 +858,6 @@ def save_stat(stat):    # only 1st run
         stat.set('EA', 'n_elite', '{}'.format(n_elite))
         stat.set('EA', 'fit_reverse', '{}'.format(fit_reverse))
         stat.set('EA', 'n_fittest', '{}'.format(n_fittest))
-        for i in range(len(atype)):
-            stat.set('EA', 'mindist_ea_{}'.format(i+1),
-                     '{}'.format(' '.join(str(c) for c in mindist_ea[i])))
         stat.set('EA', 'slct_func', '{}'.format(slct_func))
         if slct_func == 'TNM':
             stat.set('EA', 't_size', '{}'.format(t_size))
@@ -1004,6 +989,7 @@ def diffinstat(stat):
             tmp = stat.get('structure', 'mindist_{}'.format(i+1))
             tmp = [float(x) for x in tmp.split()]    # character --> float
             old_mindist.append(tmp)
+    old_mindist_factor = stat.getfloat('structure', 'mindist_factor')
     old_maxcnt = stat.getint('structure', 'maxcnt')
     old_symprec = stat.getfloat('structure', 'symprec')
     old_spgnum = stat.get('structure', 'spgnum')
@@ -1068,11 +1054,6 @@ def diffinstat(stat):
         old_n_elite = stat.getint('EA', 'n_elite')
         old_fit_reverse = stat.getboolean('EA', 'fit_reverse')
         old_n_fittest = stat.getint('EA', 'n_fittest')
-        old_mindist_ea = []
-        for i in range(len(atype)):
-            tmp = stat.get('EA', 'mindist_ea_{}'.format(i+1))
-            tmp = [float(x) for x in tmp.split()]    # character --> float
-            old_mindist_ea.append(tmp)
         old_slct_func = stat.get('EA', 'slct_func')
         if old_slct_func == 'TNM':
             old_t_size = stat.getint('EA', 't_size')
@@ -1249,6 +1230,10 @@ def diffinstat(stat):
                                          '{}'.format(' '.join(
                                              str(x) for x in mindist[i])))
         logic_change = True
+    if not old_mindist_factor == mindist_factor:
+        diff_out('mindist_factor', old_mindist_factor, mindist_factor)
+        io_stat.set_input_common(stat, sec, 'mindist_factor', mindist_factor)
+        logic_change = True
     if not old_maxcnt == maxcnt:
         diff_out('maxcnt', old_maxcnt, maxcnt)
         io_stat.set_input_common(stat, sec, 'maxcnt', maxcnt)
@@ -1375,13 +1360,6 @@ def diffinstat(stat):
         if not old_n_fittest == n_fittest:
             diff_out('n_fittest', old_n_fittest, n_fittest)
             io_stat.set_input_common(stat, sec, 'n_fittest', n_fittest)
-            logic_change = True
-        if not old_mindist_ea == mindist_ea:
-            diff_out('mindist_ea', old_mindist_ea, mindist_ea)
-            for i in range(len(atype)):
-                io_stat.set_input_common(stat, sec, 'mindist_ea_{}'.format(i+1),
-                                         '{}'.format(' '.join(
-                                             str(x) for x in mindist_ea[i])))
             logic_change = True
         if not old_slct_func == slct_func:
             diff_out('slct_func', old_slct_func, slct_func)

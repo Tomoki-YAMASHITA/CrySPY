@@ -12,6 +12,7 @@ from pymatgen.core import Structure, Molecule
 from pymatgen.core.periodic_table import DummySpecie
 from pyxtal import pyxtal
 from pyxtal.database.collection import Collection
+from pyxtal.tolerance import Tol_matrix
 
 from ..struc_util import check_distance
 from ..struc_util import sort_by_atype
@@ -202,6 +203,8 @@ class Rnd_struc_gen_pyxtal:
                              ' init_pos_path = {}'.format(init_pos_path))
         # ---------- initialize
         self.init_struc_data = {}
+        # ---------- Tol_matrix
+        tolmat = self._set_tol_mat('atomic')
         # ---------- loop for structure generattion
         while len(self.init_struc_data) < nstruc:
             # ------ spgnum --> spg
@@ -218,7 +221,7 @@ class Rnd_struc_gen_pyxtal:
             try:
                 tmp_crystal.from_random(dim=3, group=spg, species=self.atype,
                                         numIons=self.nat, factor=rand_vol,
-                                        conventional=False)
+                                        conventional=False, tm=tolmat)
             except Exception as e:
                 print(e, ':spg = {} retry.'.format(spg), file=sys.stderr)
                 self.spg_error.append(spg)
@@ -241,16 +244,19 @@ class Rnd_struc_gen_pyxtal:
                     vol = random.gauss(mu=self.vol_mu, sigma=self.vol_sigma)
                     tmp_struc.scale_lattice(volume=vol)
                 # -- check minimum distance
-                if self.mindist is not None:
-                    success, mindist_ij, dist = check_distance(tmp_struc,
-                                                               self.atype,
-                                                               self.mindist)
-                    if not success:
-                        print('mindist in gen_struc: {} - {}, {}. retry.'.format(
-                            self.atype[mindist_ij[0]],
-                            self.atype[mindist_ij[1]],
-                            dist), file=sys.stderr)
-                        continue    # failure
+                #    from CrySPY 0.10.4
+                #    Tol_matrix is used for mindist
+                #
+                #if self.mindist is not None:
+                #    success, mindist_ij, dist = check_distance(tmp_struc,
+                #                                               self.atype,
+                #                                               self.mindist)
+                #    if not success:
+                #        print('mindist in gen_struc: {} - {}, {}. retry.'.format(
+                #            self.atype[mindist_ij[0]],
+                #            self.atype[mindist_ij[1]],
+                #            dist), file=sys.stderr)
+                #        continue    # failure
                 # -- check actual space group
                 try:
                     spg_sym, spg_num = tmp_struc.get_space_group_info(
@@ -271,7 +277,7 @@ class Rnd_struc_gen_pyxtal:
                 self.spg_error.append(spg)
 
     def gen_struc_mol(self, nstruc, id_offset=0, init_pos_path=None,
-                      timeout_mol=180):
+                      timeout_mol=120):
         '''
         Generate random molecular crystal structures for given space groups
         one have to run self.set_mol() in advance
@@ -309,6 +315,8 @@ class Rnd_struc_gen_pyxtal:
             raise ValueError('timeout_mol must be positive')
         # ---------- initialize
         self.init_struc_data = {}
+        # ---------- Tol_matrix
+        tolmat = self._set_tol_mat('molecular')
         # ---------- loop for structure generattion
         while len(self.init_struc_data) < nstruc:
             # ------ spgnum --> spg
@@ -322,7 +330,7 @@ class Rnd_struc_gen_pyxtal:
             # ------ generate structure
             # -- multiprocess for measures against hangup
             q = Queue()
-            p = Process(target=self._mp_mc, args=(spg, rand_vol, q))
+            p = Process(target=self._mp_mc, args=(tolmat, spg, rand_vol, q))
             p.start()
             p.join(timeout=timeout_mol)
             if p.is_alive():
@@ -363,16 +371,19 @@ class Rnd_struc_gen_pyxtal:
                 # -- sort, necessary in molecular crystal
                 tmp_struc = sort_by_atype(tmp_struc, self.atype)
                 # -- check minimum distance
-                if self.mindist is not None:
-                    success, mindist_ij, dist = check_distance(tmp_struc,
-                                                               self.atype,
-                                                               self.mindist)
-                    if not success:
-                        print('mindist in gen_struc_mol: {} - {}, {}. retry.'.format(
-                            self.atype[mindist_ij[0]],
-                            self.atype[mindist_ij[1]],
-                            dist), file=sys.stderr)
-                        continue    # failure
+                #    from CrySPY 0.10.4
+                #    Tol_matrix is used for mindist
+                #
+                #if self.mindist is not None:
+                #    success, mindist_ij, dist = check_distance(tmp_struc,
+                #                                               self.atype,
+                #                                               self.mindist)
+                #    if not success:
+                #        print('mindist in gen_struc_mol: {} - {}, {}. retry.'.format(
+                #            self.atype[mindist_ij[0]],
+                #            self.atype[mindist_ij[1]],
+                #            dist), file=sys.stderr)
+                #        continue    # failure
                 # -- check actual space group
                 try:
                     spg_sym, spg_num = tmp_struc.get_space_group_info(
@@ -436,6 +447,8 @@ class Rnd_struc_gen_pyxtal:
             raise ValueError('len(mol_data) > len(noble_gas)')
         # ---------- initialize
         self.init_struc_data = {}
+        # ---------- Tol_matrix for mol_bs
+
         # ------ dummy atom type
         tmp_atype = noble_gas[:len(self.mol_data)]
         # ---------- loop for structure generattion
@@ -576,6 +589,15 @@ class Rnd_struc_gen_pyxtal:
             else:
                 self.spg_error.append(spg)
 
+    def _set_tol_mat(self, prototype):
+        # tmp_mindist = set_mindist()
+        tolmat = Tol_matrix(prototype=prototype)    # prototype is meaningless here, but just in case
+        for i, itype in enumerate(self.atype):
+            for j, jtype in enumerate(self.atype):
+                if i <= j:
+                    tolmat.set_tol(itype, jtype, self.mindist[i][j])
+        return tolmat
+
     def _check_nat(self, struc):
         # ---------- count number of atoms in each element for check
         species_list = [a.species_string for a in struc]
@@ -584,14 +606,14 @@ class Rnd_struc_gen_pyxtal:
                 return False    # failure
         return True
 
-    def _mp_mc(self, spg, rand_vol, q):
+    def _mp_mc(self, tolmat, spg, rand_vol, q):
         '''multiprocess part'''
         try:
             np.random.seed(random.randint(0, 100000000))
             tmp_crystal = pyxtal(molecular=True)
             tmp_crystal.from_random(dim=3, group=spg,
                                     species=self.mol_data, numIons=self.nmol,
-                                    factor=rand_vol, conventional=False)
+                                    factor=rand_vol, conventional=False, tm=tolmat)
             # ---------- queue
             if tmp_crystal.valid:
                 q.put(tmp_crystal.to_pymatgen(resort=False))

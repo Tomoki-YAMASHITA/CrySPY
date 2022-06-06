@@ -5,6 +5,7 @@ from ..gen_struc.EA.permutation import Permutation
 from ..gen_struc.EA.strain import Strain
 from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..gen_struc.random.gen_pyxtal import Rnd_struc_gen_pyxtal
+from ..gen_struc.struc_util import set_mindist
 from ..IO import pkl_data
 from ..IO import read_input as rin
 
@@ -13,10 +14,12 @@ def child_gen(sp, init_struc_data):
     # ---------- instantiate EA_generation class
     eagen = EA_generation(sp=sp, symprec=rin.symprec, id_start=rin.tot_struc,
                           init_pos_path='./data/init_POSCARS')
-
+    # ---------- set mindist
+    print('# mindist')
+    mindist = set_mindist()
     # ------ instantiate Crossover class
     if rin.n_crsov > 0:
-        co = Crossover(rin.atype, rin.nat, rin.mindist_ea,
+        co = Crossover(rin.atype, rin.nat, mindist,
                        rin.crs_lat, rin.nat_diff_tole, rin.maxcnt_ea)
         eagen.gen_crossover(rin.n_crsov, co=co)    # crossover
     with open('cryspy.out', 'a') as fout:
@@ -24,14 +27,14 @@ def child_gen(sp, init_struc_data):
 
     # ------ instantiate Permutation class
     if rin.n_perm > 0:
-        pm = Permutation(rin.atype, rin.mindist_ea, rin.ntimes, rin.maxcnt_ea)
+        pm = Permutation(rin.atype, mindist, rin.ntimes, rin.maxcnt_ea)
         eagen.gen_permutation(rin.n_perm, pm=pm)    # permutation
     with open('cryspy.out', 'a') as fout:
         fout.write('{} structures by permutation\n'.format(rin.n_perm))
 
     # ------ instantiate Strain class
     if rin.n_strain > 0:
-        st = Strain(rin.atype, rin.mindist_ea, rin.sigma_st, rin.maxcnt_ea)
+        st = Strain(rin.atype, mindist, rin.sigma_st, rin.maxcnt_ea)
         eagen.gen_strain(rin.n_strain, st=st)    # strain
     with open('cryspy.out', 'a') as fout:
         fout.write('{} structures by strain\n'.format(rin.n_strain))
@@ -46,7 +49,7 @@ def child_gen(sp, init_struc_data):
             rsgx = Rnd_struc_gen_pyxtal(natot=rin.natot, atype=rin.atype,
                                         nat=rin.nat, vol_factor=rin.vol_factor,
                                         vol_mu=rin.vol_mu, vol_sigma=rin.vol_sigma,
-                                        mindist=rin.mindist,
+                                        mindist=mindist,
                                         spgnum=rin.spgnum, symprec=rin.symprec)
             # -- crystal
             if rin.struc_mode == 'crystal':
@@ -71,7 +74,7 @@ def child_gen(sp, init_struc_data):
         else:
             rsg = Rnd_struc_gen(natot=rin.natot, atype=rin.atype, nat=rin.nat,
                                 minlen=rin.minlen, maxlen=rin.maxlen,
-                                dangle=rin.dangle, mindist=rin.mindist,
+                                dangle=rin.dangle, mindist=mindist,
                                 vol_mu=rin.vol_mu, vol_sigma=rin.vol_sigma,
                                 maxcnt=rin.maxcnt, symprec=rin.symprec)
             if rin.spgnum == 0:

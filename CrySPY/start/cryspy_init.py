@@ -11,6 +11,7 @@ from ..BO import bo_init
 from ..EA import ea_init
 from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..gen_struc.random.gen_pyxtal import Rnd_struc_gen_pyxtal
+from ..gen_struc.struc_util import set_mindist
 from ..IO import pkl_data, io_stat
 from ..IO import read_input as rin
 from ..LAQA import laqa_init
@@ -43,12 +44,15 @@ def initialize():
         print('\n# --------- Generate initial structures')
         with open('cryspy.out', 'a') as fout:
             fout.write('# ---------- Generate initial structures\n')
+        # ------ mindist
+        print('# ------ mindist')
+        mindist = set_mindist()
         # ------ pyxtal
         if not (rin.spgnum == 0 or rin.use_find_wy):
             rsgx = Rnd_struc_gen_pyxtal(natot=rin.natot, atype=rin.atype,
                                         nat=rin.nat, vol_factor=rin.vol_factor,
                                         vol_mu=rin.vol_mu, vol_sigma=rin.vol_sigma,
-                                        mindist=rin.mindist,
+                                        mindist=mindist,
                                         spgnum=rin.spgnum, symprec=rin.symprec)
             # ------ crystal
             if rin.struc_mode == 'crystal':
@@ -74,7 +78,7 @@ def initialize():
         else:
             rsg = Rnd_struc_gen(natot=rin.natot, atype=rin.atype, nat=rin.nat,
                                 minlen=rin.minlen, maxlen=rin.maxlen,
-                                dangle=rin.dangle, mindist=rin.mindist,
+                                dangle=rin.dangle, mindist=mindist,
                                 vol_mu=rin.vol_mu, vol_sigma=rin.vol_sigma,
                                 maxcnt=rin.maxcnt, symprec=rin.symprec)
             if rin.spgnum == 0:

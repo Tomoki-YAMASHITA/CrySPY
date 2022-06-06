@@ -9,6 +9,7 @@ from ..BO import bo_restart
 from ..EA import ea_append
 from ..gen_struc.random.random_generation import Rnd_struc_gen
 from ..gen_struc.random.gen_pyxtal import Rnd_struc_gen_pyxtal
+from ..gen_struc.struc_util import set_mindist
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 from ..LAQA import laqa_restart
@@ -77,12 +78,16 @@ def append_struc(init_struc_data):
     id_offset = len(init_struc_data)
     nstruc = rin.tot_struc - id_offset
 
+    # ---------- mindist
+    print('# ------ mindist')
+    mindist = set_mindist()
+
     # ---------- pyxtal
     if not (rin.spgnum == 0 or rin.use_find_wy):
         rsgx = Rnd_struc_gen_pyxtal(natot=rin.natot, atype=rin.atype,
                                     nat=rin.nat, vol_factor=rin.vol_factor,
                                     vol_mu=rin.vol_mu, vol_sigma=rin.vol_sigma,
-                                    mindist=rin.mindist,
+                                    mindist=mindist,
                                     spgnum=rin.spgnum, symprec=rin.symprec)
         # ------ crystal
         if rin.struc_mode == 'crystal':
@@ -108,7 +113,7 @@ def append_struc(init_struc_data):
     else:
         rsg = Rnd_struc_gen(natot=rin.natot, atype=rin.atype, nat=rin.nat,
                             minlen=rin.minlen, maxlen=rin.maxlen,
-                            dangle=rin.dangle, mindist=rin.mindist,
+                            dangle=rin.dangle, mindist=mindist,
                             vol_mu=rin.vol_mu, vol_sigma=rin.vol_sigma,
                             maxcnt=rin.maxcnt, symprec=rin.symprec)
         if rin.spgnum == 0:
