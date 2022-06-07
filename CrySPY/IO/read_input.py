@@ -49,7 +49,8 @@ def readin():
     # ------ global declaration
     global struc_mode, natot, atype, nat
     global mol_file, nmol, timeout_mol, rot_mol, nrot
-    global vol_factor, vol_mu, vol_sigma, mindist, mindist_factor
+    global vol_factor, vol_mu, vol_sigma
+    global mindist, mindist_factor, mindist_mol_bs, mindist_mol_bs_factor
     global maxcnt, symprec, spgnum, use_find_wy
     global minlen, maxlen, dangle
 
@@ -202,6 +203,37 @@ def readin():
             raise ValueError('mindist_factor must be positive')
     except (configparser.NoOptionError, configparser.NoSectionError):
         mindist_factor = 1.0
+    # ------ mindist_mol_bs
+    if struc_mode == 'mol_bs':
+        try:
+            mindist_mol_bs = []
+            for i in range(len(mol_file)):
+                tmp = config.get('structure', 'mindist_mol_bs_{}'.format(i+1))
+                tmp = [float(x) for x in tmp.split()]    # character --> float
+                if not len(tmp) == len(mol_file):
+                    raise ValueError('not len(mindist_mol_bs_{}) == len(mol_file)'.format(i+1))
+                mindist_mol_bs.append(tmp)
+            # -- check symmetric matrix
+            for i in range(len(mindist_mol_bs)):
+                for j in range(len(mindist_mol_bs)):
+                    if i < j:
+                        if not mindist_mol_bs[i][j] == mindist_mol_bs[j][i]:
+                            raise ValueError('mindist_mol_bs is not symmetric. ({}, {}) -->'
+                                             ' {}, ({}, {}) --> {}'.format(
+                                                 i, j, mindist_mol_bs[i][j],
+                                                 j, i, mindist_mol_bs[j][i]))
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            mindist_mol_bs = None
+        # ------ mindist_mol_bs_factor
+        try:
+            mindist_mol_bs_factor = config.getfloat('structure', 'mindist_mol_bs_factor')
+            if mindist_mol_bs_factor <= 0.0:
+                raise ValueError('mindist_mol_bs_factor must be positive')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            mindist_mol_bs_factor = 1.0
+    else:
+        mindist_mol_bs = None
+        mindist_mol_bs_factor = 1.0
     # ------ spgnum == 0 or use_find_wy
     minlen = None
     maxlen = None
@@ -656,6 +688,13 @@ def writeout():
                 fout.write('mindist_{0} = {1}\n'.format(
                     i+1, ' '.join(str(c) for c in mindist[i])))
         fout.write('mindist_factor = {}\n'.format(mindist_factor))
+        if mindist_mol_bs is None:
+            fout.write('mindist_mol_bs = {}\n'.format(mindist_mol_bs))
+        else:
+            for i in range(len(mol_file)):
+                fout.write('mindist_mol_bs_{0} = {1}\n'.format(
+                    i+1, ' '.join(str(c) for c in mindist_mol_bs[i])))
+        fout.write('mindist_mol_bs_factor = {}\n'.format(mindist_mol_bs_factor))
         fout.write('maxcnt = {}\n'.format(maxcnt))
         fout.write('symprec = {}\n'.format(symprec))
         if spgnum == 0 or spgnum == 'all':
@@ -814,6 +853,14 @@ def save_stat(stat):    # only 1st run
             stat.set('structure', 'mindist_{}'.format(i+1),
                      '{}'.format(' '.join(str(c) for c in mindist[i])))
     stat.set('structure', 'mindist_factor', '{}'.format(mindist_factor))
+    if mindist_mol_bs is None:
+        stat.set('structure', 'mindist_mol_bs', '{}'.format(mindist_mol_bs))
+    else:
+        for i in range(len(mol_file)):
+            stat.set('structure', 'mindist_mol_bs_{}'.format(i+1),
+                     '{}'.format(' '.join(str(c) for c in mindist_mol_bs[i])))
+    stat.set('structure', 'mindist_mol_bs_factor', '{}'.format(mindist_mol_bs_factor))
+
     stat.set('structure', 'maxcnt', '{}'.format(maxcnt))
     stat.set('structure', 'symprec', '{}'.format(symprec))
     if spgnum == 0 or spgnum == 'all':
@@ -990,6 +1037,17 @@ def diffinstat(stat):
             tmp = [float(x) for x in tmp.split()]    # character --> float
             old_mindist.append(tmp)
     old_mindist_factor = stat.getfloat('structure', 'mindist_factor')
+    try:    # case: None
+        old_mindist_mol_bs = stat.get('structure', 'mindist_mol_bs')
+        if old_mindist_mol_bs == 'None':
+            old_mindist_mol_bs = None    # character --> None
+    except (configparser.NoOptionError, configparser.NoSectionError):
+        old_mindist_mol_bs = []
+        for i in range(len(mol_file)):
+            tmp = stat.get('structure', 'mindist_mol_bs_{}'.format(i+1))
+            tmp = [float(x) for x in tmp.split()]    # character --> float
+            old_mindist_mol_bs.append(tmp)
+    old_mindist_mol_bs_factor = stat.getfloat('structure', 'mindist_mol_bs_factor')
     old_maxcnt = stat.getint('structure', 'maxcnt')
     old_symprec = stat.getfloat('structure', 'symprec')
     old_spgnum = stat.get('structure', 'spgnum')
@@ -1233,6 +1291,31 @@ def diffinstat(stat):
     if not old_mindist_factor == mindist_factor:
         diff_out('mindist_factor', old_mindist_factor, mindist_factor)
         io_stat.set_input_common(stat, sec, 'mindist_factor', mindist_factor)
+        logic_change = True
+    if not old_mindist_mol_bs == mindist_mol_bs:
+        diff_out('mindist_mol_bs', old_mindist_mol_bs, mindist_mol_bs)
+        # -- case: old_mindist_mol_bs = None, mindist_mol_bs = []
+        if old_mindist_mol_bs is None:
+            stat.remove_option('structure', 'mindist_mol_bs')    # clear mindist_mol_bs
+            for i in range(len(mol_file)):               # add mindist_mol_bs_?
+                io_stat.set_input_common(stat, sec, 'mindist_mol_bs_{}'.format(i+1),
+                                         '{}'.format(' '.join(
+                                             str(x) for x in mindist_mol_bs[i])))
+        # -- case: old_mindist_mol_bs = [], mindist_mol_bs = None
+        elif mindist_mol_bs is None:
+            for i in range(len(mol_file)):    # clear mindist_mol_bs_?
+                stat.remove_option('structure', 'mindist_mol_bs_{}'.format(i+1))
+            io_stat.set_input_common(stat, sec, 'mindist_mol_bs', mindist_mol_bs)    # add mindist_mol_bs
+        # -- case: old_mindist_mol_bs = [], mindist_mol_bs = [], update list
+        else:
+            for i in range(len(mol_file)):
+                io_stat.set_input_common(stat, sec, 'mindist_mol_bs_{}'.format(i+1),
+                                         '{}'.format(' '.join(
+                                             str(x) for x in mindist_mol_bs[i])))
+        logic_change = True
+    if not old_mindist_mol_bs_factor == mindist_mol_bs_factor:
+        diff_out('mindist_mol_bs_factor', old_mindist_mol_bs_factor, mindist_mol_bs_factor)
+        io_stat.set_input_common(stat, sec, 'mindist_mol_bs_factor', mindist_mol_bs_factor)
         logic_change = True
     if not old_maxcnt == maxcnt:
         diff_out('maxcnt', old_maxcnt, maxcnt)

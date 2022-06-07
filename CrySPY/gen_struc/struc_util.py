@@ -12,37 +12,56 @@ from pyxtal.tolerance import Tol_matrix
 from ..IO import read_input as rin
 
 
-def set_mindist():
-    if rin.mindist is None:
-        # ---------- Tol matrix
+def set_mindist(mindist_in, factor, dummy=False):
+    # ---------- dummy atom in mol_bs
+    if dummy:
+        atype = get_atype_dummy()
+    else:
+        atype = rin.atype
+
+    # ---------- mindist
+    if mindist_in is None:
+        # ------ Tol matrix
         if rin.struc_mode in ['crystal']:
-            tolmat = Tol_matrix(prototype='atomic', factor=rin.mindist_factor)
+            tolmat = Tol_matrix(prototype='atomic', factor=factor)
         elif rin.struc_mode in ['mol', 'mol_bs']:
-            tolmat = Tol_matrix(prototype='molecular', factor=rin.mindist_factor)
+            tolmat = Tol_matrix(prototype='molecular', factor=factor)
         else:
             raise ValueError('struc_mode')
-        # ---------- set mindist
+        # ------ set mindist
         mindist = []
-        for i, itype in enumerate(rin.atype):
+        for i, itype in enumerate(atype):
             tmp = []
-            for j, jtype in enumerate(rin.atype):
+            for j, jtype in enumerate(atype):
                 tmp.append(tolmat.get_tol(itype, jtype))
             mindist.append(tmp)
     else:
-        tmp_array = rin.mindist_factor * np.array(rin.mindist)
+        tmp_array = factor * np.array(mindist_in)
         mindist = tmp_array.tolist()
 
     # ---------- print
-    for i, itype in enumerate(rin.atype):
-        for j, jtype in enumerate(rin.atype):
+    for i, itype in enumerate(atype):
+        for j, jtype in enumerate(atype):
             if i <= j:
-                print(itype, '-', jtype, mindist[i][j])
+                if dummy:
+                    print(rin.mol_file[i], '-', rin.mol_file[j], mindist[i][j])
+                else:
+                    print(itype, '-', jtype, mindist[i][j])
     if rin.struc_mode == 'mol':
         print('When struc_mode is mol (only random structure, not EA part),')
         print('- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)')
         print('- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
+
     # ---------- return
     return mindist
+
+
+def get_atype_dummy():
+    noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
+    if len(rin.nmol) > len(noble_gas):
+        raise ValueError('len(nmol) > len(noble_gas)')
+    atype = noble_gas[:len(rin.nmol)]
+    return atype
 
 
 def out_poscar(struc, cid, fpath):

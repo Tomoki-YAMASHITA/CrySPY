@@ -46,7 +46,7 @@ def initialize():
             fout.write('# ---------- Generate initial structures\n')
         # ------ mindist
         print('# ------ mindist')
-        mindist = set_mindist()
+        mindist = set_mindist(rin.mindist, rin.mindist_factor)
         # ------ pyxtal
         if not (rin.spgnum == 0 or rin.use_find_wy):
             rsgx = Rnd_struc_gen_pyxtal(natot=rin.natot, atype=rin.atype,
@@ -66,8 +66,11 @@ def initialize():
                                    timeout_mol=rin.timeout_mol)
             # ------ molecular crystal breaking symmetry
             elif rin.struc_mode == 'mol_bs':
+                print('# -- mindist_mol_bs')
+                mindist_dummy = set_mindist(rin.mindist_mol_bs, rin.mindist_mol_bs_factor, dummy=True)
                 rsgx.set_mol(mol_file=rin.mol_file, nmol=rin.nmol)
                 rsgx.gen_struc_mol_break_sym(nstruc=rin.tot_struc,
+                                             mindist_dummy=mindist_dummy,
                                              rot_mol=rin.rot_mol,
                                              nrot=rin.nrot,
                                              id_offset=0,

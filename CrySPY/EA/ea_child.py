@@ -16,7 +16,9 @@ def child_gen(sp, init_struc_data):
                           init_pos_path='./data/init_POSCARS')
     # ---------- set mindist
     print('# mindist')
-    mindist = set_mindist()
+    mindist = set_mindist(rin.mindist, rin.mindist_factor)
+    if rin.struc_mode == 'mol_bs':
+        mindist_dummy = set_mindist(rin.mindist_mol_bs, rin.mindist_mol_bs_factor)
     # ------ instantiate Crossover class
     if rin.n_crsov > 0:
         co = Crossover(rin.atype, rin.nat, mindist,
@@ -65,6 +67,7 @@ def child_gen(sp, init_struc_data):
             elif rin.struc_mode == 'mol_bs':
                 rsgx.set_mol(mol_file=rin.mol_file, nmol=rin.nmol)
                 rsgx.gen_struc_mol_break_sym(nstruc=rin.n_rand,
+                                             mindist_dummy=mindist_dummy,
                                              rot_mol=rin.rot_mol,
                                              id_offset=eagen.cid,
                                              init_pos_path='./data/init_POSCARS')

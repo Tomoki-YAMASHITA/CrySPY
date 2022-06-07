@@ -14,6 +14,7 @@ from pyxtal import pyxtal
 from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
 
+from ..struc_util import get_atype_dummy
 from ..struc_util import check_distance
 from ..struc_util import sort_by_atype
 from ..struc_util import out_poscar
@@ -204,7 +205,7 @@ class Rnd_struc_gen_pyxtal:
         # ---------- initialize
         self.init_struc_data = {}
         # ---------- Tol_matrix
-        tolmat = self._set_tol_mat('atomic')
+        tolmat = self._set_tol_mat(self.atype, self.mindist)
         # ---------- loop for structure generattion
         while len(self.init_struc_data) < nstruc:
             # ------ spgnum --> spg
@@ -316,7 +317,7 @@ class Rnd_struc_gen_pyxtal:
         # ---------- initialize
         self.init_struc_data = {}
         # ---------- Tol_matrix
-        tolmat = self._set_tol_mat('molecular')
+        tolmat = self._set_tol_mat(self.atype, self.mindist)
         # ---------- loop for structure generattion
         while len(self.init_struc_data) < nstruc:
             # ------ spgnum --> spg
@@ -403,7 +404,7 @@ class Rnd_struc_gen_pyxtal:
             else:
                 self.spg_error.append(spg)
 
-    def gen_struc_mol_break_sym(self, nstruc, rot_mol=None, nrot=20,
+    def gen_struc_mol_break_sym(self, nstruc, mindist_dummy, rot_mol=None, nrot=20,
                                 id_offset=0, init_pos_path=None):
         '''
         Generate random molecular crystal structures
@@ -412,6 +413,8 @@ class Rnd_struc_gen_pyxtal:
 
         # ---------- args
         nstruc (int): number of generated structures
+
+        mindist_dummy: mindist for dummy atoms
 
         rot_mol (str): default: None
                        None, 'random', 'random_mol', or 'random_wyckoff'
@@ -442,15 +445,12 @@ class Rnd_struc_gen_pyxtal:
                              ' init_pos_path = {}'.format(init_pos_path))
         if rot_mol not in [None, 'random', 'random_mol', 'random_wyckoff']:
             raise ValueError('error in rot_mol')
-        noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
-        if len(self.mol_data) > len(noble_gas):
-            raise ValueError('len(mol_data) > len(noble_gas)')
         # ---------- initialize
         self.init_struc_data = {}
-        # ---------- Tol_matrix for mol_bs
-
         # ------ dummy atom type
-        tmp_atype = noble_gas[:len(self.mol_data)]
+        atype_dummy = get_atype_dummy()
+        # ---------- Tol_matrix for dummy atoms
+        tolmat = self._set_tol_mat(atype_dummy, mindist_dummy)
         # ---------- loop for structure generattion
         while len(self.init_struc_data) < nstruc:
             # ------ spgnum --> spg
@@ -465,9 +465,9 @@ class Rnd_struc_gen_pyxtal:
             # ------ generate structure
             tmp_crystal = pyxtal()
             try:
-                tmp_crystal.from_random(dim=3, group=spg, species=tmp_atype,
+                tmp_crystal.from_random(dim=3, group=spg, species=atype_dummy,
                                         numIons=self.nmol, factor=rand_vol,
-                                        conventional=False)
+                                        conventional=False, tm=tolmat)
             except Exception as e:
                 print(e, ':spg = {} retry.'.format(spg), file=sys.stderr)
                 self.spg_error.append(spg)
@@ -505,7 +505,7 @@ class Rnd_struc_gen_pyxtal:
                 for nrel in range(nrot):
                     tmp_struc = tmp_struc_ori.copy()
                     for (dum_specie, dum_coord) in zip(dum_species, dum_coords):
-                        mol_index = tmp_atype.index(dum_type[dum_specie])
+                        mol_index = atype_dummy.index(dum_type[dum_specie])
                         mol = self.mol_data[mol_index]
                         # rotation option
                         if rot_mol is None:
@@ -589,13 +589,12 @@ class Rnd_struc_gen_pyxtal:
             else:
                 self.spg_error.append(spg)
 
-    def _set_tol_mat(self, prototype):
-        # tmp_mindist = set_mindist()
-        tolmat = Tol_matrix(prototype=prototype)    # prototype is meaningless here, but just in case
-        for i, itype in enumerate(self.atype):
-            for j, jtype in enumerate(self.atype):
+    def _set_tol_mat(self, atype, mindist):
+        tolmat = Tol_matrix()
+        for i, itype in enumerate(atype):
+            for j, jtype in enumerate(atype):
                 if i <= j:
-                    tolmat.set_tol(itype, jtype, self.mindist[i][j])
+                    tolmat.set_tol(itype, jtype, mindist[i][j])
         return tolmat
 
     def _check_nat(self, struc):

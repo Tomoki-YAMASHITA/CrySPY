@@ -80,7 +80,7 @@ def append_struc(init_struc_data):
 
     # ---------- mindist
     print('# ------ mindist')
-    mindist = set_mindist()
+    mindist = set_mindist(rin.mindist, rin.mindist_factor)
 
     # ---------- pyxtal
     if not (rin.spgnum == 0 or rin.use_find_wy):
@@ -101,8 +101,11 @@ def append_struc(init_struc_data):
                                timeout_mol=rin.timeout_mol)
         # ------ molecular crystal breaking symmetry
         elif rin.struc_mode == 'mol_bs':
+            print('# -- mindist_mol_bs')
+            mindist_dummy = set_mindist(rin.mindist_mol_bs, rin.mindist_mol_bs_factor, dummy=True)
             rsgx.set_mol(mol_file=rin.mol_file, nmol=rin.nmol)
             rsgx.gen_struc_mol_break_sym(nstruc=nstruc,
+                                         mindist_dummy=mindist_dummy,
                                          rot_mol=rin.rot_mol,
                                          nrot=rin.nrot,
                                          id_offset=id_offset,

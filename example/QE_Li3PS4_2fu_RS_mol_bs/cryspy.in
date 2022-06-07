@@ -1,0 +1,30 @@
+[basic]
+algo = RS
+calc_code = QE
+tot_struc = 10
+nstage = 2
+njob = 1
+jobcmd = qsub
+jobfile = job_cryspy
+
+[structure]
+struc_mode = mol_bs
+natot = 16
+atype = Li P S
+nat = 6 2 8
+mol_file = ./Li.xyz  ./PS4.xyz
+nmol = 6 2
+vol_factor = 2.0
+mindist_1 = 2.0 2.0 2.0
+mindist_2 = 2.0 3.0 2.0
+mindist_3 = 2.0 2.0 2.0
+mindist_mol_bs_1 = 2.0 3.0
+mindist_mol_bs_2 = 3.0 3.0
+
+[QE]
+qe_infile = pwscf.in
+qe_outfile = pwscf.out
+kppvol = 40  60
+
+[option]
+

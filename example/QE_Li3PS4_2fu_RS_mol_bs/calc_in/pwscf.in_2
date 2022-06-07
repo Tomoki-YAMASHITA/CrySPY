@@ -1,0 +1,32 @@
+ &control
+    title = 'Li3PS4 2fu'
+    calculation = 'vc-relax'
+    nstep = 200
+    restart_mode = 'from_scratch',
+    pseudo_dir = '/usr/local/pslibrary.1.0.0/pbe/PSEUDOPOTENTIALS/'
+    outdir='./outdir/' 
+ /
+
+ &system
+    ibrav = 0
+    nat = 16
+    ntyp = 3
+    ecutwfc = 50.00
+    ecutrho = 325.00
+    occupations = 'smearing'
+    degauss = 0.01
+ /
+
+ &electrons
+ /
+
+ &ions
+ /
+
+ &cell
+ /
+
+ATOMIC_SPECIES
+   Li  6.9   Li.pbe-sl-kjpaw_psl.1.0.0.UPF
+   P   30.97 P.pbe-nl-kjpaw_psl.1.0.0.UPF
+   S   32.1 S.pbe-nl-kjpaw_psl.1.0.0.UPF 
