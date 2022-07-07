@@ -4,6 +4,7 @@ Utility for CrySPY
 
 from datetime import datetime
 import os
+import shutil
 
 
 # ---------- parameters
@@ -15,7 +16,7 @@ kbar2ev_ang3 = 0.0006241509073
 
 # ---------- functions
 def get_version():
-    return 'CrySPY 0.10.3'
+    return 'CrySPY 0.11.0'
 
 
 def get_date():
@@ -38,3 +39,30 @@ def check_fppath():
         raise IOError('There is no cal_fingerprint program in {}'.format(
             fppath))
     return fppath
+
+
+def backup_cryspy():
+    # ---------- make directory
+    dst = 'backup'
+    if not os.path.isdir(dst):
+        os.mkdir(dst)
+    else:
+        shutil.move(dst, 'old_backup')
+        os.mkdir(dst)
+
+    # ---------- file/directory list
+    flist = ['cryspy.in', 'cryspy.out', 'cryspy.stat', 'err', 'log']
+    dlist = ['calc_in', 'data']
+
+    # ---------- backup
+    for f in flist:
+        if os.path.isfile(f):
+            shutil.copy2(f, dst)
+    for d in dlist:
+        if os.path.isdir(d):
+            shutil.copytree(d, dst + '/' + d)
+
+    # ---------- delete old_backup
+    shutil.rmtree('old_backup')
+
+

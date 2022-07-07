@@ -9,6 +9,7 @@ from CrySPY.interface import select_code
 # from CrySPY.job.ctrl_job import Ctrl_job    # import later
 from CrySPY.IO import read_input as rin
 from CrySPY.start import cryspy_init, cryspy_restart
+from CrySPY.utility import backup_cryspy
 
 
 def main():
@@ -26,6 +27,7 @@ def main():
         raise SystemExit()
     # ---------- restart
     else:
+        backup_cryspy()    # backup
         stat, init_struc_data = cryspy_restart.restart()
 
     # ---------- check point 1
