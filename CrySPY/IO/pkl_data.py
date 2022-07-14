@@ -168,3 +168,15 @@ def load_ea_data():
 def save_ea_data(ea_data):
     with open('./data/pkl_data/EA_data.pkl', 'wb') as f:
         pickle.dump(ea_data, f)
+
+
+def load_ext_opt_struc():
+    with open('./ext/calc_data/ext_opt_struc_data.pkl', 'rb') as f:
+        ext_opt_struc_data = pickle.load(f)
+    return ext_opt_struc_data
+
+
+def load_ext_energy():
+    with open('./ext/calc_data/ext_energy_data.pkl', 'rb') as f:
+        ext_energy_data = pickle.load(f)
+    return ext_energy_data

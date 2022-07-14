@@ -388,8 +388,8 @@ class Ctrl_job:
         pkl_data.save_rslt(self.rslt_data)
         out_rslt(self.rslt_data)
         # ------ success
-        if opt_struc is not None:
-            self.save_id_data()
+        # if opt_struc is not None:
+        #    self.save_id_data()
 
     def regist_opt(self, opt_struc):
         '''

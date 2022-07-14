@@ -142,6 +142,12 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
         fout.write('selected_id: {}\n\n'.format(
             ' '.join(str(a) for a in id_queueing)))
 
+    # ---------- ext
+    if rin.calc_code == 'ext':
+        with open('ext/stat_job', 'w') as fstat:
+            fstat.write('out\n')
+
+
 
 def bayes_opt(s_act, descriptors, targets, nselect):
     # ---------- start COMBO part

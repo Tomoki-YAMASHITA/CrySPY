@@ -21,9 +21,9 @@ def readin():
     global nstage, njob, jobcmd, jobfile
     # ------ read intput variables
     calc_code = config.get('basic', 'calc_code')
-    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX']:
+    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX', 'ext']:
         raise NotImplementedError(
-            'calc_code must be VASP, QE, OMX, soiap, or LAMMPS')
+            'calc_code must be VASP, QE, OMX, soiap, LAMMPS, or ext')
     algo = config.get('basic', 'algo')
     if algo not in ['RS', 'BO', 'LAQA', 'EA']:
         raise NotImplementedError('algo must be RS, BO, LAQA, or EA')
@@ -33,17 +33,18 @@ def readin():
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
         raise ValueError('tot_struc <= 0, check tot_struc')
-    nstage = config.getint('basic', 'nstage')
-    if nstage <= 0:
-        raise ValueError('nstage <= 0, check nstage')
-    if algo == 'LAQA':
-        if not nstage == 1:
-            raise ValueError('nstage shoud be 1 in LAQA')
-    njob = config.getint('basic', 'njob')
-    if njob <= 0:
-        raise ValueError('njob <= 0, check njob')
-    jobcmd = config.get('basic', 'jobcmd')
-    jobfile = config.get('basic', 'jobfile')
+    if not calc_code == 'ext':
+        nstage = config.getint('basic', 'nstage')
+        if nstage <= 0:
+            raise ValueError('nstage <= 0, check nstage')
+        if algo == 'LAQA':
+            if not nstage == 1:
+                raise ValueError('nstage shoud be 1 in LAQA')
+        njob = config.getint('basic', 'njob')
+        if njob <= 0:
+            raise ValueError('njob <= 0, check njob')
+        jobcmd = config.get('basic', 'jobcmd')
+        jobfile = config.get('basic', 'jobfile')
 
     # ---------- structure
     # ------ global declaration
@@ -287,19 +288,19 @@ def readin():
         append_struc_ea = False
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
-        if calc_code in ['LAMMPS', 'OMX']:
+        if calc_code in ['LAMMPS', 'OMX', 'ext']:
             raise NotImplementedError('energy_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
-        if calc_code in ['LAMMPS', 'OMX']:
+        if calc_code in ['LAMMPS', 'OMX', 'ext']:
             raise NotImplementedError('struc_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         struc_step_flag = False
     try:
         force_step_flag = config.getboolean('option', 'force_step_flag')
-        if calc_code in ['LAMMPS', 'OMX']:
+        if calc_code in ['LAMMPS', 'OMX', 'ext']:
             raise NotImplementedError('force_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         force_step_flag = False
@@ -307,7 +308,7 @@ def readin():
         force_step_flag = True
     try:
         stress_step_flag = config.getboolean('option', 'stress_step_flag')
-        if calc_code in ['LAMMPS', 'OMX']:
+        if calc_code in ['LAMMPS', 'OMX', 'ext']:
             raise NotImplementedError('stress_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         stress_step_flag = False
@@ -618,9 +619,10 @@ def readin():
         lammps_data = config.get('LAMMPS', 'lammps_data')
         kpt_flag = False
         force_gamma = False
-    else:
-        raise NotImplementedError('calc_code must be VASP, QE, soiap,'
-                                  ' or LAMMPS')
+
+    # ---------- ext
+    elif calc_code == 'ext':
+        kpt_flag = False
 
 
 def spglist(spgnum):
@@ -656,10 +658,11 @@ def writeout():
         fout.write('algo = {}\n'.format(algo))
         fout.write('calc_code = {}\n'.format(calc_code))
         fout.write('tot_struc = {}\n'.format(tot_struc))
-        fout.write('nstage = {}\n'.format(nstage))
-        fout.write('njob = {}\n'.format(njob))
-        fout.write('jobcmd = {}\n'.format(jobcmd))
-        fout.write('jobfile = {}\n'.format(jobfile))
+        if not calc_code == 'ext':
+            fout.write('nstage = {}\n'.format(nstage))
+            fout.write('njob = {}\n'.format(njob))
+            fout.write('jobcmd = {}\n'.format(jobcmd))
+            fout.write('jobfile = {}\n'.format(jobfile))
 
         # ------ structure section
         fout.write('# ------ structure section\n')
@@ -822,10 +825,11 @@ def save_stat(stat):    # only 1st run
     stat.set('basic', 'algo', '{}'.format(algo))
     stat.set('basic', 'calc_code', '{}'.format(calc_code))
     stat.set('basic', 'tot_struc', '{}'.format(tot_struc))
-    stat.set('basic', 'nstage', '{}'.format(nstage))
-    stat.set('basic', 'njob', '{}'.format(njob))
-    stat.set('basic', 'jobcmd', '{}'.format(jobcmd))
-    stat.set('basic', 'jobfile', '{}'.format(jobfile))
+    if not calc_code == 'ext':
+        stat.set('basic', 'nstage', '{}'.format(nstage))
+        stat.set('basic', 'njob', '{}'.format(njob))
+        stat.set('basic', 'jobcmd', '{}'.format(jobcmd))
+        stat.set('basic', 'jobfile', '{}'.format(jobfile))
 
     # ---------- structure
     stat.set('structure', 'struc_mode', '{}'.format(struc_mode))
@@ -983,10 +987,11 @@ def diffinstat(stat):
     old_algo = stat.get('basic', 'algo')
     old_calc_code = stat.get('basic', 'calc_code')
     old_tot_struc = stat.getint('basic', 'tot_struc')
-    old_nstage = stat.getint('basic', 'nstage')
-    old_njob = stat.getint('basic', 'njob')
-    old_jobcmd = stat.get('basic', 'jobcmd')
-    old_jobfile = stat.get('basic', 'jobfile')
+    if not calc_code == 'ext':
+        old_nstage = stat.getint('basic', 'nstage')
+        old_njob = stat.getint('basic', 'njob')
+        old_jobcmd = stat.get('basic', 'jobcmd')
+        old_jobfile = stat.get('basic', 'jobfile')
 
     # ------ structure
     old_struc_mode = stat.get('structure', 'struc_mode')
@@ -1199,22 +1204,23 @@ def diffinstat(stat):
         diff_out('tot_struc', old_tot_struc, tot_struc)
         io_stat.set_input_common(stat, sec, 'tot_struc', tot_struc)
         logic_change = True
-    if not old_nstage == nstage:
-        diff_out('nstage', old_nstage, nstage)
-        io_stat.set_input_common(stat, sec, 'nstage', nstage)
-        logic_change = True
-    if not old_njob == njob:
-        diff_out('njob', old_njob, njob)
-        io_stat.set_input_common(stat, sec, 'njob', njob)
-        logic_change = True
-    if not old_jobcmd == jobcmd:
-        diff_out('jobcmd', old_jobcmd, jobcmd)
-        io_stat.set_input_common(stat, sec, 'jobcmd', jobcmd)
-        logic_change = True
-    if not old_jobfile == jobfile:
-        diff_out('jobfile', old_jobfile, jobfile)
-        io_stat.set_input_common(stat, sec, 'jobfile', jobfile)
-        logic_change = True
+    if not calc_code == 'ext':
+        if not old_nstage == nstage:
+            diff_out('nstage', old_nstage, nstage)
+            io_stat.set_input_common(stat, sec, 'nstage', nstage)
+            logic_change = True
+        if not old_njob == njob:
+            diff_out('njob', old_njob, njob)
+            io_stat.set_input_common(stat, sec, 'njob', njob)
+            logic_change = True
+        if not old_jobcmd == jobcmd:
+            diff_out('jobcmd', old_jobcmd, jobcmd)
+            io_stat.set_input_common(stat, sec, 'jobcmd', jobcmd)
+            logic_change = True
+        if not old_jobfile == jobfile:
+            diff_out('jobfile', old_jobfile, jobfile)
+            io_stat.set_input_common(stat, sec, 'jobfile', jobfile)
+            logic_change = True
 
     # ------ structure
     sec = 'structure'

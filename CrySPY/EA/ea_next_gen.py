@@ -123,3 +123,8 @@ def next_gen(stat, init_struc_data, opt_struc_data, rslt_data, ea_id_data):
     io_stat.set_common(stat, 'generation', gen)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
+
+    # ---------- ext
+    if rin.calc_code == 'ext':
+        with open('ext/stat_job', 'w') as fstat:
+            fstat.write('out\n')

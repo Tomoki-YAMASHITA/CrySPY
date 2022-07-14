@@ -44,15 +44,13 @@ def check_fppath():
 def backup_cryspy():
     # ---------- make directory
     dst = 'backup'
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
-    else:
-        shutil.move(dst, 'old_backup')
-        os.mkdir(dst)
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    os.mkdir(dst)
 
     # ---------- file/directory list
     flist = ['cryspy.in', 'cryspy.out', 'cryspy.stat', 'err', 'log']
-    dlist = ['calc_in', 'data']
+    dlist = ['calc_in', 'data', 'ext']
 
     # ---------- backup
     for f in flist:
@@ -61,8 +59,3 @@ def backup_cryspy():
     for d in dlist:
         if os.path.isdir(d):
             shutil.copytree(d, dst + '/' + d)
-
-    # ---------- delete old_backup
-    shutil.rmtree('old_backup')
-
-

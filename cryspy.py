@@ -36,15 +36,22 @@ def main():
         os.remove('lock_cryspy')
         raise SystemExit()
 
-    # ---------- check calc files in ./calc_in
-    select_code.check_calc_files()
+    if not rin.calc_code == 'ext':
+        # ---------- check calc files in ./calc_in
+        select_code.check_calc_files()
+        # ---------- mkdir work/fin
+        os.makedirs('work/fin', exist_ok=True)
 
-    # ---------- mkdir work/fin
-    os.makedirs('work/fin', exist_ok=True)
-
-    # ---------- instantiate Ctrl_job class
-    from CrySPY.job.ctrl_job import Ctrl_job
-    jobs = Ctrl_job(stat, init_struc_data)
+    # ---------- Perform structure optimization externally
+    if rin.calc_code == 'ext':
+        # ------ instantiate Ctrl_job class
+        from CrySPY.job.ctrl_ext import Ctrl_ext
+        jobs = Ctrl_ext(stat, init_struc_data)
+    # ---------- internally
+    else:
+        # ---------- instantiate Ctrl_job class
+        from CrySPY.job.ctrl_job import Ctrl_job
+        jobs = Ctrl_job(stat, init_struc_data)
 
     # ---------- check job status
     jobs.check_job()
@@ -53,15 +60,17 @@ def main():
     jobs.handle_job()
 
     # ---------- recheck for skip and done
-    if jobs.id_queueing:
-        cnt_recheck = 0
-        while jobs.recheck:
-            cnt_recheck += 1
-            jobs.recheck = False    # True --> False
-            print('\n\n recheck {}\n'.format(cnt_recheck))
-            jobs.check_job()
-            jobs.handle_job()
+    if not rin.calc_code == 'ext':
+        if jobs.id_queueing:
+            cnt_recheck = 0
+            while jobs.recheck:
+                cnt_recheck += 1
+                jobs.recheck = False    # True --> False
+                print('\n\n recheck {}\n'.format(cnt_recheck))
+                jobs.check_job()
+                jobs.handle_job()
 
+    # ---------- next selection or generation
     if not (jobs.id_queueing or jobs.id_running):
         # ---------- next selection or generation
         if rin.algo in ['BO', 'LAQA', 'EA']:

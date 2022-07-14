@@ -12,6 +12,7 @@ from .QE import calc_files_qe, ctrl_job_qe, collect_qe
 from .soiap import calc_files_soiap, ctrl_job_soiap, collect_soiap
 from .LAMMPS import calc_files_lammps, ctrl_job_lammps, collect_lammps
 from .OMX import calc_files_OMX, ctrl_job_OMX, collect_OMX
+from .ext import collect_ext
 
 from ..IO import read_input as rin
 
@@ -27,8 +28,10 @@ def check_calc_files():
         calc_files_soiap.check_input_soiap()
     elif rin.calc_code == 'LAMMPS':
         calc_files_lammps.check_input_lammps()
+    elif rin.calc_code == 'ext':
+        pass
     else:
-        raise NotImplementedError('now only VASP, QE, OMX, soiap, or LAMMPS')
+        raise NotImplementedError()
 
 
 def next_stage(stage, work_path, *args):
@@ -53,7 +56,7 @@ def next_stage(stage, work_path, *args):
         skip_flag = ctrl_job_lammps.next_stage_lammps(stage, work_path)
         return skip_flag
     else:
-        raise NotImplementedError('now only VASP, QE, OMX, soiap, or LAMMPS')
+        raise NotImplementedError()
 
 
 def collect(current_id, work_path):
@@ -72,8 +75,11 @@ def collect(current_id, work_path):
     elif rin.calc_code == 'LAMMPS':
         opt_struc, energy, magmom, check_opt = \
             collect_lammps.collect_lammps(current_id, work_path)
+    elif rin.calc_code == 'ext':
+        ext_opt_struc_data, ext_energy_data = collect_ext.collect_ext()
+        return ext_opt_struc_data, ext_energy_data
     else:
-        raise NotImplementedError('only VASP, QE, OMX, soiap, LAMMPS for now')
+        raise NotImplementedError()
 
     # ---------- return
     return opt_struc, energy, magmom, check_opt
@@ -98,7 +104,7 @@ def next_struc(structure, current_id, work_path, *args):
     elif rin.calc_code == 'LAMMPS':
         ctrl_job_lammps.next_struc_lammps(structure, current_id, work_path)
     else:
-        raise NotImplementedError('only VASP, QE, OMX, soiap, LAMMPS for now')
+        raise NotImplementedError()
 
 
 def get_energy_step(energy_step_data, current_id, work_path):
@@ -115,7 +121,7 @@ def get_energy_step(energy_step_data, current_id, work_path):
             energy_step_data, current_id, work_path)
         return energy_step_data
     else:
-        raise NotImplementedError('only VASP, QE, soiap for now')
+        raise NotImplementedError()
 
 
 def get_struc_step(struc_step_data, current_id, work_path):
@@ -132,7 +138,7 @@ def get_struc_step(struc_step_data, current_id, work_path):
             struc_step_data, current_id, work_path)
         return struc_step_data
     else:
-        raise NotImplementedError('only VASP, QE, soiap for now')
+        raise NotImplementedError()
 
 
 def get_force_step(force_step_data, current_id, work_path):
@@ -149,7 +155,7 @@ def get_force_step(force_step_data, current_id, work_path):
             force_step_data, current_id, work_path)
         return force_step_data
     else:
-        raise NotImplementedError('only VASP, QE, soiap for now')
+        raise NotImplementedError()
 
 
 def get_stress_step(stress_step_data, current_id, work_path):
@@ -166,4 +172,4 @@ def get_stress_step(stress_step_data, current_id, work_path):
             stress_step_data, current_id, work_path)
         return stress_step_data
     else:
-        raise NotImplementedError('only VASP, QE, soiap for now')
+        raise NotImplementedError()

@@ -20,3 +20,8 @@ def restart(stat, prev_nstruc):
     # ---------- save
     rs_id_data = (id_queueing, id_running)
     pkl_data.save_rs_id(rs_id_data)
+
+    # ---------- ext
+    if rin.calc_code == 'ext':
+        with open('ext/stat_job', 'w') as fstat:
+            fstat.write('out\n')
