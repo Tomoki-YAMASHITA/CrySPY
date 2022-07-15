@@ -236,8 +236,6 @@ class Ctrl_ext:
         '''
         if rin.algo == 'BO':
             self.next_select_BO()
-        if rin.algo == 'LAQA':
-            self.next_select_LAQA()
         if rin.algo == 'EA':
             self.next_gen_EA()
 

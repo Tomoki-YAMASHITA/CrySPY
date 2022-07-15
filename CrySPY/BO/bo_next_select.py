@@ -148,7 +148,6 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
             fstat.write('out\n')
 
 
-
 def bayes_opt(s_act, descriptors, targets, nselect):
     # ---------- start COMBO part
     # ------ standardization

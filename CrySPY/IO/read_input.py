@@ -6,6 +6,7 @@ import configparser
 import os
 
 from . import io_stat
+from .. import utility
 
 
 def readin():
@@ -342,7 +343,8 @@ def readin():
             cdev = 0.001
         dscrpt = config.get('BO', 'dscrpt')
         if dscrpt == 'FP':
-            pass
+            # -- check cal_fingerprint executable file
+            _ = utility.check_fppath()
         else:
             raise NotImplementedError('Now FP only')
         # -- parameters for f-fingerprint
