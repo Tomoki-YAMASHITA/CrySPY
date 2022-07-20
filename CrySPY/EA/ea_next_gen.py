@@ -76,7 +76,7 @@ def next_gen(stat, init_struc_data, opt_struc_data, rslt_data, ea_id_data):
                           rin.n_strain, rin.n_rand, rin.n_elite,
                           rin.crs_lat, rin.slct_func],
                          index=ea_info.columns)
-    ea_info = ea_info.append(tmp_info, ignore_index=True)
+    ea_info = pd.concat([ea_info, pd.DataFrame(tmp_info).T], axis=0, ignore_index=True)
     # ------ out ea_info
     out_results.out_ea_info(ea_info)
 
@@ -85,19 +85,19 @@ def next_gen(stat, init_struc_data, opt_struc_data, rslt_data, ea_id_data):
     for cid in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
         tmp_origin = pd.Series([gen, cid, eagen.operation[cid],
                                 eagen.parents[cid]], index=ea_origin.columns)
-        ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
+        ea_info = pd.concat([ea_info, pd.DataFrame(tmp_info).T], axis=0, ignore_index=True)
     # ------ random part
     for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand,
                      rin.tot_struc + rin.n_pop):
         tmp_origin = pd.Series([gen, cid, 'random', None],
                                index=ea_origin.columns)
-        ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
+        ea_info = pd.concat([ea_info, pd.DataFrame(tmp_info).T], axis=0, ignore_index=True)
     # ------ elite part
     if rin.n_elite > 0:
         for cid in se.ranking_dedupe:
             tmp_origin = pd.Series([gen, cid, 'elite', 'elite'],
                                    index=ea_origin.columns)
-            ea_origin = ea_origin.append(tmp_origin, ignore_index=True)
+            ea_origin = pd.concat([ea_origin, pd.DataFrame(tmp_origin).T], axis=0, ignore_index=True)
     # ------ out ea_origin
     out_results.out_ea_origin(ea_origin)
 
