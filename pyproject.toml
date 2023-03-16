@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cryspy"
+name = "csp-cryspy"
 authors = [
     {name = "Tomoki Yamashita", email = "yamashita06@vos.nagaokaut.ac.jp"},
 ]

@@ -2,7 +2,8 @@
 
 # CrySPY
 CrySPY (pronounced as crispy) is a crystal structure prediction tool written in Python.  
-Document: https://tomoki-yamashita.github.io/CrySPY_doc/
+Document: https://tomoki-yamashita.github.io/CrySPY_doc  
+Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
 version 1.0.0 (2023 March 16)

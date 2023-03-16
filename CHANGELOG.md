@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0] - 2023-03-??
+## [1.0.0] - 2023-03-16
 ### Changed
 - standard output --> log_cryspy
 - standard error --> err_cryspy
