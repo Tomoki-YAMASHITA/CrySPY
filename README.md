@@ -5,9 +5,12 @@ CrySPY (pronounced as crispy) is a crystal structure prediction tool written in 
 Document: https://tomoki-yamashita.github.io/CrySPY_doc/
 
 ## Latest version
-version 1.0.0 (2023 March ??)
+version 1.0.0 (2023 March 16)
 
-See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [Changelog](./CHANGELOG.md)
+## News
+- [2023 March 16] CrySPY 1.0.0 released
+    + CrySPY is available in PyPI, so you can install by pip.
+    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [Changelog](./CHANGELOG.md)
 
 
 ## System requirements
