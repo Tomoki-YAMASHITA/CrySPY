@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cryspy"
+authors = [
+    {name = "Tomoki Yamashita", email = "yamashita06@vos.nagaokaut.ac.jp"},
+]
+maintainers = [
+    {name = "Tomoki Yamashita", email = "yamashita06@vos.nagaokaut.ac.jp"}
+]
+description = "CrySPY is a crystal structure prediction tool written in Python."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = ["CSP"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pyxtal>=0.5.3",
+]
+dynamic = ["version"]
+
+[project.urls]
+documentation = "https://tomoki-yamashita.github.io/CrySPY_doc"
+repository = "https://github.com/Tomoki-YAMASHITA/CrySPY.git"
+changelog = "https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/CHANGELOG.md"
+
+[project.scripts]
+"cryspy" = "cryspy.scripts.cryspy:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "cryspy.__version__"}
+

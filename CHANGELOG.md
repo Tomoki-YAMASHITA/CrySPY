@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.0] - 2023-03-??
+### Changed
+- standard output --> log_cryspy
+- standard error --> err_cryspy
+- cryspy.out is obsoleted
+- COMBO --> optional
+- mindist
+  + mindist can be omitted in cryspy.in
+  + mindist_ea is obsoleted
+- moved examples to CrySPY utility
+- moved cal_fingerprint program to CrySPY utility
+- directory tree (gen_struc, utility, RS, EA)
+- CrySPY stops once before going to next selection or next generation
+
+### Added
+- excecutable script, cryspy
+- auto and manual backup
+- mindist_mol_bs and mindist_mol_bs_factor in cryspy.in
+- fwpath and fppath in cryspy.in
+- new calc_mode: ext
+
+
 ## [0.10.3] - 2022-05-17
 ### Changed
 - update LAMMPS example
