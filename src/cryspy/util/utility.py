@@ -10,7 +10,7 @@ import subprocess
 
 # ---------- functions
 def get_version():
-    return '1.0.0'
+    return '1.0.1'
 
 
 def get_date():
@@ -47,10 +47,9 @@ def check_fppath(fppath):
 
 def backup_cryspy():
     # ---------- make directory
-    dst = 'backup'
-    if os.path.isdir(dst):
-        shutil.rmtree(dst)
-    os.mkdir(dst)
+    dname = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dst = 'backup/' + dname + '/'
+    os.makedirs(dst, exist_ok=True)
 
     # ---------- file/directory list
     flist = ['cryspy.in', 'cryspy.stat', 'err_cryspy', 'log_cryspy']
@@ -62,7 +61,7 @@ def backup_cryspy():
             shutil.copy2(f, dst)
     for d in dlist:
         if os.path.isdir(d):
-            shutil.copytree(d, dst + '/' + d)
+            shutil.copytree(d, dst + d)
 
     # ---------- print
     print('\nBackup data')
