@@ -319,7 +319,7 @@ class Ctrl_job:
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.current_id, self.work_path)
         # ---------- total step and laqa_step
-        #     force_step_data[key][stage][step][atom]
+        #     force_step_data[ID][stage][step][atom]
         if self.force_step_data[self.current_id][-1] is None:
             self.laqa_step[self.current_id].append(0)
         else:
@@ -335,9 +335,12 @@ class Ctrl_job:
         # ---------- append laqa energy
         self.laqa_energy[self.current_id].append(energy)
         # ---------- append laqa bias
-        #     force_step_data[key][stage][step][atom]
+        #     force_step_data[ID][stage][step][atom]
+        #     stress_step_data[ID][stage][step][atom]
         tmp_laqa_bias = calc_laqa_bias(
-            self.force_step_data[self.current_id][-1], c=rin.weight_laqa)
+            self.force_step_data[self.current_id][-1],
+            self.stress_step_data[self.current_id][-1],
+            wf=rin.wf, ws=rin.ws)
         self.laqa_bias[self.current_id].append(tmp_laqa_bias)
         # ---------- append laqa score
         if check_opt == 'done' or np.isnan(energy) or np.isnan(tmp_laqa_bias):

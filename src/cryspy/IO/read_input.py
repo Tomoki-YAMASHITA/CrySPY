@@ -22,9 +22,9 @@ def readin():
     global nstage, njob, jobcmd, jobfile
     # ------ read intput variables
     calc_code = config.get('basic', 'calc_code')
-    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX', 'ext']:
+    if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX', 'ASE', 'ext']:
         raise NotImplementedError(
-            'calc_code must be VASP, QE, OMX, soiap, LAMMPS, or ext')
+            'calc_code must be VASP, QE, OMX, soiap, LAMMPS, ASE, or ext')
     algo = config.get('basic', 'algo')
     if algo not in ['RS', 'BO', 'LAQA', 'EA']:
         raise NotImplementedError('algo must be RS, BO, LAQA, or EA')
@@ -294,19 +294,19 @@ def readin():
         append_struc_ea = False
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
-        if calc_code in ['LAMMPS', 'OMX', 'ext']:
+        if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
             raise NotImplementedError('energy_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
-        if calc_code in ['LAMMPS', 'OMX', 'ext']:
+        if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
             raise NotImplementedError('struc_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         struc_step_flag = False
     try:
         force_step_flag = config.getboolean('option', 'force_step_flag')
-        if calc_code in ['LAMMPS', 'OMX', 'ext']:
+        if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
             raise NotImplementedError('force_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         force_step_flag = False
@@ -314,7 +314,7 @@ def readin():
         force_step_flag = True
     try:
         stress_step_flag = config.getboolean('option', 'stress_step_flag')
-        if calc_code in ['LAMMPS', 'OMX', 'ext']:
+        if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
             raise NotImplementedError('stress_step_flag: only VASP, QE, and soiap for now')
     except (configparser.NoOptionError, configparser.NoSectionError):
         stress_step_flag = False
@@ -414,13 +414,17 @@ def readin():
     # ---------- LAQA
     if algo == 'LAQA':
         # ------ global declaration
-        global nselect_laqa, weight_laqa
+        global nselect_laqa, wf, ws
         # ------ read intput variables
         nselect_laqa = config.getint('LAQA', 'nselect_laqa')
         try:
-            weight_laqa = config.getfloat('LAQA', 'weight_laqa')
+            wf = config.getfloat('LAQA', 'wf')
         except configparser.NoOptionError:
-            weight_laqa = 1.0
+            wf = 0.1
+        try:
+            ws = config.getfloat('LAQA', 'ws')
+        except configparser.NoOptionError:
+            ws = 10.0
 
     # ---------- EA
     if algo == 'EA' or append_struc_ea:
@@ -673,6 +677,16 @@ def readin():
         kpt_flag = False
         force_gamma = False
 
+    # ---------- ase
+    elif calc_code == 'ASE':
+        # ------ global declaration
+        global ase_python
+        # ------ read input variables
+        try:
+            ase_python = config.get('ASE', 'ase_python')
+        except configparser.NoOptionError:
+            ase_python = 'ase.py'
+
     # ---------- ext
     elif calc_code == 'ext':
         kpt_flag = False
@@ -781,7 +795,8 @@ def save_stat(stat):    # only 1st run
     # ---------- LAQA
     if algo == 'LAQA':
         stat.set('LAQA', 'nselect_laqa', '{}'.format(nselect_laqa))
-        stat.set('LAQA', 'weight_laqa', '{}'.format(weight_laqa))
+        stat.set('LAQA', 'wf', '{}'.format(wf))
+        stat.set('LAQA', 'ws', '{}'.format(ws))
 
     # ---------- EA
     elif algo == 'EA' or append_struc_ea:
@@ -856,6 +871,10 @@ def save_stat(stat):    # only 1st run
                      '{}'.format(' '.join(lammps_potential)))
         stat.set('LAMMPS', 'lammps_data', '{}'.format(lammps_data))
 
+    # ---------- ASE
+    if calc_code == 'ASE':
+        stat.set('ASE', 'ase_python', '{}'.format(ase_python))
+    
     # ---------- option
     stat.set('option', 'stop_chkpt', '{}'.format(stop_chkpt))
     stat.set('option', 'load_struc_flag', '{}'.format(load_struc_flag))
@@ -1003,7 +1022,9 @@ def diffinstat(stat):
     # ------ LAQA
     if old_algo == 'LAQA':
         old_nselect_laqa = stat.getint('LAQA', 'nselect_laqa')
-        old_weight_laqa = stat.getfloat('LAQA', 'weight_laqa')
+        old_wf = stat.getfloat('LAQA', 'wf')
+        old_ws = stat.getfloat('LAQA', 'ws')
+
 
     # ------ EA
     if old_algo == 'EA':
@@ -1087,6 +1108,10 @@ def diffinstat(stat):
             old_lammps_potential = old_lammps_potential.split()    # str --> list
         old_lammps_data = stat.get('LAMMPS', 'lammps_data')
 
+    # ------ ASE
+    if old_calc_code == 'ASE':
+        old_ase_python = stat.get('ASE', 'ase_python')
+    
     # ------ option
     old_stop_chkpt = stat.getint('option', 'stop_chkpt')
     old_load_struc_flag = stat.getboolean('option', 'load_struc_flag')
@@ -1328,9 +1353,13 @@ def diffinstat(stat):
             diff_out('nselect_laqa', old_nselect_laqa, nselect_laqa)
             io_stat.set_input_common(stat, sec, 'nselect_laqa', nselect_laqa)
             logic_change = True
-        if not old_weight_laqa == weight_laqa:
-            diff_out('weight_laqa', old_weight_laqa, weight_laqa)
-            io_stat.set_input_common(stat, sec, 'weight_laqa', weight_laqa)
+        if not old_wf == wf:
+            diff_out('wf', old_wf, wf)
+            io_stat.set_input_common(stat, sec, 'wf', wf)
+            logic_change = True
+        if not old_ws == ws:
+            diff_out('ws', old_ws, ws)
+            io_stat.set_input_common(stat, sec, 'ws', ws)
             logic_change = True
 
     # ------ EA
@@ -1504,6 +1533,12 @@ def diffinstat(stat):
             raise ValueError('Do not change lammps_potential')
         if not old_lammps_data == lammps_data:
             raise ValueError('Do not change lammps_data')
+
+    # ------ ASE
+    sec = 'ASE'
+    if calc_code == 'ASE':
+        if not old_ase_python == ase_python:
+            raise ValueError('Do not change ase_python')
 
     # ------ option
     sec = 'option'

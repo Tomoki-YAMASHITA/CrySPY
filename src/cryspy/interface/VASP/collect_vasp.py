@@ -23,7 +23,10 @@ def collect_vasp(current_id, work_path):
         print('    Structure ID {0},'
               ' could not obtain energy from OSZICAR'.format(current_id))
     # ---------- collect CONTCAR
-    opt_struc = get_opt_struc_vasp(work_path+'CONTCAR')
+    try:
+        opt_struc = Structure.from_file(work_path+'CONTCAR')
+    except Exception:
+        opt_struc = None
     # ---------- check
     if np.isnan(energy):
         opt_struc = None
@@ -66,14 +69,6 @@ def get_energy_magmom_vasp(work_path):
         pass
     # ---------- return
     return energy, magmom
-
-
-def get_opt_struc_vasp(file_name):
-    try:
-        opt_struc = Structure.from_file(file_name)
-    except Exception:
-        opt_struc = None
-    return opt_struc
 
 
 def get_energy_step_vasp(energy_step_data, current_id, work_path):
