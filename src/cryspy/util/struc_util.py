@@ -13,7 +13,7 @@ from pyxtal.tolerance import Tol_matrix
 from ..IO import read_input as rin
 
 
-def set_mindist(mindist_in, factor, dummy=False):
+def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
     # ---------- dummy atom in mol_bs
     if dummy:
         atype = get_atype_dummy()
@@ -41,17 +41,18 @@ def set_mindist(mindist_in, factor, dummy=False):
         mindist = tmp_array.tolist()
 
     # ---------- print
-    for i, itype in enumerate(atype):
-        for j, jtype in enumerate(atype):
-            if i <= j:
-                if dummy:
-                    print(rin.mol_file[i], '-', rin.mol_file[j], mindist[i][j])
-                else:
-                    print(itype, '-', jtype, mindist[i][j])
-    if rin.struc_mode == 'mol':
-        print('When struc_mode is mol (only random structure, not EA part),')
-        print('- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)')
-        print('- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
+    if mpi_rank == 0:
+        for i, itype in enumerate(atype):
+            for j, jtype in enumerate(atype):
+                if i <= j:
+                    if dummy:
+                        print(rin.mol_file[i], '-', rin.mol_file[j], mindist[i][j], flush=True)
+                    else:
+                        print(itype, '-', jtype, mindist[i][j], flush=True)
+        if rin.struc_mode == 'mol':
+            print('When struc_mode is mol (only random structure, not EA part),')
+            print('- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)')
+            print('- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)',  flush=True)
 
     # ---------- return
     return mindist

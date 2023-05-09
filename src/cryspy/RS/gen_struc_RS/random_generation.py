@@ -85,7 +85,7 @@ class Rnd_struc_gen:
         self.init_struc_data = init_struc_data
 
     def gen_with_find_wy(self, nstruc, id_offset=0,
-                         init_pos_path=None, fwpath='find_wy'):
+                         init_pos_path=None, fwpath='find_wy', mpi_rank=0):
         '''
         Generate random structures with space gruop information
         using find_wy program
@@ -109,9 +109,8 @@ class Rnd_struc_gen:
         # ---------- initialize
         init_struc_data = {}
         # ---------- cd tmp_gen_struc
-        if not os.path.isdir('tmp_gen_struc'):
-            os.mkdir('tmp_gen_struc')
-        os.chdir('tmp_gen_struc')
+        os.makedirs(f'tmp_gen_struc/rank_{mpi_rank}', exist_ok=True)
+        os.chdir(f'tmp_gen_struc/rank_{mpi_rank}')
 
         # ---------- generate structures
         while len(init_struc_data) < nstruc:
@@ -169,15 +168,10 @@ class Rnd_struc_gen:
             print('Structure ID {0:>6} was generated.'
                   ' Space group: {1:>3} --> {2:>3} {3}'.format(
                    cid, self.spg, spg_num, spg_sym), flush=True)
-            # ------ save poscar
-            if init_pos_path is not None:
-                os.chdir('../')    # temporarily go back to ../
-                out_poscar(tmp_struc, cid, init_pos_path)
-                os.chdir('tmp_gen_struc')
             # ------ clean
             self._rm_files()
         # ---------- go back to ..
-        os.chdir('../')
+        os.chdir('../../')
         # ---------- init_struc_data
         self.init_struc_data = init_struc_data
 

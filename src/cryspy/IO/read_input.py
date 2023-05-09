@@ -1111,7 +1111,7 @@ def diffinstat(stat):
     # ------ ASE
     if old_calc_code == 'ASE':
         old_ase_python = stat.get('ASE', 'ase_python')
-    
+
     # ------ option
     old_stop_chkpt = stat.getint('option', 'stop_chkpt')
     old_load_struc_flag = stat.getboolean('option', 'load_struc_flag')
