@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0] - 2023-05-16
+### Changed
+- backup (keep history)
+
+### Added
+- MPI parallelization
+- New score of LAQA
+- 
+
 ## [1.0.0] - 2023-03-16
 ### Changed
 - standard output --> log_cryspy
