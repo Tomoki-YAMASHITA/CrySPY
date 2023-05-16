@@ -26,7 +26,7 @@ def next_selection(stat, laqa_id_data, laqa_data):
 
     # ---------- done LAQA
     if len(id_queueing) == 0:
-        print('\nDone LAQA!')
+        print('\nDone all structures!')
         os.remove('lock_cryspy')
         raise SystemExit()
 

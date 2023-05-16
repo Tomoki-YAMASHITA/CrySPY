@@ -625,12 +625,12 @@ class Ctrl_job:
             raise SystemExit()
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
-            print('\nBO is ready\n')
+            print('\nBO is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('Stop at check point 3: BO is ready\n')
+            print('Stop at check point 3: BO is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- max_select_bo
@@ -650,12 +650,12 @@ class Ctrl_job:
     def next_select_LAQA(self):
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
-            print('\nLAQA is ready\n')
+            print('\nLAQA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('\nStop at check point 3: LAQA is ready\n')
+            print('\nStop at check point 3: LAQA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- selection of LAQA
@@ -671,12 +671,12 @@ class Ctrl_job:
         print('\nDone generation {}\n'.format(self.gen))
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
-            print('\nEA is ready\n')
+            print('\nEA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('\nStop at check point 3: EA is ready\n')
+            print('\nStop at check point 3: EA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- maxgen_ea
