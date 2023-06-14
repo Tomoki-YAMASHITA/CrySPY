@@ -1,4 +1,7 @@
 # Changelog
+## [1.1.1] - 2023-06-14
+### Fixed
+- bug fix for gen_struc: delete spg_error
 
 ## [1.1.0] - 2023-05-16
 ### Changed
@@ -7,7 +10,6 @@
 ### Added
 - MPI parallelization
 - New score of LAQA
-- 
 
 ## [1.0.0] - 2023-03-16
 ### Changed

@@ -682,10 +682,9 @@ def readin():
         # ------ global declaration
         global ase_python
         # ------ read input variables
-        try:
-            ase_python = config.get('ASE', 'ase_python')
-        except configparser.NoOptionError:
-            ase_python = 'ase.py'
+        ase_python = config.get('ASE', 'ase_python')
+        kpt_flag = False
+        force_gamma = False
 
     # ---------- ext
     elif calc_code == 'ext':
@@ -874,7 +873,7 @@ def save_stat(stat):    # only 1st run
     # ---------- ASE
     if calc_code == 'ASE':
         stat.set('ASE', 'ase_python', '{}'.format(ase_python))
-    
+
     # ---------- option
     stat.set('option', 'stop_chkpt', '{}'.format(stop_chkpt))
     stat.set('option', 'load_struc_flag', '{}'.format(load_struc_flag))

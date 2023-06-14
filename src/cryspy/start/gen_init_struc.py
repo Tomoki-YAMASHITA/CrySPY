@@ -14,7 +14,7 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         comm.barrier()
     mindist = set_mindist(rin.mindist, rin.mindist_factor, False, mpi_rank)
 
-    # ---------- nstruc, offset
+    # ---------- nstruc, offset for MPI
     nstruc_list, offset_list = _divide_task(rin.tot_struc, mpi_size, len(init_struc_data))
 
     # ---------- pyxtal

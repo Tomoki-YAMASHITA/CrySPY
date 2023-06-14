@@ -635,7 +635,7 @@ class Ctrl_job:
             raise SystemExit()
         # ---------- max_select_bo
         if 0 < rin.max_select_bo <= self.n_selection:
-            print('Reached max_select_bo: {}\n'.format(rin.max_select_bo))
+            print('Reached max_select_bo: {}'.format(rin.max_select_bo))
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- BO

@@ -28,6 +28,8 @@ def stat_init():
         stat.add_section('LAMMPS')
     if rin.calc_code == 'OMX':
         stat.add_section('OMX')
+    if rin.calc_code == 'ASE':
+        stat.add_section('ASE')
     # ----------
     stat.add_section('option')
     stat.add_section('status')

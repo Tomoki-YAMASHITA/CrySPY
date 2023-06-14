@@ -28,7 +28,6 @@ class Rnd_struc_gen_pyxtal:
 
     def __init__(self, mindist):
         self.mindist = mindist
-        self.spg_error = []
 
     def set_mol(self):
         '''
@@ -80,8 +79,6 @@ class Rnd_struc_gen_pyxtal:
                 spg = random.randint(1, 230)
             else:
                 spg = random.choice(rin.spgnum)
-            if spg in self.spg_error:
-                continue
             # ------ vol_factor
             rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
@@ -93,7 +90,6 @@ class Rnd_struc_gen_pyxtal:
                                             conventional=False, tm=tolmat)
             except Exception as e:
                 print(e, ':spg = {} retry.'.format(spg), file=sys.stderr, flush=True)
-                self.spg_error.append(spg)
                 continue
             if tmp_crystal.valid:
                 tmp_struc = tmp_crystal.to_pymatgen(resort=False)    # pymatgen Structure format
@@ -142,8 +138,6 @@ class Rnd_struc_gen_pyxtal:
                 # -- save init_POSCARS
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
-            else:
-                self.spg_error.append(spg)
 
     def gen_struc_mol(self, nstruc, id_offset=0, init_pos_path=None):
         '''
@@ -188,8 +182,6 @@ class Rnd_struc_gen_pyxtal:
                 spg = random.randint(1, 230)
             else:
                 spg = random.choice(rin.spgnum)
-            if spg in self.spg_error:
-                continue
             rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
             # -- multiprocess for measures against hangup
@@ -219,7 +211,6 @@ class Rnd_struc_gen_pyxtal:
                     tmp_struc = q.get()
                 tmp_valid = q.get()
                 if tmp_struc == 'error':
-                    self.spg_error.append(spg)
                     continue
             if tmp_valid:
                 # -- scale volume
@@ -319,8 +310,6 @@ class Rnd_struc_gen_pyxtal:
                 # -- save init_POSCARS
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
-            else:
-                self.spg_error.append(spg)
 
     def gen_struc_mol_break_sym(self, nstruc, mindist_dummy,
                                 id_offset=0, init_pos_path=None):
@@ -372,8 +361,6 @@ class Rnd_struc_gen_pyxtal:
                 spg = random.randint(1, 230)
             else:
                 spg = random.choice(rin.spgnum)
-            if spg in self.spg_error:
-                continue
             # ------ vol_factor
             rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
@@ -385,7 +372,6 @@ class Rnd_struc_gen_pyxtal:
                                             conventional=False, tm=tolmat)
             except Exception as e:
                 print(e, ':spg = {} retry.'.format(spg), file=sys.stderr, flush=True)
-                self.spg_error.append(spg)
                 continue
             if tmp_crystal.valid:
                 # -- each wyckoff position --> dummy atom
@@ -519,8 +505,6 @@ class Rnd_struc_gen_pyxtal:
                 # -- save init_POSCARS
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
-            else:
-                self.spg_error.append(spg)
 
     def _set_tol_mat(self, atype, mindist):
         tolmat = Tol_matrix()
