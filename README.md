@@ -9,18 +9,22 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.1.1 (2023 June 14)
+version 1.2.0 (2023 July 10)
 
 ## News
+- [2023 July 10] CrySPY 1.2.0 released. Version information/version 1.2.0
+    + Interface for ASE
+    + Adoption of logging
+    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [CHANGELOG](./CHANGELOG.md)
 - [2023 June 14] CrySPY 1.1.1 released
     + bug fix
 - [2023 May 16] CrySPY 1.1.0 released
     + MPI parallelization (optional)
     + New score of LAQA
-    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [Changelog](./CHANGELOG.md)
+    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [CHANGELOG](./CHANGELOG.md)
 - [2023 March 16] CrySPY 1.0.0 released
     + CrySPY is available in PyPI, so you can install by pip (project name is csp-cryspy).
-    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [Changelog](./CHANGELOG.md)
+    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [CHANGELOG](./CHANGELOG.md)
 
 
 ## System requirements

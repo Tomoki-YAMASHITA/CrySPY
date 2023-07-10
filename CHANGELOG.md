@@ -1,4 +1,10 @@
-# Changelog
+# CHANGELOG
+## [1.2.0] - 2023-07-10
+### Changed
+- adopts logging for output
+### Added
+- ASE interface
+
 ## [1.1.1] - 2023-06-14
 ### Fixed
 - bug fix for gen_struc: delete spg_error
