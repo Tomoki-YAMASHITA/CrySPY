@@ -2,11 +2,15 @@
 Collect results in ASE
 '''
 
+from logging import getLogger
+
 import numpy as np
 from pymatgen.core import Structure
 
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def collect_ase(current_id, work_path):
     # ---------- etc
@@ -20,8 +24,7 @@ def collect_ase(current_id, work_path):
         energy = energy/float(rin.natot)    # eV/cell --> eV/atom
     except Exception as e:
         energy = np.nan    # error
-        print(e, '    Structure ID {0}, could not obtain energy from {1}'.format(
-            current_id, 'log.tote'))
+        logger.warning(e.args[0] + f':    Structure ID {current_id}, could not obtain energy from log.tote')
     # ---------- collect CONTCAR
     try:
         opt_struc = Structure.from_file(work_path+'CONTCAR')

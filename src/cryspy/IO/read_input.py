@@ -3,16 +3,20 @@ Read input from cryspy.in
 '''
 
 import configparser
+from logging import getLogger
 import os
 
 from . import io_stat
 from ..util import utility
 
 
+logger = getLogger('cryspy')
+
 def readin():
     # ---------- read cryspy.in
     if not os.path.isfile('cryspy.in'):
-        raise IOError('Could not find cryspy.in file')
+        logger.error('Could not find cryspy.in file')
+        raise SystemExit(1)
     config = configparser.ConfigParser()
     config.read('cryspy.in')
 
@@ -23,27 +27,33 @@ def readin():
     # ------ read intput variables
     calc_code = config.get('basic', 'calc_code')
     if calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX', 'ASE', 'ext']:
-        raise NotImplementedError(
-            'calc_code must be VASP, QE, OMX, soiap, LAMMPS, ASE, or ext')
+        logger.error('calc_code must be VASP, QE, OMX, soiap, LAMMPS, ASE, or ext')
+        raise SystemExit(1)
     algo = config.get('basic', 'algo')
     if algo not in ['RS', 'BO', 'LAQA', 'EA']:
-        raise NotImplementedError('algo must be RS, BO, LAQA, or EA')
+        logger.error('algo must be RS, BO, LAQA, or EA')
+        raise SystemExit(1)
     if algo == 'LAQA':
         if calc_code not in ['VASP', 'QE', 'soiap']:
-            raise NotImplementedError('LAQA: only VASP, QE, and soiap for now')
+            logger.error('LAQA: only VASP, QE, and soiap for now')
+            raise SystemExit(1)
     tot_struc = config.getint('basic', 'tot_struc')
     if tot_struc <= 0:
-        raise ValueError('tot_struc <= 0, check tot_struc')
+        logger.error('tot_struc <= 0, check tot_struc')
+        raise SystemExit(1)
     if not calc_code == 'ext':
         nstage = config.getint('basic', 'nstage')
         if nstage <= 0:
-            raise ValueError('nstage <= 0, check nstage')
+            logger.error('nstage <= 0, check nstage')
+            raise SystemExit(1)
         if algo == 'LAQA':
             if not nstage == 1:
-                raise ValueError('nstage shoud be 1 in LAQA')
+                logger.error('nstage shoud be 1 in LAQA')
+                raise SystemExit(1)
         njob = config.getint('basic', 'njob')
         if njob <= 0:
-            raise ValueError('njob <= 0, check njob')
+            logger.error('njob <= 0, check njob')
+            raise SystemExit(1)
         jobcmd = config.get('basic', 'jobcmd')
         jobfile = config.get('basic', 'jobfile')
 
@@ -62,21 +72,26 @@ def readin():
     except (configparser.NoOptionError, configparser.NoSectionError):
         struc_mode = 'crystal'
     if struc_mode not in ['crystal', 'mol', 'mol_bs', 'host']:
-        raise ValueError('struc_mode is wrong')
+        logger.error('struc_mode is wrong')
+        raise SystemExit(1)
     if algo == 'EA' and struc_mode in ['mol', 'mol_bs']:
         if calc_code == 'ext':
-            raise NotImplementedError('EA, mol or mol_bs, ext, not yet')
+            logger.error('EA, mol or mol_bs, ext, not yet')
+            raise SystemExit(1)
     natot = config.getint('structure', 'natot')
     if natot <= 0:
-        raise ValueError('natot <= 0, check natot')
+        logger.error('natot <= 0, check natot')
+        raise SystemExit(1)
     atype = config.get('structure', 'atype')
     atype = [a for a in atype.split()]    # list
     nat = config.get('structure', 'nat')
     nat = [int(x) for x in nat.split()]    # character --> integer
     if not len(nat) == len(atype):
-        raise ValueError('not len(nat) == len(atype), check atype and nat')
+        logger.error('not len(nat) == len(atype), check atype and nat')
+        raise SystemExit(1)
     if not sum(nat) == natot:
-        raise ValueError('not sum(nat) == natot, check natot and nat')
+        logger.error('not sum(nat) == natot, check natot and nat')
+        raise SystemExit(1)
     # -- mol
     if struc_mode in ['mol', 'mol_bs']:
         mol_file = config.get('structure', 'mol_file')
@@ -84,13 +99,15 @@ def readin():
         nmol = config.get('structure', 'nmol')
         nmol = [int(x) for x in nmol.split()]    # character --> integer
         if not len(mol_file) == len(nmol):
-            raise ValueError('not len(mol_file) == len(nmol)')
+            logger.error('not len(mol_file) == len(nmol)')
+            raise SystemExit(1)
         try:
             timeout_mol = config.getfloat('structure', 'timeout_mol')
         except (configparser.NoOptionError, configparser.NoSectionError):
             timeout_mol = 120.0
         if timeout_mol <= 0:
-            raise ValueError('timeout_mol must be positive')
+            logger.error('timeout_mol must be positive')
+            raise SystemExit(1)
         if struc_mode == 'mol_bs':
             # rot_mol
             try:
@@ -98,14 +115,16 @@ def readin():
             except (configparser.NoOptionError, configparser.NoSectionError):
                 rot_mol = 'random_wyckoff'
             if rot_mol not in ['random', 'random_mol', 'random_wyckoff']:
-                raise ValueError('rot_mol is wrong')
+                logger.error('rot_mol is wrong')
+                raise SystemExit(1)
             # nrot
             try:
                 nrot = config.getint('structure', 'nrot')
             except (configparser.NoOptionError, configparser.NoSectionError):
                 nrot = 20
             if nrot <= 0:
-                raise ValueError('nrot <=0, check nrot')
+                logger.error('nrot <=0, check nrot')
+                raise SystemExit(1)
         else:
             rot_mol = None
             nrot = None
@@ -122,30 +141,35 @@ def readin():
         vol_mu = None
     if vol_mu is not None:
         if vol_mu <= 0.0:
-            raise ValueError('vol_mu must be positive float')
+            logger.error('vol_mu must be positive float')
+            raise SystemExit(1)
     try:
         vol_sigma = config.getfloat('structure', 'vol_sigma')
     except (configparser.NoOptionError, configparser.NoSectionError):
         vol_sigma = None
     if vol_mu is not None:
         if vol_sigma is None:
-            raise ValueError("check vol_mu: {} and vol_sigma: {}".format(
-                vol_mu, vol_sigma))
+            logger.error(f'check vol_mu: {vol_mu} and vol_sigma: {vol_sigma}')
+            raise SystemExit(1)
     if vol_sigma is not None:
         if vol_sigma < 0.0:
-            raise ValueError('vol_sigma must not be negative')
+            logger.error('vol_sigma must not be negative')
+            raise SystemExit(1)
     try:
         vol_factor = config.get('structure', 'vol_factor')
         vol_factor = [float(x) for x in vol_factor.split()]    # char --> float
         if vol_factor[0] <= 0.0:
-            raise ValueError('vol_factor must be positive')
+            logger.error('vol_factor must be positive')
+            raise SystemExit(1)
         if len(vol_factor) == 1:
             vol_factor = vol_factor * 2    # [0.8] --> [0.8, 0.8]
         if len(vol_factor) == 2:
             if vol_factor[0] > vol_factor[1]:
-                raise ValueError('check: vol_factor[0] < vol_factor[1]')
+                logger.error('check: vol_factor[0] < vol_factor[1]')
+                raise SystemExit(1)
         else:
-            raise ValueError('len(vol_factor) must be 1 or 2')
+            logger.error('len(vol_factor) must be 1 or 2')
+            raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         vol_factor = [1.1, 1.1]
     try:
@@ -153,20 +177,23 @@ def readin():
     except (configparser.NoOptionError, configparser.NoSectionError):
         maxcnt = 50
     if maxcnt < 0:
-        raise ValueError('maxcnt must be positive int')
+        logger.error('maxcnt must be positive int')
+        raise SystemExit(1)
     try:
         symprec = config.getfloat('structure', 'symprec')
     except (configparser.NoOptionError, configparser.NoSectionError):
         symprec = 0.01
     if symprec < 0.0:
-        raise ValueError('symprec must be positive float')
+        logger.error('symprec must be positive float')
+        raise SystemExit(1)
     try:
         spgnum = config.get('structure', 'spgnum')
     except (configparser.NoOptionError, configparser.NoSectionError):
         spgnum = 'all'
     if spgnum == '0':
         if struc_mode in ['mol', 'mol_bs']:
-            raise ValueError('spgnum = 0 is not allow when struc_mode is mol or mol_bs')
+            logger.error('spgnum = 0 is not allow when struc_mode is mol or mol_bs')
+            raise SystemExit(1)
         spgnum = 0
     elif spgnum == 'all':
         pass
@@ -178,7 +205,8 @@ def readin():
         use_find_wy = False
     if use_find_wy:
         if not struc_mode == 'crystal':
-            raise ValueError('find_wy can be use if struc_mode is crystal')
+            logger.error('find_wy can be use if struc_mode is crystal')
+            raise SystemExit(1)
     try:
         fwpath = config.get('structure', 'fwpath')
     except (configparser.NoOptionError, configparser.NoSectionError):
@@ -187,27 +215,28 @@ def readin():
     try:
         mindist = []
         for i in range(len(atype)):
-            tmp = config.get('structure', 'mindist_{}'.format(i+1))
+            tmp = config.get('structure', f'mindist_{i+1}')
             tmp = [float(x) for x in tmp.split()]    # character --> float
             if not len(tmp) == len(atype):
-                raise ValueError('not len(mindist_{}) == len(atype)'.format(i+1))
+                logger.error(f'not len(mindist_{i+1}) == len(atype)')
+                raise SystemExit(1)
             mindist.append(tmp)
         # -- check symmetric matrix
         for i in range(len(mindist)):
             for j in range(len(mindist)):
                 if i < j:
                     if not mindist[i][j] == mindist[j][i]:
-                        raise ValueError('mindist is not symmetric. ({}, {}) -->'
-                                         ' {}, ({}, {}) --> {}'.format(
-                                             i, j, mindist[i][j],
-                                             j, i, mindist[j][i]))
+                        logger.error(f'mindist is not symmetric. ({i}, {j}) -->'
+                                         f' {mindist[i][j]}, ({j}, {i}) --> {mindist[j][i]}')
+                        raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         mindist = None
     # ------ mindist_factor
     try:
         mindist_factor = config.getfloat('structure', 'mindist_factor')
         if mindist_factor <= 0.0:
-            raise ValueError('mindist_factor must be positive')
+            logger.error('mindist_factor must be positive')
+            raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         mindist_factor = 1.0
     # ------ mindist_mol_bs
@@ -215,27 +244,28 @@ def readin():
         try:
             mindist_mol_bs = []
             for i in range(len(mol_file)):
-                tmp = config.get('structure', 'mindist_mol_bs_{}'.format(i+1))
+                tmp = config.get('structure', f'mindist_mol_bs_{i+1}')
                 tmp = [float(x) for x in tmp.split()]    # character --> float
                 if not len(tmp) == len(mol_file):
-                    raise ValueError('not len(mindist_mol_bs_{}) == len(mol_file)'.format(i+1))
+                    logger.error(f'not len(mindist_mol_bs_{i+1}) == len(mol_file)')
+                    raise SystemExit(1)
                 mindist_mol_bs.append(tmp)
             # -- check symmetric matrix
             for i in range(len(mindist_mol_bs)):
                 for j in range(len(mindist_mol_bs)):
                     if i < j:
                         if not mindist_mol_bs[i][j] == mindist_mol_bs[j][i]:
-                            raise ValueError('mindist_mol_bs is not symmetric. ({}, {}) -->'
-                                             ' {}, ({}, {}) --> {}'.format(
-                                                 i, j, mindist_mol_bs[i][j],
-                                                 j, i, mindist_mol_bs[j][i]))
+                            logger.error(f'mindist_mol_bs is not symmetric. ({i}, {j}) -->'
+                                             f' {mindist_mol_bs[i][j]}, ({j}, {i}) --> {mindist_mol_bs[j][i]}')
+                            raise SystemExit(1)
         except (configparser.NoOptionError, configparser.NoSectionError):
             mindist_mol_bs = None
         # ------ mindist_mol_bs_factor
         try:
             mindist_mol_bs_factor = config.getfloat('structure', 'mindist_mol_bs_factor')
             if mindist_mol_bs_factor <= 0.0:
-                raise ValueError('mindist_mol_bs_factor must be positive')
+                logger.error('mindist_mol_bs_factor must be positive')
+                raise SystemExit(1)
         except (configparser.NoOptionError, configparser.NoSectionError):
             mindist_mol_bs_factor = 1.0
     else:
@@ -251,11 +281,14 @@ def readin():
         maxlen = config.getfloat('structure', 'maxlen')
         dangle = config.getfloat('structure', 'dangle')
         if minlen <= 0.0:
-            raise ValueError('minlen must be positive')
+            logger.error('minlen must be positive')
+            raise SystemExit(1)
         if minlen > maxlen:
-            raise ValueError('minlen > maxlen')
+            logger.error('minlen > maxlen')
+            raise SystemExit(1)
         if dangle <= 0.0:
-            raise ValueError('dangle < 0.0, dangle must be positive')
+            logger.error('dangle < 0.0, dangle must be positive')
+            raise SystemExit(1)
 
     # ---------- option
     # ------ global declaration
@@ -286,8 +319,9 @@ def readin():
     if recalc:
         for i in recalc:
             if not 0 <= i < tot_struc:
-                raise ValueError('recalc must be non-negative int'
+                logger.error('recalc must be non-negative int'
                                  ' and less than tot_struc')
+                raise SystemExit(1)
     try:
         append_struc_ea = config.getboolean('option', 'append_struc_ea')
     except (configparser.NoOptionError, configparser.NoSectionError):
@@ -295,19 +329,22 @@ def readin():
     try:
         energy_step_flag = config.getboolean('option', 'energy_step_flag')
         if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
-            raise NotImplementedError('energy_step_flag: only VASP, QE, and soiap for now')
+            logger.error('energy_step_flag: only VASP, QE, and soiap for now')
+            raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         energy_step_flag = False
     try:
         struc_step_flag = config.getboolean('option', 'struc_step_flag')
         if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
-            raise NotImplementedError('struc_step_flag: only VASP, QE, and soiap for now')
+            logger.error('struc_step_flag: only VASP, QE, and soiap for now')
+            raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         struc_step_flag = False
     try:
         force_step_flag = config.getboolean('option', 'force_step_flag')
         if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
-            raise NotImplementedError('force_step_flag: only VASP, QE, and soiap for now')
+            logger.error('force_step_flag: only VASP, QE, and soiap for now')
+            raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         force_step_flag = False
     if algo == 'LAQA':
@@ -315,7 +352,8 @@ def readin():
     try:
         stress_step_flag = config.getboolean('option', 'stress_step_flag')
         if calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
-            raise NotImplementedError('stress_step_flag: only VASP, QE, and soiap for now')
+            logger.error('stress_step_flag: only VASP, QE, and soiap for now')
+            raise SystemExit(1)
     except (configparser.NoOptionError, configparser.NoSectionError):
         stress_step_flag = False
     if algo == 'LAQA':
@@ -330,14 +368,17 @@ def readin():
         # ------ read intput variables
         nselect_bo = config.getint('BO', 'nselect_bo')
         if nselect_bo <= 0:
-            raise ValueError('nselect_bo <= 0, check nselect_bo')
+            logger.error('nselect_bo <= 0, check nselect_bo')
+            raise SystemExit(1)
         elif tot_struc < nselect_bo:
-            raise ValueError('tot_struc < nselect_bo, check nselect_bo')
+            logger.error('tot_struc < nselect_bo, check nselect_bo')
+            raise SystemExit(1)
         score = config.get('BO', 'score')
         if score == 'TS' or score == 'EI' or score == 'PI':
             pass
         else:
-            raise ValueError('score must be TS, EI, or PI, check score')
+            logger.error('score must be TS, EI, or PI, check score')
+            raise SystemExit(1)
         try:
             num_rand_basis = config.getint('BO', 'num_rand_basis')
         except configparser.NoOptionError:
@@ -355,7 +396,8 @@ def readin():
             # -- check cal_fingerprint executable file
             fppath = utility.check_fppath(fppath)
         else:
-            raise NotImplementedError('Now FP only')
+            logger.error('Now FP only')
+            raise SystemExit(1)
         # -- parameters for f-fingerprint
         try:
             fp_rmin = config.getfloat('BO', 'fp_rmin')
@@ -366,28 +408,33 @@ def readin():
         except configparser.NoOptionError:
             fp_rmax = 5.0
         if fp_rmin < 0.0:
-            raise ValueError('fp_rmin < 0, check fp_rmin')
+            logger.error('fp_rmin < 0, check fp_rmin')
+            raise SystemExit(1)
         if fp_rmax < fp_rmin:
-            raise ValueError('fp_rmax < fp_rmin, check fp_rmin and fp_rmax')
+            logger.error('fp_rmax < fp_rmin, check fp_rmin and fp_rmax')
+            raise SystemExit(1)
         try:
             fp_npoints = config.getint('BO', 'fp_npoints')
         except configparser.NoOptionError:
             fp_npoints = 20
         if fp_npoints <= 0:
-            raise ValueError('fp_npoints <= 0, check fp_npoints')
+            logger.error('fp_npoints <= 0, check fp_npoints')
+            raise SystemExit(1)
         try:
             fp_sigma = config.getfloat('BO', 'fp_sigma')
         except configparser.NoOptionError:
             fp_sigma = 1.0
         if fp_sigma < 0:
-            raise ValueError('fp_sigma < 0, check fp_sigma')
+            logger.error('fp_sigma < 0, check fp_sigma')
+            raise SystemExit(1)
         # -- BO option
         try:
             max_select_bo = config.getint('BO', 'max_select_bo')
         except configparser.NoOptionError:
             max_select_bo = 0
         if max_select_bo < 0:
-            raise ValueError('max_select_bo must be non-negative int')
+            logger.error('max_select_bo must be non-negative int')
+            raise SystemExit(1)
         try:
             manual_select_bo = config.get('BO', 'manual_select_bo')
             manual_select_bo = [int(x) for x in manual_select_bo.split()]
@@ -396,9 +443,10 @@ def readin():
         if manual_select_bo:
             for i in manual_select_bo:
                 if not 0 <= i < tot_struc:
-                    raise ValueError('manual_select_bo must be'
+                    logger.error('manual_select_bo must be'
                                      ' non-negative int'
                                      ' and less than tot_struc')
+                    raise SystemExit(1)
         try:
             emax_bo = config.getfloat('BO', 'emax_bo')
         except (configparser.NoOptionError, configparser.NoSectionError):
@@ -409,7 +457,8 @@ def readin():
             emin_bo = None
         if emax_bo is not None and emin_bo is not None:
             if emin_bo > emax_bo:
-                raise ValueError('emax_bo < emin_bo, check emax_bo and emin_bo')
+                logger.error('emax_bo < emin_bo, check emax_bo and emin_bo')
+                raise SystemExit(1)
 
     # ---------- LAQA
     if algo == 'LAQA':
@@ -441,36 +490,46 @@ def readin():
         # -- number of structures
         n_pop = config.getint('EA', 'n_pop')
         if n_pop <= 0:
-            raise ValueError('n_pop must be positive int')
+            logger.error('n_pop must be positive int')
+            raise SystemExit(1)
         n_crsov = config.getint('EA', 'n_crsov')
         if n_crsov < 0:
-            raise ValueError('n_crsov must be zero or positive int')
+            logger.error('n_crsov must be zero or positive int')
+            raise SystemExit(1)
         n_perm = config.getint('EA', 'n_perm')
         if n_perm < 0:
-            raise ValueError('n_perm must be zero or positive int')
+            logger.error('n_perm must be zero or positive int')
+            raise SystemExit(1)
         if n_perm != 0 and len(atype) == 1:
-            raise ValueError('When the number of atom type is 1,'
+            logger.error('When the number of atom type is 1,'
                              ' n_perm must be 0')
+            raise SystemExit(1)
         n_strain = config.getint('EA', 'n_strain')
         if n_strain < 0:
-            raise ValueError('n_strain must be zero or positive int')
+            logger.error('n_strain must be zero or positive int')
+            raise SystemExit(1)
         n_rand = config.getint('EA', 'n_rand')
         if n_rand < 0:
-            raise ValueError('n_rand must be zero or positive int')
+            logger.error('n_rand must be zero or positive int')
+            raise SystemExit(1)
         if struc_mode not in ['mol', 'mol_bs']:
             if n_crsov + n_perm + n_strain + n_rand != n_pop:
-                raise ValueError('n_crsov + n_perm + n_strain + n_rand'
+                logger.error('n_crsov + n_perm + n_strain + n_rand'
                                  ' must be n_pop')
+                raise SystemExit(1)
         if struc_mode in ['mol', 'mol_bs']:
             n_rotation = config.getint('EA', 'n_rotation')
             if n_rotation < 0:
-                raise ValueError('n_rotation must be zero or positive int')
+                logger.error('n_rotation must be zero or positive int')
+                raise SystemExit(1)
             if n_crsov + n_perm + n_strain + n_rand + n_rotation != n_pop:
-                raise ValueError('n_crsov + n_perm + n_strain + n_rand + n_rotation'
+                logger.error('n_crsov + n_perm + n_strain + n_rand + n_rotation'
                                  ' must be n_pop')
+                raise SystemExit(1)
         n_elite = config.getint('EA', 'n_elite')
         if n_elite < 0:
-            raise ValueError('n_elite must be non-negative int')
+            logger.error('n_elite must be non-negative int')
+            raise SystemExit(1)
         # -- n_fittest
         try:
             fit_reverse = config.getboolean('EA', 'fit_reverse')
@@ -481,18 +540,21 @@ def readin():
         except configparser.NoOptionError:
             n_fittest = 0
         if n_fittest < 0:
-            raise ValueError('n_fittest must be zero or positive int')
+            logger.error('n_fittest must be zero or positive int')
+            raise SystemExit(1)
         # -- select function
         slct_func = config.get('EA', 'slct_func')
         if slct_func not in ['TNM', 'RLT']:
-            raise ValueError('slct_func must be TNM or RLT')
+            logger.error('slct_func must be TNM or RLT')
+            raise SystemExit(1)
         if slct_func == 'TNM':
             try:
                 t_size = config.getint('EA', 't_size')
             except configparser.NoOptionError:
                 t_size = 3
             if t_size < 2:
-                raise ValueError('t_size must be greater than or equal to 2')
+                logger.error('t_size must be greater than or equal to 2')
+                raise SystemExit(1)
         elif slct_func == 'RLT':
             try:
                 a_rlt = config.getfloat('EA', 'a_rlt')
@@ -503,33 +565,38 @@ def readin():
             except configparser.NoOptionError:
                 b_rlt = 1.0
             if not 0 < b_rlt < a_rlt:
-                raise ValueError('must be 0 < b_rlt < a_rlt')
+                logger.error('must be 0 < b_rlt < a_rlt')
+                raise SystemExit(1)
         # -- crossover
         try:
             crs_lat = config.get('EA', 'crs_lat')
         except configparser.NoOptionError:
             crs_lat = 'equal'
         if crs_lat not in ['equal', 'random']:
-            raise ValueError('crs_lat must be equal or random')
+            logger.error('crs_lat must be equal or random')
+            raise SystemExit(1)
         try:
             nat_diff_tole = config.getint('EA', 'nat_diff_tole')
         except configparser.NoOptionError:
             nat_diff_tole = 4
         if nat_diff_tole < 0:
-            raise ValueError('nat_diff_tole must be nen-negative int')
+            logger.error('nat_diff_tole must be nen-negative int')
+            raise SystemExit(1)
         # -- permutation
         try:
             ntimes = config.getint('EA', 'ntimes')
         except configparser.NoOptionError:
             ntimes = 1
         if ntimes <= 0:
-            raise ValueError('ntimes must be positive int')
+            logger.error('ntimes must be positive int')
+            raise SystemExit(1)
         try:
             sigma_st = config.getfloat('EA', 'sigma_st')
         except configparser.NoOptionError:
             sigma_st = 0.5
         if sigma_st <= 0:
-            raise ValueError('simga_st must be positive float')
+            logger.error('simga_st must be positive float')
+            raise SystemExit(1)
         if struc_mode in ['mol', 'mol_bs']:
             # -- strain
             try:
@@ -542,25 +609,26 @@ def readin():
             except configparser.NoOptionError:
                 rot_max_angle = 360
             if rot_max_angle <= 0:
-                raise ValueError('rot_max_angle must be positive int')
+                logger.error('rot_max_angle must be positive int')
+                raise SystemExit(1)
         # -- common
         if struc_mode in ['mol', 'mol_bs']:
             mindist_mol_ea = []
             for i in range(len(mol_file)):
-                tmp = config.get('EA', 'mindist_mol_ea_{}'.format(i+1))
+                tmp = config.get('EA', f'mindist_mol_ea_{i+1}')
                 tmp = [float(x) for x in tmp.split()]    # character --> float
                 if not len(tmp) == len(mol_file):
-                    raise ValueError('not len(mindist_mol_ea_{}) == len(mol_file)'.format(i+1))
+                    logger.error(f'not len(mindist_mol_ea_{i+1}) == len(mol_file)')
+                    raise SystemExit(1)
                 mindist_mol_ea.append(tmp)
             # check symmetric matrix
             for i in range(len(mindist_mol_ea)):
                 for j in range(len(mindist_mol_ea)):
                     if i < j:
                         if not mindist_mol_ea[i][j] == mindist_mol_ea[j][i]:
-                            raise ValueError('mindist_mol is not symmetric. ({}, {}) -->'
-                                             ' {}, ({}, {}) --> {}'.format(
-                                                 i, j, mindist_mol_ea[i][j],
-                                                 j, i, mindist_mol_ea[j][i]))
+                            logger.error(f'mindist_mol is not symmetric. ({i}, {j}) -->'
+                                             f' {mindist_mol_ea[i][j]}, ({j}, {i}) --> {mindist_mol_ea[j][i]}')
+                            raise SystemExit(1)
         try:
             maxcnt_ea = config.getint('EA', 'maxcnt_ea')
         except configparser.NoOptionError:
@@ -571,7 +639,8 @@ def readin():
         except configparser.NoOptionError:
             maxgen_ea = 0
         if maxgen_ea < 0:
-            raise ValueError('maxgen_ea must be non-negative int')
+            logger.error('maxgen_ea must be non-negative int')
+            raise SystemExit(1)
         # # -- restart option
         # try:
         #     restart_gen = config.getint('EA', 'restart_gen')
@@ -587,7 +656,8 @@ def readin():
             emin_ea = None
         if emax_ea is not None and emin_ea is not None:
             if emin_ea > emax_ea:
-                raise ValueError('emax_ea < emin_ea, check emax_ea and emin_ea')
+                logger.error('emax_ea < emin_ea, check emax_ea and emin_ea')
+                raise SystemExit(1)
 
     # ---------- global declaration for comman part in calc_code
     global kppvol, kpt_flag, force_gamma
@@ -599,8 +669,9 @@ def readin():
         kppvol = config.get('VASP', 'kppvol')
         kppvol = [int(x) for x in kppvol.split()]    # character --> int
         if not len(kppvol) == nstage:
-            raise ValueError('not len(kppvol) == nstage,'
+            logger.error('not len(kppvol) == nstage,'
                              ' check kppvol and nstage')
+            raise SystemExit(1)
         try:
             force_gamma = config.getboolean('VASP', 'force_gamma')
         except configparser.NoOptionError:
@@ -617,8 +688,9 @@ def readin():
         kppvol = config.get('QE', 'kppvol')
         kppvol = [int(x) for x in kppvol.split()]    # character --> int
         if not len(kppvol) == nstage:
-            raise ValueError('not len(kppvol) == nstage,'
+            logger.error('not len(kppvol) == nstage,'
                              ' check kppvol and nstage')
+            raise SystemExit(1)
         try:
             force_gamma = config.getboolean('QE', 'force_gamma')
         except configparser.NoOptionError:
@@ -643,8 +715,9 @@ def readin():
         kppvol = config.get('OMX', 'kppvol')
         kppvol = [int(x) for x in kppvol.split()]    # character --> int
         if not len(kppvol) == nstage:
-            raise ValueError('not len(kppvol) == nstage,'
+            logger.error('not len(kppvol) == nstage,'
                             ' check kppvol and nstage')
+            raise SystemExit(1)
         try:
             force_gamma = config.getboolean('OMX', 'force_gamma')
         except configparser.NoOptionError:
@@ -696,26 +769,30 @@ def _spglist(spgnum):
     for c in spgnum.split():
         if '-' in c:
             if not len(c.split('-')) == 2:
-                raise ValueError('Wrong input in spgnum. ')
+                logger.error('Wrong input in spgnum. ')
+                raise SystemExit(1)
             istart = int(c.split('-')[0])
             iend = int(c.split('-')[1])+1
             if istart < 0 or 230 < istart:
-                raise ValueError('spgnum must be 1 -- 230')
+                logger.error('spgnum must be 1 -- 230')
+                raise SystemExit(1)
             if iend < 0 or 231 < iend:
-                raise ValueError('spgnum must be 1 -- 230')
+                logger.error('spgnum must be 1 -- 230')
+                raise SystemExit(1)
             for i in range(istart, iend):
                 if i not in tmpspg:
                     tmpspg.append(i)
         else:
             if int(c) < 0 or 230 < int(c):
-                raise ValueError('spgnum must be 1 -- 230')
+                logger.error('spgnum must be 1 -- 230')
+                raise SystemExit(1)
             if not int(c) in tmpspg:
                 tmpspg += [int(c)]
     return tmpspg
 
 
 def save_stat(stat):    # only 1st run
-    print('Save input data in cryspy.stat')
+    logger.info('Save input data in cryspy.stat')
     # ---------- basic
     stat.set('basic', 'algo', '{}'.format(algo))
     stat.set('basic', 'calc_code', '{}'.format(calc_code))
@@ -890,6 +967,9 @@ def save_stat(stat):    # only 1st run
 
 
 def diffinstat(stat):
+    #
+    # Do not use SystemExit in diffinstat!
+    #
     logic_change = False
 
     # ---------- old input
@@ -948,7 +1028,7 @@ def diffinstat(stat):
     except (configparser.NoOptionError, configparser.NoSectionError):
         old_mindist = []
         for i in range(len(atype)):
-            tmp = stat.get('structure', 'mindist_{}'.format(i+1))
+            tmp = stat.get('structure', f'mindist_{i+1}')
             tmp = [float(x) for x in tmp.split()]    # character --> float
             old_mindist.append(tmp)
     old_mindist_factor = stat.getfloat('structure', 'mindist_factor')
@@ -959,7 +1039,7 @@ def diffinstat(stat):
     except (configparser.NoOptionError, configparser.NoSectionError):
         old_mindist_mol_bs = []
         for i in range(len(mol_file)):
-            tmp = stat.get('structure', 'mindist_mol_bs_{}'.format(i+1))
+            tmp = stat.get('structure', f'mindist_mol_bs_{i+1}')
             tmp = [float(x) for x in tmp.split()]    # character --> float
             old_mindist_mol_bs.append(tmp)
     old_mindist_mol_bs_factor = stat.getfloat('structure', 'mindist_mol_bs_factor')
@@ -1052,7 +1132,7 @@ def diffinstat(stat):
             old_rot_max_angle = stat.getint('EA', 'rot_max_angle')
             old_mindist_mol_ea = []
             for i in range(len(mol_file)):
-                tmp = stat.get('EA', 'mindist_mol_ea_{}'.format(i+1))
+                tmp = stat.get('EA', f'mindist_mol_ea_{i+1}')
                 tmp = [float(x) for x in tmp.split()]    # character --> float
                 old_mindist_mol_ea.append(tmp)
         old_maxcnt_ea = stat.getint('EA', 'maxcnt_ea')
@@ -1577,4 +1657,4 @@ def diffinstat(stat):
 
 
 def diff_out(var_str, old_var, var):
-    print('Changed {0} from {1} to {2}'.format(var_str, old_var, var))
+    logger.info(f'Changed {var_str} from {old_var} to {var}')

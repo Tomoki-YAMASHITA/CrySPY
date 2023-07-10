@@ -2,11 +2,15 @@
 Structure file for Quantum ESPRESSO
 '''
 
+from logging import getLogger
+
 from pymatgen.core import Structure
 from pymatgen.core.units import Length
 
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def extract_cell_parameters(filename):
     # ---------- last CELL_PARAMETERS
@@ -49,8 +53,8 @@ def from_lines(lines_cell, lines_atom):
     elif unit == 'angstrom':
         scale = 1.0    # in Ang
     else:
-        raise ValueError('unit "{0:s}" for CELL_PARAMETERS'
-                         ' is not supported'.format(unit))
+        logger.error(f'unit "{unit:s}" for CELL_PARAMETERS'
+                         ' is not supported')
     lattice = [[scale * float(x) for x in line.split()]
                for line in lines_cell[1:4]]
 
@@ -67,8 +71,8 @@ def from_lines(lines_cell, lines_atom):
         if unit == 'crystal':
             pass    # 'coords' are already internal coordinates
         else:
-            raise ValueError('unit "{0:s}" for ATOMIC_POSITIONS'
-                             ' is not supported yet'.format(unit))
+            logger.error(f'unit "{unit:s}" for ATOMIC_POSITIONS'
+                             ' is not supported yet')
 
     structure = Structure(lattice, species, coords)
     return structure

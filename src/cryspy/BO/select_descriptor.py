@@ -3,15 +3,19 @@ Select descriptors
     - FP: FingerPrint
 '''
 
-from ..util.utility import check_fppath 
+from logging import getLogger
+
+from ..util.utility import check_fppath
 from ..calc_dscrpt.FP.calc_FP import Calc_FP
 from ..IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def select_descriptor(struc_data):
     # ---------- fingerprint
     if rin.dscrpt == 'FP':
-        print('Calculate descriptors: FingerPrint', flush=True)
+        logger.info('Calculate descriptors: FingerPrint')
         # ------ check cal_fingerprint executable file
         fppath = check_fppath(rin.fppath)
         # ------ calc fingerprint
@@ -20,4 +24,5 @@ def select_descriptor(struc_data):
         cfp.calc()
         return cfp.descriptors
     else:
-        raise NotImplementedError('Now FP only')
+        logger.error('Now FP only')
+        raise SystemExit(1)

@@ -2,11 +2,14 @@
 Collect results in LAMMPS
 '''
 
+from logging import getLogger
 import numpy as np
 
 from . import structure as lammps_structure
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def collect_lammps(current_id, work_path):
     # ---------- check optimization in current stage & obtain energy
@@ -17,7 +20,7 @@ def collect_lammps(current_id, work_path):
             lines = fout.readlines()
         for i, line in enumerate(lines):
             if 'ERROR:' in line:
-                print('    ' + line.rstrip())
+                logger.warning('    ' + line.rstrip())
                 energy = np.nan
                 check_opt = 'not_yet'
                 break
@@ -26,9 +29,8 @@ def collect_lammps(current_id, work_path):
                 energy = energy/float(rin.natot)    # eV/cell --> eV/atom
                 check_opt = 'done'
     except Exception as e:
-        print(e)
-        print('    Structure ID {0}, could not obtain energy from {1}'.format(
-            current_id, rin.lammps_outfile))
+        logger.warning(e.args[0] + f':    Structure ID {current_id},'
+                       f'could not obtain energy from {rin.lammps_outfile}')
         energy = np.nan    # error
         check_opt = 'no_file'
 
@@ -39,7 +41,7 @@ def collect_lammps(current_id, work_path):
     try:
         opt_struc = lammps_structure.from_file(work_path+'log.struc')
     except Exception as e:
-        print(e)
+        logger.warning(e.args[0])
         opt_struc = None
 
     # ---------- return

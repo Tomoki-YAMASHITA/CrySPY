@@ -2,6 +2,7 @@
 Collect results in Quantum ESPRESSO
 '''
 
+from logging import getLogger
 import sys
 
 import numpy as np
@@ -13,6 +14,8 @@ from ...IO import pkl_data
 from ...IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def collect_qe(current_id, work_path):
     # ---------- check optimization in previous stage
     try:
@@ -23,7 +26,7 @@ def collect_qe(current_id, work_path):
             if 'End final coordinates' in line:
                 check_opt = 'done'
     except Exception as e:
-        print(e)
+        logger.warning(e.args[0])
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom
@@ -45,9 +48,8 @@ def collect_qe(current_id, work_path):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        print(e)
-        print('    Structure ID {0}, could not obtain energy from {1}'.format(
-            current_id, rin.qe_outfile))
+        logger.warning(e.args[0] + f':    Structure ID {current_id},'
+                       f'could not obtain energy from {rin.qe_outfile}')
 
     # ---------- collect the last structure
     try:
@@ -68,7 +70,7 @@ def collect_qe(current_id, work_path):
             fstruc.write('# ID {0:d}\n'.format(current_id))
         qe_structure.write(opt_struc, './data/opt_qe-structure', mode='a')
     except Exception as e:
-        print(e)
+        logger.warning(e.args[0])
         opt_struc = None
 
     # ---------- check
@@ -112,15 +114,13 @@ def get_energy_step_qe(energy_step_data, current_id, work_path):
         # ------ list --> array, Ry/cell --> eV/atom
         if not energy_step:
             energy_step = None    # if empty
-            print('#### ID: {0}: failed to parse energy_step\n'.format(
-                current_id), file=sys.stderr)
+            logger.warning(f'#### ID: {current_id}: failed to parse energy_step')
         else:
             energy_step = constants.RY2EV / rin.natot * np.array(energy_step,
                                                                dtype='float')
     except Exception as e:
         energy_step = None
-        print(e, '#### ID: {0}: failed to parse energy_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse energy_step')
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -155,8 +155,7 @@ def get_struc_step_qe(struc_step_data, current_id, work_path):
         struc_step.pop(-1)
     except Exception as e:
         struc_step = None
-        print(e ,'#### ID: {0}: failed to parse in struc_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse in struc_step')
 
     # ---------- append struc_step_data
     if struc_step_data.get(current_id) is None:
@@ -249,12 +248,10 @@ def get_force_step_qe(force_step_data, current_id, work_path):
         # ------ if empty
         if len(force_step) == 0:
             force_step = None
-            print('#### ID: {0}: failed to parse force_step\n'.format(
-                current_id), file=sys.stderr)
+            logger.warning(f'#### ID: {current_id}: failed to parse force_step')
     except Exception as e:
         force_step = None
-        print(e, '#### ID: {0}: failed to parse in force_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e + f'#### ID: {current_id}: failed to parse in force_step')
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -309,12 +306,10 @@ def get_stress_step_qe(stress_step_data, current_id, work_path):
         # ------ if empty
         if len(stress_step) == 0:
             stress_step = None
-            print('#### ID: {0}: failed to parse stress_step\n'.format(
-                current_id), file=sys.stderr)
+            logger.warning(f'#### ID: {current_id}: failed to parse stress_step')
     except Exception as e:
         stress_step = None
-        print(e, '#### ID: {0}: failed to parse in stress_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e + f'#### ID: {current_id}: failed to parse in stress_step')
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

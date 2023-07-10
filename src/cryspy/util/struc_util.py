@@ -2,6 +2,7 @@
 Utility for structures
 '''
 
+from logging import getLogger
 import os
 
 import numpy as np
@@ -12,6 +13,8 @@ from pyxtal.tolerance import Tol_matrix
 
 from ..IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
     # ---------- dummy atom in mol_bs
@@ -28,7 +31,8 @@ def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
         elif rin.struc_mode in ['mol', 'mol_bs']:
             tolmat = Tol_matrix(prototype='molecular', factor=factor)
         else:
-            raise ValueError('struc_mode')
+            logger.error('struc_mode is wrong')
+            raise SystemExit(1)
         # ------ set mindist
         mindist = []
         for i, itype in enumerate(atype):
@@ -40,19 +44,19 @@ def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
         tmp_array = factor * np.array(mindist_in)
         mindist = tmp_array.tolist()
 
-    # ---------- print
+    # ---------- log
     if mpi_rank == 0:
         for i, itype in enumerate(atype):
             for j, jtype in enumerate(atype):
                 if i <= j:
                     if dummy:
-                        print(rin.mol_file[i], '-', rin.mol_file[j], mindist[i][j], flush=True)
+                        logger.info(f'{rin.mol_file[i]} - {rin.mol_file[j]}: {mindist[i][j]}')
                     else:
-                        print(itype, '-', jtype, mindist[i][j], flush=True)
+                        logger.info(f'{itype} - {jtype}: {mindist[i][j]}')
         if rin.struc_mode == 'mol':
-            print('When struc_mode is mol (only random structure, not EA part),')
-            print('- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)')
-            print('- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)',  flush=True)
+            logger.info('When struc_mode is mol (only random structure, not EA part),\n'
+            '- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)\n'
+            '- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
 
     # ---------- return
     return mindist
@@ -61,7 +65,8 @@ def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
 def get_atype_dummy():
     noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
     if len(rin.nmol) > len(noble_gas):
-        raise ValueError('len(nmol) > len(noble_gas)')
+        logger.error('len(nmol) > len(noble_gas)')
+        raise SystemExit(1)
     atype = noble_gas[:len(rin.nmol)]
     return atype
 
@@ -94,8 +99,9 @@ def out_cif(struc, cid, tmp_path, fpath, symprec=0.1):
     if ciflines[11][:21] == '_chemical_formula_sum':
         ciflines.pop(11)
     else:
-        raise ValueError('ciflines[11] is not _chemical_formula_sum,'
+        logger.error('ciflines[11] is not _chemical_formula_sum,'
                          ' have to fix bag')
+        raise SystemExit(1)
 
     # ---------- cif --> opt_cifs
     with open(fpath, 'a') as foptcif:
@@ -307,7 +313,8 @@ def rot_mat(angles, seq='zyx', degree=False):
     degree:
     '''
     if not len(seq) == len(angles):
-        raise ValueError('not len(seq) == len(angles)')
+        logger.error('not len(seq) == len(angles)')
+        raise SystemExit(1)
 
     if degree:
         angles = np.deg2rad(angles)

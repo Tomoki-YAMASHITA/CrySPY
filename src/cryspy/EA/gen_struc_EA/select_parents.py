@@ -2,11 +2,15 @@
 Select parents in evolutionary algorithm
 '''
 
+from logging import getLogger
+
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 class Select_parents:
     '''
@@ -57,14 +61,12 @@ class Select_parents:
             if rin.emax_ea is not None:
                 if value > rin.emax_ea:
                     self.fitness[key] = -np.inf if rin.fit_reverse else np.inf
-                    print('Eliminate ID {}: {} > emax_ea'.format(
-                          key, value))
+                    logger.info(f'Eliminate ID {key}: {value} > emax_ea')
             # ---- emin_ea
             if rin.emin_ea is not None:
                 if value < rin.emin_ea:
                     self.fitness[key] = -np.inf if rin.fit_reverse else np.inf
-                    print('Eliminate ID {}: {} < emin_ea'.format(
-                          key, value))
+                    logger.info(f'Eliminate ID {key}: {value} < emin_ea')
         # ------ self
         self.n_fittest = n_fittest
         # ---------- ranking of fitness: list of id
@@ -81,40 +83,40 @@ class Select_parents:
             pass    # if dict, allow len(struc_data) != len(fitness)
         elif isinstance(struc_data, dict) and (
                 isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
-            raise TypeError('struc_data is dict,'
+            logger.error('struc_data is dict,'
                             ' so fitness should also be dict')
         elif isinstance(fitness, dict) and (
                 isinstance(struc_data, list)
                 or isinstance(struc_data, np.ndarray)):
-            raise TypeError('fitness is dict,'
+            logger.error('fitness is dict,'
                             ' so struc_data should also be dict')
         elif isinstance(struc_data, list) and (
                 isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
             # ------ check number of data
             if not len(struc_data) == len(fitness):
-                raise ValueError('not len(struc_data) == len(fitness)')
+                logger.error('not len(struc_data) == len(fitness)')
             # ------ convert
             struc_data = {i: struc_data[i] for i in range(len(struc_data))}
             fitness = {i: fitness[i] for i in range(len(fitness))}
         else:
-            raise TypeError('Type of struc_data and fitness is wrong')
+            logger.error('Type of struc_data and fitness is wrong')
         # ---------- elite
         if isinstance(elite_struc, dict) and isinstance(elite_fitness, dict):
             # ------ check number of data
             if not len(elite_struc) == len(elite_fitness):
-                raise ValueError('not len(elite_struc) == len(elite_fitness)')
+                logger.error('not len(elite_struc) == len(elite_fitness)')
             if None in elite_struc.values():
-                raise ValueError('elite_struc includes None')
+                logger.error('elite_struc includes None')
             if (None in elite_fitness.values()) or (
                     np.nan in elite_fitness.values()):
-                raise ValueError('elite_fitness includes None or np.nan')
+                logger.error('elite_fitness includes None or np.nan')
             # ------ add elite to data
             struc_data.update(elite_struc)
             fitness.update(elite_fitness)
         elif elite_struc is elite_fitness is None:
             pass
         else:
-            raise TypeError('elite_struc and elite_fitness'
+            logger.error('elite_struc and elite_fitness'
                             ' must be dict or None')
         # ---------- return
         return struc_data, fitness
@@ -147,10 +149,9 @@ class Select_parents:
                     if len(self.ranking_dedupe) == self.n_fittest:
                         break
         # ---------- log
-        print('Remove duplicated data')
+        logger.info('Remove duplicated data')
         if self.n_fittest > 0:
-            print('Survival of the fittest: top {0} structures survive'.format(
-                self.n_fittest))
+            logger.info(f'Survival of the fittest: top {self.n_fittest} structures survive')
 
     def set_tournament(self):
         '''
@@ -222,7 +223,7 @@ class Select_parents:
         elif isinstance(fitness, list):
             fitness = np.array(fitness)
         else:
-            raise TypeError('fitness must be list or np.array')
+            logger.error('fitness must be list or np.array')
         # ------ in case of int
         a = float(rin.a_rlt)
         b = float(rin.b_rlt)

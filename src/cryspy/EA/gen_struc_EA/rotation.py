@@ -2,6 +2,7 @@
 Rotation class
 '''
 
+from logging import getLogger
 import sys
 
 import numpy as np
@@ -10,6 +11,8 @@ from pymatgen.core import Structure
 from ...IO import read_input as rin
 from ...util.struc_util import check_distance, rot_mat, find_site, cal_g, sort_by_atype_mol
 
+
+logger = getLogger('cryspy')
 
 class Rotation:
     '''
@@ -56,14 +59,13 @@ class Rotation:
                                                                            mol_id[0], rotated_group_id)
                 return self.child, [self.mol_id, self.group_id, mol_id[2]]
             else:
-                print('mindist in rotation: {} - {}, {}. retry.'.format(
-                    rin.atype[mindist_ij[0]],
-                    rin.atype[mindist_ij[1]],
-                    dist), file=sys.stderr, flush=True)
+                type0 = rin.atype[mindist_ij[0]]
+                type1 = rin.atype[mindist_ij[1]]
+                logger.warning(f'mindist in rotation: {type0} - {type1}, {dist}. retry.')
                 cnt += 1
                 if cnt >= rin.maxcnt_ea:
-                    print('Rotation: could not satisfy min_dist' +
-                          ' in {} times'.format(rin.maxcnt_ea), file=sys.stderr)
-                    print('Change parent', file=sys.stderr, flush=True)
+                    logger.warning('Rotation: could not satisfy min_dist' +
+                          f' in {rin.maxcnt_ea} times')
+                    logger.warning('Change parent')
                     self.child = None
                     return None, None    # change parent

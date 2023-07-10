@@ -3,13 +3,14 @@ Restart CrySPY
 '''
 
 from datetime import datetime
+from logging import getLogger
 import os
 import sys
 
 from .gen_init_struc import gen_init_struc
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
-from ..util.utility import get_date, get_version, backup_cryspy
+from ..util.utility import get_version, backup_cryspy
 
 # ---------- import later
 #from ..RS import rs_restart
@@ -20,14 +21,11 @@ from ..util.utility import get_date, get_version, backup_cryspy
 #from ..RS.gen_struc_RS.random_generation import Rnd_struc_gen
 
 
+logger = getLogger('cryspy')
+
 def restart(comm, mpi_rank, mpi_size):
     if mpi_rank == 0:
-        print('\n\n')
-        print(get_date())
-        print('CrySPY ' + get_version())
-        print('Restart cryspy.py')
-        print(f'Number of MPI processes: {mpi_size}\n\n')
-
+        logger.info('\n\n\nRestart CrySPY ' + get_version() + '\n\n')
         # ---------- read stat
         stat = io_stat.stat_read()
     else:
@@ -37,15 +35,20 @@ def restart(comm, mpi_rank, mpi_size):
     if mpi_size > 1:
         comm.barrier()
     # ---------- read input and check the change
-    rin.readin()
+    try:
+        rin.readin()
+    except Exception as e:
+        if mpi_rank == 0:
+            logger.error(e.args[0])
+        raise SystemExit(1)
     if mpi_rank == 0:
         try:
             rin.diffinstat(stat)
         except Exception as e:
             if mpi_size > 1:
-                print(e, file=sys.stderr, flush=True)
                 comm.Abort(1)
-            raise SystemExit(e)
+            logger.error(e.args[0])
+            raise SystemExit(1)
 
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
@@ -80,7 +83,8 @@ def restart(comm, mpi_rank, mpi_size):
             os.remove('lock_cryspy')
         raise SystemExit()
     elif rin.tot_struc < len(init_struc_data):
-        raise ValueError('tot_struc < len(init_struc_data)')
+        logger.error('tot_struc < len(init_struc_data)')
+        raise SystemExit(1)
 
     # ---------- append structures by EA (option)
     # not support MPI
@@ -118,7 +122,7 @@ def restart(comm, mpi_rank, mpi_size):
 def _append_struc(init_struc_data, comm, mpi_rank, mpi_size):
     # ---------- append initial structures
     if mpi_rank == 0:
-        print('\n# ---------- Append structures')
+        logger.info('# ---------- Append structures')
     if mpi_size > 1:
         comm.barrier()
     # ------ time
@@ -136,7 +140,7 @@ def _append_struc(init_struc_data, comm, mpi_rank, mpi_size):
         # ---------- time
         time_end = datetime.today()
         etime = time_end - time_start
-        print(f'\nElapsed time for structure generation: {etime}\n')
+        logger.info(f'Elapsed time for structure generation: {etime}')
 
     # ---------- return
     # only init_struc_data in rank0 is important

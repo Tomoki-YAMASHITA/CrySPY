@@ -3,18 +3,49 @@ Utility for CrySPY
 '''
 
 from datetime import datetime
+from logging import getLogger, StreamHandler, FileHandler, Formatter, DEBUG, INFO, WARNING
 import os
 import shutil
 import subprocess
+import sys
 
 
-# ---------- functions
+logger = getLogger('cryspy')
+
 def get_version():
-    return '1.1.1'
+    return '1.2.0'
 
 
-def get_date():
-    return datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+def set_logger(noprint=False, debug=False):
+    # ---------- level and formatter
+    logger.setLevel(DEBUG)
+    fmt = Formatter("[%(asctime)s][%(module)s][%(levelname)s] %(message)s")
+
+    # ---------- stream handler for log
+    if not noprint:
+        shandler = StreamHandler(stream=sys.stdout)
+        shandler.setFormatter(fmt)
+        shandler.setLevel(INFO)
+        logger.addHandler(shandler)
+
+    # ---------- file handler for log (level == INFO)
+    fhandler = FileHandler('./log_cryspy')
+    fhandler.setFormatter(fmt)
+    fhandler.addFilter(lambda record: record.levelno == INFO)
+    logger.addHandler(fhandler)
+
+    # ---------- file handler for error (WARNING <= level)
+    ehandler = FileHandler('./err_cryspy')
+    ehandler.setFormatter(fmt)
+    ehandler.setLevel(WARNING)
+    logger.addHandler(ehandler)
+
+    # ---------- file handler for debug (level == DEBUG)
+    if debug:
+        dhandler = FileHandler('./debug_cryspy')
+        dhandler.setFormatter(fmt)
+        dhandler.addFilter(lambda record: record.levelno == DEBUG)
+        logger.addHandler(dhandler)
 
 
 def check_fwpath(fwpath):
@@ -23,11 +54,13 @@ def check_fwpath(fwpath):
         sr = subprocess.run(['which', 'find_wy'], capture_output=True, text=True)
         fwpath = sr.stdout.strip()    # to delete \n
         if fwpath == '':
-            raise IOError('There is no find_wy program in your path')
+            logger.error('There is no find_wy program in your path')
+            raise SystemExit(1)
     else:
         # ---------- check fwpath written in cryspy.in
         if not os.path.isfile(fwpath):
-            raise IOError('There is no find_wy program in {}'.format(fwpath))
+            logger.error(f'There is no find_wy program in {fwpath}')
+            raise SystemExit(1)
     return fwpath
 
 
@@ -37,11 +70,13 @@ def check_fppath(fppath):
         sr = subprocess.run(['which', 'cal_fingerprint'], capture_output=True, text=True)
         fppath = sr.stdout.strip()    # to delete \n
         if fppath == '':
-            raise IOError('There is no cal_fingerprint program in your path')
+            logger.error('There is no cal_fingerprint program in your path')
+            raise SystemExit(1)
     else:
         # ---------- check fppath written in cryspy.in
         if not os.path.isfile(fppath):
-            raise IOError('There is no cal_fingerprint program in {}'.format(fppath))
+            logger.error(f'There is no cal_fingerprint program in {fppath}')
+            raise SystemExit(1)
     return fppath
 
 
@@ -64,7 +99,7 @@ def backup_cryspy():
             shutil.copytree(d, dst + d)
 
     # ---------- print
-    print('\nBackup data')
+    logger.info('Backup data')
 
 
 def clean_cryspy():

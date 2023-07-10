@@ -2,6 +2,8 @@
 Initialize evolutionary algorithm
 '''
 
+from logging import getLogger
+
 import pandas as pd
 
 from ..IO import out_results
@@ -9,11 +11,13 @@ from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def initialize(stat, rslt_data):
     # ---------- log
-    print('\n# ---------- Initialize evolutionary algorithm')
-    print('# ------ Generation 1')
-    print('{} structures by random\n'.format(rin.tot_struc))
+    logger.info('# ---------- Initialize evolutionary algorithm')
+    logger.info('# ------ Generation 1')
+    logger.info(f'{rin.tot_struc} structures by random')
 
     # ---------- initialize
     gen = 1

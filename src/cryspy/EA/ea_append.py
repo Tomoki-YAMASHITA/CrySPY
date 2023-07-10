@@ -2,6 +2,7 @@
 Append structures by evolutionary algorithm
 '''
 
+from logging import getLogger
 import os
 
 import pandas as pd
@@ -12,9 +13,11 @@ from ..IO import change_input, io_stat, out_results, pkl_data
 from ..IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def append_struc(stat, init_struc_data):
     # ---------- append structures by EA
-    print('\n# ---------- Append structures by EA')
+    logger.info('# ---------- Append structures by EA')
 
     # ---------- load data
     opt_struc_data = pkl_data.load_opt_struc()
@@ -24,7 +27,7 @@ def append_struc(stat, init_struc_data):
     fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
 
     # ---------- instantiate Seclect_parents class
-    print('# ------ select parents')
+    logger.info('# ------ select parents')
     sp = Select_parents(opt_struc_data, fitness, None, None, rin.n_fittest)
     if rin.slct_func == 'TNM':
         sp.set_tournament()
@@ -32,7 +35,7 @@ def append_struc(stat, init_struc_data):
         sp.set_roulette()
 
     # ---------- generate offspring by EA
-    print('# ------ Generate structures')
+    logger.info('# ------ Generate structures')
     init_struc_data, eagen = child_gen(sp, init_struc_data)
 
     # ----------  ea_info
@@ -80,16 +83,14 @@ def append_struc(stat, init_struc_data):
 
     # ---------- change variables in cryspy.in
     config = change_input.config_read()
-    print('# -- Changed cryspy.in')
+    logger.info('# -- Changed cryspy.in')
     # ------ tot_struc
     change_input.change_basic(config, 'tot_struc', rin.tot_struc + rin.n_pop)
-    print('Changed tot_struc in cryspy.in from {} to {}'.format(
-          rin.tot_struc, rin.tot_struc + rin.n_pop))
+    logger.info(f'Changed tot_struc in cryspy.in from {rin.tot_struc} to {rin.tot_struc + rin.n_pop}')
     rin.tot_struc = rin.tot_struc + rin.n_pop
     # ------ append_struc_ea: True --> False
     change_input.change_option(config, 'append_struc_ea', False)
-    print('Changed append_struc_ea in cryspy.in from {} to {}'.format(
-          True, False))
+    logger.info('Changed append_struc_ea in cryspy.in from True to Flase')
     # ------ write
     change_input.write_config(config)
 

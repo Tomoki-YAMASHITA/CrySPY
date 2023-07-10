@@ -2,6 +2,7 @@
 Collect results in VASP
 '''
 
+from logging import getLogger
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -14,14 +15,16 @@ from ...IO import pkl_data
 from ...IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def collect_vasp(current_id, work_path):
     # ---------- check optimization
     check_opt = check_opt_vasp(work_path+'OUTCAR')
     # ---------- obtain energy and magmom
     energy, magmom = get_energy_magmom_vasp(work_path)
     if np.isnan(energy):
-        print('    Structure ID {0},'
-              ' could not obtain energy from OSZICAR'.format(current_id))
+        logger.warning(f'    Structure ID {current_id},'
+              ' could not obtain energy from OSZICAR')
     # ---------- collect CONTCAR
     try:
         opt_struc = Structure.from_file(work_path+'CONTCAR')
@@ -96,13 +99,13 @@ def get_energy_step_vasp(energy_step_data, current_id, work_path):
             if fr_eng.attrib['name'] == 'e_fr_energy':
                 energy_step.append(fr_eng.text)
             else:
-                raise ValueError('bug')
+                logger.error('bug in get_energy_step_vasp')
+                raise SystemExit(1)
         # ------ list, str --> array
         energy_step = np.array(energy_step, dtype='float')/float(rin.natot)
     except Exception as e:
         energy_step = None
-        print(e, '#### ID: {0}: failed to parse in energy_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0] + f': #### ID: {current_id}: failed to parse in energy_step')
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -159,8 +162,7 @@ def get_struc_step_vasp(struc_step_data, current_id, work_path):
             struc_step.append(struc)
     except Exception as e:
         struc_step = None
-        print(e, '#### ID: {0}: failed to parse in struc_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0], f': #### ID: {current_id}: failed to parse in struc_step')
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -212,8 +214,7 @@ def get_force_step_vasp(force_step_data, current_id, work_path):
             force_step.append(force)
     except Exception as e:
         force_step = None
-        print(e, '#### ID: {0}: failed to parse in force_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0] + f': #### ID: {current_id}: failed to parse in force_step')
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -267,8 +268,7 @@ def get_stress_step_vasp(stress_step_data, current_id, work_path):
             stress_step.append(stress)
     except Exception as e:
         stress_step = None
-        print(e, '#### ID: {0}: failed to parse in stress_step\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0], f': #### ID: {current_id}: failed to parse in stress_step')
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

@@ -2,11 +2,14 @@
 Calculate Fingerprint
 '''
 
+from logging import getLogger
 import os
 import subprocess
 
 import numpy as np
 
+
+logger = getLogger('cryspy')
 
 class Calc_FP:
     '''
@@ -36,30 +39,14 @@ class Calc_FP:
             # -- convert to dict
             struc_data = {i: struc_data[i] for i in range(len(struc_data))}
         else:
-            raise TypeError('Type of struc_data is wrong')
+            logger.error('Type of struc_data is wrong')
+            raise SystemExit(1)
         self.struc_data = struc_data
-        # ------ fp_rmin, fp_rmax, fp_sigma
-        if fp_rmin >= fp_rmax:
-            raise ValueError('fprmin >= fp_rmax')
-        for x in [fp_rmin, fp_rmax, fp_sigma]:
-            if type(x) is float and x > 0:
-                pass
-            else:
-                raise ValueError('fp_rmin, fp_rmax, and fp_sigma'
-                                 ' msut be positive float')
+        # ------ fp
         self.fp_rmin = fp_rmin
         self.fp_rmax = fp_rmax
         self.fp_sigma = fp_sigma
-        # ------ fp_npoints
-        if type(fp_npoints) is int and fp_npoints > 0:
-            pass
-        else:
-            raise ValueError('fp_npoints must be positive int')
         self.fp_npoints = fp_npoints
-        # ------ fppath
-        if not os.path.isfile(fppath):
-            raise IOError('There is no cal_fingerprint program in {}'.format(
-                fppath))
         self.fppath = os.path.abspath(fppath)
 
     def calc(self):
@@ -79,7 +66,8 @@ class Calc_FP:
             # ------ output POSCAR
             struc.to(fmt='poscar', filename='POSCAR')
             if not os.path.isfile('POSCAR'):
-                raise IOError('No POSCAR file')
+                logger.error('No POSCAR file')
+                raise SystemExit(1)
             # ------ run cal_fingerprint
             with open('log_fingerprint', 'w') as logf:
                 subprocess.call([self.fppath, 'POSCAR',

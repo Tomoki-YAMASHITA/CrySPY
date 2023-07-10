@@ -1,6 +1,7 @@
 import os
 import shutil
 
+from logging import getLogger
 import numpy as np
 
 from ..interface import select_code
@@ -15,6 +16,8 @@ if rin.algo == 'BO':
 if rin.algo == 'EA':
     from ..EA import ea_next_gen
 
+
+logger = getLogger('cryspy')
 
 class Ctrl_ext:
 
@@ -62,23 +65,26 @@ class Ctrl_ext:
             self.job_stat = 'no_file'
 
     def handle_job(self):
-        print('\n# ---------- job status')
+        logger.info('# ---------- job status')
         if self.job_stat == 'submitted':
-            print('still queueing or running')
+            logger.info('still queueing or running')
         elif self.job_stat == 'done':
-            print('collect data')
+            logger.info('collect data')
             self.ctrl_done()
         elif self.job_stat == 'out':
-            print('write queueing structure data in ext/queue/')
+            logger.info('write queueing structure data in ext/queue/')
             self.out_queue()
         elif self.job_stat == 'no queue':
             pass
         elif self.job_stat == 'else':
-            raise ValueError('Wrong job_stat')
+            logger.error('Wrong job_stat')
+            raise SystemExit(1)
         elif self.job_stat == 'no_file':
-            raise ValueError('Wrong job_stat')
+            logger.error('Wrong job_stat')
+            raise SystemExit(1)
         else:
-            raise ValueError('Unexpected error')
+            logger.error('Unexpected error')
+            raise SystemExit(1)
 
     def out_queue(self):
         # ---------- out cifs
@@ -110,7 +116,8 @@ class Ctrl_ext:
         elif rin.algo == 'EA':
             self.ctrl_collect_ea()
         else:
-            raise ValueError('Error, algo')
+            logger.error('Error, algo')
+            raise SystemExit(1)
         # ---------- calc_data --> old_calc_data
         if os.path.isdir('ext/old_calc_data'):
             shutil.rmtree('ext/old_calc_data')
@@ -219,7 +226,7 @@ class Ctrl_ext:
                     out_cif(opt_struc, cid, './data/',
                             './data/opt_CIFS.cif', rin.symprec)
                 except TypeError:
-                    print('failed to write opt_CIF')
+                    logger.info('failed to write opt_CIF')
             # ------ error
             else:
                 ext_spg_num_opt[cid] = 0
@@ -241,20 +248,20 @@ class Ctrl_ext:
 
     def next_select_BO(self):
         # ---------- log
-        print('\nDone selection {}\n'.format(self.n_selection))
+        logger.info(f'\nDone selection {self.n_selection}')
         # ---------- done all structures
         if len(self.rslt_data) == rin.tot_struc:
-            print('Done all structures!')
+            logger.info('\nDone all structures!')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('Stop at check point 3: BO is ready\n')
+            logger.info('\nStop at check point 3: BO is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- max_select_bo
         if 0 < rin.max_select_bo <= self.n_selection:
-            print('Reached max_select_bo: {}\n'.format(rin.max_select_bo))
+            logger.info(f'\nReached max_select_bo: {rin.max_select_bo}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- BO
@@ -267,15 +274,15 @@ class Ctrl_ext:
 
     def next_gen_EA(self):
         # ---------- log
-        print('\nDone generation {}\n'.format(self.gen))
+        logger.info(f'\nDone generation {self.gen}')
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('\nStop at check point 3: EA is ready\n')
+            logger.info('\nStop at check point 3: EA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- maxgen_ea
         if 0 < rin.maxgen_ea <= self.gen:
-            print('\nReached maxgen_ea: {}\n'.format(rin.maxgen_ea))
+            logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- EA

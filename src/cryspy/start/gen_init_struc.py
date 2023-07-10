@@ -1,3 +1,4 @@
+from logging import getLogger
 import os
 import sys
 
@@ -6,16 +7,22 @@ from ..util.utility import check_fwpath
 from ..util.struc_util import set_mindist, out_poscar
 
 
+logger = getLogger('cryspy')
+
 def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
     # ---------- mindist
     if mpi_rank == 0:
-        print('# ------ mindist', flush=True)
+        logger.info('# ------ mindist')
     if mpi_size > 1:
         comm.barrier()
     mindist = set_mindist(rin.mindist, rin.mindist_factor, False, mpi_rank)
 
     # ---------- nstruc, offset for MPI
     nstruc_list, offset_list = _divide_task(rin.tot_struc, mpi_size, len(init_struc_data))
+
+    # ---------- log
+    if mpi_rank == 0:
+        logger.info('# ------ generate structures')
 
     # ---------- pyxtal
     if not (rin.spgnum == 0 or rin.use_find_wy):
@@ -31,7 +38,7 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         # ------ molecular crystal breaking symmetry
         elif rin.struc_mode == 'mol_bs':
             if mpi_rank == 0:
-                print('# -- mindist_mol_bs')
+                logger.info('# -- mindist_mol_bs')
             mindist_dummy = set_mindist(rin.mindist_mol_bs, rin.mindist_mol_bs_factor,
                                         dummy=True, mpi_rank=mpi_rank)
             rsgx.set_mol()
@@ -71,17 +78,7 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         else:
             # ---- findwy
             # -- check fwpath
-            if mpi_rank == 0:
-                try:
-                    fwpath = check_fwpath(rin.fwpath)
-                except Exception as e:
-                    if mpi_size > 1:
-                        print(e, file=sys.stderr, flush=True)
-                        comm.Abort(1)
-                    raise SystemExit(e)
-            else:
-                fwpath = None
-            fwpath = comm.bcast(fwpath, root=0)
+            fwpath = check_fwpath(rin.fwpath)
             if mpi_rank == 0:
                 os.makedirs('tmp_gen_struc', exist_ok=True)
             if mpi_size > 1:

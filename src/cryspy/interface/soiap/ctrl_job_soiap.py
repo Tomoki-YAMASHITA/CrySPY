@@ -2,12 +2,15 @@
 Control jobs in soiap
 '''
 
+from logging import getLogger
 import os
 import shutil
 
 from . import structure as soiap_structure
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def next_stage_soiap(stage, work_path):
     # ---------- skip_flag
@@ -18,7 +21,8 @@ def next_stage_soiap(stage, work_path):
                    'log.struc', 'log.tote', 'log.frc', 'log.strs']
     for f in soiap_files:
         if not os.path.isfile(work_path+f):
-            raise IOError('Not found '+work_path+f)
+            logger.error('Not found '+work_path+f)
+            raise SystemExit(1)
         os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
 
     # ---------- copy the input file from ./calc_in for the next stage
@@ -33,7 +37,7 @@ def next_stage_soiap(stage, work_path):
         structure = soiap_structure.from_file(lines)
     except ValueError:
         skip_flag = True
-        print('    error in soiap,  skip this structure')
+        logger.warning('    error in soiap,  skip this structure')
         return skip_flag
     with open(work_path+'stage{}_'.format(stage)+rin.soiap_cif, 'r') as f:
         lines = f.readlines()
@@ -53,7 +57,8 @@ def next_struc_soiap(structure, current_id, work_path):
     for f in calc_inputs:
         ff = f+'_1' if f == rin.soiap_infile else f
         if not os.path.isfile('./calc_in/'+ff):
-            raise IOError('Could not find ./calc_in/'+ff)
+            logger.error('Could not find ./calc_in/'+ff)
+            raise SystemExit(1)
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- generate the CIF file

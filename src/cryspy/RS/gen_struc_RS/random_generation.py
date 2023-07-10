@@ -3,6 +3,7 @@ Random structure generation w/o pyxtal
 '''
 
 import json
+from logging import getLogger
 import math
 import os
 import random
@@ -15,6 +16,8 @@ from pymatgen.core import Structure
 from ...IO import read_input as rin
 from ...util.struc_util import check_distance, out_poscar
 
+
+logger = getLogger('cryspy')
 
 class Rnd_struc_gen:
     '''
@@ -62,10 +65,9 @@ class Rnd_struc_gen:
                                                                rin.atype,
                                                                self.mindist)
                     if not success:
-                        print('mindist in gen_wo_spg: {} - {}, {}. retry.'.format(
-                            rin.atype[mindist_ij[0]],
-                            rin.atype[mindist_ij[1]],
-                            dist), file=sys.stderr, flush=True)
+                        type0 = rin.atype[mindist_ij[0]]
+                        type1 = rin.atype[mindist_ij[1]]
+                        logger.warning(f'mindist in gen_wo_spg: {type0} - {type1}, {dist}. retry.')
                         continue    # failure
                 # ------ check actual space group using pymatgen
                 try:
@@ -77,8 +79,8 @@ class Rnd_struc_gen:
                 # ------ register the structure in pymatgen format
                 cid = len(init_struc_data) + id_offset
                 init_struc_data[cid] = tmp_struc
-                print('Structure ID {0:>6} was generated.'
-                      ' Space group: {1:>3} {2}'.format(cid, spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {cid:>6} was generated.'
+                      f' Space group: {spg_num:>3} {spg_sym}')
                 # ------ save poscar
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
@@ -150,10 +152,9 @@ class Rnd_struc_gen:
                                                            rin.atype,
                                                            self.mindist)
                 if not success:
-                    print('mindist in gen_with_find_wy: {} - {}, {}. retry.'.format(
-                        rin.atype[mindist_ij[0]],
-                        rin.atype[mindist_ij[1]],
-                        dist), file=sys.stderr, flush=True)
+                    type0 = rin.atype[mindist_ij[0]]
+                    type1 = rin.atype[mindist_ij[1]]
+                    logger.warning(f'mindist in gen_with_find_wy: {type0} - {type1}, {dist}. retry.')
                     continue    # failure
             # ------ check actual space group using pymatgen
             try:
@@ -165,9 +166,8 @@ class Rnd_struc_gen:
             # ------ register the structure in pymatgen format
             cid = len(init_struc_data) + id_offset
             init_struc_data[cid] = tmp_struc
-            print('Structure ID {0:>6} was generated.'
-                  ' Space group: {1:>3} --> {2:>3} {3}'.format(
-                   cid, self.spg, spg_num, spg_sym), flush=True)
+            logger.info(f'Structure ID {cid:>6} was generated.'
+                  f' Space group: {self.spg:>3} --> {spg_num:>3} {spg_sym}')
             # ------ clean
             self._rm_files()
         # ---------- go back to ..
@@ -220,7 +220,8 @@ class Rnd_struc_gen:
             elif 195 <= spg <= 230:
                 csys = 'Cubic'
             else:
-                raise ValueError('spg is wrong')
+                logger.error('spg is wrong')
+                raise SystemExit(1)
         # ---------- generate lattice constants a, b, c, alpha, beta, gamma
         if csys == 'Triclinic':
             t1 = random.uniform(rin.minlen, rin.maxlen)
@@ -328,10 +329,9 @@ class Rnd_struc_gen:
                                                        rin.atype,
                                                        self.mindist)
             if not success:
-                print('mindist in _gen_struc_wo_spg: {} - {}, {}. retry.'.format(
-                    rin.atype[mindist_ij[0]],
-                    rin.atype[mindist_ij[1]],
-                    dist), file=sys.stderr, flush=True)
+                type0 = rin.atype[mindist_ij[0]]
+                type1 = rin.atype[mindist_ij[1]]
+                logger.warning(f'mindist in _gen_struc_wo_spg: {type0} - {type1}, {dist}. retry.')
                 incoord.pop(-1)    # cancel
                 cnt += 1
                 if rin.maxcnt < cnt:
@@ -405,10 +405,9 @@ class Rnd_struc_gen:
                                                            rin.atype,
                                                            self.mindist)
                 if not success:
-                    print('mindist in _gen_struc_with_spg: {} - {}, {}. retry.'.format(
-                        rin.atype[mindist_ij[0]],
-                        rin.atype[mindist_ij[1]],
-                        dist), file=sys.stderr, flush=True)
+                    type0 = rin.atype[mindist_ij[0]]
+                    type1 = rin.atype[mindist_ij[1]]
+                    logger.warning(f'mindist in _gen_struc_with_spg: {type0} - {type1}, {dist}. retry.')
                     # failure
                     # num_uniqvar = 0 --> value == 0
                     cnt = rin.maxcnt + 1 if value == 0 else cnt + 1
@@ -459,7 +458,8 @@ class Rnd_struc_gen:
                 elif ch == '2x':
                     pos.append(2.0 * rval[0])
                 else:
-                    raise ValueError('unknown ch in conversion in gen_wycoord')
+                    logger.error('unknown ch in conversion in gen_wycoord')
+                    raise SystemExit(1)
             pos = np.array(pos)
             eq_positions.append(pos + each['add'])
             eq_atomnames.append(each['name'])

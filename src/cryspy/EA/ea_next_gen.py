@@ -2,6 +2,8 @@
 Generational change in evolutionary algorithm
 '''
 
+from logging import getLogger
+
 import pandas as pd
 
 from .ea_child import child_gen
@@ -11,13 +13,15 @@ from ..IO import change_input, io_stat, pkl_data
 from ..IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_id_data):
     # ---------- ea_id_data
     gen, id_queueing, id_running = ea_id_data
 
     # ---------- log
-    print('# ---------- Evolutionary algorithm\n')
-    print('# ------ Generation {}'.format(gen + 1))
+    logger.info('# ---------- Evolutionary algorithm')
+    logger.info(f'# ------ Generation {gen + 1}')
 
     # ---------- current generation
     c_rslt = rslt_data[rslt_data['Gen'] == gen]
@@ -27,7 +31,7 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
     elite_struc, elite_fitness, ea_info, ea_origin = pkl_data.load_ea_data()
 
     # ---------- instantiate Seclect_parents class
-    print('# -- select parents')
+    logger.info('# -- select parents')
     sp = Select_parents(opt_struc_data, c_fitness, elite_struc, elite_fitness, rin.n_fittest)
     if rin.slct_func == 'TNM':
         sp.set_tournament()
@@ -35,7 +39,7 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
         sp.set_roulette()
 
     # ---------- generate offspring by EA
-    print('# -- Generate structures')
+    logger.info('# -- Generate structures')
     if rin.struc_mode not in ['mol', 'mol_bs']:
         _, eagen = child_gen(sp, init_struc_data, None)
     else:
@@ -43,7 +47,7 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
 
     # ---------- select elite
     if rin.n_elite > 0:
-        print('# -- select elites')
+        logger.info('# -- select elites')
         # ------ init
         all_fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
         elite_struc = {}
@@ -51,7 +55,7 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
         # ------ Select_parents class also works for selecting elite structures
         se = Select_parents(opt_struc_data, all_fitness, None, None, rin.n_elite)
         for cid in se.ranking_dedupe:
-            print('Structure ID {0:>6} keeps as the elite'.format(cid))
+            logger.info(f'Structure ID {cid:>6} keeps as the elite')
             elite_struc[cid] = opt_struc_data[cid]
             elite_fitness[cid] = all_fitness[cid]
     else:
@@ -106,10 +110,9 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
     config = change_input.config_read()
     change_input.change_basic(config, 'tot_struc', rin.tot_struc + rin.n_pop)
     change_input.write_config(config)
-    print('# -- changed cryspy.in')
-    print('Changed the value of tot_struc in cryspy.in'
-          ' from {} to {}'.format(
-              rin.tot_struc, rin.tot_struc + rin.n_pop))
+    logger.info('# -- changed cryspy.in')
+    logger.info('Changed the value of tot_struc in cryspy.in'
+          f' from {rin.tot_struc} to {rin.tot_struc + rin.n_pop}')
 
     # ---------- status
     io_stat.set_input_common(stat, 'basic', 'tot_struc', rin.tot_struc + rin.n_pop)

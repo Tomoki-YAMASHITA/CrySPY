@@ -2,9 +2,13 @@
 Structure generation by evolutionary algorithm
 '''
 
+from logging import getLogger
+
 from ...IO import read_input as rin
 from ...util.struc_util import out_poscar
 
+
+logger = getLogger('cryspy')
 
 class EA_generation:
     '''
@@ -33,18 +37,18 @@ class EA_generation:
             self.cid = max(sp.fitness.keys()) + 1
         elif isinstance(id_start, int):
             if id_start < (max(sp.fitness.keys()) + 1):
-                raise ValueError('id_start is already included'
+                logger.error('id_start is already included'
                                  ' structure ID of the data')
             else:
                 self.cid = id_start
         else:
-            raise TypeError('id_start must be int or None')
+            logger.error('id_start must be int or None')
         # ------ init_pos_path
         if init_pos_path is not None:
             if isinstance(init_pos_path, str):
                 self.init_pos_path = init_pos_path
             else:
-                raise TypeError('init_pos_path must be str or None')
+                logger.error('init_pos_path must be str or None')
         # ---------- initialize data
         self.offspring = {}    # structure data
         self.offspring_mol_id = {}
@@ -83,10 +87,9 @@ class EA_generation:
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>6} was generated'
-                      ' from {1:>6} and {2:>6} by crossover.'
-                      ' Space group: {3:>3} {4}'.format(self.cid, pid_A, pid_B,
-                                                        spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                      f' from {pid_A:>6} and {pid_B:>6} by crossover.'
+                      f' Space group: {spg_num:>3} {spg_sym}')
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
@@ -122,10 +125,9 @@ class EA_generation:
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>6} was generated'
-                      ' from {1:>6} by permutation.'
-                      ' Space group: {2:>3} {3}'.format(self.cid, pid,
-                                                        spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                      f' from {pid:>6} by permutation.'
+                      f' Space group: {spg_num:>3} {spg_sym}')
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
@@ -165,10 +167,9 @@ class EA_generation:
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>6} was generated'
-                      ' from {1:>6} by strain.'
-                      ' Space group: {2:>3} {3}'.format(self.cid, pid,
-                                                        spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                      f' from {pid:>6} by strain.'
+                      f' Space group: {spg_num:>3} {spg_sym}')
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
@@ -200,10 +201,9 @@ class EA_generation:
                 except TypeError:
                     spg_num = 0
                     spg_sym = None
-                print('Structure ID {0:>6} was generated'
-                      ' from {1:>6} by rotation.'
-                      ' Space group: {2:>3} {3}'.format(self.cid, pid,
-                                                        spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                      f' from {pid:>6} by rotation.'
+                      f' Space group: {spg_num:>3} {spg_sym}')
                 if self.init_pos_path is not None:
                     out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1

@@ -2,6 +2,7 @@
 Control jobs in Quantum ESPRESSO
 '''
 
+from logging import getLogger
 import os
 import shutil
 
@@ -13,6 +14,8 @@ from ...IO import pkl_data
 from ...IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def next_stage_qe(stage, work_path, kpt_data, current_id):
     # ---------- skip_flag
     skip_flag = False
@@ -21,7 +24,8 @@ def next_stage_qe(stage, work_path, kpt_data, current_id):
     qe_files = [rin.qe_infile, rin.qe_outfile]
     for f in qe_files:
         if not os.path.isfile(work_path+f):
-            raise IOError('Not found '+work_path+f)
+            logger.error('Not found '+work_path+f)
+            raise SystemExit(1)
         os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
 
     # ---------- next structure
@@ -42,7 +46,7 @@ def next_stage_qe(stage, work_path, kpt_data, current_id):
         kpt_data[current_id].append(['skip'])
         pkl_data.save_kpt(kpt_data)
         out_kpts(kpt_data)
-        print('    error in QE,  skip this structure')
+        logger.info(f'    error in QE,  skip structure {current_id}')
         return skip_flag, kpt_data
 
     # ---------- copy the input file from ./calc_in for the next stage
@@ -80,7 +84,8 @@ def next_struc_qe(structure, current_id, work_path, kpt_data):
     for f in calc_inputs:
         ff = f+'_1' if f == rin.qe_infile else f
         if not os.path.isfile('./calc_in/' + ff):
-            raise IOError('Could not find ./calc_in/' + ff)
+            logger.error('Could not find ./calc_in/' + ff)
+            raise SystemExit(1)
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- append structure info. to the input file

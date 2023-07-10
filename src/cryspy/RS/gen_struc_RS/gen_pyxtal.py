@@ -4,6 +4,8 @@ Random structure generation using PyXtal (https://github.com/qzhu2017/PyXtal)
 
 import collections
 from contextlib import redirect_stdout, redirect_stderr
+from io import StringIO
+from logging import getLogger
 from multiprocessing import Process, Queue
 import os
 import random
@@ -20,6 +22,8 @@ from ...util.struc_util import check_distance, sort_by_atype, out_poscar
 from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 class Rnd_struc_gen_pyxtal:
     '''
@@ -43,7 +47,8 @@ class Rnd_struc_gen_pyxtal:
             elif mf in pyxtal_mol_names:
                 mol = pyxtal_mol_data[mf]
             else:
-                raise ValueError('no molecular files')
+                logger.error('no molecular files')
+                raise SystemExit(1)
             mol_data.append(mol)
         # ---------- self.xxx
         self.mol_data = mol_data
@@ -84,12 +89,16 @@ class Rnd_struc_gen_pyxtal:
             # ------ generate structure
             tmp_crystal = pyxtal()
             try:
-                with redirect_stdout(sys.stderr):
+                f = StringIO()
+                with redirect_stdout(f):
                     tmp_crystal.from_random(dim=3, group=spg, species=rin.atype,
                                             numIons=rin.nat, factor=rand_vol,
                                             conventional=False, tm=tolmat)
+                s = f.getvalue().rstrip()    # to delete \n
+                if s:
+                    logger.warning(s)
             except Exception as e:
-                print(e, ':spg = {} retry.'.format(spg), file=sys.stderr, flush=True)
+                logger.warning(e.args[0] + f': spg = {spg} retry.')
                 continue
             if tmp_crystal.valid:
                 tmp_struc = tmp_crystal.to_pymatgen(resort=False)    # pymatgen Structure format
@@ -132,9 +141,8 @@ class Rnd_struc_gen_pyxtal:
                 # -- register the structure in pymatgen format
                 cid = len(self.init_struc_data) + id_offset
                 self.init_struc_data[cid] = tmp_struc
-                print('Structure ID {0:>6} was generated.'
-                      ' Space group: {1:>3} --> {2:>3} {3}'.format(
-                       cid, spg, spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {cid:>6} was generated.'
+                      f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
                 # -- save init_POSCARS
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
@@ -159,16 +167,6 @@ class Rnd_struc_gen_pyxtal:
         # ---------- comment
         generated structure data are saved in self.init_struc_data
         '''
-        # ---------- check args
-        if not (type(nstruc) is int and nstruc > 0):
-            raise ValueError('nstruc must be positive int')
-        if type(id_offset) is not int:
-            raise TypeError('id_offset must be int')
-        if init_pos_path is None or type(init_pos_path) is str:
-            pass
-        else:
-            raise ValueError('init_pos_path is wrong.'
-                             ' init_pos_path = {}'.format(init_pos_path))
         # ---------- initialize
         self.init_struc_data = {}
         if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
@@ -196,8 +194,7 @@ class Rnd_struc_gen_pyxtal:
                 # Process.close() available from python 3.7
                 p.close()
             if q.empty():
-                print('timeout for molecular structure generation. retry.',
-                      file=sys.stderr, flush=True)
+                logger.warning('timeout for molecular structure generation. retry.')
                 continue
             else:
                 # -- get struc data from _mp_mc
@@ -211,6 +208,8 @@ class Rnd_struc_gen_pyxtal:
                     tmp_struc = q.get()
                 tmp_valid = q.get()
                 if tmp_struc == 'error':
+                    # in case of 'error', tmp_valid <-- error message (Exception)
+                    logger.warning(tmp_valid.args[0] + f': spg = {spg} retry.')
                     continue
             if tmp_valid:
                 # -- scale volume
@@ -219,7 +218,7 @@ class Rnd_struc_gen_pyxtal:
                     vol = vol * tmp_struc.num_sites / rin.natot    # for conv. cell
                     tmp_struc = scale_cell_mol(tmp_struc, self.mol_data, vol)
                     if not tmp_struc:    # case: scale_cell_mol returns False
-                        print('failed scale cell. retry.', file=sys.stderr, flush=True)
+                        logger.warning('failed scale cell. retry.')
                         continue
                 # -- check nat
                 if not self._check_nat(tmp_struc):
@@ -229,7 +228,7 @@ class Rnd_struc_gen_pyxtal:
                     tmp_struc = tmp_struc.get_primitive_structure()
                     # recheck nat
                     if not self._check_nat(tmp_struc):    # failure
-                        print('different num. of atoms. retry.', file=sys.stderr, flush=True)
+                        logger.warning('different num. of atoms. retry.')
                         continue
                 # -- grouping atoms for molecule using interatomic distance
                 if rin.algo == 'EA':
@@ -304,9 +303,8 @@ class Rnd_struc_gen_pyxtal:
                 self.init_struc_data[cid] = tmp_struc
                 if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
                     self.struc_mol_id.update({cid: [tmp_mol_indx, tmp_id, mol_dists]})
-                print('Structure ID {0:>6} was generated.'
-                      ' Space group: {1:>3} --> {2:>3} {3}'.format(
-                       cid, spg, spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {cid:>6} was generated.'
+                      f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
                 # -- save init_POSCARS
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
@@ -336,16 +334,6 @@ class Rnd_struc_gen_pyxtal:
         # ---------- comment
         generated structure data are saved in self.init_struc_data
         '''
-        # ---------- check args
-        if not (type(nstruc) is int and nstruc > 0):
-            raise ValueError('nstruc must be positive int')
-        if type(id_offset) is not int:
-            raise TypeError('id_offset must be int')
-        if init_pos_path is None or type(init_pos_path) is str:
-            pass
-        else:
-            raise ValueError('init_pos_path is wrong.'
-                             ' init_pos_path = {}'.format(init_pos_path))
         # ---------- initialize
         self.init_struc_data = {}
         if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
@@ -366,12 +354,16 @@ class Rnd_struc_gen_pyxtal:
             # ------ generate structure
             tmp_crystal = pyxtal()
             try:
-                with redirect_stdout(sys.stderr):
+                f = StringIO()
+                with redirect_stdout(f):
                     tmp_crystal.from_random(dim=3, group=spg, species=atype_dummy,
                                             numIons=rin.nmol, factor=rand_vol,
                                             conventional=False, tm=tolmat)
+                s = f.getvalue().rstrip()    # to delete \n
+                if s:
+                    logger.warning(s)
             except Exception as e:
-                print(e, ':spg = {} retry.'.format(spg), file=sys.stderr, flush=True)
+                logger.warning(e.args[0] + f': spg = {spg} retry.')
                 continue
             if tmp_crystal.valid:
                 # -- each wyckoff position --> dummy atom
@@ -468,10 +460,9 @@ class Rnd_struc_gen_pyxtal:
                                                                    rin.atype,
                                                                    self.mindist)
                         if not success:
-                            print('mindist: {} - {}, {}. retry.'.format(
-                                rin.atype[mindist_ij[0]],
-                                rin.atype[mindist_ij[1]],
-                                dist), file=sys.stderr, flush=True)
+                            type0 = rin.atype[mindist_ij[0]]
+                            type1 = rin.atype[mindist_ij[1]]
+                            logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
                             if rin.rot_mol is None:
                                 break    # go back to the while loop
                             continue    # failure
@@ -499,9 +490,8 @@ class Rnd_struc_gen_pyxtal:
                             tmp_dists.append(mol.get_distance(0, n))
                         mol_dists.append(tmp_dists)
                     self.struc_mol_id.update({cid: [tmp_mol_indx, tmp_id, mol_dists]})
-                print('Structure ID {0:>6} was generated.'
-                      ' Space group: {1:>3} --> {2:>3} {3}'.format(
-                       cid, spg, spg_num, spg_sym), flush=True)
+                logger.info(f'Structure ID {cid:>6} was generated.'
+                      f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
                 # -- save init_POSCARS
                 if init_pos_path is not None:
                     out_poscar(tmp_struc, cid, init_pos_path)
@@ -525,17 +515,20 @@ class Rnd_struc_gen_pyxtal:
     def _mp_mc(self, tolmat, spg, nmol, rand_vol, q, algo):
         '''
         multiprocess part
-        here cannot use rin.xxx
+        here cannot use rin.xxx and logging
         '''
         try:
             np.random.seed(random.randint(0, 100000000))
             tmp_crystal = pyxtal(molecular=True)
-            with open('err_cryspy', 'a') as f:
-                with redirect_stdout(f):
-                    with redirect_stderr(f):
-                        tmp_crystal.from_random(dim=3, group=spg,
-                                                species=self.mol_data, numIons=nmol,
-                                                factor=rand_vol, conventional=False, tm=tolmat)
+            f = StringIO()
+            with redirect_stdout(f):
+                with redirect_stderr(f):
+                    tmp_crystal.from_random(dim=3, group=spg,
+                                            species=self.mol_data, numIons=nmol,
+                                            factor=rand_vol, conventional=False, tm=tolmat)
+            s = f.getvalue().rstrip()    # to delete \n
+            if s:
+                logger.warning(s)
             if algo == 'EA':
                 tmp_struc = tmp_crystal.to_pymatgen(resort=False)
                 tmp_lattice = tmp_struc.lattice
@@ -573,8 +566,5 @@ class Rnd_struc_gen_pyxtal:
                 q.put(None)
                 q.put(tmp_crystal.valid)
         except Exception as e:
-            with open('err_cryspy', 'a') as f:
-                f.write(e.args[0])
-                f.write('    spg = {} retry.\n'.format(spg))
             q.put('error')
-            q.put(None)
+            q.put(e)

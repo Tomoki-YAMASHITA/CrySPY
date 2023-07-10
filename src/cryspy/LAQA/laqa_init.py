@@ -2,12 +2,16 @@
 Initialize LAQA
 '''
 
+from logging import getLogger
+
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def initialize(stat):
-    print('\n# ---------- Initialize LAQA')
+    logger.info('# ---------- Initialize LAQA')
 
     # ---------- initialize
     tot_step_select = [0]
@@ -41,8 +45,9 @@ def initialize(stat):
     io_stat.write_stat(stat)
 
     # ---------- log
-    print('# ---------- Selection 0')
+    logger.info('# ---------- Selection 0')
     if len(id_queueing) > 30:
-        print('selected_id: {} IDs'.format(len(id_queueing)))
+        logger.info(f'selected_id: {len(id_queueing)} IDs')
     else:
-        print('selected_id: {}'.format(' '.join(str(a) for a in id_queueing)))
+        x = ' '.join(str(a) for a in id_queueing)
+        logger.info(f'selected_id: {x}')

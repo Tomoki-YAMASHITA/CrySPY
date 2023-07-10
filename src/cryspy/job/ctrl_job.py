@@ -3,6 +3,7 @@ Control jobs
 '''
 
 import itertools
+from logging import getLogger
 import os
 import shutil
 import subprocess
@@ -27,6 +28,8 @@ if rin.algo == 'LAQA':
     from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
     from ..IO.out_results import out_laqa_energy, out_laqa_bias
 
+
+logger = getLogger('cryspy')
 
 class Ctrl_job:
 
@@ -93,10 +96,10 @@ class Ctrl_job:
         # ---------- check job status
         for cid in self.tmp_running:
             # ------ mkdir
-            if not os.path.isdir('work/{:06}'.format(cid)):
-                os.mkdir('work/{:06}'.format(cid))
+            if not os.path.isdir(f'work/{cid:06}'):
+                os.mkdir(f'work/{cid:06}')
             # ------ check stat_job file
-            stat_path = 'work/{:06}'.format(cid) + '/stat_job'
+            stat_path = f'work/{cid:06}' + '/stat_job'
             try:
                 with open(stat_path, 'r') as fstat:
                     istat = fstat.readline()    # id
@@ -104,7 +107,8 @@ class Ctrl_job:
                     jstat = fstat.readline()    # submitted or done or ...
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if not cid == int(istat.split()[0]):
-                    raise SystemExit('ID is wrong in work/{:06}'.format(cid))
+                    logger.error(f'ID is wrong in work/{cid:06}')
+                    raise SystemExit(1)
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if jstat[0:3] == 'sub':
                     self.job_stat[cid] = 'submitted'
@@ -122,51 +126,48 @@ class Ctrl_job:
         # ---------- check id
         for tid in rin.recalc:
             if tid not in self.opt_struc_data:
-                raise ValueError('ID {} has not yet been calculated'.format(
-                    tid))
+                logger.error(f'ID {tid} has not yet been calculated')
+                raise SystemExit(1)
         # ---------- append IDs to the head of id_queueing
         self.id_queueing = rin.recalc + self.id_queueing
         io_stat.set_id(self.stat, 'id_queueing', self.id_queueing)
         self.save_id_data()
         # ---------- log and out
-        print('# -- Recalc')
-        print('Append {} to the head of id_queueing'.format(rin.recalc))
+        logger.info('# -- Recalc')
+        logger.info(f'Append {rin.recalc} to the head of id_queueing')
         # ---------- clear recalc
         rin.recalc = []
         config = change_input.config_read()
         change_input.change_option(config, 'recalc', '')    # clear
         change_input.write_config(config)
-        print('Clear recalc in cryspy.in')
+        logger.info('Clear recalc in cryspy.in')
         io_stat.set_input_common(self.stat, 'option', 'recalc', '')
         io_stat.write_stat(self.stat)
 
     def handle_job(self):
-        print('\n# ---------- job status')
+        logger.info('# ---------- job status')
         for cid in self.tmp_running:
             # ---------- set work_path and current_id
-            self.work_path = './work/{:06}/'.format(cid)
+            self.work_path = f'./work/{cid:06}/'
             self.current_id = cid
             # ---------- handle job
             if self.job_stat[cid] == 'submitted':
-                print('ID {:>6}: still queueing or running'.format(cid))
+                logger.info(f'ID {cid:>6}: still queueing or running')
             elif self.job_stat[cid] == 'done':
                 self.ctrl_done()
             elif self.job_stat[cid] == 'skip':
                 self.ctrl_skip()
             elif self.job_stat[cid] == 'else':
-                raise ValueError('Wrong job_stat in {}. '.format(
-                    self.work_path))
+                logger.error(f'Wrong job_stat in {self.work_path}. ')
             elif self.job_stat[cid] == 'no_file':
                 self.ctrl_next_struc()
             else:
-                raise ValueError('Unexpected error in {}stat_job'.format(
-                    self.work_path))
+                logger.error(f'Unexpected error in {self.work_path}stat_job')
 
     def ctrl_done(self):
         self.current_stage = self.stage_stat[self.current_id]
         # ---------- log
-        print('ID {0:>6}: Stage {1} Done!'.format(
-            self.current_id, self.current_stage))
+        logger.info(f'ID {self.current_id:>6}: Stage {self.current_stage} Done!')
         # ---------- next stage
         if self.current_stage < rin.nstage:
             self.ctrl_next_stage()
@@ -175,7 +176,8 @@ class Ctrl_job:
             self.ctrl_collect()
         # ---------- error
         else:
-            raise ValueError('Wrong stage in '+self.work_path+'stat_job')
+            logger.error('Wrong stage in '+self.work_path+'stat_job')
+            raise SystemExit(1)
 
     def ctrl_next_stage(self):
         # ---------- energy step
@@ -215,8 +217,8 @@ class Ctrl_job:
         # ---------- submit job
         os.chdir(self.work_path)    # cd work_path
         with open('stat_job', 'w') as fwstat:
-            fwstat.write('{:<6}    # Structure ID\n'.format(self.current_id))
-            fwstat.write('{:<6}    # Stage\n'.format(self.current_stage + 1))
+            fwstat.write(f'{self.current_id:<6}    # Structure ID\n')
+            fwstat.write(f'{self.current_stage + 1:<6}    # Stage\n')
             fwstat.write('submitted\n')
         with open('sublog', 'w') as logf:
             subprocess.Popen([rin.jobcmd, rin.jobfile],
@@ -226,8 +228,7 @@ class Ctrl_job:
         io_stat.set_stage(self.stat, self.current_id, self.current_stage + 1)
         io_stat.write_stat(self.stat)
         # ---------- log
-        print('    submitted job, ID {0:>6} Stage {1}'.format(
-            self.current_id, self.current_stage + 1))
+        logger.info(f'    submitted job, ID {self.current_id:>6} Stage {self.current_stage + 1}')
 
     def ctrl_collect(self):
         # ---------- energy step
@@ -256,7 +257,8 @@ class Ctrl_job:
         elif rin.algo == 'EA':
             self.ctrl_collect_ea()
         else:
-            raise ValueError('Error, algo')
+            logger.error('Error, algo')
+            raise SystemExit(1)
         # ---------- move to fin
         if rin.algo == 'LAQA':
             if self.fin_laqa:
@@ -275,7 +277,7 @@ class Ctrl_job:
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.current_id, self.work_path)
-        print('    collect results: E = {0} eV/atom'.format(energy))
+        logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
@@ -289,7 +291,7 @@ class Ctrl_job:
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.current_id, self.work_path)
-        print('    collect results: E = {0} eV/atom'.format(energy))
+        logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
@@ -358,7 +360,7 @@ class Ctrl_job:
         # ---------- case of 'done' or error
         if check_opt == 'done' or np.isnan(energy) or np.isnan(tmp_laqa_bias):
             self.fin_laqa = True
-            print('    collect results: E = {0} eV/atom'.format(energy))
+            logger.info(f'    collect results: E = {energy} eV/atom')
             # ------ register opt_struc
             (spg_sym, spg_num,
              spg_sym_opt, spg_num_opt) = self.regist_opt(opt_struc)
@@ -373,7 +375,7 @@ class Ctrl_job:
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.current_id, self.work_path)
-        print('    collect results: E = {0} eV/atom'.format(energy))
+        logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
@@ -413,7 +415,7 @@ class Ctrl_job:
                 out_cif(opt_struc, self.current_id, self.work_path,
                         './data/opt_CIFS.cif', rin.symprec)
             except TypeError:
-                print('failed to write opt_CIF')
+                logger.warning('failed to write opt_CIF')
         # ---------- error
         else:
             spg_num_opt = 0
@@ -442,12 +444,12 @@ class Ctrl_job:
             next_struc_data = self.init_struc_data[self.current_id]
         # ---------- algo is wrong
         else:
-            raise ValueError('Error, algo')
+            logger.error('Error, algo in ctrl_next_struc')
+            raise SystemExit(1)
         # ---------- common part
         # ------ in case there is no initial strucure data
         if next_struc_data is None:
-            print('ID {:>6}: initial structure is None'.format(
-                self.current_id))
+            logger.info(f'ID {self.current_id:>6}: initial structure is None')
             self.ctrl_skip()
         # ------ normal initial structure data
         else:
@@ -464,7 +466,7 @@ class Ctrl_job:
             self.prepare_jobfile()
             # -- submit
             self.submit_next_struc()
-            print('ID {:>6}: submit job, Stage 1'.format(self.current_id))
+            logger.info(f'ID {self.current_id:>6}: submit job, Stage 1')
             # -- update status
             self.update_status(operation='submit')
 
@@ -472,8 +474,8 @@ class Ctrl_job:
         # ---------- submit job
         os.chdir(self.work_path)    # cd work_path
         with open('stat_job', 'w') as fwstat:
-            fwstat.write('{:<6}    # Structure ID\n'.format(self.current_id))
-            fwstat.write('{:<6}    # Stage\n'.format(1))
+            fwstat.write(f'{self.current_id:<6}    # Structure ID\n')
+            fwstat.write(f'{1:<6}    # Stage\n')
             fwstat.write('submitted\n')
         with open('sublog', 'w') as logf:
             subprocess.Popen([rin.jobcmd, rin.jobfile],
@@ -482,7 +484,7 @@ class Ctrl_job:
 
     def ctrl_skip(self):
         # ---------- log
-        print('ID {:>6}: Skip'.format(self.current_id))
+        logger.info(f'ID {self.current_id:>6}: Skip')
         # ---------- get initial spg info
         if self.init_struc_data[self.current_id] is None:
             spg_sym = None
@@ -575,7 +577,8 @@ class Ctrl_job:
                 self.id_running.remove(self.current_id)
             io_stat.clean_id(self.stat, self.current_id)
         else:
-            raise ValueError('operation is wrong')
+            logger.error('operation is wrong')
+            raise SystemExit(1)
         io_stat.set_id(self.stat, 'id_queueing', self.id_queueing)
         io_stat.write_stat(self.stat)
         # ---------- save id_data
@@ -583,7 +586,8 @@ class Ctrl_job:
 
     def prepare_jobfile(self):
         if not os.path.isfile('./calc_in/' + rin.jobfile):
-            raise IOError('Could not find ./calc_in' + rin.jobfile)
+            logger.error('Could not find ./calc_in' + rin.jobfile)
+            raise SystemExit(1)
         with open('./calc_in/' + rin.jobfile, 'r') as f:
             lines = f.readlines()
         lines2 = []
@@ -593,49 +597,47 @@ class Ctrl_job:
             f.writelines(lines2)
 
     def mv_fin(self):
-        if not os.path.isdir('work/fin/{0:06}'.format(self.current_id)):
-            shutil.move('work/{:06}'.format(self.current_id), 'work/fin/')
+        if not os.path.isdir(f'work/fin/{self.current_id:06}'):
+            shutil.move(f'work/{self.current_id:06}', 'work/fin/')
         else:    # rename for recalc
             for i in itertools.count(1):
-                if not os.path.isdir('work/fin/{0:06}_{1}'.format(
-                        self.current_id, i)):
-                    shutil.move('work/{:06}'.format(self.current_id),
-                                'work/fin/{0:06}_{1}'.format(
-                                    self.current_id, i))
+                if not os.path.isdir(f'work/fin/{self.current_id:06}_{i}'):
+                    shutil.move(f'work/{self.current_id:06}',
+                                f'work/fin/{self.current_id:06}_{i}')
                     break
 
-    def next_sg(self):
+    def next_sg(self, noprint=False):
         '''
         next selection or generation
         '''
         if rin.algo == 'BO':
-            self.next_select_BO()
+            self.next_select_BO(noprint)
         if rin.algo == 'LAQA':
             self.next_select_LAQA()
         if rin.algo == 'EA':
             self.next_gen_EA()
 
-    def next_select_BO(self):
+    def next_select_BO(self, noprint=False):
         # ---------- log
-        print('\nDone selection {}\n'.format(self.n_selection))
+        logger.info(f'\nDone selection {self.n_selection}')
         # ---------- done all structures
         if len(self.rslt_data) == rin.tot_struc:
-            print('Done all structures!')
+            logger.info('\nDone all structures!')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
-            print('\nBO is ready')
+            logger.info('\nBO is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('Stop at check point 3: BO is ready')
+            logger.info('\nStop at check point 3: BO is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- max_select_bo
         if 0 < rin.max_select_bo <= self.n_selection:
-            print('Reached max_select_bo: {}'.format(rin.max_select_bo))
+            logger.info(f'\nReached max_select_bo: {rin.max_select_bo}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- BO
@@ -645,17 +647,17 @@ class Ctrl_job:
         bo_id_data = (self.n_selection, self.id_queueing,
                       self.id_running, self.id_select_hist)
         bo_next_select.next_select(self.stat, self.rslt_data,
-                                   bo_id_data, bo_data)
+                                   bo_id_data, bo_data, noprint)
 
     def next_select_LAQA(self):
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
-            print('\nLAQA is ready')
+            logger.info('\nLAQA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('\nStop at check point 3: LAQA is ready')
+            logger.info('\nStop at check point 3: LAQA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- selection of LAQA
@@ -668,20 +670,20 @@ class Ctrl_job:
 
     def next_gen_EA(self):
         # ---------- log
-        print('\nDone generation {}\n'.format(self.gen))
+        logger.info(f'\nDone generation {self.gen}')
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
-            print('\nEA is ready')
+            logger.info('\nEA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if rin.stop_chkpt == 3:
-            print('\nStop at check point 3: EA is ready')
+            logger.info('\nStop at check point 3: EA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- maxgen_ea
         if 0 < rin.maxgen_ea <= self.gen:
-            print('\nReached maxgen_ea: {}\n'.format(rin.maxgen_ea))
+            logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- EA

@@ -3,8 +3,8 @@ Crossover class
 '''
 
 from collections import Counter
+from logging import getLogger
 import random
-import sys
 
 import numpy as np
 from pymatgen.core import Structure, Lattice
@@ -13,6 +13,8 @@ from pymatgen.core.periodic_table import DummySpecie
 from ...IO import read_input as rin
 from ...util.struc_util import origin_shift, sort_by_atype, check_distance, find_site, cal_g, sort_by_atype_mol
 
+
+logger = getLogger('cryspy')
 
 class Crossover:
     '''
@@ -34,7 +36,7 @@ class Crossover:
         elif rin.crs_lat == 'random':
             self.w_lat = np.random.choice([0.0, 1.0], size=2, replace=False)
         else:
-            raise ValueError('crs_lat must be equal or random')
+            logger.error('crs_lat must be equal or random')
 
     def gen_child(self, struc_A, struc_B):
         '''
@@ -207,7 +209,7 @@ class Crossover:
                                    self.mindist, check_all=True)
         if dist_list:    # still something within mindist
             self.child = None
-            print('some atoms within mindist. retry.', file=sys.stderr, flush=True)
+            logger.warning('some atoms within mindist. retry.')
 
     def _remove_border_line(self):
         # ---------- rank atoms from border line
@@ -256,10 +258,9 @@ class Crossover:
                     cnt = 0    # reset
                     self._nat_diff[i] += 1
                 else:
-                    print('mindist in _add_border_line: {} - {}, {}. retry.'.format(
-                        rin.atype[mindist_ij[0]],
-                        rin.atype[mindist_ij[1]],
-                        dist), file=sys.stderr, flush=True)
+                    type0 = rin.atype[mindist_ij[0]]
+                    type1 = rin.atype[mindist_ij[1]]
+                    logger.warning(f'mindist in _add_border_line: {type0} - {type1}, {dist}. retry.')
                     self.child.pop()    # cancel
                 # ------ fail
                 if cnt == rin.maxcnt_ea:
@@ -513,10 +514,9 @@ class Crossover:
                     cnt = 0    # reset
                     self._nmol_diff[i] += 1
                 else:
-                    sys.stderr.write('mindist in _add_border_line: {} - {}, {}. retry.\n'.format(
-                        rin.atype[mindist_ij[0]],
-                        rin.atype[mindist_ij[1]],
-                        dist))
+                    type0 = rin.atype[mindist_ij[0]]
+                    type1 = rin.atype[mindist_ij[1]]
+                    logger.warning(f'mindist in _add_border_line: {type0} - {type1}, {dist}. retry.')
                     self.child.pop()    # cancel
                 # ------ fail
                 if cnt == rin.maxcnt_ea:

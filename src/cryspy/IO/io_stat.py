@@ -49,27 +49,26 @@ def write_stat(stat):
 
 # ---------- input section
 def set_input_common(stat, sec, var_str, var):
-    stat.set(sec, var_str, '{}'.format(var))
+    stat.set(sec, var_str, f'{var}')
 
 
 # ---------- status section
 def set_common(stat, var_str, var):
-    stat.set('status', var_str, '{}'.format(var))
+    stat.set('status', var_str, f'{var}')
 
 
 def set_id(stat, var_str, var_list):
     if len(var_list) > 30:
-        stat.set('status', var_str, '{0} ... total {1} IDs'.format(
-            ' '.join(str(a) for a in var_list[:5]), len(var_list)))
+        vl = ' '.join(str(a) for a in var_list[:5])
+        stat.set('status', var_str, f'{vl} ... total {len(var_list)} IDs')
     else:
-        stat.set('status', var_str, '{}'.format(
-            ' '.join(str(a) for a in var_list)))
+        vl = ' '.join(str(a) for a in var_list)
+        stat.set('status', var_str, f'{vl}')
 
 
 def set_stage(stat, current_id, current_stage):
-    stat.set('status', 'ID {:>6}'.format(current_id), 'Stage {}'.format(
-        current_stage))
+    stat.set('status', f'ID {current_id:>6}', f'Stage {current_stage}')
 
 
 def clean_id(stat, current_id):
-    stat.remove_option('status', 'ID {:>6}'.format(current_id))
+    stat.remove_option('status', f'ID {current_id:>6}')

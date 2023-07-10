@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from .gen_struc_EA.crossover import Crossover
 from .gen_struc_EA.ea_generation import EA_generation
 from .gen_struc_EA.permutation import Permutation
@@ -13,12 +15,14 @@ from ..util.struc_util import set_mindist
 #from ..RS.gen_struc_RS.random_generation import Rnd_struc_gen
 
 
+logger = getLogger('cryspy')
+
 def child_gen(sp, init_struc_data, struc_mol_id=None):
     # ---------- instantiate EA_generation class
     eagen = EA_generation(sp=sp, id_start=rin.tot_struc,
                           init_pos_path='./data/init_POSCARS')
     # ---------- set mindist
-    print('# mindist')
+    logger.info('# mindist')
     mindist = set_mindist(rin.mindist, rin.mindist_factor)
     if rin.struc_mode == 'mol_bs':
         mindist_dummy = set_mindist(rin.mindist_mol_bs, rin.mindist_mol_bs_factor)
@@ -77,7 +81,7 @@ def child_gen(sp, init_struc_data, struc_mol_id=None):
                                    init_pos_path='./data/init_POSCARS')
             # ------ molecular crystal breaking symmetry
             elif rin.struc_mode == 'mol_bs':
-                print('# -- mindist_mol_bs')
+                logger.info('# -- mindist_mol_bs')
                 mindist_dummy = set_mindist(rin.mindist_mol_bs, rin.mindist_mol_bs_factor, dummy=True)
                 rsgx.set_mol()
                 rsgx.gen_struc_mol_break_sym(nstruc=rin.n_rand,

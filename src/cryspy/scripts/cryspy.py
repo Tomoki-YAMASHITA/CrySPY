@@ -4,19 +4,18 @@ Main script
 '''
 
 import argparse
+from logging import getLogger
 import os
-import sys
 
-from cryspy.interface import select_code
 from cryspy.IO import read_input as rin
 from cryspy.start import cryspy_init, cryspy_restart
-from cryspy.util.utility import backup_cryspy, clean_cryspy
+from cryspy.util.utility import set_logger, backup_cryspy, clean_cryspy
 
 # ---------- import later
+# from mpi4py import MPI
 # from cryspy.job.ctrl_ext import Ctrl_ext
 # from cryspy.job.ctrl_job import Ctrl_job
-# from mpi4py import MPI
-
+# from cryspy.interface import select_code
 
 def main():
     # ########## MPI start
@@ -32,15 +31,18 @@ def main():
         mpi_rank = 0
         mpi_size = 1
 
-    # ---------- stdout/stderr
-    sys.stdout = open('log_cryspy', 'a')
-    sys.stderr = open('err_cryspy', 'a')
-
     # ---------- argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--backup', help='backup data', action='store_true')
     parser.add_argument('-c', '--clean', help='clean data', action='store_true')
+    parser.add_argument('-g', '--debug', help='debug', action='store_true')
+    parser.add_argument('-n', '--noprint', help='not printing to the console', action='store_true')
     args = parser.parse_args()
+
+    # ---------- logger
+    set_logger(args.noprint, args.debug)
+    logger = getLogger('cryspy')
+    logger.debug('debug hogehoge')
 
     # ---------- backup option
     if args.backup:
@@ -51,15 +53,13 @@ def main():
     # ---------- clean option
     if args.clean:
         if mpi_rank == 0:
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
             clean_cryspy()
         raise SystemExit()
 
     # ---------- lock
     if os.path.isfile('lock_cryspy'):
         if mpi_rank == 0:
-            print('lock_cryspy file exists', file=sys.stderr)
+            logger.error('lock_cryspy file exists')
         raise SystemExit(1)
     else:
         if mpi_size > 1:
@@ -85,12 +85,13 @@ def main():
     if mpi_rank == 0:
         # ---------- check point 1
         if rin.stop_chkpt == 1:
-            print('Stop at check point 1')
+            logger.info('Stop at check point 1')
             os.remove('lock_cryspy')
             raise SystemExit()
 
         if not rin.calc_code == 'ext':
             # ---------- check calc files in ./calc_in
+            from cryspy.interface import select_code
             select_code.check_calc_files()
             # ---------- mkdir work/fin
             os.makedirs('work/fin', exist_ok=True)
@@ -119,7 +120,7 @@ def main():
                 while jobs.recheck:
                     cnt_recheck += 1
                     jobs.recheck = False    # True --> False
-                    print('\n\n recheck {}\n'.format(cnt_recheck))
+                    logger.info(f'\n\nrecheck {cnt_recheck}\n')
                     jobs.check_job()
                     jobs.handle_job()
 
@@ -127,10 +128,10 @@ def main():
         if not (jobs.id_queueing or jobs.id_running):
             # ---------- next selection or generation
             if rin.algo in ['BO', 'LAQA', 'EA']:
-                jobs.next_sg()
+                jobs.next_sg(args.noprint)
             # ---------- for RS
             else:
-                print('Done all structures!')
+                logger.info('\nDone all structures!')
 
         # ---------- unlock
         os.remove('lock_cryspy')

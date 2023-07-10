@@ -6,9 +6,13 @@ Modify Policy class in combo3 for CrySPY
  which is distributed under the MIT License.
 '''
 
+from logging import getLogger
+
 import combo
 import numpy as np
 
+
+logger = getLogger('cryspy')
 
 # ---------- inheritance
 class Policy_cryspy(combo.search.discrete.policy):
@@ -18,8 +22,9 @@ class Policy_cryspy(combo.search.discrete.policy):
                          simulator=None, is_disp=True):
         N = int(num_search_each_probe)
         if int(max_num_probes) * N > len(self.actions):
-            raise ValueError('max_num_probes * num_search_each_probe must'
-                             ' be smaller than the length of candidates')
+            logger.error('max_num_probes * num_search_each_probe must'
+                        ' be smaller than the length of candidates')
+            raise SystemExit(1)
         for n in range(0, max_num_probes):
             action = self.get_specified_action(N, specified_actions)
             return action
@@ -104,7 +109,8 @@ class Policy_cryspy(combo.search.discrete.policy):
         elif mode == 'TS':
             f = combo.search.score.TS(predictor, training, test, alpha)
         else:
-            raise NotImplementedError('mode must be EI, PI or TS.')
+            logger.error('mode must be EI, PI or TS.')
+            raise SystemExit(1)
         # ---------- start cryspy
         cryspy_mean = predictor.get_post_fmean(training, test)
         cryspy_var = predictor.get_post_fcov(training, test)

@@ -4,6 +4,8 @@ written  by  H. Sawahata 2020/03/09
 info at hikaruri.jp
 '''
 
+from logging import getLogger
+
 import numpy as np
 import re
 from pymatgen.core.units import Energy
@@ -11,6 +13,8 @@ from pymatgen.core.units import Energy
 from . import structure as OMX_structure
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def collect_OMX(current_id, work_path):
     # ---------- check optimization in previous stage (done)
@@ -20,7 +24,7 @@ def collect_OMX(current_id, work_path):
             lines = fpout.readlines()
         check_opt = 'done'
     except Exception as e:
-        print(e)
+        logger.warning(e.args[0])
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom (done)
@@ -43,9 +47,8 @@ def collect_OMX(current_id, work_path):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        print(e)
-        print(' Structure ID {0}, could not obtain energy from {1}'.format(
-            current_id, rin.OMX_outfile))
+        logger.warning(e.args[0] + f':    Structure ID {current_id},'
+                       f' could not obtain energy from {rin.OMX_outfile}')
 
     # ---------- collect the last structure (yet)
     try:
@@ -65,7 +68,7 @@ def collect_OMX(current_id, work_path):
             fstruc.write('# ID {0:d}\n'.format(current_id))
         OMX_structure.write(opt_struc, './data/opt_OMX-structure', mode='a')
     except Exception as e:
-        print(e)
+        logger.warning(e.args[0])
         opt_struc = None
 
     # ---------- check

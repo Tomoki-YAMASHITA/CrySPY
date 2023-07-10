@@ -3,6 +3,7 @@ Initialize CrySPY
 '''
 
 from datetime import datetime
+from logging import getLogger
 import os
 
 import pandas as pd
@@ -10,7 +11,7 @@ import pandas as pd
 from .gen_init_struc import gen_init_struc
 from ..IO import pkl_data, io_stat
 from ..IO import read_input as rin
-from ..util.utility import get_date, get_version
+from ..util.utility import get_version
 from ..util.struc_util import out_poscar
 
 # ---------- import later
@@ -22,21 +23,25 @@ from ..util.struc_util import out_poscar
 #from ..RS.gen_struc_RS.random_generation import Rnd_struc_gen
 
 
+logger = getLogger('cryspy')
+
 def initialize(comm, mpi_rank, mpi_size):
+    # ---------- start
     if mpi_rank == 0:
-        # ---------- start
-        print(get_date())
-        print('CrySPY ' + get_version())
-        print('Start cryspy.py', flush=True)
-        print(f'Number of MPI processes: {mpi_size}\n')
+        logger.info('\n\n\nStart CrySPY ' + get_version() + '\n\n')
 
     # ---------- read input
     if mpi_rank == 0:
-        print('Read input file, cryspy.in')
+        logger.info('# ---------- Read input file, cryspy.in')
     # ########## MPI start
     if mpi_size > 1:
         comm.barrier()
-    rin.readin()          # read input data, cryspy,in
+    try:
+        rin.readin()          # read input data, cryspy,in
+    except Exception as e:
+        if mpi_rank == 0:
+            logger.error(e.args[0])
+        raise SystemExit(1)
     # ########## MPI end
     if mpi_rank == 0:
         stat = io_stat.stat_init()    # initialize stat
@@ -48,7 +53,8 @@ def initialize(comm, mpi_rank, mpi_size):
     # ---------- generate initial structures
     if not rin.load_struc_flag:
         if mpi_rank == 0:
-            print('\n# --------- Generate initial structures')
+            logger.info('# ---------- Initial structure generation')
+            logger.info(f'Number of MPI processes: {mpi_size}')
         if mpi_size > 1:
             comm.barrier()
         if mpi_rank == 0:
@@ -76,18 +82,18 @@ def initialize(comm, mpi_rank, mpi_size):
             # ------ time
             time_end = datetime.today()
             etime = time_end - time_start
-            print(f'\nElapsed time for structure generation: {etime}\n')
+            logger.info(f'Elapsed time for structure generation: {etime}')
     else:
         # ------ load initial structure
         if mpi_rank == 0:
-            print('\n# --------- Load initial structure data')
-            print('Load ./data/pkl_data/init_struc_data.pkl\n')
+            logger.info('# --------- Load initial structure data')
+            logger.info('Load ./data/pkl_data/init_struc_data.pkl')
             init_struc_data = pkl_data.load_init_struc()
             # -- check
             if not rin.tot_struc == len(init_struc_data):
-                raise ValueError('rin.tot_struc = {0},'
-                                ' len(init_struc_data) = {1}'.format(
-                                    rin.tot_struc, len(init_struc_data)))
+                logger.error(f'rin.tot_struc = {rin.tot_struc},'
+                                f' len(init_struc_data) = {len(init_struc_data)}')
+                raise SystemExit(1)
             # -- init_POSCARS
             for cid, struc in init_struc_data.items():
                 out_poscar(struc, cid, './data/init_POSCARS')

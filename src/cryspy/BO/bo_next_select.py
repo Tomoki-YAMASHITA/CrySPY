@@ -3,6 +3,9 @@ Selection in Bayesian optimization
 '''
 
 import configparser
+from contextlib import redirect_stdout
+from logging import getLogger
+import os
 
 import numpy as np
 
@@ -11,9 +14,11 @@ from ..IO import io_stat, out_results, pkl_data
 from ..IO import read_input as rin
 
 
-def next_select(stat, rslt_data, bo_id_data, bo_data):
+logger = getLogger('cryspy')
+
+def next_select(stat, rslt_data, bo_id_data, bo_data, noprint=False):
     # ---------- log
-    print('# ------ Bayesian optimization')
+    logger.info('# ------ Bayesian optimization')
 
     # ---------- bo_id_data and bo_data
     n_selection, id_running, id_queueing, id_select_hist = bo_id_data
@@ -24,13 +29,13 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
 
     # ---------- manual select
     if rin.manual_select_bo:
-        print('Manual select: {}'.format(
-            ' '.join(str(i) for i in rin.manual_select_bo)))
+        x = ' '.join(str(i) for i in rin.manual_select_bo)
+        logger.info(f'Manual select: {x}')
         # ------ check already selected
         tmp_list = [i for i in rin.manual_select_bo if i in opt_dscrpt_data]
         for j in tmp_list:
             rin.manual_select_bo.remove(j)
-            print('ID {} was already selected. Remove it'.format(j))
+            logger.info(f'ID {j} was already selected. Remove it')
         # ------ number of structure to be selected
         nselect = rin.nselect_bo - len(rin.manual_select_bo)
         id_queueing = rin.manual_select_bo
@@ -59,17 +64,16 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
                 if opt_dscrpt_data[i] is None:    # find error
                     non_error_id.remove(i)
                     continue
+                x = rslt_data.loc[i]['E_eV_atom']
                 if rin.emax_bo is not None:
-                    if rslt_data.loc[i]['E_eV_atom'] > rin.emax_bo:
+                    if x > rin.emax_bo:
                         non_error_id.remove(i)
-                        print('Eliminate ID {}: {} > emax_bo'.format(
-                              i, rslt_data.loc[i]['E_eV_atom']))
+                        logger.info(f'Eliminate ID {i}: {x} > emax_bo')
                         continue
                 if rin.emin_bo is not None:
-                    if rslt_data.loc[i]['E_eV_atom'] < rin.emin_bo:
+                    if x < rin.emin_bo:
                         non_error_id.remove(i)
-                        print('Eliminate ID {}: {} < emin_bo'.format(
-                              i, rslt_data.loc[i]['E_eV_atom']))
+                        logger.info(f'Eliminate ID {i}: {x} < emin_bo')
                         continue
                 s_act.append(len(descriptors))
                 done_id.append(i)
@@ -89,7 +93,7 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
         targets = np.array(targets, dtype=float)
         # ------ Bayesian optimization
         actions, cryspy_mean, cryspy_var, cryspy_score = bayes_opt(
-            s_act, descriptors, targets, nselect)
+            s_act, descriptors, targets, nselect, noprint)
         # ------ actions --> id_queueing
         for i in actions:
             id_queueing.append(non_error_id[i])
@@ -128,8 +132,9 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
     io_stat.write_stat(stat)
 
     # ---------- out and log
-    print('\n\n# ---------- Selection: {}'.format(n_selection))
-    print('selected_id: {}'.format(' '.join(str(a) for a in id_queueing)))
+    logger.info(f'# ---------- Selection: {n_selection}')
+    x = ' '.join(str(a) for a in id_queueing)
+    logger.info(f'selected_id: {x}')
 
     # ---------- ext
     if rin.calc_code == 'ext':
@@ -137,7 +142,7 @@ def next_select(stat, rslt_data, bo_id_data, bo_data):
             fstat.write('out\n')
 
 
-def bayes_opt(s_act, descriptors, targets, nselect):
+def bayes_opt(s_act, descriptors, targets, nselect, noprint=False):
     # ---------- start COMBO part
     # ------ standardization
     # X = combo.misc.centering(descriptors)
@@ -150,8 +155,7 @@ def bayes_opt(s_act, descriptors, targets, nselect):
     pc = Policy_cryspy(test_X=X)
 
     # ------ pick up data, already optimized
-    actions = pc.specified_search(specified_actions=s_act,
-                                  max_num_probes=1)
+    actions = pc.specified_search(specified_actions=s_act, max_num_probes=1)
 
     # ------ write
     pc.write(actions, -targets)    # minus for minimum search
@@ -160,11 +164,19 @@ def bayes_opt(s_act, descriptors, targets, nselect):
     out_log(pc.history)
 
     # ------ Bayes_search
-    actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
-        max_num_probes=1,
-        num_search_each_probe=nselect,
-        score=rin.score,
-        num_rand_basis=rin.num_rand_basis)
+    if noprint:
+        with redirect_stdout(open(os.devnull, 'w')):
+            actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
+                max_num_probes=1,
+                num_search_each_probe=nselect,
+                score=rin.score,
+                num_rand_basis=rin.num_rand_basis)
+    else:
+        actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
+            max_num_probes=1,
+            num_search_each_probe=nselect,
+            score=rin.score,
+            num_rand_basis=rin.num_rand_basis)
 
     # ------ return
     return actions, cryspy_mean, cryspy_var, cryspy_score
@@ -175,5 +187,4 @@ def out_log(history):
     n = history.total_num_search
     index = np.argmax(history.fx[0:n])
 
-    print('current best E = {0}\n'.format(-history.fx[index]))
-    print('\n')
+    logger.info(f'current best E = {-history.fx[index]}')

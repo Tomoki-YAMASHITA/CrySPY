@@ -1,6 +1,7 @@
 '''
 Strain class
 '''
+from logging import getLogger
 import sys
 
 import numpy as np
@@ -10,6 +11,8 @@ from pymatgen.core.periodic_table import DummySpecie
 from ...IO import read_input as rin
 from ...util.struc_util import sort_by_atype, sort_by_atype_mol, check_distance, cal_g, find_site
 
+
+logger = getLogger('cryspy')
 
 class Strain:
     '''
@@ -62,10 +65,9 @@ class Strain:
                 self.child = sort_by_atype(self.child, rin.atype)
                 return self.child
             else:
-                print('mindist in strain: {} - {}, {}. retry.'.format(
-                    rin.atype[mindist_ij[0]],
-                    rin.atype[mindist_ij[1]],
-                    dist), file=sys.stderr, flush=True)
+                type0 = rin.atype[mindist_ij[0]]
+                type1 = rin.atype[mindist_ij[1]]
+                logger.warning(f'mindist in strain: {type0} - {type1}, {dist}. retry.')
                 cnt += 1
                 if cnt >= rin.maxcnt_ea:
                     self.child = None
@@ -143,10 +145,9 @@ class Strain:
                                                                            strained_mol_id, strained_group_id)
                 return self.child, [self.mol_id, self.group_id, mol_id[2]]
             else:
-                print('mindist in permutation: {} - {}, {}. retry.'.format(
-                    rin.atype[mindist_ij[0]],
-                    rin.atype[mindist_ij[1]],
-                    dist), file=sys.stderr, flush=True)
+                type0 = rin.atype[mindist_ij[0]]
+                type1 = rin.atype[mindist_ij[1]]
+                logger.warning(f'mindist in permutation: {type0} - {type1}, {dist}. retry.')
                 cnt += 1
                 if cnt >= rin.maxcnt_ea:
                     self.child = None

@@ -2,6 +2,7 @@
 Collect results in soiap
 '''
 
+from logging import getLogger
 import sys
 
 import numpy as np
@@ -11,6 +12,8 @@ from ...util import constants
 from ...IO import pkl_data
 from ...IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def collect_soiap(current_id, work_path):
     # ---------- check optimization in current stage
@@ -36,8 +39,8 @@ def collect_soiap(current_id, work_path):
         energy = energy * constants.HRT2EV        # Hartree/atom to eV/atom
     except Exception as e:
         energy = np.nan    # error
-        print(e, '    Structure ID {0}, could not obtain energy from {1}'.format(
-            current_id, rin.soiap_outfile))
+        logger.warning(e.args[0] + f'    Structure ID {current_id},'
+                    f' could not obtain energy from {rin.soiap_outfile}')
 
     # ---------- collect the last structure
     try:
@@ -82,8 +85,7 @@ def get_energy_step_soiap(energy_step_data, current_id, work_path):
         energy_step = np.array(energy_step, dtype='float') * constants.HRT2EV
     except Exception as e:
         energy_step = None
-        print(e, '#### ID: {0}: failed to parse log.tote\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse log.tote')
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -125,8 +127,7 @@ def get_struc_step_soiap(struc_step_data, current_id, work_path):
                 tmp_lines = []    # clear
     except Exception as e:
         struc_step = None
-        print(e, '#### ID: {0}: failed to parse log.struc\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0], f'#### ID: {current_id}: failed to parse log.struc')
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -171,8 +172,7 @@ def get_force_step_soiap(force_step_data, current_id, work_path):
                     tmp_lines = []    # clear
     except Exception as e:
         force_step = None
-        print(e, '#### ID: {0}: failed to parse log.frc\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse log.frc')
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -217,8 +217,7 @@ def get_stress_step_soiap(stress_step_data, current_id, work_path):
                     tmp_lines = []    # clear
     except Exception as e:
         stress_step = None
-        print(e, '#### ID: {0}: failed to parse log.strs\n'.format(
-            current_id), file=sys.stderr)
+        logger.warning(e.args[0], f'#### ID: {current_id}: failed to parse log.strs')
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

@@ -3,6 +3,7 @@ Initialize Bayesian optimization
 '''
 
 import configparser
+from logging import getLogger
 import random
 
 import pandas as pd
@@ -12,9 +13,11 @@ from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
 
+logger = getLogger('cryspy')
+
 def initialize(stat, init_struc_data, rslt_data):
     # ---------- log
-    print('\n# ---------- Selection: 1')
+    logger.info('# ---------- Selection: 1')
 
     # ---------- check init_struc_data
     if None in init_struc_data.values():
@@ -39,8 +42,8 @@ def initialize(stat, init_struc_data, rslt_data):
     all_id = [i for i in range(len(init_struc_data))]
     if rin.manual_select_bo:
         # ------ manual select bo
-        print('Manual select: {}'.format(
-            ' '.join(str(i) for i in rin.manual_select_bo)))
+        x = ' '.join(str(i) for i in rin.manual_select_bo)
+        logger.info(f'Manual select: {x}')
         nselect = rin.nselect_bo - len(rin.manual_select_bo)
         id_queueing = rin.manual_select_bo[:]    # shallow copy
         if 0 < nselect:
@@ -75,5 +78,6 @@ def initialize(stat, init_struc_data, rslt_data):
     io_stat.write_stat(stat)
 
     # ---------- out and log
-    print('selected_id: {}'.format(' '.join(str(a) for a in id_queueing)))
+    x = ' '.join(str(a) for a in id_queueing)
+    logger.info(f'selected_id: {x}')
 

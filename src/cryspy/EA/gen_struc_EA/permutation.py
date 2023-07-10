@@ -2,6 +2,7 @@
 Permutaion class
 '''
 
+from logging import getLogger
 import sys
 
 import numpy as np
@@ -11,6 +12,8 @@ from pymatgen.core import Structure
 from ...IO import read_input as rin
 from ...util.struc_util import sort_by_atype, check_distance, cal_g, sort_by_atype_mol, find_site
 
+
+logger = getLogger('cryspy')
 
 class Permutation:
     '''
@@ -78,15 +81,14 @@ class Permutation:
                 self.child = sort_by_atype(self.child, rin.atype)
                 return self.child
             else:
-                print('mindist in permutation: {} - {}, {}. retry.'.format(
-                    rin.atype[mindist_ij[0]],
-                    rin.atype[mindist_ij[1]],
-                    dist), file=sys.stderr, flush=True)
+                type0 = rin.atype[mindist_ij[0]]
+                type1 = rin.atype[mindist_ij[1]]
+                logger.warning(f'mindist in permutation: {type0} - {type1}, {dist}. retry.')
                 cnt += 1
                 if cnt >= rin.maxcnt_ea:
-                    print('Permutatin: could not satisfy min_dist' +
-                          ' in {} times'.format(rin.maxcnt_ea), file=sys.stderr)
-                    print('Change parent', file=sys.stderr, flush=True)
+                    logger.warning('Permutatin: could not satisfy min_dist' +
+                          f' in {rin.maxcnt_ea} times')
+                    logger.warning('Change parent')
                     self.child = None
                     return None    # change parent
 
@@ -168,15 +170,14 @@ class Permutation:
                                                                            self.group_id)
                 return self.child, [self.mol_id, self.group_id, self.true_dists]
             else:
-                print('mindist in permutation: {} - {}, {}. retry.'.format(
-                    rin.atype[mindist_ij[0]],
-                    rin.atype[mindist_ij[1]],
-                    dist), file=sys.stderr, flush=True)
+                type0 = rin.atype[mindist_ij[0]]
+                type1 = rin.atype[mindist_ij[1]]
+                logger.warning(f'mindist in permutation: {type0} - {type1}, {dist}. retry.')
                 cnt += 1
                 if cnt >= rin.maxcnt_ea:
-                    print('Permutatin: could not satisfy min_dist' +
-                          ' in {} times'.format(rin.maxcnt_ea), file=sys.stderr)
-                    print('Change parent', file=sys.stderr, flush=True)
+                    logger.warning('Permutatin: could not satisfy min_dist' +
+                          f' in {rin.maxcnt_ea} times')
+                    logger.warning('Change parent')
                     self.child = None
                     return None    # change parent
 

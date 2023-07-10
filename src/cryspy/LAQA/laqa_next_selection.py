@@ -2,12 +2,15 @@
 Selection in LAQA
 '''
 
+from logging import getLogger
 import os
 
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 from ..IO.out_results import out_laqa_id_hist
 
+
+logger = getLogger('cryspy')
 
 def next_selection(stat, laqa_id_data, laqa_data):
     # ---------- laqa_id_data and laqa_data
@@ -26,7 +29,7 @@ def next_selection(stat, laqa_id_data, laqa_data):
 
     # ---------- done LAQA
     if len(id_queueing) == 0:
-        print('\nDone all structures!')
+        logger.info('\nDone all structures!')
         os.remove('lock_cryspy')
         raise SystemExit()
 
@@ -51,9 +54,9 @@ def next_selection(stat, laqa_id_data, laqa_data):
     io_stat.write_stat(stat)
 
     # ---------- out and log
-    print('\n# ---------- Selection {}'.format(len(id_select_hist)))
+    logger.info(f'# ---------- Selection {len(id_select_hist)}')
     if len(id_queueing) > 30:
-        print('selected_id: {} IDs'.format(len(id_queueing)))
+        logger.info(f'selected_id: {len(id_queueing)} IDs')
     else:
-        print('selected_id: {}\n'.format(
-            ' '.join(str(a) for a in id_queueing)))
+        x = ' '.join(str(a) for a in id_queueing)
+        logger.info(f'selected_id: {x}')

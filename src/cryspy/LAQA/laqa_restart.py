@@ -2,9 +2,13 @@
 Restart in LAQA
 '''
 
+from logging import getLogger
+
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 
+
+logger = getLogger('cryspy')
 
 def restart(stat, prev_nstruc):
     # ---------- load laqa data
@@ -20,7 +24,7 @@ def restart(stat, prev_nstruc):
         laqa_bias[i] = []
         laqa_score[i] = [float('inf')]
         id_queueing.append(i)
-    print('Append scores and id_queueing')
+    logger.info('Append scores and id_queueing')
 
     # ---------- status
     io_stat.set_id(stat, 'id_queueing', id_queueing)

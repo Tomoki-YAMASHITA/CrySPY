@@ -8,16 +8,27 @@ Select an optimizer
     - ASE
 '''
 
-from .VASP import calc_files_vasp, ctrl_job_vasp, collect_vasp
-from .QE import calc_files_qe, ctrl_job_qe, collect_qe
-from .soiap import calc_files_soiap, ctrl_job_soiap, collect_soiap
-from .LAMMPS import calc_files_lammps, ctrl_job_lammps, collect_lammps
-from .OMX import calc_files_OMX, ctrl_job_OMX, collect_OMX
-from .ASE import calc_files_ase, ctrl_job_ase, collect_ase
-from .ext import collect_ext
+from logging import getLogger
 
 from ..IO import read_input as rin
 
+if rin.calc_code == 'VASP':
+    from .VASP import calc_files_vasp, ctrl_job_vasp, collect_vasp
+elif rin.calc_code == 'QE':
+    from .QE import calc_files_qe, ctrl_job_qe, collect_qe
+elif rin.calc_code == 'OMX':
+    from .OMX import calc_files_OMX, ctrl_job_OMX, collect_OMX
+elif rin.calc_code == 'soiap':
+    from .soiap import calc_files_soiap, ctrl_job_soiap, collect_soiap
+elif rin.calc_code == 'LAMMPS':
+    from .LAMMPS import calc_files_lammps, ctrl_job_lammps, collect_lammps
+elif rin.calc_code == 'ASE':
+    from .ASE import calc_files_ase, ctrl_job_ase, collect_ase
+elif rin.calc_code == 'ext':
+    from .ext import collect_ext
+
+
+logger = getLogger('cryspy')
 
 def check_calc_files():
     if rin.calc_code == 'VASP':
@@ -35,7 +46,8 @@ def check_calc_files():
     elif rin.calc_code == 'ext':
         pass
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
 
 def next_stage(stage, work_path, *args):
@@ -63,7 +75,8 @@ def next_stage(stage, work_path, *args):
         skip_flag = ctrl_job_ase.next_stage_ase(stage, work_path)
         return skip_flag
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
 
 def collect(current_id, work_path):
@@ -89,7 +102,8 @@ def collect(current_id, work_path):
         ext_opt_struc_data, ext_energy_data = collect_ext.collect_ext()
         return ext_opt_struc_data, ext_energy_data
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
     # ---------- return
     return opt_struc, energy, magmom, check_opt
@@ -116,7 +130,8 @@ def next_struc(structure, current_id, work_path, *args):
     elif rin.calc_code == 'ASE':
         ctrl_job_ase.next_struc_ase(structure, current_id, work_path)
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
 
 def get_energy_step(energy_step_data, current_id, work_path):
@@ -133,7 +148,8 @@ def get_energy_step(energy_step_data, current_id, work_path):
             energy_step_data, current_id, work_path)
         return energy_step_data
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
 
 def get_struc_step(struc_step_data, current_id, work_path):
@@ -150,7 +166,8 @@ def get_struc_step(struc_step_data, current_id, work_path):
             struc_step_data, current_id, work_path)
         return struc_step_data
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
 
 def get_force_step(force_step_data, current_id, work_path):
@@ -167,7 +184,8 @@ def get_force_step(force_step_data, current_id, work_path):
             force_step_data, current_id, work_path)
         return force_step_data
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
 
 
 def get_stress_step(stress_step_data, current_id, work_path):
@@ -184,4 +202,5 @@ def get_stress_step(stress_step_data, current_id, work_path):
             stress_step_data, current_id, work_path)
         return stress_step_data
     else:
-        raise NotImplementedError()
+        logger.error(f'{rin.calc_code}: not implemented yet')
+        raise SystemExit(1)
