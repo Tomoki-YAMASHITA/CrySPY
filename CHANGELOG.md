@@ -1,4 +1,7 @@
 # CHANGELOG
+## [1.2.1] - 2023-09-27
+### Fixed
+- bug fix for ASE interface
 ## [1.2.0] - 2023-07-10
 ### Changed
 - adopts logging for output

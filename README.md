@@ -12,6 +12,8 @@ Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 version 1.2.0 (2023 July 10)
 
 ## News
+- [2023 September 27] CrySPY 1.2.1 released.
+    + bug fix for ASE interface
 - [2023 July 10] CrySPY 1.2.0 released. Version information/version 1.2.0
     + Interface for ASE
     + Adoption of logging
