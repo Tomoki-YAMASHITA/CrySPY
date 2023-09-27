@@ -31,10 +31,6 @@ def next_stage_ase(stage, work_path):
     finfile = './calc_in/'+rin.ase_python+'_{}'.format(stage + 1)
     shutil.copyfile(finfile, work_path+rin.ase_python)
 
-    # ---------- cp INCAR_? from ./calc_in for the next stage: (stage + 1)
-    fincar = './calc_in/INCAR_{}'.format(stage + 1)
-    shutil.copyfile(fincar, work_path+'INCAR')
-
     # ---------- return
     return skip_flag
 
