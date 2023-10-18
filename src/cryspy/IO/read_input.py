@@ -680,7 +680,7 @@ def readin():
     # ---------- QE
     elif calc_code == 'QE':
         # ------ global declaration
-        global qe_infile, qe_outfile
+        global qe_infile, qe_outfile, pv_term
         # ------ read intput variables
         kpt_flag = True
         qe_infile = config.get('QE', 'qe_infile')
@@ -695,6 +695,12 @@ def readin():
             force_gamma = config.getboolean('QE', 'force_gamma')
         except configparser.NoOptionError:
             force_gamma = False
+        try:
+            pv_term = config.getboolean('QE', 'pv_term')
+        except configparser.NoOptionError:
+            pv_term = False
+        if energy_step_flag and pv_term:
+            logger.error('cannot parse energy_step with pv_term yet. use pv_term = False')
 
     # ---------- OpenMX
     elif calc_code == 'OMX':
@@ -920,6 +926,7 @@ def save_stat(stat):    # only 1st run
         stat.set('QE', 'kppvol',
                  '{}'.format(' '.join(str(c) for c in kppvol)))
         stat.set('QE', 'force_gamma', '{}'.format(force_gamma))
+        stat.set('QE', 'pv_term', '{}'.format(pv_term))
 
     # ---------- OMX
     if calc_code == 'OMX':
@@ -1162,6 +1169,7 @@ def diffinstat(stat):
         old_kppvol = stat.get('QE', 'kppvol')
         old_kppvol = [int(x) for x in old_kppvol.split()]  # int list
         old_force_gamma = stat.getboolean('QE', 'force_gamma')
+        old_pv_term = stat.getboolean('QE', 'pv_term')
 
     if old_calc_code == 'OMX':
         old_OMX_infile = stat.get('OMX', 'OMX_infile')
@@ -1574,6 +1582,11 @@ def diffinstat(stat):
             diff_out('force_gamma', old_force_gamma, force_gamma)
             io_stat.set_input_common(stat, sec, 'force_gamma', force_gamma)
             logic_change = True
+        if not old_pv_term == pv_term:
+            diff_out('pv_term', old_pv_term, pv_term)
+            io_stat.set_input_common(stat, sec, 'pv_term', pv_term)
+            logic_change = True
+
     # ------ OMX
     sec = 'OMX'
     if calc_code == 'OMX':

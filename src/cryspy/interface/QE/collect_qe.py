@@ -3,7 +3,6 @@ Collect results in Quantum ESPRESSO
 '''
 
 from logging import getLogger
-import sys
 
 import numpy as np
 from pymatgen.core import Structure
@@ -35,7 +34,11 @@ def collect_qe(current_id, work_path):
             lines = fpout.readlines()
         energy = np.nan
         for line in reversed(lines):
-            if line.startswith('!'):
+            if rin.pv_term:
+                condition = 'Final enthalpy' in line
+            else:
+                condition = line.startswith('!')
+            if condition:
                 energy = float(line.split()[-2])    # in Ry
                 energy = energy * constants.RY2EV / float(rin.natot)    # Ry/cell --> eV/atom
                 break

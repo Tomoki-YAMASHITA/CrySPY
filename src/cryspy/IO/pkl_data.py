@@ -4,6 +4,8 @@ Save data in ./data/pkl_data/xxx
 
 import pickle
 
+import pandas as pd
+
 
 def load_init_struc():
     with open('./data/pkl_data/init_struc_data.pkl', 'rb') as f:
@@ -28,14 +30,12 @@ def save_opt_struc(opt_struc_data):
 
 
 def load_rslt():
-    with open('./data/pkl_data/rslt_data.pkl', 'rb') as f:
-        rslt_data = pickle.load(f)
-    return rslt_data
+    return pd.read_pickle('./data/pkl_data/rslt_data.pkl')
 
 
 def save_rslt(rslt_data):
-    with open('./data/pkl_data/rslt_data.pkl', 'wb') as f:
-        pickle.dump(rslt_data, f)
+    # use pandas.DataFrame.to_pickle
+    rslt_data.to_pickle('./data/pkl_data/rslt_data.pkl')
 
 
 def load_kpt():

@@ -42,7 +42,6 @@ def main():
     # ---------- logger
     set_logger(args.noprint, args.debug)
     logger = getLogger('cryspy')
-    logger.debug('debug hogehoge')
 
     # ---------- backup option
     if args.backup:
