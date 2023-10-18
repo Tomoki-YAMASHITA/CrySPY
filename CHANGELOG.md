@@ -1,4 +1,7 @@
 # CHANGELOG
+## [1.2.2] - 2023-10-18
+### Added
+- enthalpy
 ## [1.2.1] - 2023-09-27
 ### Fixed
 - bug fix for ASE interface

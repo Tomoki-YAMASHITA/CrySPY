@@ -9,9 +9,11 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.2.1 (2023 September 27)
+version 1.2.2 (2023 October 18)
 
 ## News
+- [2023 October 18] CrySPY 1.2.2 released.
+    + [Enthalpy](https://tomoki-yamashita.github.io/CrySPY_doc/features/enthalpy/index.html)
 - [2023 September 27] CrySPY 1.2.1 released.
     + bug fix for ASE interface
 - [2023 July 10] CrySPY 1.2.0 released. Version information/version 1.2.0
