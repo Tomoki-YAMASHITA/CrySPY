@@ -1,4 +1,7 @@
 # CHANGELOG
+## [1.2.3] - 2023-10-21
+### Fixed
+- bug fix for MPI
 ## [1.2.2] - 2023-10-18
 ### Added
 - enthalpy
