@@ -10,6 +10,10 @@ from ..util.struc_util import set_mindist, out_poscar
 logger = getLogger('cryspy')
 
 def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
+    # ---------- log: num of MPI processes
+    if mpi_size > 1 and mpi_rank == 0:
+        logger.info('# ---------- Initial structure generation')
+        logger.info(f'Number of MPI processes: {mpi_size}')
     # ---------- mindist
     if mpi_rank == 0:
         logger.info('# ------ mindist')

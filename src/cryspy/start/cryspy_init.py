@@ -52,9 +52,6 @@ def initialize(comm, mpi_rank, mpi_size):
 
     # ---------- generate initial structures
     if not rin.load_struc_flag:
-        if mpi_rank == 0:
-            logger.info('# ---------- Initial structure generation')
-            logger.info(f'Number of MPI processes: {mpi_size}')
         if mpi_size > 1:
             comm.barrier()
         if mpi_rank == 0:

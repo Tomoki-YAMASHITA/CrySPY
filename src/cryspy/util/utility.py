@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.2.2'
+    return '1.2.3'
 
 
 def set_logger(noprint=False, debug=False):

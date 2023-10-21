@@ -18,26 +18,27 @@ from cryspy.util.utility import set_logger, backup_cryspy, clean_cryspy
 # from cryspy.interface import select_code
 
 def main():
-    # ########## MPI start
-    # ---------- MPI
-    try:
-        from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        mpi_rank = comm.Get_rank()
-        mpi_size = comm.Get_size()
-    except Exception as e:
-        # ------ if mpi4py is not installed
-        comm = None
-        mpi_rank = 0
-        mpi_size = 1
-
     # ---------- argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--backup', help='backup data', action='store_true')
     parser.add_argument('-c', '--clean', help='clean data', action='store_true')
     parser.add_argument('-g', '--debug', help='debug', action='store_true')
     parser.add_argument('-n', '--noprint', help='not printing to the console', action='store_true')
+    parser.add_argument('-p', '--parallel', help='with MPI', action='store_true')
     args = parser.parse_args()
+
+    # ########## MPI start
+    # ---------- MPI
+    if args.parallel:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        mpi_rank = comm.Get_rank()
+        mpi_size = comm.Get_size()
+    else:
+        # ------ normal run
+        comm = None
+        mpi_rank = 0
+        mpi_size = 1
 
     # ---------- logger
     set_logger(args.noprint, args.debug)
