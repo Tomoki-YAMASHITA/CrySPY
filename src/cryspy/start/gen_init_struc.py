@@ -11,8 +11,9 @@ logger = getLogger('cryspy')
 
 def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
     # ---------- log: num of MPI processes
-    if mpi_size > 1 and mpi_rank == 0:
+    if mpi_rank == 0:
         logger.info('# ---------- Initial structure generation')
+    if mpi_size > 1 and mpi_rank == 0:
         logger.info(f'Number of MPI processes: {mpi_size}')
     # ---------- mindist
     if mpi_rank == 0:
@@ -34,7 +35,11 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         rsgx = Rnd_struc_gen_pyxtal(mindist=mindist)
         # ------ crystal
         if rin.struc_mode == 'crystal':
-            rsgx.gen_struc(nstruc=nstruc_list[mpi_rank], id_offset=offset_list[mpi_rank])
+            if not rin.algo == 'EA-vc':
+                rsgx.gen_struc(nstruc=nstruc_list[mpi_rank], id_offset=offset_list[mpi_rank])
+            else:    # vc
+                rsgx.gen_struc(nstruc=nstruc_list[mpi_rank], id_offset=offset_list[mpi_rank],
+                               vc=True)
         # ------ molecular crystal
         elif rin.struc_mode == 'mol':
             rsgx.set_mol()
@@ -53,7 +58,7 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         if mpi_size > 1:
             # -- parallel
             # only init_struc_data in rank0 is important
-            if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+            if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
                 struc_dict, mol_id_dict = _gather_struc(rsgx.init_struc_data, rsgx.struc_mol_id,
                                                         comm, mpi_rank)
                 init_struc_data.update(struc_dict)
@@ -68,7 +73,7 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         else:
             # -- serial
             init_struc_data.update(rsgx.init_struc_data)
-            if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+            if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
                 struc_mol_id.update(rsgx.struc_mol_id)
             # init_POSCARS
             for cid, struc in rsgx.init_struc_data.items():
@@ -78,7 +83,10 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
         from ..RS.gen_struc_RS.random_generation import Rnd_struc_gen
         rsg = Rnd_struc_gen(mindist=mindist)
         if rin.spgnum == 0:
-            rsg.gen_wo_spg(nstruc=nstruc_list[mpi_rank], id_offset=offset_list[mpi_rank])
+            if not rin.algo == 'EA-vc':
+                rsg.gen_wo_spg(nstruc=nstruc_list[mpi_rank], id_offset=offset_list[mpi_rank])
+            else:    # vc
+                rsg.gen_wo_spg(nstruc=nstruc_list[mpi_rank], id_offset=offset_list[mpi_rank], vc=True)
         else:
             # ---- findwy
             # -- check fwpath
@@ -87,9 +95,14 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
                 os.makedirs('tmp_gen_struc', exist_ok=True)
             if mpi_size > 1:
                 comm.barrier()
-            rsg.gen_with_find_wy(nstruc=nstruc_list[mpi_rank],
-                                    id_offset=offset_list[mpi_rank], init_pos_path=None,
-                                    fwpath=fwpath, mpi_rank=mpi_rank)
+            if not rin.algo == 'EA-vc':
+                rsg.gen_with_find_wy(nstruc=nstruc_list[mpi_rank],
+                                     id_offset=offset_list[mpi_rank],
+                                     fwpath=fwpath, mpi_rank=mpi_rank)
+            else:    # vc
+                rsg.gen_with_find_wy(nstruc=nstruc_list[mpi_rank],
+                                     id_offset=offset_list[mpi_rank],
+                                     fwpath=fwpath, mpi_rank=mpi_rank, vc=True)
         # ------ init_struc_data
         if mpi_size > 1:
             # -- parallel
@@ -108,7 +121,7 @@ def gen_init_struc(init_struc_data, struc_mol_id, comm, mpi_rank, mpi_size):
 
     # ---------- return
     # only init_struc_data in rank0 is important
-    if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+    if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
         return init_struc_data, struc_mol_id
     else:
         return init_struc_data
@@ -173,7 +186,7 @@ def _gather_struc(struc_dict, mol_id_dict, comm, mpi_rank):
     else:
         assert data is None
     # ---------- for mol_id
-    if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+    if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
         data = mol_id_dict
         data = comm.gather(data, root=0)
         if mpi_rank == 0:

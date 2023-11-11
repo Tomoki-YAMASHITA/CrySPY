@@ -15,7 +15,7 @@ def stat_init():
         stat.add_section('BO')
     if rin.algo == 'LAQA':
         stat.add_section('LAQA')
-    if rin.algo == 'EA':
+    if rin.algo in ['EA', 'EA-vc']:
         stat.add_section('EA')
     # ---------- calc_code
     if rin.calc_code == 'VASP':

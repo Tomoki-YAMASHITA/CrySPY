@@ -181,6 +181,17 @@ def save_ea_data(ea_data):
         pickle.dump(ea_data, f)
 
 
+def load_ea_vc_data():
+    with open('./data/pkl_data/EA-vc_data.pkl','rb') as f:
+        ea_vc_data = pickle.load(f)
+    return ea_vc_data
+
+
+def save_ea_vc_data(ea_vc_data):
+    with open('./data/pkl_data/EA-vc_data.pkl','wb') as f:
+        pickle.dump(ea_vc_data, f)
+
+
 def load_ext_opt_struc():
     with open('./ext/calc_data/ext_opt_struc_data.pkl', 'rb') as f:
         ext_opt_struc_data = pickle.load(f)

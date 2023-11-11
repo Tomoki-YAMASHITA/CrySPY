@@ -18,7 +18,7 @@ from pyxtal import pyxtal
 from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
 
-from ...util.struc_util import check_distance, sort_by_atype, out_poscar
+from ...util.struc_util import check_distance, sort_by_atype, get_nat
 from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
 from ...IO import read_input as rin
 
@@ -53,7 +53,7 @@ class Rnd_struc_gen_pyxtal:
         # ---------- self.xxx
         self.mol_data = mol_data
 
-    def gen_struc(self, nstruc, id_offset=0, init_pos_path=None):
+    def gen_struc(self, nstruc, id_offset=0, vc=False):
         '''
         Generate random structures for given space groups
 
@@ -65,10 +65,7 @@ class Rnd_struc_gen_pyxtal:
                          e.g. nstruc = 3, id_offset = 10
                               you obtain ID 10, ID 11, ID 12
 
-        init_pos_path (str): default: None
-                             specify a path of file
-                             if you write POSCAR data of init_struc_data
-                             ATTENSION: data are appended to the specified file
+        vc (bool): variable composition. it needs ll_nat and ul_nat
 
         # ---------- comment
         generated structure data are saved in self.init_struc_data
@@ -88,11 +85,15 @@ class Rnd_struc_gen_pyxtal:
             rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
             tmp_crystal = pyxtal()
+            if not vc:
+                numIons = rin.nat
+            else:    # variable composition
+                numIons = [random.randint(l, u) for l, u in zip(rin.ll_nat, rin.ul_nat)]
             try:
                 f = StringIO()
                 with redirect_stdout(f):
                     tmp_crystal.from_random(dim=3, group=spg, species=rin.atype,
-                                            numIons=rin.nat, factor=rand_vol,
+                                            numIons=numIons, factor=rand_vol,
                                             conventional=False, tm=tolmat)
                 s = f.getvalue().rstrip()    # to delete \n
                 if s:
@@ -102,14 +103,15 @@ class Rnd_struc_gen_pyxtal:
                 continue
             if tmp_crystal.valid:
                 tmp_struc = tmp_crystal.to_pymatgen(resort=False)    # pymatgen Structure format
+                tmp_nat, _ = get_nat(tmp_struc, rin.atype)
                 # -- check the number of atoms
-                if not self._check_nat(tmp_struc):
+                if tmp_nat != numIons:
                     # (pyxtal 0.1.4) cryspy adopts "conventional=False",
                     #     which is better for DFT calculation
                     # pyxtal returns conventional cell, that is, too many atoms
                     tmp_struc = tmp_struc.get_primitive_structure()
                     # recheck nat
-                    if not self._check_nat(tmp_struc):    # failure
+                    if tmp_nat != numIons:    # failure
                         continue
                 # -- sort, just in case
                 tmp_struc = sort_by_atype(tmp_struc, rin.atype)
@@ -141,13 +143,10 @@ class Rnd_struc_gen_pyxtal:
                 # -- register the structure in pymatgen format
                 cid = len(self.init_struc_data) + id_offset
                 self.init_struc_data[cid] = tmp_struc
-                logger.info(f'Structure ID {cid:>6} was generated.'
+                logger.info(f'Structure ID {cid:>6}: {numIons}'
                       f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
-                # -- save init_POSCARS
-                if init_pos_path is not None:
-                    out_poscar(tmp_struc, cid, init_pos_path)
 
-    def gen_struc_mol(self, nstruc, id_offset=0, init_pos_path=None):
+    def gen_struc_mol(self, nstruc, id_offset=0):
         '''
         Generate random molecular crystal structures for given space groups
         one have to run self.set_mol() in advance
@@ -159,17 +158,12 @@ class Rnd_struc_gen_pyxtal:
                          e.g. nstruc = 3, id_offset = 10
                               you obtain ID 10, ID 11, ID 12
 
-        init_pos_path (str): default: None
-                             specify a path of file
-                             if you write POSCAR data of init_struc_data
-                             ATTENSION: data are appended to the specified file
-
         # ---------- comment
         generated structure data are saved in self.init_struc_data
         '''
         # ---------- initialize
         self.init_struc_data = {}
-        if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+        if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
             self.struc_mol_id = {}
         # ---------- Tol_matrix
         tolmat = self._set_tol_mat(rin.atype, self.mindist)
@@ -198,7 +192,7 @@ class Rnd_struc_gen_pyxtal:
                 continue
             else:
                 # -- get struc data from _mp_mc
-                if rin.algo == 'EA':
+                if rin.algo in ['EA', 'EA-vc']:
                     tmp_q = q.get()
                     tmp_struc = tmp_q[0]    # structure data
                     dums = tmp_q[1]         # dummy element
@@ -221,17 +215,18 @@ class Rnd_struc_gen_pyxtal:
                         logger.warning('failed scale cell. retry.')
                         continue
                 # -- check nat
-                if not self._check_nat(tmp_struc):
+                tmp_nat, _ = get_nat(tmp_struc, rin.atype)
+                if tmp_nat != rin.nat:
                     # cryspy adopts conventional=True
                     # pyxtal returns conventional cell,
                     # too many atoms if centering
                     tmp_struc = tmp_struc.get_primitive_structure()
                     # recheck nat
-                    if not self._check_nat(tmp_struc):    # failure
+                    if tmp_nat != rin.nat:    # failure
                         logger.warning('different num. of atoms. retry.')
                         continue
                 # -- grouping atoms for molecule using interatomic distance
-                if rin.algo == 'EA':
+                if rin.algo in ['EA', 'EA-vc']:
                     loopcnt = 0
                     while loopcnt < 10:
                         loopcnt += 1
@@ -267,7 +262,7 @@ class Rnd_struc_gen_pyxtal:
                 # -- sort, necessary in molecular crystal
                 tmp_struc = sort_by_atype(tmp_struc, rin.atype)
                 # -- record group_id, mol_id, and dist_index
-                if rin.algo == 'EA':
+                if rin.algo in ['EA', 'EA-vc']:
                     tmp_id = []
                     tmp_mol_indx = []
                     tmp_dist_indx = []
@@ -301,16 +296,13 @@ class Rnd_struc_gen_pyxtal:
                 # -- register the structure in pymatgen format
                 cid = len(self.init_struc_data) + id_offset
                 self.init_struc_data[cid] = tmp_struc
-                if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+                if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
                     self.struc_mol_id.update({cid: [tmp_mol_indx, tmp_id, mol_dists]})
                 logger.info(f'Structure ID {cid:>6} was generated.'
                       f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
-                # -- save init_POSCARS
-                if init_pos_path is not None:
-                    out_poscar(tmp_struc, cid, init_pos_path)
 
     def gen_struc_mol_break_sym(self, nstruc, mindist_dummy,
-                                id_offset=0, init_pos_path=None):
+                                id_offset=0):
         '''
         Generate random molecular crystal structures
         one have to run self.set_mol() in advance
@@ -326,17 +318,12 @@ class Rnd_struc_gen_pyxtal:
                          e.g. nstruc = 3, id_offset = 10
                               you obtain ID 10, ID 11, ID 12
 
-        init_pos_path (str): default: None
-                             specify a path of file
-                             if you write POSCAR data of init_struc_data
-                             ATTENSION: data are appended to the specified file
-
         # ---------- comment
         generated structure data are saved in self.init_struc_data
         '''
         # ---------- initialize
         self.init_struc_data = {}
-        if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+        if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
             self.struc_mol_id = {}
         # ------ dummy atom type
         atype_dummy = get_atype_dummy()
@@ -390,7 +377,7 @@ class Rnd_struc_gen_pyxtal:
                 # -- save dummy coords
                 dum_species = tmp_struc.species
                 dum_coords = tmp_struc.cart_coords
-                if rin.algo == 'EA':
+                if rin.algo in ['EA', 'EA-vc']:
                     tmp_mol_indx = []
                     tmp_id = []
                     tmp_id_cnt = 0
@@ -437,18 +424,19 @@ class Rnd_struc_gen_pyxtal:
                         # append mol
                         for i, ms in enumerate(mol.species):
                             tmp_struc.append(ms, coord[i], coords_are_cartesian=True)
-                            if rin.algo == 'EA':
+                            if rin.algo in ['EA', 'EA-vc']:
                                 tmp_id.append(tmp_id_cnt)
                                 tmp_mol_indx.append(mol_index)
-                        if rin.algo == 'EA':
+                        if rin.algo in ['EA', 'EA-vc']:
                             tmp_id_cnt += 1
                     # -- check nat
-                    if not self._check_nat(tmp_struc):
+                    tmp_nat, _ = get_nat(tmp_struc, rin.atype)
+                    if tmp_nat != rin.nat:
                         # pyxtal returns conventional cell,
                         # too many atoms if centering
                         tmp_struc = tmp_struc.get_primitive_structure()
                         # recheck nat
-                        if not self._check_nat(tmp_struc):    # failure
+                        if tmp_nat != rin.nat:    # failure
                             if rin.rot_mol is None:
                                 break    # go back to the while loop
                             continue
@@ -481,7 +469,7 @@ class Rnd_struc_gen_pyxtal:
                 # -- register the structure in pymatgen format
                 cid = len(self.init_struc_data) + id_offset
                 self.init_struc_data[cid] = tmp_struc
-                if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+                if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
                     # calculate interatomic distance of mol_data
                     mol_dists = []
                     for j, mol in enumerate(self.mol_data):
@@ -492,9 +480,6 @@ class Rnd_struc_gen_pyxtal:
                     self.struc_mol_id.update({cid: [tmp_mol_indx, tmp_id, mol_dists]})
                 logger.info(f'Structure ID {cid:>6} was generated.'
                       f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
-                # -- save init_POSCARS
-                if init_pos_path is not None:
-                    out_poscar(tmp_struc, cid, init_pos_path)
 
     def _set_tol_mat(self, atype, mindist):
         tolmat = Tol_matrix()
@@ -503,14 +488,6 @@ class Rnd_struc_gen_pyxtal:
                 if i <= j:
                     tolmat.set_tol(itype, jtype, mindist[i][j])
         return tolmat
-
-    def _check_nat(self, struc):
-        # ---------- count number of atoms in each element for check
-        species_list = [a.species_string for a in struc]
-        for i in range(len(rin.atype)):
-            if species_list.count(rin.atype[i]) != rin.nat[i]:
-                return False    # failure
-        return True
 
     def _mp_mc(self, tolmat, spg, nmol, rand_vol, q, algo):
         '''
@@ -529,7 +506,7 @@ class Rnd_struc_gen_pyxtal:
             s = f.getvalue().rstrip()    # to delete \n
             if s:
                 logger.warning(s)
-            if algo == 'EA':
+            if algo in ['EA', 'EA-vc']:
                 tmp_struc = tmp_crystal.to_pymatgen(resort=False)
                 tmp_lattice = tmp_struc.lattice
                 dums = []        # dummy atoms
@@ -557,7 +534,7 @@ class Rnd_struc_gen_pyxtal:
                     tmp_struc.append(ds, dc, coords_are_cartesian=True)
             # ---------- queue
             if tmp_crystal.valid:
-                if algo == 'EA':
+                if algo in ['EA', 'EA-vc']:
                     q.put([tmp_struc, dums, in_dists, mol_dists])
                 else:
                     q.put(tmp_crystal.to_pymatgen(resort=False))

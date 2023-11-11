@@ -13,7 +13,7 @@ from ..util.struc_util import out_poscar, out_cif
 if rin.algo == 'BO':
     from ..BO.select_descriptor import select_descriptor
     from ..BO import bo_next_select
-if rin.algo == 'EA':
+if rin.algo in ['EA', 'EA-vc']:
     from ..EA import ea_next_gen
 
 
@@ -37,7 +37,7 @@ class Ctrl_ext:
             (self.init_dscrpt_data, self.opt_dscrpt_data,
              self.bo_mean, self.bo_var,
              self.bo_score) = pkl_data.load_bo_data()
-        elif rin.algo == 'EA':
+        elif rin.rin.algo in ['EA', 'EA-vc']:
             (self.gen, self.id_queueing,
              self.id_running) = pkl_data.load_ea_id()
             # do not have to load ea_data here.
@@ -113,7 +113,7 @@ class Ctrl_ext:
             self.ctrl_collect_rs()
         elif rin.algo == 'BO':
             self.ctrl_collect_bo()
-        elif rin.algo == 'EA':
+        elif rin.rin.algo in ['EA', 'EA-vc']:
             self.ctrl_collect_ea()
         else:
             logger.error('Error, algo')
@@ -243,7 +243,7 @@ class Ctrl_ext:
         '''
         if rin.algo == 'BO':
             self.next_select_BO()
-        if rin.algo == 'EA':
+        if rin.rin.algo in ['EA', 'EA-vc']:
             self.next_gen_EA()
 
     def next_select_BO(self):
@@ -299,7 +299,7 @@ class Ctrl_ext:
             bo_id_data = (self.n_selection, self.id_queueing,
                           self.id_running, self.id_select_hist)
             pkl_data.save_bo_id(bo_id_data)
-        if rin.algo == 'EA':
+        if rin.rin.algo in ['EA', 'EA-vc']:
             ea_id_data = (self.gen, self.id_queueing, self.id_running)
             pkl_data.save_ea_id(ea_id_data)
 

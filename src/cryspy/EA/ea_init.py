@@ -9,11 +9,12 @@ import pandas as pd
 from ..IO import out_results
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
+from ..util.struc_util import get_nat
 
 
 logger = getLogger('cryspy')
 
-def initialize(stat, rslt_data):
+def initialize(stat, init_struc_data, rslt_data):
     # ---------- log
     logger.info('# ---------- Initialize evolutionary algorithm')
     logger.info('# ------ Generation 1')
@@ -50,6 +51,19 @@ def initialize(stat, rslt_data):
     rslt_data = rslt_data[['Gen', 'Spg_num',
                            'Spg_sym', 'Spg_num_opt',
                            'Spg_sym_opt', 'E_eV_atom', 'Magmom', 'Opt']]
+    if rin.algo == 'EA-vc':
+        rslt_data['Ef_eV_atom'] = pd.Series(dtype='float64')
+        rslt_data = rslt_data[['Gen', 'Spg_num', 'Spg_sym',
+                               'Spg_num_opt', 'Spg_sym_opt',
+                               'E_eV_atom', 'Ef_eV_atom', 'Magmom', 'Opt']]
+    # ------ nat, ratio for EA-vc
+    if rin.algo == 'EA-vc':
+        nat_data = {}
+        ratio_data = {}
+        for cid, struc in init_struc_data.items():
+            tmp_nat, tmp_ratio = get_nat(struc, rin.atype)
+            nat_data[cid] = tmp_nat
+            ratio_data[cid] = tmp_ratio
 
     # ---------- save
     ea_id_data = (gen, id_queueing, id_running)
@@ -57,6 +71,9 @@ def initialize(stat, rslt_data):
     ea_data = (elite_struc, elite_fitness, ea_info, ea_origin)
     pkl_data.save_ea_data(ea_data)
     pkl_data.save_rslt(rslt_data)
+    if rin.algo == 'EA-vc':
+        ea_vc_data = (nat_data, ratio_data)
+        pkl_data.save_ea_vc_data(ea_vc_data)
 
     # ---------- status
     io_stat.set_common(stat, 'generation', gen)

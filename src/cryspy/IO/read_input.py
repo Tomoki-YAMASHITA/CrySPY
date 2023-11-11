@@ -30,8 +30,8 @@ def readin():
         logger.error('calc_code must be VASP, QE, OMX, soiap, LAMMPS, ASE, or ext')
         raise SystemExit(1)
     algo = config.get('basic', 'algo')
-    if algo not in ['RS', 'BO', 'LAQA', 'EA']:
-        logger.error('algo must be RS, BO, LAQA, or EA')
+    if algo not in ['RS', 'BO', 'LAQA', 'EA', 'EA-vc']:
+        logger.error('algo must be RS, BO, LAQA, EA or EA-vc')
         raise SystemExit(1)
     if algo == 'LAQA':
         if calc_code not in ['VASP', 'QE', 'soiap']:
@@ -59,7 +59,7 @@ def readin():
 
     # ---------- structure
     # ------ global declaration
-    global struc_mode, natot, atype, nat
+    global struc_mode, natot, atype, nat, ll_nat, ul_nat
     global mol_file, nmol, timeout_mol, rot_mol, nrot
     global vol_factor, vol_mu, vol_sigma
     global mindist, mindist_factor, mindist_mol_bs, mindist_mol_bs_factor
@@ -74,24 +74,37 @@ def readin():
     if struc_mode not in ['crystal', 'mol', 'mol_bs', 'host']:
         logger.error('struc_mode is wrong')
         raise SystemExit(1)
-    if algo == 'EA' and struc_mode in ['mol', 'mol_bs']:
+    if algo in ['EA', 'EA-vc'] and struc_mode in ['mol', 'mol_bs']:
         if calc_code == 'ext':
             logger.error('EA, mol or mol_bs, ext, not yet')
             raise SystemExit(1)
-    natot = config.getint('structure', 'natot')
-    if natot <= 0:
-        logger.error('natot <= 0, check natot')
-        raise SystemExit(1)
     atype = config.get('structure', 'atype')
     atype = [a for a in atype.split()]    # list
-    nat = config.get('structure', 'nat')
-    nat = [int(x) for x in nat.split()]    # character --> integer
-    if not len(nat) == len(atype):
-        logger.error('not len(nat) == len(atype), check atype and nat')
-        raise SystemExit(1)
-    if not sum(nat) == natot:
-        logger.error('not sum(nat) == natot, check natot and nat')
-        raise SystemExit(1)
+    if not algo == 'EA-vc':
+        natot = config.getint('structure', 'natot')
+        if natot <= 0:
+            logger.error('natot <= 0, check natot')
+            raise SystemExit(1)
+        nat = config.get('structure', 'nat')
+        nat = [int(x) for x in nat.split()]    # character --> integer
+        if not len(nat) == len(atype):
+            logger.error('not len(nat) == len(atype), check atype and nat')
+            raise SystemExit(1)
+        if not sum(nat) == natot:
+            logger.error('not sum(nat) == natot, check natot and nat')
+            raise SystemExit(1)
+    if algo =='EA-vc':
+        ll_nat = config.get('structure', 'll_nat')
+        ll_nat = [int(x) for x in ll_nat.split()]
+        ul_nat = config.get('structure', 'ul_nat')
+        ul_nat = [int(x) for x in ul_nat.split()]
+        if not len(atype) == len(ll_nat) == len(ul_nat):
+            logger.error('not len(atype) == len(ll_nat) == len(ul_nat), check ll_nat and ul_nat')
+            raise SystemExit(1)
+        for i in range(len(ll_nat)):
+            if not 1 <= ll_nat[i] <= ul_nat[i]:
+                logger.error(f'not 1 <= ll_nat[{i}] <= ul_nat[{i}], check ll_nat and ul_nat')
+                raise SystemExit(1)
     # -- mol
     if struc_mode in ['mol', 'mol_bs']:
         mol_file = config.get('structure', 'mol_file')
@@ -476,13 +489,14 @@ def readin():
             ws = 10.0
 
     # ---------- EA
-    if algo == 'EA' or append_struc_ea:
+    if algo in ['EA', 'EA-vc'] or append_struc_ea:
         # ------ global declaration
         global n_pop, n_crsov, n_perm, n_strain, n_rand, n_elite
         global fit_reverse, n_fittest
         global slct_func, t_size, a_rlt, b_rlt
         global crs_lat, nat_diff_tole, ntimes, sigma_st,  maxcnt_ea
         global maxgen_ea, emax_ea, emin_ea
+        global end_point
         if struc_mode in ['mol', 'mol_bs']:
             global n_rotation, mindist_mol_ea, rot_max_angle, protect_mol_struc
         # global restart_gen
@@ -658,7 +672,13 @@ def readin():
             if emin_ea > emax_ea:
                 logger.error('emax_ea < emin_ea, check emax_ea and emin_ea')
                 raise SystemExit(1)
-
+        # -- EA-vc
+        if algo == 'EA-vc':
+            end_point = config.get('EA','end_point')
+            end_point = [float(x) for x in end_point.split()]
+            if not len(end_point) == len(atype):
+                logger.error('len(end_point) == len(atype), check end_point')
+                raise SystemExit(1)
     # ---------- global declaration for comman part in calc_code
     global kppvol, kpt_flag, force_gamma
 
@@ -811,9 +831,13 @@ def save_stat(stat):    # only 1st run
 
     # ---------- structure
     stat.set('structure', 'struc_mode', '{}'.format(struc_mode))
-    stat.set('structure', 'natot', '{}'.format(natot))
     stat.set('structure', 'atype', '{}'.format(' '.join(a for a in atype)))
-    stat.set('structure', 'nat', '{}'.format(' '.join(str(b) for b in nat)))
+    if not algo == 'EA-vc':
+        stat.set('structure', 'natot', '{}'.format(natot))
+        stat.set('structure', 'nat', '{}'.format(' '.join(str(b) for b in nat)))
+    if algo == 'EA-vc':
+        stat.set('structure', 'll_nat', '{}'.format(' '.join(str(b) for b in ll_nat)))
+        stat.set('structure', 'ul_nat', '{}'.format(' '.join(str(b) for b in ul_nat)))
     if mol_file is None:
         stat.set('structure', 'mol_file', '{}'.format(mol_file))
     else:
@@ -881,7 +905,7 @@ def save_stat(stat):    # only 1st run
         stat.set('LAQA', 'ws', '{}'.format(ws))
 
     # ---------- EA
-    elif algo == 'EA' or append_struc_ea:
+    elif algo in ['EA', 'EA-vc'] or append_struc_ea:
         stat.set('EA', 'n_pop', '{}'.format(n_pop))
         stat.set('EA', 'n_crsov', '{}'.format(n_crsov))
         stat.set('EA', 'n_perm', '{}'.format(n_perm))
@@ -912,6 +936,8 @@ def save_stat(stat):    # only 1st run
         stat.set('EA', 'maxgen_ea', '{}'.format(maxgen_ea))
         stat.set('EA', 'emax_ea', '{}'.format(emax_ea))
         stat.set('EA', 'emin_ea', '{}'.format(emin_ea))
+        if algo == 'EA-vc':
+            stat.set('EA', 'end_point', '{}'.format(' '.join(str(b) for b in end_point)))
 
     # ---------- VASP
     if calc_code == 'VASP':
@@ -992,11 +1018,17 @@ def diffinstat(stat):
 
     # ------ structure
     old_struc_mode = stat.get('structure', 'struc_mode')
-    old_natot = stat.getint('structure', 'natot')
     old_atype = stat.get('structure', 'atype')
     old_atype = [a for a in old_atype.split()]    # list
-    old_nat = stat.get('structure', 'nat')
-    old_nat = [int(x) for x in old_nat.split()]    # str --> int list
+    if not algo == 'EA-vc':
+        old_natot = stat.getint('structure', 'natot')
+        old_nat = stat.get('structure', 'nat')
+        old_nat = [int(x) for x in old_nat.split()]    # str --> int list
+    if algo == 'EA-vc':
+        old_ll_nat = stat.get('structure','ll_nat')
+        old_ll_nat = [int(x) for x in old_ll_nat.split()]
+        old_ul_nat = stat.get('structure','ul_nat')
+        old_ul_nat = [int(x) for x in old_ul_nat.split()]
     old_mol_file = stat.get('structure', 'mol_file')
     if old_mol_file == 'None':
         old_mol_file = None    # character --> None
@@ -1113,7 +1145,7 @@ def diffinstat(stat):
 
 
     # ------ EA
-    if old_algo == 'EA':
+    if old_algo in ['EA', 'EA-vc']:
         old_n_pop = stat.getint('EA', 'n_pop')
         old_n_crsov = stat.getint('EA', 'n_crsov')
         old_n_perm = stat.getint('EA', 'n_perm')
@@ -1155,6 +1187,9 @@ def diffinstat(stat):
             old_emin_ea = None    # char --> None
         else:
             old_emin_ea = float(old_emin_ea)    # char --> float
+        if algo == 'EA-vc':
+            old_end_point = stat.get('EA','end_point')
+            old_end_point = [float(x) for x in old_end_point.split()]
 
     # ------ VASP
     if old_calc_code == 'VASP':
@@ -1219,7 +1254,7 @@ def diffinstat(stat):
     if not old_calc_code == calc_code:
         raise ValueError('Do not change calc code')
     if not old_tot_struc == tot_struc:
-        if algo == 'EA':
+        if algo in ['EA', 'EA-vc']:
             raise ValueError('Do not change tot_struc in EA')
         diff_out('tot_struc', old_tot_struc, tot_struc)
         io_stat.set_input_common(stat, sec, 'tot_struc', tot_struc)
@@ -1251,12 +1286,22 @@ def diffinstat(stat):
             logic_change = True
         else:
             raise ValueError('Do not change struc_mode: host')
-    if not old_natot == natot:
-        raise ValueError('Do not change natot')
     if not old_atype == atype:
         raise ValueError('Do not change atype')
-    if not old_nat == nat:
-        raise ValueError('Do not change nat')
+    if not algo == 'EA-vc':
+        if not old_natot == natot:
+            raise ValueError('Do not change natot')
+        if not old_nat == nat:
+            raise ValueError('Do not change nat')
+    if algo == 'EA-vc':
+        if not old_ll_nat == ll_nat:
+            diff_out('ll_nat', old_ll_nat, ll_nat)
+            io_stat.set_input_common(stat, sec, 'll_nat', ll_nat)
+            logic_change = True
+        if not old_ul_nat == ul_nat:
+            diff_out('ul_nat', old_ul_nat, ul_nat)
+            io_stat.set_input_common(stat, sec, 'ul_nat', ul_nat)
+            logic_change = True
     if not old_mol_file == mol_file:
         diff_out('mol_file', old_mol_file, mol_file)
         io_stat.set_input_common(stat, sec, 'mol_file', mol_file)
@@ -1451,7 +1496,7 @@ def diffinstat(stat):
 
     # ------ EA
     sec = 'EA'
-    if algo == 'EA':
+    if algo in ['EA', 'EA-vc']:
         if not old_n_pop == n_pop:
             diff_out('n_pop', old_n_pop, n_pop)
             io_stat.set_input_common(stat, sec, 'n_pop', n_pop)
@@ -1552,6 +1597,9 @@ def diffinstat(stat):
             diff_out('emin_ea', old_emin_ea, emin_ea)
             io_stat.set_input_common(stat, sec, 'emin_ea', emin_ea)
             logic_change = True
+        if algo == 'EA-vc':
+            if not old_end_point == end_point:
+                raise ValueError('Do not change end_point')
 
     # ------ VASP
     sec = 'VASP'

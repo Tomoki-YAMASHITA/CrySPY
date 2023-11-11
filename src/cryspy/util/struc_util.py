@@ -433,3 +433,10 @@ def sort_by_atype_mol(struc, atype, mol_id, group_id):
                 sorted_mol_id.append(mol_id[j])
                 sorted_group_id.append(group_id[j])
     return sorted_struc, sorted_mol_id, sorted_group_id
+
+
+def get_nat(struc, atype):
+    compos = struc.composition.as_dict()
+    nat = [int(compos[at]) for at in atype]
+    ratio = [x/sum(nat) for x in nat]
+    return nat, ratio

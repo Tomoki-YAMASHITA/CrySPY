@@ -11,7 +11,8 @@ from pymatgen.core import Structure, Lattice
 from pymatgen.core.periodic_table import DummySpecie
 
 from ...IO import read_input as rin
-from ...util.struc_util import origin_shift, sort_by_atype, check_distance, find_site, cal_g, sort_by_atype_mol
+from ...util.struc_util import origin_shift, sort_by_atype, check_distance
+from ...util.struc_util import find_site, cal_g, sort_by_atype_mol, get_nat
 
 
 logger = getLogger('cryspy')
@@ -60,7 +61,7 @@ class Crossover:
             self.child = Structure(lattice=self.lattice, species=self.species,
                                    coords=self.coords)
             # ------ check nat_diff
-            self._check_nat()    # get self._nat_diff
+            self._get_nat_diff()    # get self._nat_diff
             if any([abs(n) > rin.nat_diff_tole for n in self._nat_diff]):
                 if count > rin.maxcnt_ea:    # fail
                     self.child = None
@@ -83,7 +84,7 @@ class Crossover:
                         return None
                     continue    # fail --> slice again
             # ------ recheck nat_diff
-            self._check_nat()
+            self._get_nat_diff()
             # ------ nothing smaller than mindist
             # -- remove atoms near the border line
             if any([n > 0 for n in self._nat_diff]):
@@ -100,7 +101,7 @@ class Crossover:
                     return None
                 continue
         # ---------- final check for nat
-        self._check_nat()
+        self._get_nat_diff()
         if not all([n == 0 for n in self._nat_diff]):
             return None    # failure
         # ---------- sort by atype
@@ -167,13 +168,10 @@ class Crossover:
         # ---------- set instance variables
         self.species, self.coords = species, coords
 
-    def _check_nat(self):
-        self._nat_diff = []
-        species_list = [a.species_string for a in self.child]
-        for i in range(len(rin.atype)):
-            self._nat_diff.append(species_list.count(rin.atype[i])
-                                  - rin.nat[i])
-
+    def _get_nat_diff(self):
+        tmp_nat, _ = get_nat(self.child, rin.atype)
+        self._nat_diff = [i - j for i, j in zip(tmp_nat, rin.nat)]
+        
     def _remove_within_mindist(self):
         '''
         if success: self.child <-- child structure data
@@ -364,7 +362,7 @@ class Crossover:
         # ---------- final check for nat
         self.decide_mol_from_dummy(self.child)
         self.child, self.child_mol_id, self.child_group_id = self.replace_mol(self.child)
-        self._check_nat()
+        self._get_nat_diff()
         if not all([n == 0 for n in self._nat_diff]):
             return None, None    # failure
         # ---------- sort by atype

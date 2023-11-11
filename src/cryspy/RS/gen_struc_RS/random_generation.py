@@ -8,13 +8,12 @@ import math
 import os
 import random
 import subprocess
-import sys
 
 import numpy as np
 from pymatgen.core import Structure
 
 from ...IO import read_input as rin
-from ...util.struc_util import check_distance, out_poscar
+from ...util.struc_util import check_distance
 
 
 logger = getLogger('cryspy')
@@ -27,7 +26,7 @@ class Rnd_struc_gen:
     def __init__(self, mindist):
         self.mindist = mindist
 
-    def gen_wo_spg(self, nstruc, id_offset=0, init_pos_path=None):
+    def gen_wo_spg(self, nstruc, id_offset=0, vc=False):
         '''
         Generate random structures without space group information
 
@@ -38,24 +37,27 @@ class Rnd_struc_gen:
                          e.g. nstruc = 3, id_offset = 10
                               you obtain ID 10, ID 11, ID 12
 
-        init_pos_path (str): specify a path of file,
-                             if you write POSCAR data of init_struc_data
-                             ATTENSION: data are appended to the specified file
+        vc (bool): variable composition. it needs ll_nat and ul_nat
 
         # ---------- comment
         generated init_struc_data is saved in self.init_struc_data
         '''
         # ---------- initialize
         init_struc_data = {}
-        self._get_atomlist()    # get self.atomlist
         # ---------- generate structures
         while len(init_struc_data) < nstruc:
+            # ------ vc
+            if not vc:
+                numIons = rin.nat
+            else:    # variable composition
+                numIons = [random.randint(l, u) for l, u in zip(rin.ll_nat, rin.ul_nat)]
+            self._get_atomlist(numIons)    # get self.atomlist
             # ------ get spg, a, b, c, alpha, beta, gamma in self.*
             self._gen_lattice()
             # ------ get va, vb, and vc in self.*
             self._calc_latvec()
             # ------ get structure
-            tmp_struc = self._gen_struc_wo_spg()
+            tmp_struc = self._gen_struc_wo_spg(numIons)
             if tmp_struc is not None:    # success of generation
                 # ------ scale volume
                 if rin.vol_mu is not None:
@@ -79,15 +81,13 @@ class Rnd_struc_gen:
                 # ------ register the structure in pymatgen format
                 cid = len(init_struc_data) + id_offset
                 init_struc_data[cid] = tmp_struc
-                logger.info(f'Structure ID {cid:>6} was generated.'
+                logger.info(f'Structure ID {cid:>6}: {numIons}'
                       f' Space group: {spg_num:>3} {spg_sym}')
-                # ------ save poscar
-                if init_pos_path is not None:
-                    out_poscar(tmp_struc, cid, init_pos_path)
+        # ---------- to self
         self.init_struc_data = init_struc_data
 
     def gen_with_find_wy(self, nstruc, id_offset=0,
-                         init_pos_path=None, fwpath='find_wy', mpi_rank=0):
+                         fwpath='find_wy', mpi_rank=0, vc=False):
         '''
         Generate random structures with space gruop information
         using find_wy program
@@ -99,11 +99,9 @@ class Rnd_struc_gen:
                          e.g. nstruc = 3, id_offset = 10
                               you obtain ID 10, ID 11, ID 12
 
-        init_pos_path (str): specify a path of file
-                             if you write POSCAR data of init_struc_data
-                             ATTENSION: data are appended to the specified file
-
         fwpath (str): specify a path for a executable file of find_wy program
+
+        vc (bool): variable composition. it needs ll_nat and ul_nat
 
         # ---------- comment
         generated init_struc_data is saved in self.init_struc_data
@@ -116,12 +114,17 @@ class Rnd_struc_gen:
 
         # ---------- generate structures
         while len(init_struc_data) < nstruc:
+            # ------ vc
+            if not vc:
+                numIons = rin.nat
+            else:    # variable composition
+                numIons = [random.randint(l, u) for l, u in zip(rin.ll_nat, rin.ul_nat)]
             # ------ get spg, a, b, c, alpha, beta, gamma in self.*
             self._gen_lattice()
             # ------ get cosa, cosb, and cosg in self.*
             self._calc_cos()
             # ------ write an input file for find_wy
-            self._fw_input()
+            self._fw_input(numIons)
             # ------ loop for same fw_input
             cnt = 0
             while cnt <= rin.maxcnt:
@@ -166,7 +169,7 @@ class Rnd_struc_gen:
             # ------ register the structure in pymatgen format
             cid = len(init_struc_data) + id_offset
             init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6} was generated.'
+            logger.info(f'Structure ID {cid:>6}: {numIons}'
                   f' Space group: {self.spg:>3} --> {spg_num:>3} {spg_sym}')
             # ------ clean
             self._rm_files()
@@ -175,14 +178,14 @@ class Rnd_struc_gen:
         # ---------- init_struc_data
         self.init_struc_data = init_struc_data
 
-    def _get_atomlist(self):
+    def _get_atomlist(self, numIons):
         '''
         e.g. Na2Cl2
             atomlist = ['Na', 'Na', 'Cl', 'Cl']
         '''
         atomlist = []
         for i in range(len(rin.atype)):
-            atomlist += [rin.atype[i]]*rin.nat[i]
+            atomlist += [rin.atype[i]]*numIons[i]
         self.atomlist = atomlist
 
     def _gen_lattice(self):
@@ -310,7 +313,7 @@ class Rnd_struc_gen:
         self.cosb = math.cos(b_rad)
         self.cosg = math.cos(g_rad)
 
-    def _gen_struc_wo_spg(self):
+    def _gen_struc_wo_spg(self, numIons):
         '''
         Success --> return structure data in pymatgen format
         Failure --> return None
@@ -318,8 +321,9 @@ class Rnd_struc_gen:
         # ---------- initialize
         cnt = 0
         incoord = []
+        natot = sum(numIons)    # do not use rin.natot because of vc
         # ---------- generate internal coordinates
-        while len(incoord) < rin.natot:
+        while len(incoord) < natot:
             tmp_coord = np.random.rand(3)
             incoord.append(tmp_coord)
             tmp_struc = Structure([self.va, self.vb, self.vc],
@@ -338,7 +342,7 @@ class Rnd_struc_gen:
                     return None
         return tmp_struc
 
-    def _fw_input(self):
+    def _fw_input(self, numIons):
         with open('input', 'w') as f:
             f.write('nspecies {}\n'.format(len(rin.atype)))
             f.write('species_name')
@@ -346,7 +350,7 @@ class Rnd_struc_gen:
                 f.write('  {}'.format(aa))
             f.write('\n')
             f.write('species_num')
-            for i in rin.nat:
+            for i in numIons:
                 f.write('  {}'.format(i))
             f.write('\n')
             f.write('spacegroup  {}\n'.format(self.spg))

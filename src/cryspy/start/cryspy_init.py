@@ -60,21 +60,22 @@ def initialize(comm, mpi_rank, mpi_size):
         # ########## MPI start
         # ------ from scratch
         init_struc_data = {}
-        if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+        if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
             struc_mol_id = {}
         # ------ gen_init_struc()
         # only init_struc_data in rank0 is important
-        if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+        if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
             init_struc_data, struc_mol_id = gen_init_struc(init_struc_data, struc_mol_id,
                                                            comm, mpi_rank, mpi_size)
         else:
             init_struc_data = gen_init_struc(init_struc_data, None,
                                              comm, mpi_rank, mpi_size)
         # ########## MPI end
+
         if mpi_rank == 0:
             # ------ save
             pkl_data.save_init_struc(init_struc_data)
-            if rin.algo == 'EA' and rin.struc_mode in ['mol', 'mol_bs']:
+            if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
                 pkl_data.save_struc_mol_id(struc_mol_id)
             # ------ time
             time_end = datetime.today()
@@ -118,9 +119,9 @@ def initialize(comm, mpi_rank, mpi_size):
         elif rin.algo == 'LAQA':
             from ..LAQA import laqa_init
             laqa_init.initialize(stat)
-        elif rin.algo == "EA":
+        elif rin.algo in ['EA', 'EA-vc']:
             from ..EA import ea_init
-            ea_init.initialize(stat, rslt_data)
+            ea_init.initialize(stat, init_struc_data, rslt_data)
 
         # ---------- initialize etc
         if rin.kpt_flag:

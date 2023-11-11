@@ -24,7 +24,7 @@ def collect_ase(current_id, work_path):
         energy = energy/float(rin.natot)    # eV/cell --> eV/atom
     except Exception as e:
         energy = np.nan    # error
-        logger.warning(e.args[0] + f':    Structure ID {current_id}, could not obtain energy from log.tote')
+        logger.warning(str(e.args[0]) + f':    Structure ID {current_id}, could not obtain energy from log.tote')
     # ---------- collect CONTCAR
     try:
         opt_struc = Structure.from_file(work_path+'CONTCAR')

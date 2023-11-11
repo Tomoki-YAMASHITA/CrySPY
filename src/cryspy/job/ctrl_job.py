@@ -20,7 +20,7 @@ from ..util.struc_util import out_poscar, out_cif
 if rin.algo == 'BO':
     from ..BO.select_descriptor import select_descriptor
     from ..BO import bo_next_select
-if rin.algo == 'EA':
+if rin.algo in ['EA', 'EA-vc']:
     from ..EA import ea_next_gen
 if rin.algo == 'LAQA':
     from ..LAQA.calc_score import calc_laqa_bias
@@ -55,7 +55,7 @@ class Ctrl_job:
             (self.tot_step_select, self.laqa_step,
              self.laqa_struc, self.laqa_energy,
              self.laqa_bias, self.laqa_score) = pkl_data.load_laqa_data()
-        elif rin.algo == 'EA':
+        elif rin.algo in ['EA', 'EA-vc']:
             (self.gen, self.id_queueing,
              self.id_running) = pkl_data.load_ea_id()
             if rin.struc_mode in ['mol', 'mol_bs']:
@@ -254,7 +254,7 @@ class Ctrl_job:
             self.ctrl_collect_bo()
         elif rin.algo == 'LAQA':
             self.ctrl_collect_laqa()
-        elif rin.algo == 'EA':
+        elif rin.algo in ['EA', 'EA-vc']:
             self.ctrl_collect_ea()
         else:
             logger.error('Error, algo')
@@ -375,6 +375,9 @@ class Ctrl_job:
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.current_id, self.work_path)
+        # ---------- calculate Ef
+        if rin.algo == 'EA-vc':
+            ef = calc_ef(self.current_id, energy)
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
@@ -440,7 +443,7 @@ class Ctrl_job:
             else:
                 next_struc_data = self.init_struc_data[self.current_id]
         # ---------- EA
-        elif rin.algo == 'EA':
+        elif rin.algo in ['EA', 'EA-vc']:
             next_struc_data = self.init_struc_data[self.current_id]
         # ---------- algo is wrong
         else:
@@ -550,7 +553,7 @@ class Ctrl_job:
             out_laqa_energy(self.laqa_energy)
             out_laqa_bias(self.laqa_bias)
         # ---------- EA
-        elif rin.algo == 'EA':
+        elif rin.algo in ['EA', 'EA-vc']:
             self.rslt_data.loc[self.current_id] = [self.gen,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
@@ -614,7 +617,7 @@ class Ctrl_job:
             self.next_select_BO(noprint)
         if rin.algo == 'LAQA':
             self.next_select_LAQA()
-        if rin.algo == 'EA':
+        if rin.algo in ['EA', 'EA-vc']:
             self.next_gen_EA()
 
     def next_select_BO(self, noprint=False):
@@ -709,7 +712,7 @@ class Ctrl_job:
             laqa_id_data = (self.id_queueing, self.id_running,
                             self.id_select_hist)
             pkl_data.save_laqa_id(laqa_id_data)
-        if rin.algo == 'EA':
+        if rin.algo in ['EA', 'EA-vc']:
             ea_id_data = (self.gen, self.id_queueing, self.id_running)
             pkl_data.save_ea_id(ea_id_data)
 
