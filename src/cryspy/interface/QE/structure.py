@@ -26,15 +26,16 @@ def extract_cell_parameters(filename):
     return lines_cell
 
 
-def extract_atomic_positions(filename):
+def extract_atomic_positions(filename, nat):
     # ---------- last ATOMIC_POSITIONS
     with open(filename, 'r') as f:
         lines = f.readlines()
     lines_atom = None
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     for i, line in enumerate(reversed(lines)):
         if 'ATOMIC_POSITIONS' in line:
             ibegin = len(lines) - 1 - i
-            iend = ibegin + rin.natot + 1
+            iend = ibegin + natot + 1
             lines_atom = lines[ibegin:iend]
             break
     return lines_atom

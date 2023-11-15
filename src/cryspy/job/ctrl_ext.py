@@ -15,6 +15,8 @@ if rin.algo == 'BO':
     from ..BO import bo_next_select
 if rin.algo in ['EA', 'EA-vc']:
     from ..EA import ea_next_gen
+if rin.algo == 'EA-vc':
+    from ..EA.calc_hull import calc_ef
 
 
 logger = getLogger('cryspy')
@@ -40,6 +42,8 @@ class Ctrl_ext:
         elif rin.rin.algo in ['EA', 'EA-vc']:
             (self.gen, self.id_queueing,
              self.id_running) = pkl_data.load_ea_id()
+            if rin.algo == 'EA-vc':
+                self.nat_data, self.ratio_data = pkl_data.load_ea_vc_data()
             # do not have to load ea_data here.
             # ea_data is used only in ea_next_gen.py
 
@@ -135,7 +139,7 @@ class Ctrl_ext:
 
     def ctrl_collect_rs(self):
         # ---------- get opt data
-        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy')
+        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy', 'dummy')
         # ---------- register opt_struc
         ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, \
             ext_spg_sym_opt, ext_spg_num_opt = self.regist_opt(ext_opt_struc_data)
@@ -149,7 +153,7 @@ class Ctrl_ext:
 
     def ctrl_collect_bo(self):
         # ---------- get opt data
-        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy')
+        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy', 'dummy')
         # ---------- register opt_struc
         ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, \
             ext_spg_sym_opt, ext_spg_num_opt = self.regist_opt(ext_opt_struc_data)
@@ -177,16 +181,23 @@ class Ctrl_ext:
 
     def ctrl_collect_ea(self):
         # ---------- get opt data
-        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy')
+        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy', 'dummy')
         # ---------- register opt_struc
         ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, \
             ext_spg_sym_opt, ext_spg_num_opt = self.regist_opt(ext_opt_struc_data)
         # ---------- save rslt
         for cid, opt_struc in ext_opt_struc_data.items():
-            self.rslt_data.loc[cid] = [self.gen,
-                                       ext_spg_num[cid], ext_spg_sym[cid],
-                                       ext_spg_num_opt[cid], ext_spg_sym_opt[cid],
-                                       ext_energy_data[cid], ext_magmom[cid], ext_check_opt[cid]]
+            if not rin.algo == 'EA-vc':
+                self.rslt_data.loc[cid] = [self.gen,
+                                           ext_spg_num[cid], ext_spg_sym[cid],
+                                           ext_spg_num_opt[cid], ext_spg_sym_opt[cid],
+                                           ext_energy_data[cid], ext_magmom[cid], ext_check_opt[cid]]
+            else:    # for EA-vc
+                ef = calc_ef(ext_energy_data[cid], self.ratio_data[cid], rin.end_point)
+                self.rslt_data.loc[cid] = [self.gen,
+                                           ext_spg_num[cid], ext_spg_sym[cid],
+                                           ext_spg_num_opt[cid], ext_spg_sym_opt[cid],
+                                           ext_energy_data[cid], ef, ext_magmom[cid], ext_check_opt[cid]]
         pkl_data.save_rslt(self.rslt_data)
         out_rslt(self.rslt_data)
 

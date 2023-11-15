@@ -4,7 +4,6 @@ Collect results in VASP
 
 from logging import getLogger
 import os
-import sys
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -17,11 +16,11 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def collect_vasp(current_id, work_path):
+def collect_vasp(current_id, work_path, nat):
     # ---------- check optimization
     check_opt = check_opt_vasp(work_path+'OUTCAR')
     # ---------- obtain energy and magmom
-    energy, magmom = get_energy_magmom_vasp(work_path)
+    energy, magmom = get_energy_magmom_vasp(work_path, nat)
     if np.isnan(energy):
         logger.warning(f'    Structure ID {current_id},'
               ' could not obtain energy from OSZICAR')
@@ -56,7 +55,9 @@ def check_opt_vasp(file_path):
     return check_opt
 
 
-def get_energy_magmom_vasp(work_path):
+def get_energy_magmom_vasp(work_path, nat):
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- obtain energy and magmom
     energy = np.nan
     magmom = np.nan
@@ -65,7 +66,7 @@ def get_energy_magmom_vasp(work_path):
             oszi = foszi.readlines()
         if 'F=' in oszi[-1]:
             energy = float(oszi[-1].split()[2])    # free energy (eV/cell)
-            energy = energy/float(rin.natot)       # eV/atom
+            energy = energy/float(natot)       # eV/atom
             if 'mag=' in oszi[-1]:
                 magmom = float(oszi[-1].split()[-1])    # total magnetic moment
     except Exception:
@@ -74,7 +75,7 @@ def get_energy_magmom_vasp(work_path):
     return energy, magmom
 
 
-def get_energy_step_vasp(energy_step_data, current_id, work_path):
+def get_energy_step_vasp(energy_step_data, current_id, work_path, nat):
     '''
     get energy step data in eV/atom
 
@@ -82,6 +83,8 @@ def get_energy_step_vasp(energy_step_data, current_id, work_path):
     energy_step_data[ID][0] <-- stage 1
     energy_step_data[ID][1] <-- stage 2
     '''
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- get energy step from vasprun
     try:
         # ------ read file
@@ -102,10 +105,10 @@ def get_energy_step_vasp(energy_step_data, current_id, work_path):
                 logger.error('bug in get_energy_step_vasp')
                 raise SystemExit(1)
         # ------ list, str --> array
-        energy_step = np.array(energy_step, dtype='float')/float(rin.natot)
+        energy_step = np.array(energy_step, dtype='float')/float(natot)
     except Exception as e:
         energy_step = None
-        logger.warning(e.args[0] + f': #### ID: {current_id}: failed to parse in energy_step')
+        logger.warning(str(e.args[0]) + f': #### ID: {current_id}: failed to parse in energy_step')
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -162,7 +165,7 @@ def get_struc_step_vasp(struc_step_data, current_id, work_path):
             struc_step.append(struc)
     except Exception as e:
         struc_step = None
-        logger.warning(e.args[0], f': #### ID: {current_id}: failed to parse in struc_step')
+        logger.warning(str(e.args[0]), f': #### ID: {current_id}: failed to parse in struc_step')
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -214,7 +217,7 @@ def get_force_step_vasp(force_step_data, current_id, work_path):
             force_step.append(force)
     except Exception as e:
         force_step = None
-        logger.warning(e.args[0] + f': #### ID: {current_id}: failed to parse in force_step')
+        logger.warning(str(e.args[0]) + f': #### ID: {current_id}: failed to parse in force_step')
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -268,7 +271,7 @@ def get_stress_step_vasp(stress_step_data, current_id, work_path):
             stress_step.append(stress)
     except Exception as e:
         stress_step = None
-        logger.warning(e.args[0], f': #### ID: {current_id}: failed to parse in stress_step')
+        logger.warning(str(e.args[0]), f': #### ID: {current_id}: failed to parse in stress_step')
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

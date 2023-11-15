@@ -12,7 +12,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def next_stage_soiap(stage, work_path):
+def next_stage_soiap(stage, work_path, nat):
     # ---------- skip_flag
     skip_flag = False
 
@@ -30,11 +30,12 @@ def next_stage_soiap(stage, work_path):
     shutil.copyfile(finfile, work_path+rin.soiap_infile)
 
     # ---------- generate the CIF file
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         with open(work_path+'stage{}_log.struc'.format(stage), 'r') as f:
             lines = f.readlines()
-            lines = lines[-(rin.natot+5):]
-        structure = soiap_structure.from_file(lines)
+            lines = lines[-(natot+5):]
+        structure = soiap_structure.from_file(lines, nat)
     except ValueError:
         skip_flag = True
         logger.warning('    error in soiap,  skip this structure')

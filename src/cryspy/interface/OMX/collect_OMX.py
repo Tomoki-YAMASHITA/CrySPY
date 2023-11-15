@@ -16,7 +16,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def collect_OMX(current_id, work_path):
+def collect_OMX(current_id, work_path, nat):
     # ---------- check optimization in previous stage (done)
     # If *.out file exists, the calculation is done.
     try:
@@ -24,10 +24,11 @@ def collect_OMX(current_id, work_path):
             lines = fpout.readlines()
         check_opt = 'done'
     except Exception as e:
-        logger.warning(e.args[0])
+        logger.warning(str(e.args[0]))
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom (done)
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         with open(work_path+rin.OMX_outfile, 'r') as fpout:
             lines = fpout.readlines()
@@ -36,7 +37,7 @@ def collect_OMX(current_id, work_path):
             if re.search('Utot\.', line):
                 energy = float(re.search(r"-\d.+", line).group())
                 energy = float(Energy(energy, 'Ha').to('eV'))
-                energy = energy / float(rin.natot)
+                energy = energy / float(natot)
                 break
         magmom = np.nan # implemented (2020/10/03)
         for line in lines:
@@ -47,7 +48,7 @@ def collect_OMX(current_id, work_path):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        logger.warning(e.args[0] + f':    Structure ID {current_id},'
+        logger.warning(str(e.args[0]) + f':    Structure ID {current_id},'
                        f' could not obtain energy from {rin.OMX_outfile}')
 
     # ---------- collect the last structure (yet)
@@ -58,17 +59,17 @@ def collect_OMX(current_id, work_path):
             lines_cell = OMX_structure.extract_cell_parameters_from_infile(
             work_path+rin.OMX_infile)
         lines_atom = OMX_structure.extract_atomic_positions_from_outfile(
-            work_path+rin.OMX_outfile)
+            work_path+rin.OMX_outfile, nat)
         if lines_atom is None:
             lines_atom = OMX_structure.extract_atomic_positions_from_infile(
-                work_path+rin.OMX_infile)
+                work_path+rin.OMX_infile, nat)
         opt_struc = OMX_structure.from_lines(lines_cell, lines_atom)
         # ------ opt_OMX-structure
         with open('./data/opt_OMX-structure', 'a') as fstruc:
             fstruc.write('# ID {0:d}\n'.format(current_id))
         OMX_structure.write(opt_struc, './data/opt_OMX-structure', mode='a')
     except Exception as e:
-        logger.warning(e.args[0])
+        logger.warning(str(e.args[0]))
         opt_struc = None
 
     # ---------- check

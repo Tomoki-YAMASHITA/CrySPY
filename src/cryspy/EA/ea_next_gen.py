@@ -6,6 +6,7 @@ from logging import getLogger
 
 import pandas as pd
 
+from .calc_hull import write_asc_hdist
 from .ea_child import child_gen
 from .gen_struc_EA.select_parents import Select_parents
 from ..IO import out_results

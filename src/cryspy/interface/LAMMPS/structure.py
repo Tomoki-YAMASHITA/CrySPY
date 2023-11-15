@@ -10,13 +10,15 @@ from pymatgen.core import Structure
 from ...IO import read_input as rin
 
 
-def from_file(name):
+def from_file(name, nat):
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- last structure
     with open(name, 'r') as f:
         lines = f.readlines()
     for i, line in enumerate(lines):
         if 'ITEM: TIMESTEP' in line:
-            tmp_lines = lines[i:i+rin.natot+9]
+            tmp_lines = lines[i:i+natot+9]
     lines = tmp_lines
 
     # ---------- lattice
@@ -42,7 +44,7 @@ def from_file(name):
 
     # ---------- species
     species = [itertools.repeat(typ, times=num) for typ, num in zip(
-        rin.atype, rin.nat)]
+        rin.atype, nat)]
     species = list(itertools.chain.from_iterable(species))
 
     structure = Structure(lattice, species, coords)

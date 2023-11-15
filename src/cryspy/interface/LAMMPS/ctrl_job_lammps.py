@@ -12,7 +12,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def next_stage_lammps(stage, work_path):
+def next_stage_lammps(stage, work_path, nat):
     # ---------- skip_flag
     skip_flag = False
 
@@ -32,7 +32,7 @@ def next_stage_lammps(stage, work_path):
     # ---------- generate the structure data file
     try:
         structure = lammps_structure.from_file(
-            work_path+'stage{}_log.struc'.format(stage))
+            work_path+'stage{}_log.struc'.format(stage), nat)
     except ValueError:
         skip_flag = True
         logger.warning('    error in lammps,  skip this structure')

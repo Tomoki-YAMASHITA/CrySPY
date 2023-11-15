@@ -22,6 +22,8 @@ if rin.algo == 'BO':
     from ..BO import bo_next_select
 if rin.algo in ['EA', 'EA-vc']:
     from ..EA import ea_next_gen
+if rin.algo == 'EA-vc':
+    from ..EA.calc_hull import calc_ef, calc_convex_hull, write_asc_hdist
 if rin.algo == 'LAQA':
     from ..LAQA.calc_score import calc_laqa_bias
     from ..LAQA import laqa_next_selection
@@ -47,6 +49,8 @@ class Ctrl_job:
             (self.n_selection, self.id_queueing,
              self.id_running, self.id_select_hist) = pkl_data.load_bo_id()
             (self.init_dscrpt_data, self.opt_dscrpt_data,
+             self.bo_mean, self.bo_var, self.bo_score) = pkl_data.load_bo_data()
+            (self.init_dscrpt_data, self.opt_dscrpt_data,
              self.bo_mean, self.bo_var,
              self.bo_score) = pkl_data.load_bo_data()
         elif rin.algo == 'LAQA':
@@ -60,6 +64,8 @@ class Ctrl_job:
              self.id_running) = pkl_data.load_ea_id()
             if rin.struc_mode in ['mol', 'mol_bs']:
                 self.struc_mol_id = pkl_data.load_struc_mol_id()
+            if rin.algo == 'EA-vc':
+                self.nat_data, self.ratio_data = pkl_data.load_ea_vc_data()
             # do not have to load ea_data here.
             # ea_data is used only in ea_next_gen.py
         # ---------- for option
@@ -74,7 +80,7 @@ class Ctrl_job:
         if rin.stress_step_flag:
             self.stress_step_data = pkl_data.load_stress_step()
         # ---------- flag for next selection or generation
-        if rin.algo in ['BO', 'LAQA', 'EA']:
+        if rin.algo in ['BO', 'LAQA', 'EA', 'EA-vc']:
             if (self.id_queueing or self.id_running):
                 self.go_next_sg = False
             else:
@@ -180,18 +186,23 @@ class Ctrl_job:
             raise SystemExit(1)
 
     def ctrl_next_stage(self):
+        # ---------- EA-vc
+        if rin.algo == 'EA-vc':
+            nat = self.nat_data[self.current_id]
+        else:
+            nat = rin.nat
         # ---------- energy step
         if rin.energy_step_flag:
             self.energy_step_data = select_code.get_energy_step(
-                self.energy_step_data, self.current_id, self.work_path)
+                self.energy_step_data, self.current_id, self.work_path, nat)
         # ---------- struc step
         if rin.struc_step_flag:
             self.struc_step_data = select_code.get_struc_step(
-                self.struc_step_data, self.current_id, self.work_path)
+                self.struc_step_data, self.current_id, self.work_path, nat)
         # ---------- force step
         if rin.force_step_flag:
             self.force_step_data = select_code.get_force_step(
-                self.force_step_data, self.current_id, self.work_path)
+                self.force_step_data, self.current_id, self.work_path, nat)
         # ---------- stress step
         if rin.stress_step_flag:
             self.stress_step_data = select_code.get_stress_step(
@@ -199,11 +210,11 @@ class Ctrl_job:
         # ---------- next stage
         if rin.kpt_flag:
             skip_flag, self.kpt_data = select_code.next_stage(
-                self.current_stage, self.work_path,
-                self.kpt_data, self.current_id)
+                self.current_stage, self.work_path, nat,
+                kpt_data=self.kpt_data, cid=self.current_id)
         else:
             skip_flag = select_code.next_stage(self.current_stage,
-                                               self.work_path)
+                                               self.work_path, nat)
         # ---------- skip
         if skip_flag:
             self.ctrl_skip()
@@ -231,31 +242,36 @@ class Ctrl_job:
         logger.info(f'    submitted job, ID {self.current_id:>6} Stage {self.current_stage + 1}')
 
     def ctrl_collect(self):
+        # ---------- EA-vc
+        if rin.algo == 'EA-vc':
+            nat = self.nat_data[self.current_id]
+        else:
+            nat = rin.nat
         # ---------- energy step
         if rin.energy_step_flag:
             self.energy_step_data = select_code.get_energy_step(
-                self.energy_step_data, self.current_id, self.work_path)
+                self.energy_step_data, self.current_id, self.work_path, nat)
         # ---------- struc step
         if rin.struc_step_flag:
             self.struc_step_data = select_code.get_struc_step(
-                self.struc_step_data, self.current_id, self.work_path)
+                self.struc_step_data, self.current_id, self.work_path, nat)
         # ---------- force step
         if rin.force_step_flag:
             self.force_step_data = select_code.get_force_step(
-                self.force_step_data, self.current_id, self.work_path)
+                self.force_step_data, self.current_id, self.work_path, nat)
         # ---------- stress step
         if rin.stress_step_flag:
             self.stress_step_data = select_code.get_stress_step(
                 self.stress_step_data, self.current_id, self.work_path)
         # ---------- each algo
         if rin.algo == 'RS':
-            self.ctrl_collect_rs()
+            self.ctrl_collect_rs(nat)
         elif rin.algo == 'BO':
-            self.ctrl_collect_bo()
+            self.ctrl_collect_bo(nat)
         elif rin.algo == 'LAQA':
-            self.ctrl_collect_laqa()
+            self.ctrl_collect_laqa(nat)
         elif rin.algo in ['EA', 'EA-vc']:
-            self.ctrl_collect_ea()
+            self.ctrl_collect_ea(nat)
         else:
             logger.error('Error, algo')
             raise SystemExit(1)
@@ -273,10 +289,10 @@ class Ctrl_job:
         # ---------- recheck
         self.recheck = True
 
-    def ctrl_collect_rs(self):
+    def ctrl_collect_rs(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path)
+            select_code.collect(self.current_id, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
@@ -287,10 +303,10 @@ class Ctrl_job:
         pkl_data.save_rslt(self.rslt_data)
         out_rslt(self.rslt_data)
 
-    def ctrl_collect_bo(self):
+    def ctrl_collect_bo(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path)
+            select_code.collect(self.current_id, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
@@ -314,12 +330,12 @@ class Ctrl_job:
         # ---------- save bo_data
         self.save_data()
 
-    def ctrl_collect_laqa(self):
+    def ctrl_collect_laqa(self, nat):
         # ---------- flag for finish
         self.fin_laqa = False
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path)
+            select_code.collect(self.current_id, self.work_path, nat)
         # ---------- total step and laqa_step
         #     force_step_data[ID][stage][step][atom]
         if self.force_step_data[self.current_id][-1] is None:
@@ -371,26 +387,30 @@ class Ctrl_job:
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
 
-    def ctrl_collect_ea(self):
+    def ctrl_collect_ea(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path)
+            select_code.collect(self.current_id, self.work_path, nat)
+        logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- calculate Ef
         if rin.algo == 'EA-vc':
-            ef = calc_ef(self.current_id, energy)
-        logger.info(f'    collect results: E = {energy} eV/atom')
+            ef = calc_ef(energy, self.ratio_data[self.current_id], rin.end_point)
+            logger.info(f'                     Ef = {ef} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
-        self.rslt_data.loc[self.current_id] = [self.gen,
-                                               spg_num, spg_sym,
-                                               spg_num_opt, spg_sym_opt,
-                                               energy, magmom, check_opt]
+        if not rin.algo == 'EA-vc':
+            self.rslt_data.loc[self.current_id] = [self.gen,
+                                                   spg_num, spg_sym,
+                                                   spg_num_opt, spg_sym_opt,
+                                                   energy, magmom, check_opt]
+        else:
+            self.rslt_data.loc[self.current_id] = [self.gen,
+                                                   spg_num, spg_sym,
+                                                   spg_num_opt, spg_sym_opt,
+                                                   energy, ef, magmom, check_opt]
         pkl_data.save_rslt(self.rslt_data)
         out_rslt(self.rslt_data)
-        # ------ success
-        # if opt_struc is not None:
-        #    self.save_id_data()
 
     def regist_opt(self, opt_struc):
         '''
@@ -553,11 +573,19 @@ class Ctrl_job:
             out_laqa_energy(self.laqa_energy)
             out_laqa_bias(self.laqa_bias)
         # ---------- EA
-        elif rin.algo in ['EA', 'EA-vc']:
+        elif rin.algo == 'EA':
             self.rslt_data.loc[self.current_id] = [self.gen,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
+            pkl_data.save_rslt(self.rslt_data)
+            out_rslt(self.rslt_data)
+        elif rin.algo == 'EA-vc':
+            ef = np.nan
+            self.rslt_data.loc[self.current_id] = [self.gen,
+                                                   spg_num, spg_sym,
+                                                   spg_num_opt, spg_sym_opt,
+                                                   energy, ef, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
         # ---------- move to fin
@@ -686,6 +714,10 @@ class Ctrl_job:
             raise SystemExit()
         # ---------- maxgen_ea
         if 0 < rin.maxgen_ea <= self.gen:
+            if rin.algo == 'EA-vc':
+                all_ef = self.rslt_data['Ef_eV_atom'].to_dict()
+                hdist = calc_convex_hull(all_ef, rin.n_pop)
+                write_asc_hdist(hdist)
             logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
@@ -727,3 +759,4 @@ class Ctrl_job:
                          self.laqa_energy, self.laqa_bias, self.laqa_score)
             pkl_data.save_laqa_data(laqa_data)
         # ea_data is used only in ea_next_gen.py
+        # ea_vc_data is used in this class, but it is not updated.

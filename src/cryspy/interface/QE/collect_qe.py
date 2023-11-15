@@ -15,7 +15,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def collect_qe(current_id, work_path):
+def collect_qe(current_id, work_path, nat):
     # ---------- check optimization in previous stage
     try:
         with open(work_path+rin.qe_outfile, 'r') as fpout:
@@ -25,10 +25,11 @@ def collect_qe(current_id, work_path):
             if 'End final coordinates' in line:
                 check_opt = 'done'
     except Exception as e:
-        logger.warning(e.args[0])
+        logger.warning(str(e.args[0]))
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         with open(work_path+rin.qe_outfile, 'r') as fpout:
             lines = fpout.readlines()
@@ -40,7 +41,7 @@ def collect_qe(current_id, work_path):
                 condition = line.startswith('!')
             if condition:
                 energy = float(line.split()[-2])    # in Ry
-                energy = energy * constants.RY2EV / float(rin.natot)    # Ry/cell --> eV/atom
+                energy = energy * constants.RY2EV / float(natot)    # Ry/cell --> eV/atom
                 break
         magmom = np.nan    # implemented by H. Sawahata 2020/10/04
         for line in reversed(lines):
@@ -51,7 +52,7 @@ def collect_qe(current_id, work_path):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        logger.warning(e.args[0] + f':    Structure ID {current_id},'
+        logger.warning(str(e.args[0]) + f':    Structure ID {current_id},'
                        f'could not obtain energy from {rin.qe_outfile}')
 
     # ---------- collect the last structure
@@ -62,10 +63,10 @@ def collect_qe(current_id, work_path):
             lines_cell = qe_structure.extract_cell_parameters(
                 work_path+rin.qe_infile)
         lines_atom = qe_structure.extract_atomic_positions(
-            work_path+rin.qe_outfile)
+            work_path+rin.qe_outfile, nat)
         if lines_atom is None:
             lines_atom = qe_structure.extract_atomic_positions(
-                work_path+rin.qe_infile)
+                work_path+rin.qe_infile, nat)
         opt_struc = qe_structure.from_lines(lines_cell, lines_atom)
 
         # ------ opt_qe-structure
@@ -73,7 +74,7 @@ def collect_qe(current_id, work_path):
             fstruc.write('# ID {0:d}\n'.format(current_id))
         qe_structure.write(opt_struc, './data/opt_qe-structure', mode='a')
     except Exception as e:
-        logger.warning(e.args[0])
+        logger.warning(str(e.args[0]))
         opt_struc = None
 
     # ---------- check
@@ -87,7 +88,7 @@ def collect_qe(current_id, work_path):
     return opt_struc, energy, magmom, check_opt
 
 
-def get_energy_step_qe(energy_step_data, current_id, work_path):
+def get_energy_step_qe(energy_step_data, current_id, work_path, nat):
     '''
     get energy step data in eV/atom
 
@@ -95,6 +96,8 @@ def get_energy_step_qe(energy_step_data, current_id, work_path):
     energy_step_data[ID][0] <-- stage 1
     energy_step_data[ID][1] <-- stage 2
     '''
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         # ---------- read output file
         with open(work_path+rin.qe_outfile, 'r') as f:
@@ -119,11 +122,11 @@ def get_energy_step_qe(energy_step_data, current_id, work_path):
             energy_step = None    # if empty
             logger.warning(f'#### ID: {current_id}: failed to parse energy_step')
         else:
-            energy_step = constants.RY2EV / rin.natot * np.array(energy_step,
+            energy_step = constants.RY2EV / natot * np.array(energy_step,
                                                                dtype='float')
     except Exception as e:
         energy_step = None
-        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse energy_step')
+        logger.warning(str(e.args[0]) + f'#### ID: {current_id}: failed to parse energy_step')
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -137,7 +140,7 @@ def get_energy_step_qe(energy_step_data, current_id, work_path):
     return energy_step_data
 
 
-def get_struc_step_qe(struc_step_data, current_id, work_path):
+def get_struc_step_qe(struc_step_data, current_id, work_path, nat):
     '''
     get structure step data
 
@@ -151,14 +154,14 @@ def get_struc_step_qe(struc_step_data, current_id, work_path):
     try:
         struc_step = []
         # ------ init struc from pwscf.in
-        _extract_struc_qe(work_path+rin.qe_infile, struc_step)
+        _extract_struc_qe(work_path+rin.qe_infile, struc_step, nat)
         # ------ struc step from pwscf.out
-        _extract_struc_qe(work_path+rin.qe_outfile, struc_step)
+        _extract_struc_qe(work_path+rin.qe_outfile, struc_step, nat)
         # ------ delete last structure due to duplication
         struc_step.pop(-1)
     except Exception as e:
         struc_step = None
-        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse in struc_step')
+        logger.warning(str(e.args[0]) + f'#### ID: {current_id}: failed to parse in struc_step')
 
     # ---------- append struc_step_data
     if struc_step_data.get(current_id) is None:
@@ -172,11 +175,12 @@ def get_struc_step_qe(struc_step_data, current_id, work_path):
     return struc_step_data
 
 
-def _extract_struc_qe(filename, struc_step):
+def _extract_struc_qe(filename, struc_step, nat):
     # ---------- read a file
     with open(filename, 'r') as f:
         lines = f.readlines()
     # ---------- extract struc
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     read_cell = False
     read_coords = False
     vc_flag = False      # in case of vc-relax
@@ -196,7 +200,7 @@ def _extract_struc_qe(filename, struc_step):
             lsplit = line.split()
             species.append(lsplit[0])
             coords.append(lsplit[1:])
-            if len(coords) == rin.natot:
+            if len(coords) == natot:
                 read_coords = False
                 coords = np.array(coords, dtype='float')
                 # ---- gen struc
@@ -210,7 +214,7 @@ def _extract_struc_qe(filename, struc_step):
             coords = []
 
 
-def get_force_step_qe(force_step_data, current_id, work_path):
+def get_force_step_qe(force_step_data, current_id, work_path, nat):
     '''
     get force step data in eV/angstrom
 
@@ -221,6 +225,8 @@ def get_force_step_qe(force_step_data, current_id, work_path):
     force_step_data[ID][0] <-- stage 1
     force_step_data[ID][1] <-- stage 2
     '''
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         # ---------- read output file
         with open(work_path+rin.qe_outfile, 'r') as f:
@@ -236,7 +242,7 @@ def get_force_step_qe(force_step_data, current_id, work_path):
                 force = []
             if read_force:
                 force.append(line.split()[6:])
-                if len(force) == rin.natot:
+                if len(force) == natot:
                     read_force = False
                     force_step.append(constants.RY2EV / constants.BOHR2ANG * np.array(
                         force, dtype='float'))

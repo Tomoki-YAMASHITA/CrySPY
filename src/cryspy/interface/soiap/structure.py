@@ -12,7 +12,7 @@ from ...util import constants
 from ...IO import read_input as rin
 
 
-def from_file(lines):
+def from_file(lines, nat):
     # ---------- lattice
     lattice = [[float(x) for x in line.split()] for line in lines[1:4]]
     #     in Bohr, each column is a lattice vector
@@ -24,7 +24,7 @@ def from_file(lines):
 
     # ---------- species
     species = [itertools.repeat(typ, times=num) for typ, num in zip(
-        rin.atype, rin.nat)]
+        rin.atype, nat)]
     species = list(itertools.chain.from_iterable(species))
 
     structure = Structure(lattice, species, coords)

@@ -99,7 +99,7 @@ class Rnd_struc_gen_pyxtal:
                 if s:
                     logger.warning(s)
             except Exception as e:
-                logger.warning(e.args[0] + f': spg = {spg} retry.')
+                logger.warning(str(e.args[0]) + f': spg = {spg} retry.')
                 continue
             if tmp_crystal.valid:
                 tmp_struc = tmp_crystal.to_pymatgen(resort=False)    # pymatgen Structure format
@@ -350,7 +350,7 @@ class Rnd_struc_gen_pyxtal:
                 if s:
                     logger.warning(s)
             except Exception as e:
-                logger.warning(e.args[0] + f': spg = {spg} retry.')
+                logger.warning(str(e.args[0]) + f': spg = {spg} retry.')
                 continue
             if tmp_crystal.valid:
                 # -- each wyckoff position --> dummy atom

@@ -36,7 +36,9 @@ def extract_cell_parameters_from_infile(filename):
             break
     return lines_cell
 
-def extract_atomic_positions_from_outfile(filename):
+def extract_atomic_positions_from_outfile(filename, nat):
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- last atomic positions
     with open(filename, 'r') as f:
         lines = f.readlines()
@@ -44,7 +46,7 @@ def extract_atomic_positions_from_outfile(filename):
     for i, line in enumerate(lines):
         if re.search('final', line):
             ibegin = i + 4
-            iend = ibegin + rin.natot
+            iend = ibegin + natot
             lines_atom = lines[ibegin:iend]
             break
     return lines_atom

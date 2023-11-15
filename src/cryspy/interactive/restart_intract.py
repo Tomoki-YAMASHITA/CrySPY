@@ -104,7 +104,7 @@ def restart_interact(njob: int):
         #     self.ctrl_collect_rs()
         # def ctrl_collect_rs()
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(cid, work_path)
+            select_code.collect(cid, work_path, rin.nat)
         print('{0}    collect results: E = {1} eV/atom'.format(cid, energy))
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = regist_opt(

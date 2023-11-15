@@ -40,7 +40,7 @@ def initialize(comm, mpi_rank, mpi_size):
         rin.readin()          # read input data, cryspy,in
     except Exception as e:
         if mpi_rank == 0:
-            logger.error(e.args[0])
+            logger.error(str(e.args[0]))
         raise SystemExit(1)
     # ########## MPI end
     if mpi_rank == 0:

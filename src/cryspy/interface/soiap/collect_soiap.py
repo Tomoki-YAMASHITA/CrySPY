@@ -3,7 +3,6 @@ Collect results in soiap
 '''
 
 from logging import getLogger
-import sys
 
 import numpy as np
 
@@ -15,7 +14,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def collect_soiap(current_id, work_path):
+def collect_soiap(current_id, work_path, nat):
     # ---------- check optimization in current stage
     try:
         with open(work_path+rin.soiap_outfile, 'r') as fout:
@@ -39,15 +38,16 @@ def collect_soiap(current_id, work_path):
         energy = energy * constants.HRT2EV        # Hartree/atom to eV/atom
     except Exception as e:
         energy = np.nan    # error
-        logger.warning(e.args[0] + f'    Structure ID {current_id},'
+        logger.warning(str(e.args[0]) + f'    Structure ID {current_id},'
                     f' could not obtain energy from {rin.soiap_outfile}')
 
     # ---------- collect the last structure
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         with open(work_path+'log.struc', 'r') as f:
             lines = f.readlines()
-            lines = lines[-(rin.natot+5):]
-        opt_struc = soiap_structure.from_file(lines)
+            lines = lines[-(natot+5):]
+        opt_struc = soiap_structure.from_file(lines, nat)
     except Exception:
         opt_struc = None
 
@@ -85,7 +85,7 @@ def get_energy_step_soiap(energy_step_data, current_id, work_path):
         energy_step = np.array(energy_step, dtype='float') * constants.HRT2EV
     except Exception as e:
         energy_step = None
-        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse log.tote')
+        logger.warning(str(e.args[0]) + f'#### ID: {current_id}: failed to parse log.tote')
 
     # ---------- append energy_step
     if energy_step_data.get(current_id) is None:
@@ -99,7 +99,7 @@ def get_energy_step_soiap(energy_step_data, current_id, work_path):
     return energy_step_data
 
 
-def get_struc_step_soiap(struc_step_data, current_id, work_path):
+def get_struc_step_soiap(struc_step_data, current_id, work_path, nat):
     '''
     get structure step data
 
@@ -111,6 +111,7 @@ def get_struc_step_soiap(struc_step_data, current_id, work_path):
     struc_step_data[ID][1] <-- stage 2
     '''
     # ---------- get struc step from log.struc
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         # ------ read file
         with open(work_path+'log.struc', 'r') as f:
@@ -121,13 +122,13 @@ def get_struc_step_soiap(struc_step_data, current_id, work_path):
         tmp_lines = []
         for line in lines:
             tmp_lines.append(line)
-            if len(tmp_lines) == rin.natot + 5:
-                struc = soiap_structure.from_file(tmp_lines)
+            if len(tmp_lines) == natot + 5:
+                struc = soiap_structure.from_file(tmp_lines, nat)
                 struc_step.append(struc)
                 tmp_lines = []    # clear
     except Exception as e:
         struc_step = None
-        logger.warning(e.args[0], f'#### ID: {current_id}: failed to parse log.struc')
+        logger.warning(str(e.args[0]), f'#### ID: {current_id}: failed to parse log.struc')
 
     # ---------- append struc_step
     if struc_step_data.get(current_id) is None:
@@ -141,7 +142,7 @@ def get_struc_step_soiap(struc_step_data, current_id, work_path):
     return struc_step_data
 
 
-def get_force_step_soiap(force_step_data, current_id, work_path):
+def get_force_step_soiap(force_step_data, current_id, work_path, nat):
     '''
     get force step data in eV/angstrom
 
@@ -153,6 +154,7 @@ def get_force_step_soiap(force_step_data, current_id, work_path):
     force_step_data[ID][1] <-- stage 2
     '''
     # ---------- get force step from log.frc
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
         # ------ read file
         with open(work_path+'log.frc', 'r') as f:
@@ -164,7 +166,7 @@ def get_force_step_soiap(force_step_data, current_id, work_path):
         for line in lines:
             if 'forces' not in line:
                 tmp_lines.append([float(x) for x in line.split()])
-                if len(tmp_lines) == rin.natot:
+                if len(tmp_lines) == natot:
                     tmp_lines = np.array(tmp_lines)
                     # Hartree/Bohr --> eV/ang
                     tmp_lines = tmp_lines * constants.HRT2EV / constants.BOHR2ANG
@@ -172,7 +174,7 @@ def get_force_step_soiap(force_step_data, current_id, work_path):
                     tmp_lines = []    # clear
     except Exception as e:
         force_step = None
-        logger.warning(e.args[0] + f'#### ID: {current_id}: failed to parse log.frc')
+        logger.warning(str(e.args[0]) + f'#### ID: {current_id}: failed to parse log.frc')
 
     # ---------- append force_step
     if force_step_data.get(current_id) is None:
@@ -217,7 +219,7 @@ def get_stress_step_soiap(stress_step_data, current_id, work_path):
                     tmp_lines = []    # clear
     except Exception as e:
         stress_step = None
-        logger.warning(e.args[0], f'#### ID: {current_id}: failed to parse log.strs')
+        logger.warning(str(e.args[0]), f'#### ID: {current_id}: failed to parse log.strs')
 
     # ---------- append stress_step
     if stress_step_data.get(current_id) is None:

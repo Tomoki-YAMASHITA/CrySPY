@@ -16,7 +16,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def next_stage_qe(stage, work_path, kpt_data, current_id):
+def next_stage_qe(stage, work_path, kpt_data, current_id, nat):
     # ---------- skip_flag
     skip_flag = False
 
@@ -36,10 +36,10 @@ def next_stage_qe(stage, work_path, kpt_data, current_id):
             lines_cell = qe_structure.extract_cell_parameters(
                 work_path+'stage{}_'.format(stage)+rin.qe_infile)
         lines_atom = qe_structure.extract_atomic_positions(
-            work_path+'stage{}_'.format(stage)+rin.qe_outfile)
+            work_path+'stage{}_'.format(stage)+rin.qe_outfile, nat)
         if lines_atom is None:
             lines_atom = qe_structure.extract_atomic_positions(
-                work_path+'stage{}_'.format(stage)+rin.qe_infile)
+                work_path+'stage{}_'.format(stage)+rin.qe_infile, nat)
         structure = qe_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
         skip_flag = True

@@ -5,7 +5,6 @@ Restart CrySPY
 from datetime import datetime
 from logging import getLogger
 import os
-import sys
 
 from .gen_init_struc import gen_init_struc
 from ..IO import io_stat, pkl_data
@@ -39,7 +38,7 @@ def restart(comm, mpi_rank, mpi_size):
         rin.readin()
     except Exception as e:
         if mpi_rank == 0:
-            logger.error(e.args[0])
+            logger.error(str(e.args[0]))
         raise SystemExit(1)
     if mpi_rank == 0:
         try:
@@ -47,11 +46,12 @@ def restart(comm, mpi_rank, mpi_size):
         except Exception as e:
             if mpi_size > 1:
                 comm.Abort(1)
-            logger.error(e.args[0])
+            logger.error(str(e.args[0]))
             raise SystemExit(1)
 
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
+    # _append_struc is not allowed in EA and EA-vc, too
     init_struc_data = pkl_data.load_init_struc()
 
     # ---------- append structures
@@ -93,6 +93,7 @@ def restart(comm, mpi_rank, mpi_size):
             # ------ backup
             backup_cryspy()
     #
+    # EA-vc is not compatible with append_struc_ea option
     # struc_mol_id has not developed yet here
     #if rin.struc_mode in ['mol', 'mol_bs']:
     #    struc_mol_id = pkl_data.load_struc_mol_id()
