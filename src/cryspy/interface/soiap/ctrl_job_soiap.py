@@ -52,7 +52,7 @@ def next_stage_soiap(stage, work_path, nat):
     return skip_flag
 
 
-def next_struc_soiap(structure, current_id, work_path):
+def next_struc_soiap(structure, cid, work_path):
     # ---------- copy files
     calc_inputs = [rin.soiap_infile]
     for f in calc_inputs:
@@ -66,4 +66,4 @@ def next_struc_soiap(structure, current_id, work_path):
     soiap_structure.write(structure,
                           work_path+rin.soiap_cif,
                           symprec=rin.symprec,
-                          title='ID_{0:d}'.format(current_id))
+                          title='ID_{0:d}'.format(cid))

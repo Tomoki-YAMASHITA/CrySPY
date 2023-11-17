@@ -16,7 +16,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def next_stage_vasp(stage, work_path, kpt_data, current_id):
+def next_stage_vasp(stage, work_path, kpt_data, cid):
     # ---------- skip_flag
     skip_flag = False
 
@@ -42,10 +42,10 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
         structure = Structure.from_file(work_path+'POSCAR')
     except ValueError:
         skip_flag = True
-        kpt_data[current_id].append(['skip'])
+        kpt_data[cid].append(['skip'])
         pkl_data.save_kpt(kpt_data)
         out_kpts(kpt_data)
-        logger.info(f'    error in VASP,  skip structure {current_id}')
+        logger.info(f'    error in VASP,  skip structure {cid}')
         return skip_flag, kpt_data
     mitparamset = MITRelaxSet(structure)
     # kppvol[0]: <--> stage 1, kppvol[1] <--> stage2, ...
@@ -56,7 +56,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     kpoints.write_file(work_path+'KPOINTS')
 
     # ---------- kpt_data
-    kpt_data[current_id].append(kpoints.kpts[0])
+    kpt_data[cid].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 
@@ -68,7 +68,7 @@ def next_stage_vasp(stage, work_path, kpt_data, current_id):
     return skip_flag, kpt_data
 
 
-def next_struc_vasp(structure, current_id, work_path, kpt_data):
+def next_struc_vasp(structure, cid, work_path, kpt_data):
     # ---------- copy files
     calc_inputs = ['POTCAR', 'INCAR']
     for f in calc_inputs:
@@ -88,7 +88,7 @@ def next_struc_vasp(structure, current_id, work_path, kpt_data):
     # ---------- Change the title of POSCAR
     with open(work_path+'POSCAR', 'r') as f:
         lines = f.readlines()
-    lines[0] = 'ID_{}\n'.format(current_id)
+    lines[0] = 'ID_{}\n'.format(cid)
     with open(work_path+'POSCAR', 'w') as f:
         for line in lines:
             f.write(line)
@@ -101,8 +101,8 @@ def next_struc_vasp(structure, current_id, work_path, kpt_data):
     kpoints.write_file(work_path+'KPOINTS')
 
     # ---------- kpt_data
-    kpt_data[current_id] = []    # initialize
-    kpt_data[current_id].append(kpoints.kpts[0])
+    kpt_data[cid] = []    # initialize
+    kpt_data[cid].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 

@@ -42,13 +42,14 @@ def next_stage_lammps(stage, work_path, nat):
     title = lines[0][7:]    # string following 'data_'
     lammps_structure.write(structure,
                            work_path+rin.lammps_data,
+                           nat,
                            title=title)
 
     # ---------- return
     return skip_flag
 
 
-def next_struc_lammps(structure, current_id, work_path):
+def next_struc_lammps(structure, cid, work_path, nat):
     # ---------- copy files
     if rin.lammps_potential is None:
         calc_inputs = [rin.lammps_infile]
@@ -63,5 +64,5 @@ def next_struc_lammps(structure, current_id, work_path):
 
     # ---------- generate the structure data file
     lammps_structure.write(structure,
-                           work_path+rin.lammps_data,
-                           title='ID_{0:d}'.format(current_id))
+                           work_path+rin.lammps_data, nat,
+                           title='ID_{0:d}'.format(cid))

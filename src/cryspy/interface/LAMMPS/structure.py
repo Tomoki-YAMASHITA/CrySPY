@@ -52,7 +52,7 @@ def from_file(name, nat):
     return structure
 
 
-def write(structure, output, title="LAMMPS"):
+def write(structure, output, nat, title="LAMMPS"):
     # ---------- convert lattice constants and angles to LAMMPS format
     cos = lambda x: np.cos(np.deg2rad(x))
     sqrt = lambda x: np.sqrt(x)
@@ -68,9 +68,10 @@ def write(structure, output, title="LAMMPS"):
     lz = sqrt(c**2 - xz**2 - yz**2)
 
     # ---------- coordinates
-    index = range(1, rin.natot+1)
+    natot = sum(nat)
+    index = range(1, natot+1)
     species = [itertools.repeat(typ, times=num) for typ, num in zip(
-        index, rin.nat)]
+        index, nat)]
     species = list(itertools.chain.from_iterable(species))
     sites = structure.sites
 
@@ -78,7 +79,7 @@ def write(structure, output, title="LAMMPS"):
     with open(output, 'w') as f:
         f.write('# data_{0:s}\n'.format(''.join(title.split())))
         f.write('\n')
-        f.write(str(rin.natot) + ' atoms\n')
+        f.write(str(natot) + ' atoms\n')
         f.write(str(len(rin.atype)) + ' atom types\n')
         f.write('\n')
         f.write('0.000000  {0:10.6f}   xlo xhi\n'.format(lx))

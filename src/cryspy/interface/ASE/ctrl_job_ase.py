@@ -35,7 +35,7 @@ def next_stage_ase(stage, work_path):
     return skip_flag
 
 
-def next_struc_ase(structure, current_id, work_path):
+def next_struc_ase(structure, cid, work_path):
     # ---------- copy files
     calc_inputs = [rin.ase_python]
     for f in calc_inputs:
@@ -54,7 +54,7 @@ def next_struc_ase(structure, current_id, work_path):
     # ---------- Change the title of POSCAR
     with open(work_path+'POSCAR', 'r') as f:
         lines = f.readlines()
-    lines[0] = 'ID_{}\n'.format(current_id)
+    lines[0] = 'ID_{}\n'.format(cid)
     with open(work_path+'POSCAR', 'w') as f:
         for line in lines:
             f.write(line)

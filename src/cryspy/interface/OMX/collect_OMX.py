@@ -16,7 +16,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def collect_OMX(current_id, work_path, nat):
+def collect_OMX(cid, work_path, nat):
     # ---------- check optimization in previous stage (done)
     # If *.out file exists, the calculation is done.
     try:
@@ -48,7 +48,7 @@ def collect_OMX(current_id, work_path, nat):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        logger.warning(str(e.args[0]) + f':    Structure ID {current_id},'
+        logger.warning(str(e.args[0]) + f':    Structure ID {cid},'
                        f' could not obtain energy from {rin.OMX_outfile}')
 
     # ---------- collect the last structure (yet)
@@ -66,7 +66,7 @@ def collect_OMX(current_id, work_path, nat):
         opt_struc = OMX_structure.from_lines(lines_cell, lines_atom)
         # ------ opt_OMX-structure
         with open('./data/opt_OMX-structure', 'a') as fstruc:
-            fstruc.write('# ID {0:d}\n'.format(current_id))
+            fstruc.write('# ID {0:d}\n'.format(cid))
         OMX_structure.write(opt_struc, './data/opt_OMX-structure', mode='a')
     except Exception as e:
         logger.warning(str(e.args[0]))

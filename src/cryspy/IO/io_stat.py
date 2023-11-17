@@ -66,9 +66,9 @@ def set_id(stat, var_str, var_list):
         stat.set('status', var_str, f'{vl}')
 
 
-def set_stage(stat, current_id, current_stage):
-    stat.set('status', f'ID {current_id:>6}', f'Stage {current_stage}')
+def set_stage(stat, cid, cstage):
+    stat.set('status', f'ID {cid:>6}', f'Stage {cstage}')
 
 
-def clean_id(stat, current_id):
-    stat.remove_option('status', f'ID {current_id:>6}')
+def clean_id(stat, cid):
+    stat.remove_option('status', f'ID {cid:>6}')

@@ -16,7 +16,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def next_stage_qe(stage, work_path, kpt_data, current_id, nat):
+def next_stage_qe(stage, work_path, nat, kpt_data, cid):
     # ---------- skip_flag
     skip_flag = False
 
@@ -43,15 +43,19 @@ def next_stage_qe(stage, work_path, kpt_data, current_id, nat):
         structure = qe_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
         skip_flag = True
-        kpt_data[current_id].append(['skip'])
+        kpt_data[cid].append(['skip'])
         pkl_data.save_kpt(kpt_data)
         out_kpts(kpt_data)
-        logger.info(f'    error in QE,  skip structure {current_id}')
+        logger.info(f'    error in QE,  skip structure {cid}')
         return skip_flag, kpt_data
 
     # ---------- copy the input file from ./calc_in for the next stage
     finput = './calc_in/'+rin.qe_infile+'_{}'.format(stage + 1)
     shutil.copyfile(finput, work_path+rin.qe_infile)
+
+    # ---------- "nat" (<-- natot) in qe_infile for EA-vc
+    if rin.algo == 'EA-vc':
+        _replace_nat(work_path + rin.qe_infile, nat)
 
     # ---------- append structure info.
     with open(work_path+rin.qe_infile, 'a') as fin:
@@ -70,7 +74,7 @@ def next_stage_qe(stage, work_path, kpt_data, current_id, nat):
         f.write(' '.join(str(x) for x in kpoints.kpts[0]) + '  0 0 0\n')
 
     # ---------- kpt_data
-    kpt_data[current_id].append(kpoints.kpts[0])
+    kpt_data[cid].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 
@@ -78,7 +82,7 @@ def next_stage_qe(stage, work_path, kpt_data, current_id, nat):
     return skip_flag, kpt_data
 
 
-def next_struc_qe(structure, current_id, work_path, kpt_data):
+def next_struc_qe(structure, cid, work_path, nat, kpt_data):
     # ---------- copy files
     calc_inputs = [rin.qe_infile]
     for f in calc_inputs:
@@ -87,6 +91,10 @@ def next_struc_qe(structure, current_id, work_path, kpt_data):
             logger.error('Could not find ./calc_in/' + ff)
             raise SystemExit(1)
         shutil.copyfile('./calc_in/'+ff, work_path+f)
+
+    # ---------- "nat" (<-- natot) in qe_infile for EA-vc
+    if rin.algo == 'EA-vc':
+        _replace_nat(work_path + rin.qe_infile, nat)
 
     # ---------- append structure info. to the input file
     with open(work_path+rin.qe_infile, 'a') as fin:
@@ -103,10 +111,23 @@ def next_struc_qe(structure, current_id, work_path, kpt_data):
         f.write(' '.join(str(x) for x in kpoints.kpts[0]) + '  0 0 0\n')
 
     # ---------- kpt_data
-    kpt_data[current_id] = []    # initialize
-    kpt_data[current_id].append(kpoints.kpts[0])
+    kpt_data[cid] = []    # initialize
+    kpt_data[cid].append(kpoints.kpts[0])
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 
     # ---------- return
     return kpt_data
+
+
+def _replace_nat(filename, nat):
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+    lines2 = []
+    for line in lines:
+        if line.lstrip().startswith('nat'):
+            lines2.append(f'    nat = {sum(nat)}\n')
+        else:
+            lines2.append(line)
+    with open(filename, 'w') as f:
+        f.writelines(lines2)

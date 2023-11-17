@@ -73,7 +73,7 @@ def restart_interact(njob: int):
             os.mkdir('work/{:06}'.format(cid))
         work_path = './work/{:06}/'.format(cid)
 
-        select_code.next_struc(init_struc_data[cid], cid, work_path)
+        select_code.next_struc(init_struc_data[cid], cid, work_path, rin.nat)
 
         # def prepare_jobfile(self)
         if not os.path.isfile('./calc_in/' + rin.jobfile):
@@ -157,7 +157,7 @@ def regist_opt(init_struc_data, opt_struc, tmp_opt_struc, cid, work_path):
         spg_num_opt = 0
         spg_sym_opt = None
     # ---------- register opt_struc
-    # self.opt_struc_data[self.current_id] = opt_struc
+    # self.opt_struc_data[self.cid] = opt_struc
     tmp_opt_struc[cid] = opt_struc
     pkl_data.save_opt_struc(tmp_opt_struc)
     # ---------- return

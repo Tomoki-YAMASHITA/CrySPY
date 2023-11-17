@@ -153,9 +153,9 @@ class Ctrl_job:
     def handle_job(self):
         logger.info('# ---------- job status')
         for cid in self.tmp_running:
-            # ---------- set work_path and current_id
+            # ---------- set work_path and cid
             self.work_path = f'./work/{cid:06}/'
-            self.current_id = cid
+            self.cid = cid
             # ---------- handle job
             if self.job_stat[cid] == 'submitted':
                 logger.info(f'ID {cid:>6}: still queueing or running')
@@ -171,14 +171,14 @@ class Ctrl_job:
                 logger.error(f'Unexpected error in {self.work_path}stat_job')
 
     def ctrl_done(self):
-        self.current_stage = self.stage_stat[self.current_id]
+        self.cstage = self.stage_stat[self.cid]
         # ---------- log
-        logger.info(f'ID {self.current_id:>6}: Stage {self.current_stage} Done!')
+        logger.info(f'ID {self.cid:>6}: Stage {self.cstage} Done!')
         # ---------- next stage
-        if self.current_stage < rin.nstage:
+        if self.cstage < rin.nstage:
             self.ctrl_next_stage()
         # ---------- collect result
-        elif self.current_stage == rin.nstage:
+        elif self.cstage == rin.nstage:
             self.ctrl_collect()
         # ---------- error
         else:
@@ -188,32 +188,32 @@ class Ctrl_job:
     def ctrl_next_stage(self):
         # ---------- EA-vc
         if rin.algo == 'EA-vc':
-            nat = self.nat_data[self.current_id]
+            nat = self.nat_data[self.cid]
         else:
             nat = rin.nat
         # ---------- energy step
         if rin.energy_step_flag:
             self.energy_step_data = select_code.get_energy_step(
-                self.energy_step_data, self.current_id, self.work_path, nat)
+                self.energy_step_data, self.cid, self.work_path, nat)
         # ---------- struc step
         if rin.struc_step_flag:
             self.struc_step_data = select_code.get_struc_step(
-                self.struc_step_data, self.current_id, self.work_path, nat)
+                self.struc_step_data, self.cid, self.work_path, nat)
         # ---------- force step
         if rin.force_step_flag:
             self.force_step_data = select_code.get_force_step(
-                self.force_step_data, self.current_id, self.work_path, nat)
+                self.force_step_data, self.cid, self.work_path, nat)
         # ---------- stress step
         if rin.stress_step_flag:
             self.stress_step_data = select_code.get_stress_step(
-                self.stress_step_data, self.current_id, self.work_path)
+                self.stress_step_data, self.cid, self.work_path)
         # ---------- next stage
         if rin.kpt_flag:
             skip_flag, self.kpt_data = select_code.next_stage(
-                self.current_stage, self.work_path, nat,
-                kpt_data=self.kpt_data, cid=self.current_id)
+                self.cstage, self.work_path, nat,
+                kpt_data=self.kpt_data, cid=self.cid)
         else:
-            skip_flag = select_code.next_stage(self.current_stage,
+            skip_flag = select_code.next_stage(self.cstage,
                                                self.work_path, nat)
         # ---------- skip
         if skip_flag:
@@ -228,41 +228,41 @@ class Ctrl_job:
         # ---------- submit job
         os.chdir(self.work_path)    # cd work_path
         with open('stat_job', 'w') as fwstat:
-            fwstat.write(f'{self.current_id:<6}    # Structure ID\n')
-            fwstat.write(f'{self.current_stage + 1:<6}    # Stage\n')
+            fwstat.write(f'{self.cid:<6}    # Structure ID\n')
+            fwstat.write(f'{self.cstage + 1:<6}    # Stage\n')
             fwstat.write('submitted\n')
         with open('sublog', 'w') as logf:
             subprocess.Popen([rin.jobcmd, rin.jobfile],
                              stdout=logf, stderr=logf)
         os.chdir('../../')    # go back to ..
         # ---------- save status
-        io_stat.set_stage(self.stat, self.current_id, self.current_stage + 1)
+        io_stat.set_stage(self.stat, self.cid, self.cstage + 1)
         io_stat.write_stat(self.stat)
         # ---------- log
-        logger.info(f'    submitted job, ID {self.current_id:>6} Stage {self.current_stage + 1}')
+        logger.info(f'    submitted job, ID {self.cid:>6} Stage {self.cstage + 1}')
 
     def ctrl_collect(self):
         # ---------- EA-vc
         if rin.algo == 'EA-vc':
-            nat = self.nat_data[self.current_id]
+            nat = self.nat_data[self.cid]
         else:
             nat = rin.nat
         # ---------- energy step
         if rin.energy_step_flag:
             self.energy_step_data = select_code.get_energy_step(
-                self.energy_step_data, self.current_id, self.work_path, nat)
+                self.energy_step_data, self.cid, self.work_path, nat)
         # ---------- struc step
         if rin.struc_step_flag:
             self.struc_step_data = select_code.get_struc_step(
-                self.struc_step_data, self.current_id, self.work_path, nat)
+                self.struc_step_data, self.cid, self.work_path, nat)
         # ---------- force step
         if rin.force_step_flag:
             self.force_step_data = select_code.get_force_step(
-                self.force_step_data, self.current_id, self.work_path, nat)
+                self.force_step_data, self.cid, self.work_path, nat)
         # ---------- stress step
         if rin.stress_step_flag:
             self.stress_step_data = select_code.get_stress_step(
-                self.stress_step_data, self.current_id, self.work_path)
+                self.stress_step_data, self.cid, self.work_path)
         # ---------- each algo
         if rin.algo == 'RS':
             self.ctrl_collect_rs(nat)
@@ -292,12 +292,12 @@ class Ctrl_job:
     def ctrl_collect_rs(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path, nat)
+            select_code.collect(self.cid, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
-        self.rslt_data.loc[self.current_id] = [spg_num, spg_sym,
+        self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
                                                spg_num_opt, spg_sym_opt,
                                                energy, magmom, check_opt]
         pkl_data.save_rslt(self.rslt_data)
@@ -306,12 +306,12 @@ class Ctrl_job:
     def ctrl_collect_bo(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path, nat)
+            select_code.collect(self.cid, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
-        self.rslt_data.loc[self.current_id] = [self.n_selection,
+        self.rslt_data.loc[self.cid] = [self.n_selection,
                                                spg_num, spg_sym,
                                                spg_num_opt, spg_sym_opt,
                                                energy, magmom, check_opt]
@@ -320,13 +320,13 @@ class Ctrl_job:
         # ---------- success
         if opt_struc is not None:
             # ------ calc descriptor for opt sturcture
-            tmp_dscrpt = select_descriptor({self.current_id: opt_struc})
+            tmp_dscrpt = select_descriptor({self.cid: opt_struc})
             # ------ update descriptors
             self.opt_dscrpt_data.update(tmp_dscrpt)
         # ---------- error
         else:
             # ------ update descriptors and non_error_id
-            self.opt_dscrpt_data[self.current_id] = None
+            self.opt_dscrpt_data[self.cid] = None
         # ---------- save bo_data
         self.save_data()
 
@@ -335,36 +335,36 @@ class Ctrl_job:
         self.fin_laqa = False
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path, nat)
+            select_code.collect(self.cid, self.work_path, nat)
         # ---------- total step and laqa_step
         #     force_step_data[ID][stage][step][atom]
-        if self.force_step_data[self.current_id][-1] is None:
-            self.laqa_step[self.current_id].append(0)
+        if self.force_step_data[self.cid][-1] is None:
+            self.laqa_step[self.cid].append(0)
         else:
             self.tot_step_select[-1] += len(
-                self.force_step_data[self.current_id][-1])
-            self.laqa_step[self.current_id].append(
-                len(self.force_step_data[self.current_id][-1]))
+                self.force_step_data[self.cid][-1])
+            self.laqa_step[self.cid].append(
+                len(self.force_step_data[self.cid][-1]))
         # ------ save status
         io_stat.set_common(self.stat, 'total_step', sum(self.tot_step_select))
         io_stat.write_stat(self.stat)
         # ---------- append laqa struc
-        self.laqa_struc[self.current_id].append(opt_struc)
+        self.laqa_struc[self.cid].append(opt_struc)
         # ---------- append laqa energy
-        self.laqa_energy[self.current_id].append(energy)
+        self.laqa_energy[self.cid].append(energy)
         # ---------- append laqa bias
         #     force_step_data[ID][stage][step][atom]
         #     stress_step_data[ID][stage][step][atom]
         tmp_laqa_bias = calc_laqa_bias(
-            self.force_step_data[self.current_id][-1],
-            self.stress_step_data[self.current_id][-1],
+            self.force_step_data[self.cid][-1],
+            self.stress_step_data[self.cid][-1],
             wf=rin.wf, ws=rin.ws)
-        self.laqa_bias[self.current_id].append(tmp_laqa_bias)
+        self.laqa_bias[self.cid].append(tmp_laqa_bias)
         # ---------- append laqa score
         if check_opt == 'done' or np.isnan(energy) or np.isnan(tmp_laqa_bias):
-            self.laqa_score[self.current_id].append(-float('inf'))
+            self.laqa_score[self.cid].append(-float('inf'))
         else:
-            self.laqa_score[self.current_id].append(-energy + tmp_laqa_bias)
+            self.laqa_score[self.cid].append(-energy + tmp_laqa_bias)
         # ---------- save and out laqa data
         self.save_data()
         out_laqa_status(self.laqa_step, self.laqa_score,
@@ -381,7 +381,7 @@ class Ctrl_job:
             (spg_sym, spg_num,
              spg_sym_opt, spg_num_opt) = self.regist_opt(opt_struc)
             # ------ save rslt
-            self.rslt_data.loc[self.current_id] = [spg_num, spg_sym,
+            self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
@@ -390,22 +390,22 @@ class Ctrl_job:
     def ctrl_collect_ea(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
-            select_code.collect(self.current_id, self.work_path, nat)
+            select_code.collect(self.cid, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- calculate Ef
         if rin.algo == 'EA-vc':
-            ef = calc_ef(energy, self.ratio_data[self.current_id], rin.end_point)
+            ef = calc_ef(energy, self.ratio_data[self.cid], rin.end_point)
             logger.info(f'                     Ef = {ef} eV/atom')
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
         # ---------- save rslt
         if not rin.algo == 'EA-vc':
-            self.rslt_data.loc[self.current_id] = [self.gen,
+            self.rslt_data.loc[self.cid] = [self.gen,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
         else:
-            self.rslt_data.loc[self.current_id] = [self.gen,
+            self.rslt_data.loc[self.cid] = [self.gen,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, ef, magmom, check_opt]
@@ -419,7 +419,7 @@ class Ctrl_job:
         # ---------- get initial spg info
         try:
             spg_sym, spg_num = self.init_struc_data[
-                self.current_id].get_space_group_info(symprec=rin.symprec)
+                self.cid].get_space_group_info(symprec=rin.symprec)
         except TypeError:
             spg_num = 0
             spg_sym = None
@@ -433,9 +433,9 @@ class Ctrl_job:
                 spg_num_opt = 0
                 spg_sym_opt = None
             # ------ out opt_struc
-            out_poscar(opt_struc, self.current_id, './data/opt_POSCARS')
+            out_poscar(opt_struc, self.cid, './data/opt_POSCARS')
             try:
-                out_cif(opt_struc, self.current_id, self.work_path,
+                out_cif(opt_struc, self.cid, self.work_path,
                         './data/opt_CIFS.cif', rin.symprec)
             except TypeError:
                 logger.warning('failed to write opt_CIF')
@@ -444,7 +444,7 @@ class Ctrl_job:
             spg_num_opt = 0
             spg_sym_opt = None
         # ---------- register opt_struc
-        self.opt_struc_data[self.current_id] = opt_struc
+        self.opt_struc_data[self.cid] = opt_struc
         pkl_data.save_opt_struc(self.opt_struc_data)
         # ---------- return
         return spg_sym, spg_num, spg_sym_opt, spg_num_opt
@@ -452,44 +452,50 @@ class Ctrl_job:
     def ctrl_next_struc(self):
         # ---------- RS
         if rin.algo == 'RS':
-            next_struc_data = self.init_struc_data[self.current_id]
+            next_struc_data = self.init_struc_data[self.cid]
         # ---------- BO
         elif rin.algo == 'BO':
-            next_struc_data = self.init_struc_data[self.current_id]
+            next_struc_data = self.init_struc_data[self.cid]
         # ---------- LAQA
         elif rin.algo == 'LAQA':
-            if self.laqa_struc[self.current_id]:    # vacant list?
-                next_struc_data = self.laqa_struc[self.current_id][-1]
+            if self.laqa_struc[self.cid]:    # vacant list?
+                next_struc_data = self.laqa_struc[self.cid][-1]
             else:
-                next_struc_data = self.init_struc_data[self.current_id]
+                next_struc_data = self.init_struc_data[self.cid]
         # ---------- EA
         elif rin.algo in ['EA', 'EA-vc']:
-            next_struc_data = self.init_struc_data[self.current_id]
+            next_struc_data = self.init_struc_data[self.cid]
         # ---------- algo is wrong
         else:
             logger.error('Error, algo in ctrl_next_struc')
             raise SystemExit(1)
+        # ---------- nat for EA-vc
+        if rin.algo == 'EA-vc':
+            nat = self.nat_data[self.cid]
+        else:
+            nat = rin.nat
         # ---------- common part
         # ------ in case there is no initial strucure data
         if next_struc_data is None:
-            logger.info(f'ID {self.current_id:>6}: initial structure is None')
+            logger.info(f'ID {self.cid:>6}: initial structure is None')
             self.ctrl_skip()
         # ------ normal initial structure data
         else:
             # -- prepare input files for structure optimization
             if rin.kpt_flag:
                 self.kpt_data = select_code.next_struc(next_struc_data,
-                                                       self.current_id,
+                                                       self.cid,
                                                        self.work_path,
+                                                       nat,
                                                        self.kpt_data)
             else:
-                select_code.next_struc(next_struc_data, self.current_id,
-                                       self.work_path)
+                select_code.next_struc(next_struc_data, self.cid,
+                                       self.work_path, nat)
             # -- prepare jobfile
             self.prepare_jobfile()
             # -- submit
             self.submit_next_struc()
-            logger.info(f'ID {self.current_id:>6}: submit job, Stage 1')
+            logger.info(f'ID {self.cid:>6}: submit job, Stage 1')
             # -- update status
             self.update_status(operation='submit')
 
@@ -497,7 +503,7 @@ class Ctrl_job:
         # ---------- submit job
         os.chdir(self.work_path)    # cd work_path
         with open('stat_job', 'w') as fwstat:
-            fwstat.write(f'{self.current_id:<6}    # Structure ID\n')
+            fwstat.write(f'{self.cid:<6}    # Structure ID\n')
             fwstat.write(f'{1:<6}    # Stage\n')
             fwstat.write('submitted\n')
         with open('sublog', 'w') as logf:
@@ -507,15 +513,15 @@ class Ctrl_job:
 
     def ctrl_skip(self):
         # ---------- log
-        logger.info(f'ID {self.current_id:>6}: Skip')
+        logger.info(f'ID {self.cid:>6}: Skip')
         # ---------- get initial spg info
-        if self.init_struc_data[self.current_id] is None:
+        if self.init_struc_data[self.cid] is None:
             spg_sym = None
             spg_num = 0
         else:
             try:
                 spg_sym, spg_num = self.init_struc_data[
-                    self.current_id].get_space_group_info(symprec=rin.symprec)
+                    self.cid].get_space_group_info(symprec=rin.symprec)
             except TypeError:
                 spg_num = 0
                 spg_sym = None
@@ -526,12 +532,12 @@ class Ctrl_job:
         magmom = np.nan
         check_opt = 'skip'
         # ---------- register opt_struc
-        self.opt_struc_data[self.current_id] = None
+        self.opt_struc_data[self.cid] = None
         pkl_data.save_opt_struc(self.opt_struc_data)
         # ---------- RS
         if rin.algo == 'RS':
             # ------ save rslt
-            self.rslt_data.loc[self.current_id] = [spg_num, spg_sym,
+            self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
@@ -539,31 +545,31 @@ class Ctrl_job:
         # ---------- BO
         elif rin.algo == 'BO':
             # ------ save rslt
-            self.rslt_data.loc[self.current_id] = [self.n_selection,
+            self.rslt_data.loc[self.cid] = [self.n_selection,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
             # ------ update descriptors
-            self.opt_dscrpt_data[self.current_id] = None
+            self.opt_dscrpt_data[self.cid] = None
             # ------ save
             self.save_id_data()
             self.save_data()
         # ---------- LAQA
         elif rin.algo == 'LAQA':
             # ------ save rslt
-            self.rslt_data.loc[self.current_id] = [spg_num, spg_sym,
+            self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
             # ---------- laqa data
-            self.laqa_step[self.current_id].append(0)
-            self.laqa_struc[self.current_id].append(None)
-            self.laqa_energy[self.current_id].append(energy)
-            self.laqa_bias[self.current_id].append(np.nan)
-            self.laqa_score[self.current_id].append(-float('inf'))
+            self.laqa_step[self.cid].append(0)
+            self.laqa_struc[self.cid].append(None)
+            self.laqa_energy[self.cid].append(energy)
+            self.laqa_bias[self.cid].append(np.nan)
+            self.laqa_score[self.cid].append(-float('inf'))
             # ---------- save and out laqa data
             self.save_data()
             out_laqa_status(self.laqa_step, self.laqa_score,
@@ -574,7 +580,7 @@ class Ctrl_job:
             out_laqa_bias(self.laqa_bias)
         # ---------- EA
         elif rin.algo == 'EA':
-            self.rslt_data.loc[self.current_id] = [self.gen,
+            self.rslt_data.loc[self.cid] = [self.gen,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, magmom, check_opt]
@@ -582,7 +588,7 @@ class Ctrl_job:
             out_rslt(self.rslt_data)
         elif rin.algo == 'EA-vc':
             ef = np.nan
-            self.rslt_data.loc[self.current_id] = [self.gen,
+            self.rslt_data.loc[self.cid] = [self.gen,
                                                    spg_num, spg_sym,
                                                    spg_num_opt, spg_sym_opt,
                                                    energy, ef, magmom, check_opt]
@@ -598,15 +604,15 @@ class Ctrl_job:
     def update_status(self, operation):
         # ---------- update status
         if operation == 'submit':
-            self.id_running.append(self.current_id)
-            self.id_queueing.remove(self.current_id)
-            io_stat.set_stage(self.stat, self.current_id, 1)
+            self.id_running.append(self.cid)
+            self.id_queueing.remove(self.cid)
+            io_stat.set_stage(self.stat, self.cid, 1)
         elif operation == 'fin':
-            if self.current_id in self.id_queueing:
-                self.id_queueing.remove(self.current_id)
-            if self.current_id in self.id_running:
-                self.id_running.remove(self.current_id)
-            io_stat.clean_id(self.stat, self.current_id)
+            if self.cid in self.id_queueing:
+                self.id_queueing.remove(self.cid)
+            if self.cid in self.id_running:
+                self.id_running.remove(self.cid)
+            io_stat.clean_id(self.stat, self.cid)
         else:
             logger.error('operation is wrong')
             raise SystemExit(1)
@@ -623,18 +629,18 @@ class Ctrl_job:
             lines = f.readlines()
         lines2 = []
         for line in lines:
-            lines2.append(line.replace('CrySPY_ID', str(self.current_id)))
+            lines2.append(line.replace('CrySPY_ID', str(self.cid)))
         with open(self.work_path + rin.jobfile, 'w') as f:
             f.writelines(lines2)
 
     def mv_fin(self):
-        if not os.path.isdir(f'work/fin/{self.current_id:06}'):
-            shutil.move(f'work/{self.current_id:06}', 'work/fin/')
+        if not os.path.isdir(f'work/fin/{self.cid:06}'):
+            shutil.move(f'work/{self.cid:06}', 'work/fin/')
         else:    # rename for recalc
             for i in itertools.count(1):
-                if not os.path.isdir(f'work/fin/{self.current_id:06}_{i}'):
-                    shutil.move(f'work/{self.current_id:06}',
-                                f'work/fin/{self.current_id:06}_{i}')
+                if not os.path.isdir(f'work/fin/{self.cid:06}_{i}'):
+                    shutil.move(f'work/{self.cid:06}',
+                                f'work/fin/{self.cid:06}_{i}')
                     break
 
     def next_sg(self, noprint=False):

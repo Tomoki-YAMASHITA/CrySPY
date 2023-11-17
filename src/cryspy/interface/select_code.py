@@ -81,31 +81,31 @@ def next_stage(stage, work_path, nat, kpt_data=None, cid=None):
         raise SystemExit(1)
 
 
-def collect(current_id, work_path, nat):
+def collect(cid, work_path, nat):
     if rin.calc_code == 'VASP':
         # vasp needs the number of atoms to collect results
         opt_struc, energy, magmom, check_opt = \
-            collect_vasp.collect_vasp(current_id, work_path, nat)
+            collect_vasp.collect_vasp(cid, work_path, nat)
     elif rin.calc_code == 'QE':
         # qe needs the number of atoms to collect results
         opt_struc, energy, magmom, check_opt = \
-            collect_qe.collect_qe(current_id, work_path, nat)
+            collect_qe.collect_qe(cid, work_path, nat)
     elif rin.calc_code == 'OMX':
         # OMX needs the number of atoms to collect results
         opt_struc, energy, magmom, check_opt = \
-            collect_OMX.collect_OMX(current_id, work_path, nat)
+            collect_OMX.collect_OMX(cid, work_path, nat)
     elif rin.calc_code == 'soiap':
         # soiap needs the number of atoms to collect results
         opt_struc, energy, magmom, check_opt = \
-            collect_soiap.collect_soiap(current_id, work_path, nat)
+            collect_soiap.collect_soiap(cid, work_path, nat)
     elif rin.calc_code == 'LAMMPS':
         # lammps needs the number of atoms to collect results
         opt_struc, energy, magmom, check_opt = \
-            collect_lammps.collect_lammps(current_id, work_path, nat)
+            collect_lammps.collect_lammps(cid, work_path, nat)
     elif rin.calc_code == 'ASE':
         # ase needs the number of atoms to collect results
         opt_struc, energy, magmom, check_opt = \
-            collect_ase.collect_ase(current_id, work_path, nat)
+            collect_ase.collect_ase(cid, work_path, nat)
     elif rin.calc_code == 'ext':
         ext_opt_struc_data, ext_energy_data = collect_ext.collect_ext()
         return ext_opt_struc_data, ext_energy_data
@@ -117,103 +117,105 @@ def collect(current_id, work_path, nat):
     return opt_struc, energy, magmom, check_opt
 
 
-def next_struc(structure, current_id, work_path, kpt_data=None):
+def next_struc(structure, cid, work_path, nat, kpt_data=None):
     # args[0] <-- kpt_data
     if rin.calc_code == 'VASP':
-        kpt_data = ctrl_job_vasp.next_struc_vasp(structure, current_id,
+        kpt_data = ctrl_job_vasp.next_struc_vasp(structure, cid,
                                                  work_path, kpt_data)
         return kpt_data
     elif rin.calc_code == 'QE':
-        kpt_data = ctrl_job_qe.next_struc_qe(structure, current_id,
-                                             work_path, kpt_data)
+        # qe needs the number of atoms
+        kpt_data = ctrl_job_qe.next_struc_qe(structure, cid,
+                                             work_path, nat, kpt_data)
         return kpt_data
     elif rin.calc_code == 'OMX':
-        kpt_data = ctrl_job_OMX.next_struc_OMX(structure, current_id,
-                                               work_path, kpt_data)
+        kpt_data = ctrl_job_OMX.next_struc_OMX(structure, cid,
+                                               work_path, nat, kpt_data)
         return kpt_data
     elif rin.calc_code == 'soiap':
-        ctrl_job_soiap.next_struc_soiap(structure, current_id, work_path)
+        ctrl_job_soiap.next_struc_soiap(structure, cid, work_path)
     elif rin.calc_code == 'LAMMPS':
-        ctrl_job_lammps.next_struc_lammps(structure, current_id, work_path)
+        # lammps needs the number of atoms
+        ctrl_job_lammps.next_struc_lammps(structure, cid, work_path ,nat)
     elif rin.calc_code == 'ASE':
-        ctrl_job_ase.next_struc_ase(structure, current_id, work_path)
+        ctrl_job_ase.next_struc_ase(structure, cid, work_path)
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
 
 
-def get_energy_step(energy_step_data, current_id, work_path, nat):
+def get_energy_step(energy_step_data, cid, work_path, nat):
     if rin.calc_code == 'VASP':
         # vasp needs the number of atoms to collect results
         energy_step_data = collect_vasp.get_energy_step_vasp(
-            energy_step_data, current_id, work_path, nat)
+            energy_step_data, cid, work_path, nat)
         return energy_step_data
     elif rin.calc_code == 'QE':
         # qe needs the number of atoms to collect results
         energy_step_data = collect_qe.get_energy_step_qe(energy_step_data,
-                                                         current_id, work_path, nat)
+                                                         cid, work_path, nat)
         return energy_step_data
     elif rin.calc_code == 'soiap':
         energy_step_data = collect_soiap.get_energy_step_soiap(
-            energy_step_data, current_id, work_path)
+            energy_step_data, cid, work_path)
         return energy_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
 
 
-def get_struc_step(struc_step_data, current_id, work_path, nat):
+def get_struc_step(struc_step_data, cid, work_path, nat):
     if rin.calc_code == 'VASP':
         struc_step_data = collect_vasp.get_struc_step_vasp(
-            struc_step_data, current_id, work_path)
+            struc_step_data, cid, work_path)
         return struc_step_data
     elif rin.calc_code == 'QE':
         # qe needs the number of atoms to collect results
         struc_step_data = collect_qe.get_struc_step_qe(
-            struc_step_data, current_id, work_path, nat)
+            struc_step_data, cid, work_path, nat)
         return struc_step_data
     elif rin.calc_code == 'soiap':
         # soiap needs the number of atoms to collect results
         struc_step_data = collect_soiap.get_struc_step_soiap(
-            struc_step_data, current_id, work_path, nat)
+            struc_step_data, cid, work_path, nat)
         return struc_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
 
 
-def get_force_step(force_step_data, current_id, work_path, nat):
+def get_force_step(force_step_data, cid, work_path, nat):
     if rin.calc_code == 'VASP':
         force_step_data = collect_vasp.get_force_step_vasp(
-            force_step_data, current_id, work_path)
+            force_step_data, cid, work_path)
         return force_step_data
     elif rin.calc_code == 'QE':
         # qe needs the number of atoms to collect results
         force_step_data = collect_qe.get_force_step_qe(
-            force_step_data, current_id, work_path, nat)
+            force_step_data, cid, work_path, nat)
         return force_step_data
     elif rin.calc_code == 'soiap':
         # soiap needs the number of atoms to collect results
         force_step_data = collect_soiap.get_force_step_soiap(
-            force_step_data, current_id, work_path, nat)
+            force_step_data, cid, work_path, nat)
         return force_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
 
 
-def get_stress_step(stress_step_data, current_id, work_path):
+def get_stress_step(stress_step_data, cid, work_path):
     if rin.calc_code == 'VASP':
         stress_step_data = collect_vasp.get_stress_step_vasp(
-            stress_step_data, current_id, work_path)
+            stress_step_data, cid, work_path)
         return stress_step_data
     elif rin.calc_code == 'QE':
         stress_step_data = collect_qe.get_stress_step_qe(
-            stress_step_data, current_id, work_path)
+            stress_step_data, cid, work_path)
         return stress_step_data
     elif rin.calc_code == 'soiap':
         stress_step_data = collect_soiap.get_stress_step_soiap(
-            stress_step_data, current_id, work_path)
+            stress_step_data, cid, work_path)
         return stress_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')

@@ -11,7 +11,7 @@ from ...IO import read_input as rin
 
 logger = getLogger('cryspy')
 
-def collect_lammps(current_id, work_path, nat):
+def collect_lammps(cid, work_path, nat):
     # ---------- natot
     natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- check optimization in current stage & obtain energy
@@ -31,7 +31,7 @@ def collect_lammps(current_id, work_path, nat):
                 energy = energy/float(natot)    # eV/cell --> eV/atom
                 check_opt = 'done'
     except Exception as e:
-        logger.warning(str(e.args[0]) + f':    Structure ID {current_id},'
+        logger.warning(str(e.args[0]) + f':    Structure ID {cid},'
                        f'could not obtain energy from {rin.lammps_outfile}')
         energy = np.nan    # error
         check_opt = 'no_file'
