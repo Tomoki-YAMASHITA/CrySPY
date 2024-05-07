@@ -51,7 +51,7 @@ def restart(comm, mpi_rank, mpi_size):
 
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
-    # _append_struc is not allowed in EA and EA-vc, too
+    # _append_struc is not allowed in EA and EA-vc either
     init_struc_data = pkl_data.load_init_struc()
 
     # ---------- append structures
@@ -93,7 +93,6 @@ def restart(comm, mpi_rank, mpi_size):
             # ------ backup
             backup_cryspy()
     #
-    # EA-vc is not compatible with append_struc_ea option
     # struc_mol_id has not developed yet here
     #if rin.struc_mode in ['mol', 'mol_bs']:
     #    struc_mol_id = pkl_data.load_struc_mol_id()

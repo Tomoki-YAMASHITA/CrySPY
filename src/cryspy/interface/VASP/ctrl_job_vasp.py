@@ -7,7 +7,7 @@ import os
 import shutil
 
 from pymatgen.core import Structure
-from pymatgen.io.vasp.sets import MITRelaxSet
+from pymatgen.io.vasp import Kpoints
 
 from ...IO.out_results import out_kpts
 from ...IO import pkl_data
@@ -47,12 +47,11 @@ def next_stage_vasp(stage, work_path, kpt_data, cid):
         out_kpts(kpt_data)
         logger.info(f'    error in VASP,  skip structure {cid}')
         return skip_flag, kpt_data
-    mitparamset = MITRelaxSet(structure)
     # kppvol[0]: <--> stage 1, kppvol[1] <--> stage2, ...
     #   so (stage - 1): current stage, stage: next stage in kppvol
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
-                                                           rin.kppvol[stage],
-                                                           rin.force_gamma)
+    kpoints = Kpoints.automatic_density_by_vol(structure=structure,
+                                               kppvol=rin.kppvol[stage],
+                                               force_gamma=rin.force_gamma)
     kpoints.write_file(work_path+'KPOINTS')
 
     # ---------- kpt_data
@@ -94,10 +93,9 @@ def next_struc_vasp(structure, cid, work_path, kpt_data):
             f.write(line)
 
     # ---------- generate KPOINTS using pymatgen
-    mitparamset = MITRelaxSet(structure)
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
-                                                           rin.kppvol[0],
-                                                           rin.force_gamma)
+    kpoints = Kpoints.automatic_density_by_vol(structure=structure,
+                                               kppvol=rin.kppvol[0],
+                                               force_gamma=rin.force_gamma)
     kpoints.write_file(work_path+'KPOINTS')
 
     # ---------- kpt_data

@@ -94,6 +94,9 @@ def readin():
             logger.error('not sum(nat) == natot, check natot and nat')
             raise SystemExit(1)
     if algo =='EA-vc':
+        if not len(atype) == 2:
+            logger.error('len(atype) must be 2 in EA-vc for now')
+            raise SystemExit(1)
         ll_nat = config.get('structure', 'll_nat')
         ll_nat = [int(x) for x in ll_nat.split()]
         ul_nat = config.get('structure', 'ul_nat')
@@ -496,7 +499,8 @@ def readin():
         global slct_func, t_size, a_rlt, b_rlt
         global crs_lat, nat_diff_tole, ntimes, sigma_st,  maxcnt_ea
         global maxgen_ea, emax_ea, emin_ea
-        global end_point
+        if algo == 'EA-vc':
+            global n_add, n_elim, n_subs, target, end_point
         if struc_mode in ['mol', 'mol_bs']:
             global n_rotation, mindist_mol_ea, rot_max_angle, protect_mol_struc
         # global restart_gen
@@ -516,7 +520,7 @@ def readin():
             raise SystemExit(1)
         if n_perm != 0 and len(atype) == 1:
             logger.error('When the number of atom type is 1,'
-                             ' n_perm must be 0')
+                         ' n_perm must be 0')
             raise SystemExit(1)
         n_strain = config.getint('EA', 'n_strain')
         if n_strain < 0:
@@ -526,11 +530,36 @@ def readin():
         if n_rand < 0:
             logger.error('n_rand must be zero or positive int')
             raise SystemExit(1)
-        if struc_mode not in ['mol', 'mol_bs']:
-            if n_crsov + n_perm + n_strain + n_rand != n_pop:
-                logger.error('n_crsov + n_perm + n_strain + n_rand'
-                                 ' must be n_pop')
+        if algo == 'EA-vc':
+            n_add = config.getint('EA', 'n_add')
+            if n_add < 0:
+                logger.error('n_add must be zero or positive int')
                 raise SystemExit(1)
+            n_elim = config.getint('EA', 'n_elim')
+            if n_elim < 0:
+                logger.error('n_elim must be zero or positive int')
+                raise SystemExit(1)
+            n_subs = config.getint('EA', 'n_subs')
+            if n_subs < 0:
+                logger.error('n_subs must be zero or positive int')
+                raise SystemExit(1)
+            target = config.get('EA', 'target')
+            #if target not in ['random','depop','overpop']:
+            if target not in ['random']:
+                logger.error('target must be random for now')
+                raise SystemExit(1)
+        if struc_mode not in ['mol', 'mol_bs']:
+            if algo != 'EA-vc':
+                if n_crsov + n_perm + n_strain + n_rand != n_pop:
+                    logger.error('n_crsov + n_perm + n_strain + n_rand'
+                                 ' must be n_pop')
+                    raise SystemExit(1)
+            else:
+                if n_crsov + n_perm + n_strain + n_rand + n_add + n_elim + n_subs != n_pop:
+                    logger.error('n_crsov + n_perm + n_strain + n_rand'
+                                 ' + n_add + n_elim + n_subs'
+                                 ' must be n_pop')
+                    raise SystemExit(1)
         if struc_mode in ['mol', 'mol_bs']:
             n_rotation = config.getint('EA', 'n_rotation')
             if n_rotation < 0:
@@ -585,7 +614,7 @@ def readin():
         try:
             crs_lat = config.get('EA', 'crs_lat')
         except configparser.NoOptionError:
-            crs_lat = 'equal'
+            crs_lat = 'random'
         if crs_lat not in ['equal', 'random']:
             logger.error('crs_lat must be equal or random')
             raise SystemExit(1)
@@ -679,6 +708,7 @@ def readin():
             if not len(end_point) == len(atype):
                 logger.error('len(end_point) == len(atype), check end_point')
                 raise SystemExit(1)
+
     # ---------- global declaration for comman part in calc_code
     global kppvol, kpt_flag, force_gamma
 
@@ -937,6 +967,10 @@ def save_stat(stat):    # only 1st run
         stat.set('EA', 'emax_ea', '{}'.format(emax_ea))
         stat.set('EA', 'emin_ea', '{}'.format(emin_ea))
         if algo == 'EA-vc':
+            stat.set('EA', 'n_add', '{}'.format(n_add))
+            stat.set('EA', 'n_elim', '{}'.format(n_elim))
+            stat.set('EA', 'n_subs', '{}'.format(n_subs))
+            stat.set('EA', 'target', '{}'.format(target))
             stat.set('EA', 'end_point', '{}'.format(' '.join(str(b) for b in end_point)))
 
     # ---------- VASP
@@ -1151,6 +1185,11 @@ def diffinstat(stat):
         old_n_perm = stat.getint('EA', 'n_perm')
         old_n_strain = stat.getint('EA', 'n_strain')
         old_n_rand = stat.getint('EA', 'n_rand')
+        if old_algo == 'EA-vc':
+            old_n_add = stat.getint('EA', 'n_add')
+            old_n_elim = stat.getint('EA', 'n_elim')
+            old_n_subs = stat.getint('EA', 'n_subs')
+            old_target = stat.get('EA','target')
         if struc_mode in ['mol', 'mol_bs']:
             old_n_rotation = stat.getint('EA', 'n_rotation')
         old_n_elite = stat.getint('EA', 'n_elite')
@@ -1517,6 +1556,23 @@ def diffinstat(stat):
             diff_out('n_rand', old_n_rand, n_rand)
             io_stat.set_input_common(stat, sec, 'n_rand', n_rand)
             logic_change = True
+        if algo == 'EA-vc':
+            if not old_n_add == n_add:
+                diff_out('n_add', old_n_add, n_add)
+                io_stat.set_input_common(stat, sec, 'n_add', n_add)
+                logic_change = True
+            if not old_n_elim == n_elim:
+                diff_out('n_elim', old_n_elim, n_elim)
+                io_stat.set_input_common(stat, sec, 'n_elim', n_elim)
+                logic_change = True
+            if not old_n_subs == n_subs:
+                diff_out('n_subs', old_n_subs, n_subs)
+                io_stat.set_input_common(stat, sec, 'n_subs', n_subs)
+                logic_change = True
+            if not old_target == target:
+                diff_out('target', old_target, target)
+                io_stat.set_input_common(stat, sec, 'target', target)
+                logic_change = True
         if struc_mode in ['mol', 'mol_bs']:
             if not old_n_rotation == n_rotation:
                 diff_out('n_rotation', old_n_rotation, n_rotation)
@@ -1599,7 +1655,10 @@ def diffinstat(stat):
             logic_change = True
         if algo == 'EA-vc':
             if not old_end_point == end_point:
-                raise ValueError('Do not change end_point')
+                diff_out('end_point', old_end_point, end_point)
+                io_stat.set_input_common(stat, sec, 'end_point', '{}'.format(
+                    ' '.join(str(x) for x in end_point)))
+                logic_change = True
 
     # ------ VASP
     sec = 'VASP'

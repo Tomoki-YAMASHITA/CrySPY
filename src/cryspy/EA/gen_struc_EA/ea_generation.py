@@ -208,3 +208,147 @@ class EA_generation:
                     out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
                 struc_cnt += 1
+
+    def gen_addition(self, ad, nat_data):
+        '''
+        generate structures by addition
+
+        # ---------- args
+        ad: instance of Addition class
+        nat_data [dict]: {ID: [nat], ..,}
+        '''
+        # ---------- generate structures by addition
+        struc_cnt = 0
+        while struc_cnt < rin.n_add:
+            # ------ select parents
+            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            # ------ check nat limit
+            atype_avail = []
+            for i, at in enumerate(rin.atype):
+                if nat_data[pid][i] < rin.ul_nat[i]:
+                    atype_avail.append(at)
+            if len(atype_avail) == 0:
+                logger.warning('Addition: reached nat limit (ul_nat). cannot add atoms')
+                logger.warning('Change parent')
+                continue
+            child = ad.gen_child(self.sp.struc_data[pid], atype_avail)
+            # ------ success
+            if child is not None:
+                self.offspring[self.cid] = child
+                self.parents[self.cid] = (pid, )
+                self.operation[self.cid] = 'addition'
+                try:
+                    spg_sym, spg_num = child.get_space_group_info(
+                        symprec=rin.symprec)
+                except TypeError:
+                    spg_num = 0
+                    spg_sym = None
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                    f' from {pid:>6} by addition.'
+                    f' Space group: {spg_num:>3} {spg_sym}')
+                if self.init_pos_path is not None:
+                    out_poscar(child, self.cid, self.init_pos_path)
+                    self.cid += 1
+                    struc_cnt += 1
+
+    def gen_elimination(self, el, nat_data):
+        '''
+        generate structures by elimination
+
+        # ---------- args
+        el: instance of Elimination class
+        nat_data [dict]: {ID: [nat], ..,}
+        '''
+        # ---------- generate structures by elimination
+        struc_cnt = 0
+        while struc_cnt < rin.n_elim:
+            # ------ select parents
+            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            # ------ check nat limit
+            atype_avail = []
+            for i, at in enumerate(rin.atype):
+                if nat_data[pid][i] > rin.ll_nat[i]:
+                    atype_avail.append(at)
+            if len(atype_avail) == 0:
+                logger.warning('Elimination: reached nat limit (ll_nat). cannot add atoms')
+                logger.warning('Change parent')
+                continue
+            child = el.gen_child(self.sp.struc_data[pid], atype_avail)
+            # ------ success
+            if child is not None:
+                self.offspring[self.cid] = child
+                self.parents[self.cid] = (pid, )
+                self.operation[self.cid] = 'elimination'
+                try:
+                    spg_sym, spg_num = child.get_space_group_info(
+                        symprec=rin.symprec)
+                except TypeError:
+                    spg_num = 0
+                    spg_sym = None
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                    f' from {pid:>6} by elimination.'
+                    f' Space group: {spg_num:>3} {spg_sym}')
+                if self.init_pos_path is not None:
+                    out_poscar(child, self.cid, self.init_pos_path)
+                    self.cid += 1
+                    struc_cnt += 1
+
+    def gen_substitution(self, su, nat_data):
+        '''
+        generate structures by substitution
+
+        # ---------- args
+        su: instance of Substitution class
+        nat_data [dict]: {ID: [nat], ..,}
+        '''
+        # ---------- generate structures by substitution
+        struc_cnt = 0
+        while struc_cnt < rin.n_subs:
+            # ------ select parents
+            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            # ------ check nat limit
+            atype_avail_elim = []
+            atype_avail_add = []
+            for i, at in enumerate(rin.atype):
+                if nat_data[pid][i] > rin.ll_nat[i]:
+                    atype_avail_elim.append(at)
+                if nat_data[pid][i] < rin.ul_nat[i]:
+                    atype_avail_add.append(at)
+            if len(atype_avail_elim) == 1:
+                # if atype_avail_elim is ['Na'], 'Na' should be removed from atype_avail_add
+                at = atype_avail_elim[0]
+                if at in atype_avail_add:
+                    atype_avail_add.remove(at)
+            if len(atype_avail_add) == 1:
+                # if atype_avail_add is ['Na'], 'Na' should be removed from atype_avail_elim
+                at = atype_avail_add[0]
+                if at in atype_avail_elim:
+                    atype_avail_elim.remove(at)
+            if len(atype_avail_add) == 0:
+                logger.warning('Substitution: reached nat limit (ul_nat).')
+                logger.warning('Change parent')
+                continue
+            if len(atype_avail_elim) == 0:
+                logger.warning('Substitution: reached nat limit (ll_nat).')
+                logger.warning('Change parent')
+                continue
+            child = su.gen_child(self.sp.struc_data[pid], atype_avail_add, atype_avail_elim)
+            # ------ success
+            if child is not None:
+                self.offspring[self.cid] = child
+                self.parents[self.cid] = (pid, )
+                self.operation[self.cid] = 'substitution'
+                try:
+                    spg_sym, spg_num = child.get_space_group_info(
+                        symprec=rin.symprec)
+                except TypeError:
+                    spg_num = 0
+                    spg_sym = None
+                logger.info(f'Structure ID {self.cid:>6} was generated'
+                    f' from {pid:>6} by substitution.'
+                    f' Space group: {spg_num:>3} {spg_sym}')
+                if self.init_pos_path is not None:
+                    out_poscar(child, self.cid, self.init_pos_path)
+                    self.cid += 1
+                    struc_cnt += 1
+

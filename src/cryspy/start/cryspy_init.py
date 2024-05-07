@@ -29,6 +29,10 @@ def initialize(comm, mpi_rank, mpi_size):
     # ---------- start
     if mpi_rank == 0:
         logger.info('\n\n\nStart CrySPY ' + get_version() + '\n\n')
+    # ---------- check versions
+    if mpi_rank == 0:
+        logger.info('# ---------- Check version')
+        logger.info(f'pandas version: {pd.__version__}')
 
     # ---------- read input
     if mpi_rank == 0:

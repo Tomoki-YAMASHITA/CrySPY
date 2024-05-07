@@ -7,8 +7,6 @@ from logging import getLogger
 import numpy as np
 from pymatgen.core import Structure
 
-from ...IO import read_input as rin
-
 
 logger = getLogger('cryspy')
 

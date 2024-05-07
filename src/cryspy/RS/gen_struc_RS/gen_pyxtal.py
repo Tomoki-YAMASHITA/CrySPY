@@ -119,20 +119,6 @@ class Rnd_struc_gen_pyxtal:
                 if rin.vol_mu is not None:
                     vol = random.gauss(mu=rin.vol_mu, sigma=rin.vol_sigma)
                     tmp_struc.scale_lattice(volume=vol)
-                # -- check minimum distance
-                #    from CrySPY 0.10.4
-                #    Tol_matrix is used for mindist
-                #
-                #if self.mindist is not None:
-                #    success, mindist_ij, dist = check_distance(tmp_struc,
-                #                                               self.atype,
-                #                                               self.mindist)
-                #    if not success:
-                #        print('mindist in gen_struc: {} - {}, {}. retry.'.format(
-                #            self.atype[mindist_ij[0]],
-                #            self.atype[mindist_ij[1]],
-                #            dist), file=sys.stderr)
-                #        continue    # failure
                 # -- check actual space group
                 try:
                     spg_sym, spg_num = tmp_struc.get_space_group_info(

@@ -54,19 +54,19 @@ class Select_parents:
                                                          elite_struc,
                                                          elite_fitness)
         # ------ None and np.nan --> inf or -inf for fitness
-        for key, value in self.fitness.items():
+        for cid, value in self.fitness.items():
             if value is None or np.isnan(value):
-                self.fitness[key] = -np.inf if rin.fit_reverse else np.inf
+                self.fitness[cid] = -np.inf if rin.fit_reverse else np.inf
             # ---- emax_ea
             if rin.emax_ea is not None:
                 if value > rin.emax_ea:
-                    self.fitness[key] = -np.inf if rin.fit_reverse else np.inf
-                    logger.info(f'Eliminate ID {key}: {value} > emax_ea')
+                    self.fitness[cid] = -np.inf if rin.fit_reverse else np.inf
+                    logger.info(f'Eliminate ID {cid}: {value} > emax_ea')
             # ---- emin_ea
             if rin.emin_ea is not None:
                 if value < rin.emin_ea:
-                    self.fitness[key] = -np.inf if rin.fit_reverse else np.inf
-                    logger.info(f'Eliminate ID {key}: {value} < emin_ea')
+                    self.fitness[cid] = -np.inf if rin.fit_reverse else np.inf
+                    logger.info(f'Eliminate ID {cid}: {value} < emin_ea')
         # ------ self
         self.n_fittest = n_fittest
         # ---------- ranking of fitness: list of id
@@ -76,6 +76,9 @@ class Select_parents:
         # ---------- remove duplicated structures and
         #                cut by survival of the fittest
         self._dedupe()    # get self.ranking_dedupe
+        logger.info('Parent candidates:')
+        for cid in self.ranking_dedupe:
+            logger.info(f'Structure ID {cid:>6}, fitness: {self.fitness[cid]:>10.6f}')
 
     def _check_data(self, struc_data, fitness, elite_struc, elite_fitness):
         # ---------- struc_data and fitness
@@ -128,22 +131,22 @@ class Select_parents:
         self.ranking_dedupe = []
         smatcher = StructureMatcher()    # instantiate
         # ------ register not dupulicated data
-        for i_id in self.ranking:
+        for cid in self.ranking:
             # -- init dupl_flag
             dupl_flag = False
             # -- for structure is None
-            if self.struc_data[i_id] is None:
-                continue    # next i_id
+            if self.struc_data[cid] is None:
+                continue    # next cid
             # -- duplication check
-            for j_id in self.ranking_dedupe[:-(ncheck+1):-1]:
-                if smatcher.fit(self.struc_data[i_id], self.struc_data[j_id]):
+            for tid in self.ranking_dedupe[:-(ncheck+1):-1]:
+                if smatcher.fit(self.struc_data[cid], self.struc_data[tid]):
                     dupl_flag = True
                     break
             # -- register or skip
             if dupl_flag:
-                continue    # next i_id
+                continue    # next cid
             else:
-                self.ranking_dedupe.append(i_id)
+                self.ranking_dedupe.append(cid)
                 # n_fittest
                 if self.n_fittest > 0:
                     if len(self.ranking_dedupe) == self.n_fittest:

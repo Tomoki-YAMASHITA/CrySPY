@@ -8,7 +8,7 @@ from logging import getLogger
 import os
 import shutil
 
-from pymatgen.io.vasp.sets import MITRelaxSet
+from pymatgen.io.vasp import Kpoints
 
 from . import structure as OMX_structure
 from ...IO.out_results import out_kpts
@@ -65,11 +65,10 @@ def next_stage_OMX(stage, work_path, nat, kpt_data, cid):
     OMX_structure.write(structure, work_path+rin.OMX_infile, mode='a')
 
     # ---------- K_POINTS
-    mitparamset = MITRelaxSet(structure)
     # kppvol[0]: <--> stage 1, kppvol[1] <--> stage2, ...
     #   so (stage - 1): current stage, stage: next stage in kppvol
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
-                                                           rin.kppvol[stage])
+    kpoints = Kpoints.automatic_density_by_vol(structure=structure,
+                                               kppvol=rin.kppvol[stage])
     with open(work_path+rin.OMX_infile, 'a') as f:
         f.write('\n')
         f.write('scf.Kgrid  ')
@@ -104,9 +103,8 @@ def next_struc_OMX(structure, cid, work_path, nat, kpt_data):
     OMX_structure.write(structure, work_path+rin.OMX_infile, mode='a')
 
     # ---------- K_POINTS
-    mitparamset = MITRelaxSet(structure)
-    kpoints = mitparamset.kpoints.automatic_density_by_vol(structure,
-                                                           rin.kppvol[0])
+    kpoints = Kpoints.automatic_density_by_vol(structure=structure,
+                                               kppvol=rin.kppvol[0])
     with open(work_path+rin.OMX_infile, 'a') as f:
         f.write('\n')
         f.write('scf.Kgrid  ')

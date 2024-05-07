@@ -13,7 +13,7 @@ import numpy as np
 from ..interface import select_code
 from ..IO import read_input as rin
 from ..IO import change_input, io_stat, pkl_data
-from ..IO.out_results import out_rslt
+from ..IO.out_results import out_rslt, out_hdist
 from ..util.utility import backup_cryspy
 from ..util.struc_util import out_poscar, out_cif
 
@@ -23,7 +23,8 @@ if rin.algo == 'BO':
 if rin.algo in ['EA', 'EA-vc']:
     from ..EA import ea_next_gen
 if rin.algo == 'EA-vc':
-    from ..EA.calc_hull import calc_ef, calc_convex_hull, write_asc_hdist
+    from ..EA.calc_ef import calc_ef
+    from ..EA.calc_hull import calc_convex_hull_2d
 if rin.algo == 'LAQA':
     from ..LAQA.calc_score import calc_laqa_bias
     from ..LAQA import laqa_next_selection
@@ -65,7 +66,7 @@ class Ctrl_job:
             if rin.struc_mode in ['mol', 'mol_bs']:
                 self.struc_mol_id = pkl_data.load_struc_mol_id()
             if rin.algo == 'EA-vc':
-                self.nat_data, self.ratio_data = pkl_data.load_ea_vc_data()
+                self.nat_data, self.ratio_data, self.hdist_data = pkl_data.load_ea_vc_data()
             # do not have to load ea_data here.
             # ea_data is used only in ea_next_gen.py
         # ---------- for option
@@ -100,7 +101,7 @@ class Ctrl_job:
         self.stage_stat = {}    # key: Structure ID
         self.job_stat = {}
         # ---------- check job status
-        for cid in self.tmp_running:
+        for cid in self.tmp_running[:rin.njob]:
             # ------ mkdir
             if not os.path.isdir(f'work/{cid:06}'):
                 os.mkdir(f'work/{cid:06}')
@@ -152,7 +153,7 @@ class Ctrl_job:
 
     def handle_job(self):
         logger.info('# ---------- job status')
-        for cid in self.tmp_running:
+        for cid in self.tmp_running[:rin.njob]:
             # ---------- set work_path and cid
             self.work_path = f'./work/{cid:06}/'
             self.cid = cid
@@ -401,16 +402,19 @@ class Ctrl_job:
         # ---------- save rslt
         if not rin.algo == 'EA-vc':
             self.rslt_data.loc[self.cid] = [self.gen,
-                                                   spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, magmom, check_opt]
+                                            spg_num, spg_sym,
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, magmom, check_opt]
         else:
             self.rslt_data.loc[self.cid] = [self.gen,
-                                                   spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, ef, magmom, check_opt]
+                                            spg_num, spg_sym,
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, ef, magmom, check_opt]
         pkl_data.save_rslt(self.rslt_data)
-        out_rslt(self.rslt_data)
+        if rin.algo == 'EA':
+            out_rslt(self.rslt_data)
+        if rin.algo == 'EA-vc':
+            out_rslt(self.rslt_data, order_ef=True)
 
     def regist_opt(self, opt_struc):
         '''
@@ -538,17 +542,17 @@ class Ctrl_job:
         if rin.algo == 'RS':
             # ------ save rslt
             self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, magmom, check_opt]
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
         # ---------- BO
         elif rin.algo == 'BO':
             # ------ save rslt
             self.rslt_data.loc[self.cid] = [self.n_selection,
-                                                   spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, magmom, check_opt]
+                                            spg_num, spg_sym,
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
             # ------ update descriptors
@@ -560,8 +564,8 @@ class Ctrl_job:
         elif rin.algo == 'LAQA':
             # ------ save rslt
             self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, magmom, check_opt]
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
             # ---------- laqa data
@@ -581,17 +585,17 @@ class Ctrl_job:
         # ---------- EA
         elif rin.algo == 'EA':
             self.rslt_data.loc[self.cid] = [self.gen,
-                                                   spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, magmom, check_opt]
+                                            spg_num, spg_sym,
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
         elif rin.algo == 'EA-vc':
             ef = np.nan
             self.rslt_data.loc[self.cid] = [self.gen,
-                                                   spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, ef, magmom, check_opt]
+                                            spg_num, spg_sym,
+                                            spg_num_opt, spg_sym_opt,
+                                            energy, ef, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
         # ---------- move to fin
@@ -707,7 +711,7 @@ class Ctrl_job:
 
     def next_gen_EA(self):
         # ---------- log
-        logger.info(f'\nDone generation {self.gen}')
+        logger.info(f'Done generation {self.gen}')
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
             logger.info('\nEA is ready')
@@ -721,21 +725,33 @@ class Ctrl_job:
         # ---------- maxgen_ea
         if 0 < rin.maxgen_ea <= self.gen:
             if rin.algo == 'EA-vc':
-                all_ef = self.rslt_data['Ef_eV_atom'].to_dict()
-                hdist = calc_convex_hull(all_ef, rin.n_pop)
-                write_asc_hdist(hdist)
+                # ------ when gen reaches maxgen_ea,  next generation is not created
+                #        so convex hull is calculated here
+                #        update only convex hull and hdist, not elite_struc and elite_fitness
+                c_rslt = self.rslt_data[self.rslt_data['Gen'] == self.gen]
+                c_ids = c_rslt.index.values    # current IDs [array]
+                ef_all = self.rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
+                hdist = calc_convex_hull_2d(self.ratio_data, ef_all, c_ids, self.gen)
+                out_hdist(self.gen, hdist, self.ratio_data)
+                self.hdist_data[self.gen] = hdist
+                ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
+                pkl_data.save_ea_vc_data(ea_vc_data)
             logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- EA
         backup_cryspy()
         ea_id_data = (self.gen, self.id_queueing, self.id_running)
-        if rin.struc_mode not in ['mol', 'mol_bs']:
-            ea_next_gen.next_gen(self.stat, self.init_struc_data, None,
-                                 self.opt_struc_data, self.rslt_data, ea_id_data)
+        if rin.struc_mode in ['mol', 'mol_bs']:
+            struc_mol_id = self.struc_mol_id
         else:
-            ea_next_gen.next_gen(self.stat, self.init_struc_data, self.struc_mol_id,
-                                 self.opt_struc_data, self.rslt_data, ea_id_data)
+            struc_mol_id = None
+        if rin.algo == 'EA-vc':
+            ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
+        else:
+            ea_vc_data = None
+        ea_next_gen.next_gen(self.stat, self.init_struc_data, struc_mol_id,
+                             self.opt_struc_data, self.rslt_data, ea_id_data, ea_vc_data)
 
     def save_id_data(self):
         # ---------- save id_data
@@ -766,3 +782,4 @@ class Ctrl_job:
             pkl_data.save_laqa_data(laqa_data)
         # ea_data is used only in ea_next_gen.py
         # ea_vc_data is used in this class, but it is not updated.
+        # ea_vc_data is saved in ea_next_gen.py

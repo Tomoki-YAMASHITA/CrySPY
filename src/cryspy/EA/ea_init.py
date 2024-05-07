@@ -3,10 +3,11 @@ Initialize evolutionary algorithm
 '''
 
 from logging import getLogger
+import os
 
 import pandas as pd
 
-from ..IO import out_results
+from ..IO.out_results import out_ea_info, out_nat_data
 from ..IO import io_stat, pkl_data
 from ..IO import read_input as rin
 from ..util.struc_util import get_nat
@@ -25,16 +26,28 @@ def initialize(stat, init_struc_data, rslt_data):
     id_queueing = [i for i in range(rin.tot_struc)]
     id_running = []
     # ------ ea_info
-    ea_info = pd.DataFrame(columns=['Gen', 'Population',
-                                    'Crossover', 'Permutation', 'Strain',
-                                    'Random', 'Elite',
-                                    'crs_lat', 'slct_func'])
-    ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
-    tmp_info = pd.DataFrame([[1, rin.tot_struc, 0, 0, 0, rin.tot_struc, 0,
-                              rin.crs_lat, rin.slct_func]],
-                            columns=ea_info.columns)
-    ea_info = pd.concat([ea_info, tmp_info], axis=0, ignore_index=True)
-    out_results.out_ea_info(ea_info)
+    if rin.algo == 'EA':
+        ea_info = pd.DataFrame(columns=['Gen', 'Population',
+                                        'Crossover', 'Permutation', 'Strain',
+                                        'Random', 'Elite',
+                                        'crs_lat', 'slct_func'])
+        ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
+        tmp_info = pd.DataFrame([[1, rin.tot_struc, 0, 0, 0, rin.tot_struc, 0,
+                                rin.crs_lat, rin.slct_func]],
+                                columns=ea_info.columns)
+        ea_info = pd.concat([ea_info, tmp_info], axis=0, ignore_index=True)
+    if rin.algo == 'EA-vc':
+        ea_info = pd.DataFrame(columns=['Gen', 'Population',
+                                        'Crossover', 'Permutation', 'Strain',
+                                        'Addition', 'Elimination', 'Substitution',
+                                        'Random', 'Elite',
+                                        'crs_lat', 'slct_func'])
+        ea_info.iloc[:, 0:10] = ea_info.iloc[:, 0:10].astype(int)
+        tmp_info = pd.DataFrame([[1, rin.tot_struc, 0, 0, 0, 0, 0, 0, rin.tot_struc, 0,
+                                rin.crs_lat, rin.slct_func]],
+                                columns=ea_info.columns)
+        ea_info = pd.concat([ea_info, tmp_info], axis=0, ignore_index=True)
+    out_ea_info(ea_info)
     # ------ ea_origin
     ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID',
                                       'Operation', 'Parent'])
@@ -56,14 +69,17 @@ def initialize(stat, init_struc_data, rslt_data):
         rslt_data = rslt_data[['Gen', 'Spg_num', 'Spg_sym',
                                'Spg_num_opt', 'Spg_sym_opt',
                                'E_eV_atom', 'Ef_eV_atom', 'Magmom', 'Opt']]
-    # ------ nat, ratio for EA-vc
+    # ------ nat, ratio, etc for EA-vc
     if rin.algo == 'EA-vc':
-        nat_data = {}
-        ratio_data = {}
+        nat_data = {}      # {ID: [nat], ...}
+        ratio_data = {}    # {ID: [ratio], ...}
+        hdist_data = {}    # {gen: {ID: hdist, ...}, ...}
         for cid, struc in init_struc_data.items():
             tmp_nat, tmp_ratio = get_nat(struc, rin.atype)
             nat_data[cid] = tmp_nat
             ratio_data[cid] = tmp_ratio
+        out_nat_data(nat_data, rin.atype)
+        os.makedirs('data/convex_hull', exist_ok=True)
 
     # ---------- save
     ea_id_data = (gen, id_queueing, id_running)
@@ -72,7 +88,7 @@ def initialize(stat, init_struc_data, rslt_data):
     pkl_data.save_ea_data(ea_data)
     pkl_data.save_rslt(rslt_data)
     if rin.algo == 'EA-vc':
-        ea_vc_data = (nat_data, ratio_data)
+        ea_vc_data = (nat_data, ratio_data, hdist_data)
         pkl_data.save_ea_vc_data(ea_vc_data)
 
     # ---------- status

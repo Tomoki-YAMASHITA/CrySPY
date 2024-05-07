@@ -16,7 +16,7 @@ if rin.algo == 'BO':
 if rin.algo in ['EA', 'EA-vc']:
     from ..EA import ea_next_gen
 if rin.algo == 'EA-vc':
-    from ..EA.calc_hull import calc_ef
+    from ..EA.calc_ef import calc_ef
 
 
 logger = getLogger('cryspy')
@@ -43,7 +43,7 @@ class Ctrl_ext:
             (self.gen, self.id_queueing,
              self.id_running) = pkl_data.load_ea_id()
             if rin.algo == 'EA-vc':
-                self.nat_data, self.ratio_data = pkl_data.load_ea_vc_data()
+                self.nat_data, self.ratio_data, self.hdist_data = pkl_data.load_ea_vc_data()
             # do not have to load ea_data here.
             # ea_data is used only in ea_next_gen.py
 
@@ -248,18 +248,18 @@ class Ctrl_ext:
         # ---------- return
         return ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, ext_spg_sym_opt, ext_spg_num_opt
 
-    def next_sg(self):
+    def next_sg(self, noprint=False):
         '''
         next selection or generation
         '''
         if rin.algo == 'BO':
-            self.next_select_BO()
+            self.next_select_BO(noprint)
         if rin.rin.algo in ['EA', 'EA-vc']:
             self.next_gen_EA()
 
-    def next_select_BO(self):
+    def next_select_BO(self, noprint=False):
         # ---------- log
-        logger.info(f'\nDone selection {self.n_selection}')
+        logger.info(f'Done selection {self.n_selection}')
         # ---------- done all structures
         if len(self.rslt_data) == rin.tot_struc:
             logger.info('\nDone all structures!')
@@ -281,11 +281,11 @@ class Ctrl_ext:
         bo_id_data = (self.n_selection, self.id_queueing,
                       self.id_running, self.id_select_hist)
         bo_next_select.next_select(self.stat, self.rslt_data,
-                                   bo_id_data, bo_data)
+                                   bo_id_data, bo_data, noprint)
 
     def next_gen_EA(self):
         # ---------- log
-        logger.info(f'\nDone generation {self.gen}')
+        logger.info(f'Done generation {self.gen}')
         # ---------- check point 3
         if rin.stop_chkpt == 3:
             logger.info('\nStop at check point 3: EA is ready')
@@ -298,8 +298,12 @@ class Ctrl_ext:
             raise SystemExit()
         # ---------- EA
         ea_id_data = (self.gen, self.id_queueing, self.id_running)
-        ea_next_gen.next_gen(self.stat, self.init_struc_data,
-                             self.opt_struc_data, self.rslt_data, ea_id_data)
+        if rin.algo == 'EA-vc':
+            ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
+        else:
+            ea_vc_data = None
+        ea_next_gen.next_gen(self.stat, self.init_struc_data, None,
+                             self.opt_struc_data, self.rslt_data, ea_id_data, ea_vc_data)
 
     def save_id_data(self):
         # ---------- save id_data

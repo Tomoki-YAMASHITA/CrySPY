@@ -3,15 +3,19 @@ Output results in ./data/xxx
 '''
 
 
-def out_rslt(rslt_data):
+def out_rslt(rslt_data, order_ef=False):
     # ---------- asc in Struc_ID or (Gen or Select)
     with open('./data/cryspy_rslt', 'w') as f:
         f.write(rslt_data.to_string())
 
     # ---------- asc in energy
     with open('./data/cryspy_rslt_energy_asc', 'w') as f:
+        if order_ef:
+            order = 'E_eV_atom'
+        else:
+            order = 'Ef_eV_atom'
         f.write(rslt_data.sort_values(
-            by=['E_eV_atom'], ascending=True).to_string())
+            by=[order], ascending=True).to_string())
 
 
 def out_kpts(kpt_data):
@@ -153,3 +157,18 @@ def out_ea_info(ea_info):
 def out_ea_origin(ea_origin):
     with open('./data/EA_origin', 'w') as f:
         f.write(ea_origin.to_string(index=False))
+
+
+# ---------- EA-vc
+def out_nat_data(nat_data, atype):
+    with open('./data/nat_data', 'w') as f:
+        f.write(f'    ID    {atype}\n')
+        for cid, nat in nat_data.items():
+            f.write(f'{cid:6}    {nat}\n')
+
+
+def out_hdist(gen, hdist, ratio_data):
+    with open(f'./data/convex_hull/hull_dist_all_gen_{gen}', 'w') as f:
+        f.write(f'    ID    hull distance (eV/atom)    ratio\n')
+        for cid, dist in sorted(hdist.items(), key=lambda x: x[1]):
+            f.write(f'{cid:6}    {dist:>23.6f}    {ratio_data[cid]}\n')

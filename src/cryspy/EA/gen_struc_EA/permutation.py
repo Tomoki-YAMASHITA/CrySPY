@@ -3,7 +3,6 @@ Permutaion class
 '''
 
 from logging import getLogger
-import sys
 
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher

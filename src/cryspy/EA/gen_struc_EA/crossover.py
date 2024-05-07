@@ -61,12 +61,15 @@ class Crossover:
             self.child = Structure(lattice=self.lattice, species=self.species,
                                    coords=self.coords)
             # ------ check nat_diff
-            self._get_nat_diff()    # get self._nat_diff
-            if any([abs(n) > rin.nat_diff_tole for n in self._nat_diff]):
-                if count > rin.maxcnt_ea:    # fail
-                    self.child = None
-                    return self.child
-                continue    # slice again
+            if rin.algo == 'EA':
+                self._get_nat_diff()    # get self._nat_diff
+                if any([abs(n) > rin.nat_diff_tole for n in self._nat_diff]):
+                    if count > rin.maxcnt_ea:    # fail
+                        self.child = None
+                        return self.child
+                    continue    # slice again
+            if rin.algo == 'EA-vc':
+                self._nat_diff = [0, 0]    # dummy
             # ------ check mindist
             dist_list = check_distance(self.child, rin.atype,
                                        self.mindist, check_all=True)
@@ -84,26 +87,36 @@ class Crossover:
                         return None
                     continue    # fail --> slice again
             # ------ recheck nat_diff
-            self._get_nat_diff()
+            if rin.algo == 'EA':
+                self._get_nat_diff()
             # ------ nothing smaller than mindist
             # -- remove atoms near the border line
-            if any([n > 0 for n in self._nat_diff]):
-                self._remove_border_line()
-            # -- add atoms near border line
-            if any([n < 0 for n in self._nat_diff]):
-                self._add_border_line()
-            # -- success --> break while loop
+            if rin.algo == 'EA':
+                if any([n > 0 for n in self._nat_diff]):
+                    self._remove_border_line()
+                # -- add atoms near border line
+                if any([n < 0 for n in self._nat_diff]):
+                    self._add_border_line()
+            # ------ nat check for EA-vc
+            if rin.algo == 'EA-vc':
+                nat, _ = get_nat(self.child, rin.atype)
+                for i, na in enumerate(nat):
+                    if not rin.ll_nat[i] <= na <= rin.ul_nat[i]:
+                        logger.warning(f'Crossover: nat = {nat}, ll_nat = {rin.ll_nat}, ul_nat = {rin.ul_nat}')
+                        self.child = None
+            # ------ success --> break while loop
             if self.child is not None:
                 break
-            # -- fail --> slice again
+            # ------ fail --> slice again
             else:
                 if count > rin.maxcnt_ea:
                     return None
                 continue
         # ---------- final check for nat
-        self._get_nat_diff()
-        if not all([n == 0 for n in self._nat_diff]):
-            return None    # failure
+        if rin.algo == 'EA':
+            self._get_nat_diff()
+            if not all([n == 0 for n in self._nat_diff]):
+                return None    # failure
         # ---------- sort by atype
         self.child = sort_by_atype(self.child, rin.atype)
         # ---------- return
@@ -145,6 +158,7 @@ class Crossover:
             else:
                 species_B.append(self.parent_A[i].species_string)
                 coords_B.append(self.parent_A[i].frac_coords)
+        for i in range(self.parent_B.num_sites):
             if self.parent_B.frac_coords[i, self._axis] >= self._slice_point:
                 species_A.append(self.parent_B[i].species_string)
                 coords_A.append(self.parent_B[i].frac_coords)

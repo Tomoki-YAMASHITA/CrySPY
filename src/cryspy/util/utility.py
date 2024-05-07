@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.2.3'
+    return '1.2.4b1'
 
 
 def set_logger(noprint=False, debug=False):
@@ -112,7 +112,7 @@ def clean_cryspy():
             return
 
     # ---------- file/directory list
-    fdlist = ['cryspy.stat', 'err_cryspy', 'log_cryspy', 'lock_cryspy',
+    fdlist = ['cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'lock_cryspy',
               'data', 'work', 'ext', 'tmp_calc_FP', 'tmp_gen_struc']
 
     # ---------- clean

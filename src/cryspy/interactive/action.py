@@ -34,7 +34,7 @@ def restart(njob: int):
     if os.path.isfile('cryspy.stat'):
         restart_interact(njob)
     else:
-        logger.error('cryspy.stat file exists. Clean files to start from the beginning.')
+        logger.error('cryspy.stat file does not exist.')
 
 
 def show_rslt(cid='all'):
