@@ -1,13 +1,24 @@
 # CHANGELOG
+## [1.2.4] - 2024-5-7
+### Fixed
+- bug fix
+### Changed
+- default value of cls_lat: equal –> random
+### Added
+- test version of variable composition EA (EA-vc). only binary system for now.
+
 ## [1.2.3] - 2023-10-21
 ### Fixed
 - bug fix for MPI
+
 ## [1.2.2] - 2023-10-18
 ### Added
 - enthalpy
+
 ## [1.2.1] - 2023-09-27
 ### Fixed
 - bug fix for ASE interface
+
 ## [1.2.0] - 2023-07-10
 ### Changed
 - adopts logging for output
@@ -21,7 +32,6 @@
 ## [1.1.0] - 2023-05-16
 ### Changed
 - backup (keep history)
-
 ### Added
 - MPI parallelization
 - New score of LAQA

@@ -9,9 +9,11 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.2.3 (2023 October 21)
+version 1.2.4 (2024 May 7)
 
 ## News
+- [2024 May 7] CrySPY 1.2.4 released.
+    + bug fix
 - [2023 October 21] CrySPY 1.2.3 released.
     + bug fix for MPI
 - [2023 October 18] CrySPY 1.2.2 released.
