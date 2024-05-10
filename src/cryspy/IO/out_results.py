@@ -10,7 +10,7 @@ def out_rslt(rslt_data, order_ef=False):
 
     # ---------- asc in energy
     with open('./data/cryspy_rslt_energy_asc', 'w') as f:
-        if order_ef:
+        if not order_ef:
             order = 'E_eV_atom'
         else:
             order = 'Ef_eV_atom'
