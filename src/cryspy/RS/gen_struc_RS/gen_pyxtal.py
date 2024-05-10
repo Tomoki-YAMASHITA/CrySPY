@@ -81,8 +81,6 @@ class Rnd_struc_gen_pyxtal:
                 spg = random.randint(1, 230)
             else:
                 spg = random.choice(rin.spgnum)
-            # ------ vol_factor
-            rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
             tmp_crystal = pyxtal()
             if not vc:
@@ -93,7 +91,7 @@ class Rnd_struc_gen_pyxtal:
                 f = StringIO()
                 with redirect_stdout(f):
                     tmp_crystal.from_random(dim=3, group=spg, species=rin.atype,
-                                            numIons=numIons, factor=rand_vol,
+                                            numIons=numIons, factor=rin.vol_factor,
                                             conventional=False, tm=tolmat)
                 s = f.getvalue().rstrip()    # to delete \n
                 if s:
@@ -160,11 +158,10 @@ class Rnd_struc_gen_pyxtal:
                 spg = random.randint(1, 230)
             else:
                 spg = random.choice(rin.spgnum)
-            rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
             # -- multiprocess for measures against hangup
             q = Queue()
-            p = Process(target=self._mp_mc, args=(tolmat, spg, rin.nmol, rand_vol, q, rin.algo))
+            p = Process(target=self._mp_mc, args=(tolmat, spg, rin.nmol, rin.vol_factor, q, rin.algo))
             p.start()
             p.join(timeout=rin.timeout_mol)
             if p.is_alive():
@@ -322,15 +319,13 @@ class Rnd_struc_gen_pyxtal:
                 spg = random.randint(1, 230)
             else:
                 spg = random.choice(rin.spgnum)
-            # ------ vol_factor
-            rand_vol = random.uniform(rin.vol_factor[0], rin.vol_factor[1])
             # ------ generate structure
             tmp_crystal = pyxtal()
             try:
                 f = StringIO()
                 with redirect_stdout(f):
                     tmp_crystal.from_random(dim=3, group=spg, species=atype_dummy,
-                                            numIons=rin.nmol, factor=rand_vol,
+                                            numIons=rin.nmol, factor=rin.vol_factor,
                                             conventional=False, tm=tolmat)
                 s = f.getvalue().rstrip()    # to delete \n
                 if s:
@@ -475,7 +470,7 @@ class Rnd_struc_gen_pyxtal:
                     tolmat.set_tol(itype, jtype, mindist[i][j])
         return tolmat
 
-    def _mp_mc(self, tolmat, spg, nmol, rand_vol, q, algo):
+    def _mp_mc(self, tolmat, spg, nmol, vol_factor, q, algo):
         '''
         multiprocess part
         here cannot use rin.xxx and logging
@@ -488,7 +483,7 @@ class Rnd_struc_gen_pyxtal:
                 with redirect_stderr(f):
                     tmp_crystal.from_random(dim=3, group=spg,
                                             species=self.mol_data, numIons=nmol,
-                                            factor=rand_vol, conventional=False, tm=tolmat)
+                                            factor=vol_factor, conventional=False, tm=tolmat)
             s = f.getvalue().rstrip()    # to delete \n
             if s:
                 logger.warning(s)

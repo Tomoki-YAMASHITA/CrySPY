@@ -89,7 +89,7 @@ class Ctrl_job:
 
     def check_job(self):
         # ---------- option: recalc
-        if rin.recalc:
+        if rin.recalc is not None:
             self.set_recalc()
         # ---------- temporarily append
         self.tmp_running = self.id_running[:]    # shallow copy
@@ -136,14 +136,14 @@ class Ctrl_job:
                 logger.error(f'ID {tid} has not yet been calculated')
                 raise SystemExit(1)
         # ---------- append IDs to the head of id_queueing
-        self.id_queueing = rin.recalc + self.id_queueing
+        self.id_queueing = list(rin.recalc) + self.id_queueing
         io_stat.set_id(self.stat, 'id_queueing', self.id_queueing)
         self.save_id_data()
         # ---------- log and out
         logger.info('# -- Recalc')
         logger.info(f'Append {rin.recalc} to the head of id_queueing')
         # ---------- clear recalc
-        rin.recalc = []
+        rin.recalc = None
         config = change_input.config_read()
         change_input.change_option(config, 'recalc', '')    # clear
         change_input.write_config(config)

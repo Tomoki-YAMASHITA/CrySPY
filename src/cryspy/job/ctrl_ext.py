@@ -49,7 +49,7 @@ class Ctrl_ext:
 
     def check_job(self):
         # ---------- option: recalc
-        if rin.recalc:
+        if rin.recalc is not None:
             self.set_recalc()
         # ---------- check job status
         try:
