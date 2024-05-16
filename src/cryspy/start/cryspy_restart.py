@@ -7,8 +7,8 @@ from logging import getLogger
 import os
 
 from .gen_init_struc import gen_init_struc
-from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
+from ..IO import diff_input, pkl_data
+from ..IO.read_input import ReadInput
 from ..util.utility import get_version, backup_cryspy
 
 # ---------- import later
@@ -16,8 +16,6 @@ from ..util.utility import get_version, backup_cryspy
 #from ..BO import bo_restart
 #from ..LAQA import laqa_restart
 #from ..EA import ea_append
-#from ..RS.gen_struc_RS.gen_pyxtal import Rnd_struc_gen_pyxtal
-#from ..RS.gen_struc_RS.random_generation import Rnd_struc_gen
 
 
 logger = getLogger('cryspy')
@@ -25,37 +23,42 @@ logger = getLogger('cryspy')
 def restart(comm, mpi_rank, mpi_size):
     if mpi_rank == 0:
         logger.info('\n\n\nRestart CrySPY ' + get_version() + '\n\n')
-        # ---------- read stat
-        stat = io_stat.stat_read()
-    else:
-        stat = None
 
     # ########## MPI start
     if mpi_size > 1:
         comm.barrier()
     # ---------- read input and check the change
+    if mpi_rank == 0:
+        logger.info('read input, cryspy.in')
     try:
-        rin.readin()
+        # all processes read input data
+        rin = ReadInput()    # read input data, cryspy,in
     except Exception as e:
         if mpi_rank == 0:
-            logger.error(str(e.args[0]))
+            logger.error(e)
         raise SystemExit(1)
     if mpi_rank == 0:
         try:
-            rin.diffinstat(stat)
+            # only rank0 compares current and previous input
+            pin = pkl_data.load_input()    # load previous input data from input_data.pkl
+            diff_input.diff_in(rin, pin)           # compare current and previous input
+            pkl_data.save_input(rin)       # save input data to input_data.pkl
         except Exception as e:
             if mpi_size > 1:
                 comm.Abort(1)
-            logger.error(str(e.args[0]))
+            logger.error(e)
             raise SystemExit(1)
 
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
     # _append_struc is not allowed in EA and EA-vc either
     init_struc_data = pkl_data.load_init_struc()
+    append_flag = False
 
     # ---------- append structures
     if len(init_struc_data) < rin.tot_struc:
+        # ------ append_flag
+        append_flag = True
         # ------ backup
         if mpi_rank == 0:
             backup_cryspy()
@@ -65,23 +68,8 @@ def restart(comm, mpi_rank, mpi_size):
         # ------ append struc.
         if mpi_rank == 0:
             prev_nstruc = len(init_struc_data)
-        init_struc_data = _append_struc(init_struc_data, comm, mpi_rank, mpi_size)
-        # ------ post append
-        if mpi_rank == 0:
-            # -- RS
-            if rin.algo == 'RS':
-                from ..RS import rs_restart
-                rs_restart.restart(stat, prev_nstruc)
-            # -- BO
-            if rin.algo == 'BO':
-                from ..BO import bo_restart
-                bo_restart.restart(init_struc_data, prev_nstruc)
-            # -- LAQA
-            if rin.algo == 'LAQA':
-                from ..LAQA import laqa_restart
-                laqa_restart.restart(stat, prev_nstruc)
-            os.remove('lock_cryspy')
-        raise SystemExit()
+        #        init_struc_data is saved in _append_struc
+        init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size)
     elif rin.tot_struc < len(init_struc_data):
         logger.error('tot_struc < len(init_struc_data)')
         raise SystemExit(1)
@@ -89,6 +77,8 @@ def restart(comm, mpi_rank, mpi_size):
     # ---------- append structures by EA (option)
     # not support MPI
     if rin.append_struc_ea:
+        # ------ append_flag
+        append_flag = True
         if mpi_rank == 0:
             # ------ backup
             backup_cryspy()
@@ -99,44 +89,56 @@ def restart(comm, mpi_rank, mpi_size):
     #
             from ..EA import ea_append
             prev_nstruc = len(init_struc_data)
-            init_struc_data = ea_append.append_struc(stat, init_struc_data)
+            # init_struc_data is saved in ea_append.append_struc()
+            init_struc_data = ea_append.append_struc(rin, init_struc_data)
+
+    # ---------- post append
+    if append_flag:
+        if mpi_rank == 0:
             # ------ RS
             if rin.algo == 'RS':
                 from ..RS import rs_restart
-                rs_restart.restart(stat, prev_nstruc)
+                rs_restart.restart(rin, prev_nstruc)
             # ------ BO
             if rin.algo == 'BO':
                 from ..BO import bo_restart
-                bo_restart.restart(init_struc_data, prev_nstruc)
+                bo_restart.restart(rin, init_struc_data, prev_nstruc)
             # ------ LAQA
             if rin.algo == 'LAQA':
                 from ..LAQA import laqa_restart
-                laqa_restart.restart(stat, prev_nstruc)
+                laqa_restart.restart(rin, prev_nstruc)
+            # ------ remove lock_cryspy
             os.remove('lock_cryspy')
         raise SystemExit()
 
     # ---------- return
-    return stat, init_struc_data
+    return rin, init_struc_data
 
 
-def _append_struc(init_struc_data, comm, mpi_rank, mpi_size):
-    # ---------- append initial structures
+def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size):
+    # ---------- log
     if mpi_rank == 0:
         logger.info('# ---------- Append structures')
     if mpi_size > 1:
         comm.barrier()
-    # ------ time
+
+    # ---------- time
     if mpi_rank == 0:
         time_start = datetime.today()
 
-    # ---------- gen_init_struc()
+    # ---------- generate structures
     # only init_struc_data in rank0 is important
-    init_struc_data = gen_init_struc(init_struc_data, None,
+    tmp_struc_data, tmp_struc_mol_id = gen_init_struc(rin, len(init_struc_data),
                                         comm, mpi_rank, mpi_size)
+
+    # ---------- update
+    init_struc_data.update(tmp_struc_data)
+    # ToDo: struc_mol_id
 
     if mpi_rank == 0:
         # ---------- save
         pkl_data.save_init_struc(init_struc_data)
+
         # ---------- time
         time_end = datetime.today()
         etime = time_end - time_start

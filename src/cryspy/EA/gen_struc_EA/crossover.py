@@ -1,7 +1,3 @@
-'''
-Crossover class
-'''
-
 from collections import Counter
 from logging import getLogger
 import random
@@ -10,12 +6,12 @@ import numpy as np
 from pymatgen.core import Structure, Lattice
 from pymatgen.core.periodic_table import DummySpecie
 
-from ...IO import read_input as rin
 from ...util.struc_util import origin_shift, sort_by_atype, check_distance
 from ...util.struc_util import find_site, cal_g, sort_by_atype_mol, get_nat
 
 
 logger = getLogger('cryspy')
+
 
 class Crossover:
     '''
@@ -27,7 +23,7 @@ class Crossover:
         if fail, return None
     '''
 
-    def __init__(self, mindist):
+    def __init__(self, rin, mindist):
         # ---------- self
         self.mindist = mindist
 
@@ -39,7 +35,7 @@ class Crossover:
         else:
             logger.error('crs_lat must be equal or random')
 
-    def gen_child(self, struc_A, struc_B):
+    def gen_child(self, rin, struc_A, struc_B):
         '''
         generate child structure
 
@@ -61,8 +57,8 @@ class Crossover:
             self.child = Structure(lattice=self.lattice, species=self.species,
                                    coords=self.coords)
             # ------ check nat_diff
-            if rin.algo == 'EA':
-                self._get_nat_diff()    # get self._nat_diff
+            if rin.algo != 'EA-vc':    # Do not use "if rin.algo == 'EA':" because rin.algo == 'RS' is also possible with ea_append
+                self._get_nat_diff(rin)    # get self._nat_diff
                 if any([abs(n) > rin.nat_diff_tole for n in self._nat_diff]):
                     if count > rin.maxcnt_ea:    # fail
                         self.child = None
@@ -77,7 +73,7 @@ class Crossover:
             if dist_list:
                 # -- remove atoms within mindist
                 if any([n > 0 for n in self._nat_diff]):
-                    self._remove_within_mindist()
+                    self._remove_within_mindist(rin)
                     if self.child is None:    # fail --> slice again
                         if count > rin.maxcnt_ea:
                             return None
@@ -87,16 +83,16 @@ class Crossover:
                         return None
                     continue    # fail --> slice again
             # ------ recheck nat_diff
-            if rin.algo == 'EA':
-                self._get_nat_diff()
+            if rin.algo != 'EA-vc':
+                self._get_nat_diff(rin)
             # ------ nothing smaller than mindist
             # -- remove atoms near the border line
-            if rin.algo == 'EA':
+            if rin.algo != 'EA-vc':
                 if any([n > 0 for n in self._nat_diff]):
-                    self._remove_border_line()
+                    self._remove_border_line(rin)
                 # -- add atoms near border line
                 if any([n < 0 for n in self._nat_diff]):
-                    self._add_border_line()
+                    self._add_border_line(rin)
             # ------ nat check for EA-vc
             if rin.algo == 'EA-vc':
                 nat, _ = get_nat(self.child, rin.atype)
@@ -113,8 +109,8 @@ class Crossover:
                     return None
                 continue
         # ---------- final check for nat
-        if rin.algo == 'EA':
-            self._get_nat_diff()
+        if rin.algo != 'EA-vc':
+            self._get_nat_diff(rin)
             if not all([n == 0 for n in self._nat_diff]):
                 return None    # failure
         # ---------- sort by atype
@@ -182,11 +178,11 @@ class Crossover:
         # ---------- set instance variables
         self.species, self.coords = species, coords
 
-    def _get_nat_diff(self):
+    def _get_nat_diff(self, rin):
         tmp_nat, _ = get_nat(self.child, rin.atype)
         self._nat_diff = [i - j for i, j in zip(tmp_nat, rin.nat)]
         
-    def _remove_within_mindist(self):
+    def _remove_within_mindist(self, rin):
         '''
         if success: self.child <-- child structure data
         if fail: self.child <-- None
@@ -223,7 +219,7 @@ class Crossover:
             self.child = None
             logger.warning('some atoms within mindist. retry.')
 
-    def _remove_border_line(self):
+    def _remove_border_line(self, rin):
         # ---------- rank atoms from border line
         coords_axis = self.child.frac_coords[:, self._axis]
         # ------ one point crossover: boundary --> 0.0, slice_point, 1.0
@@ -251,7 +247,7 @@ class Crossover:
             if each_type:
                 self.child.remove_sites(each_type)
 
-    def _add_border_line(self):
+    def _add_border_line(self, rin):
         for i in range(len(rin.atype)):
             # ---------- counter
             cnt = 0
@@ -292,7 +288,7 @@ class Crossover:
         else:
             self._mean = np.random.choice([0.0, self._slice_point])
 
-    def gen_child_mol(self, struc_A, struc_B, mol_id_A, mol_id_B):
+    def gen_child_mol(self, rin, struc_A, struc_B, mol_id_A, mol_id_B):
         '''
         generate child structures for mol
 
@@ -334,7 +330,7 @@ class Crossover:
             self.decide_mol_from_dummy(self.child)
 
             # ------ check nat_diff
-            self.check_mol_num()    # get self._nat_diff
+            self.check_mol_num(rin)    # get self._nat_diff
 
             if any([abs(n) > rin.nat_diff_tole for n in self._nmol_diff]):
                 if count > rin.maxcnt_ea:    # fail
@@ -348,7 +344,7 @@ class Crossover:
             if dist_list:
                 # -- remove atoms within mindist
                 if any([n > 0 for n in self._nmol_diff]):
-                    self._remove_within_mindist_mol()
+                    self._remove_within_mindist_mol(rin)
                     if self.child is None:    # fail --> slice again
                         if count > rin.maxcnt_ea:
                             return None, None
@@ -358,13 +354,13 @@ class Crossover:
                         return None, None
                     continue    # fail --> slice again
             # ------ recheck nmol_diff
-            self.check_mol_num()
+            self.check_mol_num(rin)
             # -- remove atoms near the border line
             if any([n > 0 for n in self._nmol_diff]):
                 self._remove_border_line_mol()
             # -- add atoms near border line
             if any([n < 0 for n in self._nmol_diff]):
-                self._add_border_line_mol()
+                self._add_border_line_mol(rin)
             # -- success --> break while loop
             if self.child is not None:
                 break
@@ -376,14 +372,16 @@ class Crossover:
         # ---------- final check for nat
         self.decide_mol_from_dummy(self.child)
         self.child, self.child_mol_id, self.child_group_id = self.replace_mol(self.child)
-        self._get_nat_diff()
+        self._get_nat_diff(rin)
         if not all([n == 0 for n in self._nat_diff]):
             return None, None    # failure
         # ---------- sort by atype
-        self.child, self.child_mol_id, self.child_group_id = sort_by_atype_mol(self.child,
-                                                                               rin.atype,
-                                                                               self.child_mol_id,
-                                                                               self.child_group_id)
+        self.child, self.child_mol_id, self.child_group_id = sort_by_atype_mol(
+                                                                 self.child,
+                                                                 rin.atype,
+                                                                 self.child_mol_id,
+                                                                 self.child_group_id
+                                                             )
         # ---------- return
         return self.child, [self.child_mol_id, self.child_group_id, self.true_dists_A]
 
@@ -463,7 +461,7 @@ class Crossover:
         # ---------- set instance variables
         self.species, self.coords, self.child_mol_id, self.child_group_id = species, coords, mol_id, group_id
 
-    def check_mol_num(self):
+    def check_mol_num(self, rin):
         self._nmol_diff = []
         for j, mol_number in enumerate(list(set(self.child_mol_id))):
             tmp_num = []
@@ -507,7 +505,7 @@ class Crossover:
             self.child_group_id.pop(rl)
             self.child_parent.pop(rl)
 
-    def _add_border_line_mol(self):
+    def _add_border_line_mol(self, rin):
         for i in range(len(self._nmol_diff)):
             # ---------- counter
             cnt = 0
@@ -646,7 +644,7 @@ class Crossover:
             mol_group_list.update({cnt_id: list(set(tmp_group_id))})
             cnt_id += 1
 
-    def _remove_within_mindist_mol(self):
+    def _remove_within_mindist_mol(self, rin):
         '''
         if success: self.child <-- child structure data
         if fail: self.child <-- None

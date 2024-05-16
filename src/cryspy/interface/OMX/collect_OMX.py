@@ -11,12 +11,11 @@ import re
 from pymatgen.core.units import Energy
 
 from . import structure as OMX_structure
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def collect_OMX(cid, work_path, nat):
+def collect_OMX(rin, cid, work_path, nat):
     # ---------- check optimization in previous stage (done)
     # If *.out file exists, the calculation is done.
     try:
@@ -24,7 +23,7 @@ def collect_OMX(cid, work_path, nat):
             lines = fpout.readlines()
         check_opt = 'done'
     except Exception as e:
-        logger.warning(str(e.args[0]))
+        logger.warning(e)
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom (done)
@@ -48,7 +47,7 @@ def collect_OMX(cid, work_path, nat):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        logger.warning(str(e.args[0]) + f':    Structure ID {cid},'
+        logger.warning(f'{e}:    Structure ID {cid},'
                        f' could not obtain energy from {rin.OMX_outfile}')
 
     # ---------- collect the last structure (yet)
@@ -62,14 +61,14 @@ def collect_OMX(cid, work_path, nat):
             work_path+rin.OMX_outfile, nat)
         if lines_atom is None:
             lines_atom = OMX_structure.extract_atomic_positions_from_infile(
-                work_path+rin.OMX_infile, nat)
+                rin, work_path+rin.OMX_infile, nat)
         opt_struc = OMX_structure.from_lines(lines_cell, lines_atom)
         # ------ opt_OMX-structure
         with open('./data/opt_OMX-structure', 'a') as fstruc:
             fstruc.write('# ID {0:d}\n'.format(cid))
-        OMX_structure.write(opt_struc, './data/opt_OMX-structure', mode='a')
+        OMX_structure.write(rin, opt_struc, './data/opt_OMX-structure', mode='a')
     except Exception as e:
-        logger.warning(str(e.args[0]))
+        logger.warning(e)
         opt_struc = None
 
     # ---------- check

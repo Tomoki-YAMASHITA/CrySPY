@@ -1,18 +1,13 @@
-'''
-Rotation class
-'''
-
 from logging import getLogger
-import sys
 
 import numpy as np
 from pymatgen.core import Structure
 
-from ...IO import read_input as rin
 from ...util.struc_util import check_distance, rot_mat, find_site, cal_g, sort_by_atype_mol
 
 
 logger = getLogger('cryspy')
+
 
 class Rotation:
     '''
@@ -22,7 +17,7 @@ class Rotation:
     def __init__(self, mindist):
         self.mindist = mindist
 
-    def gen_child(self, struc, mol_id):
+    def gen_child(self, rin, struc, mol_id):
         # ---------- init
         cnt = 0
         self.child = struc

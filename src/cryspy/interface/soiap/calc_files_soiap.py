@@ -1,16 +1,11 @@
-'''
-Calculation files in soiap
-'''
-
 from logging import getLogger
 import os
-
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def check_input_soiap():
+
+def check_input_soiap(rin):
     # ---------- prepare rin.jobfile, rin.soiap_infile
     calc_inputs = [rin.jobfile, rin.soiap_infile]
 

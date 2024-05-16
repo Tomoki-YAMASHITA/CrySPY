@@ -1,16 +1,11 @@
-'''
-Restart in LAQA
-'''
-
 from logging import getLogger
 
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def restart(stat, prev_nstruc):
+def restart(rin, prev_nstruc):
     # ---------- load laqa data
     id_queueing, id_running, id_select_hist = pkl_data.load_laqa_id()
     tot_step_select, laqa_step, laqa_struc, \
@@ -27,6 +22,7 @@ def restart(stat, prev_nstruc):
     logger.info('Append scores and id_queueing')
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
 

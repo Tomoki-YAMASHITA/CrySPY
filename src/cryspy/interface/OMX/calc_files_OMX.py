@@ -7,12 +7,11 @@ info at hikaruri.jp
 from logging import getLogger
 import os
 
-from ...IO import read_input as rin
-
 
 logger = getLogger('cryspy')
 
-def check_input_OMX():
+
+def check_input_OMX(rin):
     # ---------- prepare rin.jobfile, rin.OMX_infile
     calc_inputs = [rin.jobfile, rin.OMX_infile]
 

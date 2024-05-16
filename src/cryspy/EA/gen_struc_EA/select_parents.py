@@ -1,16 +1,11 @@
-'''
-Select parents in evolutionary algorithm
-'''
-
 from logging import getLogger
 
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 
-from ...IO import read_input as rin
-
 
 logger = getLogger('cryspy')
+
 
 class Select_parents:
     '''
@@ -45,7 +40,7 @@ class Select_parents:
     self.get_parents(n_parent)
     '''
 
-    def __init__(self, struc_data, fitness,
+    def __init__(self, rin, struc_data, fitness,
                  elite_struc=None, elite_fitness=None, n_fittest=0):
         # ---------- check args
         # ------ data
@@ -163,7 +158,7 @@ class Select_parents:
         # ---------- set self.get_parents() <-- self._tournament or self._roulette
         self.get_parents = self._tournament
 
-    def _tournament(self, n_parent):
+    def _tournament(self, rin, n_parent):
         '''
         tournament selection
 
@@ -183,19 +178,19 @@ class Select_parents:
             parent_id.append(self.ranking_dedupe[min(t_indx)])
         return parent_id
 
-    def set_roulette(self):
+    def set_roulette(self, rin):
         '''
         setting for roulette selection
         '''
         # ---------- calculate cumulative fitness
         fitness_dedupe = np.array(
             [self.fitness[i] for i in self.ranking_dedupe])
-        fitness_dedupe = self._linear_scaling(fitness_dedupe)
+        fitness_dedupe = self._linear_scaling(rin, fitness_dedupe)
         self.cum_fit = np.cumsum(fitness_dedupe/fitness_dedupe.sum())
         # ---------- set self.get_parents <-- self._tournament or self._roulette
         self.get_parents = self._roulette
 
-    def _roulette(self, n_parent):
+    def _roulette(self, rin, n_parent):
         '''
         roulette selection
 
@@ -218,7 +213,7 @@ class Select_parents:
             parent_id.append(self.ranking_dedupe[select_indx])
         return parent_id
 
-    def _linear_scaling(self, fitness):
+    def _linear_scaling(self, rin, fitness):
         # ---------- check args
         # ------ fitness
         if isinstance(fitness, np.ndarray):

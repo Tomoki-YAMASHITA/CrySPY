@@ -2,7 +2,6 @@ from logging import getLogger
 
 import numpy as np
 
-from ...IO import read_input as rin
 from ...util.struc_util import check_distance, sort_by_atype
 #from .adj_comp import operation_atoms, convex_hull_check
 
@@ -16,7 +15,7 @@ class Addition:
         self.mindist = mindist
         self.target = target
 
-    def gen_child(self, struc, atype_avail):
+    def gen_child(self, rin, struc, atype_avail):
         cnt = 0
         while True:
             # ---------- keep original structure
@@ -30,8 +29,8 @@ class Addition:
                 self.child.append(species=at, coords=coords)
             # ---------- not implemented yet
             # elif target in ['depop', 'overpop']:
-            #     section = convex_hull_check()
-            #     self.child = operation_atoms('addition', self.child, section)
+            #     section = convex_hull_check(rin)
+            #     self.child = operation_atoms(rin, 'addition', self.child, section)
             # ------ check distance
             success, mindist_ij, dist = check_distance(self.child,
                                                        rin.atype,

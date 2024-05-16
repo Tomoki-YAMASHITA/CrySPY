@@ -1,17 +1,13 @@
-'''
-Collect results in LAMMPS
-'''
-
 from logging import getLogger
 import numpy as np
 
 from . import structure as lammps_structure
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def collect_lammps(cid, work_path, nat):
+
+def collect_lammps(rin, cid, work_path, nat):
     # ---------- natot
     natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- check optimization in current stage & obtain energy
@@ -31,7 +27,7 @@ def collect_lammps(cid, work_path, nat):
                 energy = energy/float(natot)    # eV/cell --> eV/atom
                 check_opt = 'done'
     except Exception as e:
-        logger.warning(str(e.args[0]) + f':    Structure ID {cid},'
+        logger.warning(f'{e}:    Structure ID {cid},'
                        f'could not obtain energy from {rin.lammps_outfile}')
         energy = np.nan    # error
         check_opt = 'no_file'
@@ -41,9 +37,9 @@ def collect_lammps(cid, work_path, nat):
 
     # ---------- collect the last structure
     try:
-        opt_struc = lammps_structure.from_file(work_path+'log.struc', nat)
+        opt_struc = lammps_structure.from_file(rin, work_path+'log.struc', nat)
     except Exception as e:
-        logger.warning(str(e.args[0]))
+        logger.warning(e)
         opt_struc = None
 
     # ---------- return

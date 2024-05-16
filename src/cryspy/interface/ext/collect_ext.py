@@ -1,6 +1,3 @@
-'''
-Collect results in ext
-'''
 from logging import getLogger
 import os
 
@@ -8,6 +5,7 @@ from ...IO import pkl_data
 
 
 logger = getLogger('cryspy')
+
 
 def collect_ext():
     # ---------- get opt_struc_data and energy_data

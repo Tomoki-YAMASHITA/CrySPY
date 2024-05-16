@@ -1,16 +1,10 @@
-'''
-Calculation files in Quantum ESPRESSO
-'''
-
 from logging import getLogger
 import os
-
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def check_input_qe():
+def check_input_qe(rin):
     # ---------- prepare rin.jobfile, rin.qe_infile
     calc_inputs = [rin.jobfile, rin.qe_infile]
 

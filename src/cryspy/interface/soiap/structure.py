@@ -1,7 +1,6 @@
 '''
 Structure files in soiap
 '''
-
 import itertools
 
 import numpy as np
@@ -9,10 +8,9 @@ from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from ...util import constants
-from ...IO import read_input as rin
 
 
-def from_file(lines, nat):
+def from_file(rin, lines, nat):
     # ---------- lattice
     lattice = [[float(x) for x in line.split()] for line in lines[1:4]]
     #     in Bohr, each column is a lattice vector
@@ -56,7 +54,7 @@ def write(structure, output, symprec=0.001, title="soiap"):
         f.write('loop_\n')
         f.write('  _symmetry_equiv_pos_as_xyz\n')
         for symop in symmetry_operations:
-            f.write("  '{0:s}'\n".format(symop.as_xyz_string()))
+            f.write("  '{0:s}'\n".format(symop.as_xyz_str()))
         f.write('\n')
         f.write('loop_\n')
         f.write('  _atom_site_type_symbol\n')

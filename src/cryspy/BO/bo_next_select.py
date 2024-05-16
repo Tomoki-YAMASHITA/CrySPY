@@ -1,7 +1,3 @@
-'''
-Selection in Bayesian optimization
-'''
-
 import configparser
 from contextlib import redirect_stdout
 from logging import getLogger
@@ -11,12 +7,12 @@ import numpy as np
 
 from .combo_cryspy import Policy_cryspy
 from ..IO import io_stat, out_results, pkl_data
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def next_select(stat, rslt_data, bo_id_data, bo_data, noprint=False):
+
+def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
     # ---------- log
     logger.info('# ------ Bayesian optimization')
 
@@ -28,21 +24,22 @@ def next_select(stat, rslt_data, bo_id_data, bo_data, noprint=False):
     n_selection += 1
 
     # ---------- manual select
-    if rin.manual_select_bo:
-        x = ' '.join(str(i) for i in rin.manual_select_bo)
+    if rin.manual_select_bo is not None:
+        manual_list = list(rin.manual_select_bo)
+        x = ' '.join(str(i) for i in manual_list)
         logger.info(f'Manual select: {x}')
         # ------ check already selected
-        tmp_list = [i for i in rin.manual_select_bo if i in opt_dscrpt_data]
+        tmp_list = [i for i in manual_list if i in opt_dscrpt_data]
         for j in tmp_list:
-            rin.manual_select_bo.remove(j)
+            manual_list.remove(j)
             logger.info(f'ID {j} was already selected. Remove it')
         # ------ number of structure to be selected
-        nselect = rin.nselect_bo - len(rin.manual_select_bo)
-        id_queueing = rin.manual_select_bo
+        nselect = rin.nselect_bo - len(manual_list)
+        id_queueing = manual_list
         # ------ delete the value for manual_select_bo in cryspy.in
         config = configparser.ConfigParser()
         config.read('cryspy.in')
-        config.set('BO', 'manual_select_bo', '')
+        config.set('BO', 'manual_select_bo', '')    # clear
         with open('cryspy.in', 'w') as f:
             config.write(f)
     else:
@@ -92,8 +89,9 @@ def next_select(stat, rslt_data, bo_id_data, bo_data, noprint=False):
         descriptors = np.array(descriptors)
         targets = np.array(targets, dtype=float)
         # ------ Bayesian optimization
-        actions, cryspy_mean, cryspy_var, cryspy_score = bayes_opt(
-            s_act, descriptors, targets, nselect, noprint)
+        actions, cryspy_mean, cryspy_var, cryspy_score = _bayes_opt(
+            s_act, descriptors, targets, nselect,
+            rin.score, rin.cdev, rin.num_rand_basis, noprint)
         # ------ actions --> id_queueing
         for i in actions:
             id_queueing.append(non_error_id[i])
@@ -126,6 +124,7 @@ def next_select(stat, rslt_data, bo_id_data, bo_data, noprint=False):
     pkl_data.save_bo_id(bo_id_data)
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_common(stat, 'selection', n_selection)
     io_stat.set_id(stat, 'selected_id', id_queueing)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
@@ -142,12 +141,13 @@ def next_select(stat, rslt_data, bo_id_data, bo_data, noprint=False):
             fstat.write('out\n')
 
 
-def bayes_opt(s_act, descriptors, targets, nselect, noprint=False):
+def _bayes_opt(s_act, descriptors, targets, nselect, score,
+               cdev=0.001, num_rand_basis=0, noprint=False):
     # ---------- start COMBO part
     # ------ standardization
     # X = combo.misc.centering(descriptors)
     dev = np.std(descriptors, axis=0)
-    nonzero_indx = np.where(dev > rin.cdev)[0]
+    nonzero_indx = np.where(dev > cdev)[0]
     X = (descriptors[:, nonzero_indx] - np.mean(
         descriptors[:, nonzero_indx], axis=0)) / dev[nonzero_indx]
 
@@ -169,14 +169,14 @@ def bayes_opt(s_act, descriptors, targets, nselect, noprint=False):
             actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
                 max_num_probes=1,
                 num_search_each_probe=nselect,
-                score=rin.score,
-                num_rand_basis=rin.num_rand_basis)
+                score=score,
+                num_rand_basis=num_rand_basis)
     else:
         actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
             max_num_probes=1,
             num_search_each_probe=nselect,
-            score=rin.score,
-            num_rand_basis=rin.num_rand_basis)
+            score=score,
+            num_rand_basis=num_rand_basis)
 
     # ------ return
     return actions, cryspy_mean, cryspy_var, cryspy_score

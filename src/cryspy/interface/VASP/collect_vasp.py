@@ -11,7 +11,6 @@ from pymatgen.core import Structure
 
 from ...util import constants
 from ...IO import pkl_data
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
@@ -108,7 +107,7 @@ def get_energy_step_vasp(energy_step_data, cid, work_path, nat):
         energy_step = np.array(energy_step, dtype='float')/float(natot)
     except Exception as e:
         energy_step = None
-        logger.warning(str(e.args[0]) + f': #### ID: {cid}: failed to parse in energy_step')
+        logger.warning(f'{e}:    ID {cid}: failed to parse in energy_step')
 
     # ---------- append energy_step
     if energy_step_data.get(cid) is None:
@@ -165,7 +164,7 @@ def get_struc_step_vasp(struc_step_data, cid, work_path):
             struc_step.append(struc)
     except Exception as e:
         struc_step = None
-        logger.warning(str(e.args[0]), f': #### ID: {cid}: failed to parse in struc_step')
+        logger.warning(f'{e}:    ID {cid}: failed to parse in struc_step')
 
     # ---------- append struc_step
     if struc_step_data.get(cid) is None:
@@ -217,7 +216,7 @@ def get_force_step_vasp(force_step_data, cid, work_path):
             force_step.append(force)
     except Exception as e:
         force_step = None
-        logger.warning(str(e.args[0]) + f': #### ID: {cid}: failed to parse in force_step')
+        logger.warning(f'{e}:    ID {cid}: failed to parse in force_step')
 
     # ---------- append force_step
     if force_step_data.get(cid) is None:
@@ -271,7 +270,7 @@ def get_stress_step_vasp(stress_step_data, cid, work_path):
             stress_step.append(stress)
     except Exception as e:
         stress_step = None
-        logger.warning(str(e.args[0]), f': #### ID: {cid}: failed to parse in stress_step')
+        logger.warning(f'{e}:    ID {cid}: failed to parse in stress_step')
 
     # ---------- append stress_step
     if stress_step_data.get(cid) is None:

@@ -1,19 +1,17 @@
 import itertools
 from logging import getLogger
 import os
-#import sys
 import subprocess
 import shutil
-#from datetime import datetime
 
-from ..IO import read_input as rin
-from ..IO import io_stat, pkl_data
+from ..IO import diff_input, io_stat, pkl_data
 from ..IO.out_results import out_rslt
+from ..IO.read_input import ReadInput
 from ..util.utility import get_version, backup_cryspy
 from ..util.struc_util import out_poscar, out_cif
 #from ..start.gen_init_struc import gen_init_struc
 
-# ---------- import later (after rin.readin())
+# ---------- import later (rin = ReadInput())
 #from ..interface import select_code
 
 logger = getLogger('cryspy')
@@ -26,39 +24,60 @@ def restart_interact(njob: int):
     mpi_size = 1
     logger.info('\n\n\nRestart CrySPY ' + get_version() + '\n\n')
 
-    # ---------- read stat
-    stat = io_stat.stat_read()
-
     # ---------- read input and check the change
-    rin.readin()
-    rin.diffinstat(stat)
+    rin = ReadInput()    # read input data, cryspy,in
+    pin = pkl_data.load_input()    # load previous input data from input_data.pkl
+    diff_input.diff_in(rin, pin)           # compare current and previous input
+    pkl_data.save_input(rin)       # save input data to input_data.pkl
     if njob == 0:
         njob = rin.njob
     from ..interface import select_code
 
     # ---------- load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
+    # _append_struc is not allowed in EA and EA-vc either
     init_struc_data = pkl_data.load_init_struc()
+    append_flag = False
 
     # ---------- append structures
     if len(init_struc_data) < rin.tot_struc:
         logger.info('append structure: not implemented yet')
         raise SystemExit()
+        # ------ append_flag
+        #append_flag = True
         # ------ backup
         #backup_cryspy()
-        
         # ------ append
         #prev_nstruc = len(init_struc_data)
-        #init_struc_data = _append_struc(init_struc_data, comm, mpi_rank, mpi_size)
+        #init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size)
 
+    # ---------- post append
+    # if append_flag:
+    #     if mpi_rank == 0:
+    #         # ------ RS
+    #         if rin.algo == 'RS':
+    #             from ..RS import rs_restart
+    #             rs_restart.restart(rin, prev_nstruc)
+    #         # ------ BO
+    #         if rin.algo == 'BO':
+    #             from ..BO import bo_restart
+    #             bo_restart.restart(rin, init_struc_data, prev_nstruc)
+    #         # ------ LAQA
+    #         if rin.algo == 'LAQA':
+    #             from ..LAQA import laqa_restart
+    #             laqa_restart.restart(rin, prev_nstruc)
+    #         # ------ remove lock_cryspy
+    #         os.remove('lock_cryspy')
+    #     raise SystemExit()
 
-    if rin.algo == 'RS':
-        id_queueing, id_running = pkl_data.load_rs_id()
-    # ----------
-
+    # ---------- mkdir work/fin
     os.makedirs('work/fin', exist_ok=True)
 
-    # ----------   def check_job
+    # ---------- Ctrl_job
+    if rin.algo == 'RS':
+        id_queueing, id_running = pkl_data.load_rs_id()
+
+    # ----------  check_job
     if not rin.stop_next_struc:
         while len(id_running) < njob and id_queueing:
             id_running.append(id_queueing.pop(0))
@@ -73,7 +92,7 @@ def restart_interact(njob: int):
             os.mkdir('work/{:06}'.format(cid))
         work_path = './work/{:06}/'.format(cid)
 
-        select_code.next_struc(init_struc_data[cid], cid, work_path, rin.nat)
+        select_code.next_struc(rin, init_struc_data[cid], cid, work_path, rin.nat)
 
         # def prepare_jobfile(self)
         if not os.path.isfile('./calc_in/' + rin.jobfile):
@@ -108,7 +127,7 @@ def restart_interact(njob: int):
         print('{0}    collect results: E = {1} eV/atom'.format(cid, energy))
         # ---------- register opt_struc
         spg_sym, spg_num, spg_sym_opt, spg_num_opt = regist_opt(
-            init_struc_data, opt_struc, tmp_opt_struc, cid, work_path)
+            rin, init_struc_data, opt_struc, tmp_opt_struc, cid, work_path)
         # ---------- save rslt
         rslt_data.loc[cid] = [spg_num, spg_sym,
                               spg_num_opt, spg_sym_opt,
@@ -125,7 +144,7 @@ def restart_interact(njob: int):
     print("finish")
 
 
-def regist_opt(init_struc_data, opt_struc, tmp_opt_struc, cid, work_path):
+def regist_opt(rin, init_struc_data, opt_struc, tmp_opt_struc, cid, work_path):
     '''
     Common part in ctrl_collect_*
     '''
@@ -146,12 +165,12 @@ def regist_opt(init_struc_data, opt_struc, tmp_opt_struc, cid, work_path):
             spg_num_opt = 0
             spg_sym_opt = None
         # ------ out opt_struc
-        out_poscar(opt_struc, cid, './data/opt_POSCARS')
+        out_poscar({cid:opt_struc}, './data/opt_POSCARS')
         try:
             out_cif(opt_struc, cid, work_path,
                     './data/opt_CIFS.cif', rin.symprec)
         except TypeError:
-            print('failed to write opt_CIF')
+            logger.warning('failed to write opt_CIF')
     # ---------- error
     else:
         spg_num_opt = 0
@@ -179,6 +198,8 @@ def mv_fin(cid):
 
 def update_status(operation, cid, stat, id_queueing, id_running):
     print("update_status work!")
+    # ---------- read stat
+    stat = io_stat.stat_read()
     # ---------- update status
     if operation == 'submit':
         id_running.append(cid)

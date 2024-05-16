@@ -1,12 +1,7 @@
-'''
-Restart random search
-'''
-
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 
 
-def restart(stat, prev_nstruc):
+def restart(rin, prev_nstruc):
     # ---------- load rs data
     id_queueing, id_running = pkl_data.load_rs_id()
 
@@ -14,6 +9,7 @@ def restart(stat, prev_nstruc):
     id_queueing.extend([i for i in range(prev_nstruc, rin.tot_struc)])
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
 

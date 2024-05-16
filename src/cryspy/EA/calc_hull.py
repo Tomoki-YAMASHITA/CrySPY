@@ -1,16 +1,14 @@
 from logging import getLogger
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.spatial import ConvexHull
-
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
 
-def calc_convex_hull_2d(ratio_data, ef_all, c_ids, gen):
+def calc_convex_hull_2d(rin, ratio_data, ef_all, c_ids, gen):
     '''
     Input:
         ratio_data [dict]: ratio of all structures, {ID: [ratio list], ...}
@@ -36,7 +34,7 @@ def calc_convex_hull_2d(ratio_data, ef_all, c_ids, gen):
     if len(ef_chull) == 2:    # only end points
         # np.nan --> np.inf in hdist
         hdist = {cid: np.inf if np.isnan(ef_all[cid]) else ef_all[cid] for cid in ef_all}
-        draw_convex_hull_2d(None, ratio_data, ef_all, c_ids, gen)
+        draw_convex_hull_2d(rin, None, ratio_data, ef_all, c_ids, gen)
         return hdist
 
     # ---------- calc convex hull
@@ -53,7 +51,7 @@ def calc_convex_hull_2d(ratio_data, ef_all, c_ids, gen):
     }
 
     # ---------- draw convex hull
-    draw_convex_hull_2d(vpoints, ratio_data, ef_all, c_ids, gen)
+    draw_convex_hull_2d(rin, vpoints, ratio_data, ef_all, c_ids, gen)
 
     # ---------- return
     return hdist
@@ -76,7 +74,7 @@ def hull_distance_2d(x, y, equations):
     return min(hdists)
 
 
-def draw_convex_hull_2d(vpoints, ratio_data, ef_all, c_ids, gen):
+def draw_convex_hull_2d(rin, vpoints, ratio_data, ef_all, c_ids, gen):
     # ---------- setting
     plt.rcParams.update(_set_params())
 

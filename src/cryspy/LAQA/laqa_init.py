@@ -1,16 +1,11 @@
-'''
-Initialize LAQA
-'''
-
 from logging import getLogger
 
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def initialize(stat):
+def initialize(rin):
     logger.info('# ---------- Initialize LAQA')
 
     # ---------- initialize
@@ -38,6 +33,7 @@ def initialize(stat):
     pkl_data.save_laqa_data(laqa_data)
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_common(stat, 'selection', 0)
     io_stat.set_common(stat, 'total_step', 0)
     io_stat.set_id(stat, 'selected_id', id_queueing)    # all IDs

@@ -1,16 +1,13 @@
 '''
 Structure file for LAMMPS
 '''
-
 import itertools
 
 import numpy as np
 from pymatgen.core import Structure
 
-from ...IO import read_input as rin
 
-
-def from_file(name, nat):
+def from_file(rin, name, nat):
     # ---------- natot
     natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- last structure

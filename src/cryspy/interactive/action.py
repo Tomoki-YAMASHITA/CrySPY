@@ -9,8 +9,10 @@ from .rslt_energy import display_rslt
 from .view_atom import get_ase_atoms
 from .energy_plot import energy_plot
 
+
 set_logger()
 logger = getLogger('cryspy')
+
 
 def initialize():
     comm = None

@@ -7,10 +7,19 @@ import pickle
 import pandas as pd
 
 
+def load_input():
+    with open('./data/pkl_data/input_data.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
+def save_input(rin):
+    with open('./data/pkl_data/input_data.pkl', 'wb') as f:
+        pickle.dump(rin, f)
+
+
 def load_init_struc():
     with open('./data/pkl_data/init_struc_data.pkl', 'rb') as f:
-        init_struc_data = pickle.load(f)
-    return init_struc_data
+        return pickle.load(f)
 
 
 def save_init_struc(init_struc_data):
@@ -20,8 +29,7 @@ def save_init_struc(init_struc_data):
 
 def load_opt_struc():
     with open('./data/pkl_data/opt_struc_data.pkl', 'rb') as f:
-        opt_struc_data = pickle.load(f)
-    return opt_struc_data
+        return pickle.load(f)
 
 
 def save_opt_struc(opt_struc_data):
@@ -40,8 +48,7 @@ def save_rslt(rslt_data):
 
 def load_kpt():
     with open('./data/pkl_data/kpt_data.pkl', 'rb') as f:
-        kpt_data = pickle.load(f)
-    return kpt_data
+        return pickle.load(f)
 
 
 def save_kpt(kpt_data):
@@ -51,8 +58,7 @@ def save_kpt(kpt_data):
 
 def load_energy_step():
     with open('./data/pkl_data/energy_step_data.pkl', 'rb') as f:
-        energy_step_data = pickle.load(f)
-    return energy_step_data
+        return pickle.load(f)
 
 
 def save_energy_step(energy_step_data):
@@ -62,8 +68,7 @@ def save_energy_step(energy_step_data):
 
 def load_struc_step():
     with open('./data/pkl_data/struc_step_data.pkl', 'rb') as f:
-        struc_step_data = pickle.load(f)
-    return struc_step_data
+        return pickle.load(f)
 
 
 def save_struc_step(struc_step_data):
@@ -73,8 +78,7 @@ def save_struc_step(struc_step_data):
 
 def load_force_step():
     with open('./data/pkl_data/force_step_data.pkl', 'rb') as f:
-        force_step_data = pickle.load(f)
-    return force_step_data
+        return pickle.load(f)
 
 
 def save_force_step(force_step_data):
@@ -84,8 +88,7 @@ def save_force_step(force_step_data):
 
 def load_stress_step():
     with open('./data/pkl_data/stress_step_data.pkl', 'rb') as f:
-        stress_step_data = pickle.load(f)
-    return stress_step_data
+        return pickle.load(f)
 
 
 def save_stress_step(stress_step_data):
@@ -95,8 +98,7 @@ def save_stress_step(stress_step_data):
 
 def load_rs_id():
     with open('./data/pkl_data/RS_id_data.pkl', 'rb') as f:
-        rs_id_data = pickle.load(f)
-    return rs_id_data
+        return pickle.load(f)
 
 
 def save_rs_id(rs_id_data):
@@ -106,8 +108,7 @@ def save_rs_id(rs_id_data):
 
 def load_bo_id():
     with open('./data/pkl_data/BO_id_data.pkl', 'rb') as f:
-        bo_id_data = pickle.load(f)
-    return bo_id_data
+        return pickle.load(f)
 
 
 def save_bo_id(bo_id_data):
@@ -117,8 +118,7 @@ def save_bo_id(bo_id_data):
 
 def load_bo_data():
     with open('./data/pkl_data/BO_data.pkl', 'rb') as f:
-        bo_data = pickle.load(f)
-    return bo_data
+        return pickle.load(f)
 
 
 def save_bo_data(bo_data):
@@ -128,8 +128,7 @@ def save_bo_data(bo_data):
 
 def load_laqa_id():
     with open('./data/pkl_data/LAQA_id_data.pkl', 'rb') as f:
-        laqa_id_data = pickle.load(f)
-    return laqa_id_data
+        return pickle.load(f)
 
 
 def save_laqa_id(laqa_id_data):
@@ -139,8 +138,7 @@ def save_laqa_id(laqa_id_data):
 
 def load_laqa_data():
     with open('./data/pkl_data/LAQA_data.pkl', 'rb') as f:
-        laqa_data = pickle.load(f)
-    return laqa_data
+        return pickle.load(f)
 
 
 def save_laqa_data(laqa_data):
@@ -150,14 +148,12 @@ def save_laqa_data(laqa_data):
 
 def load_ea_id():
     with open('./data/pkl_data/EA_id_data.pkl', 'rb') as f:
-        ea_id_data = pickle.load(f)
-    return ea_id_data
+        return pickle.load(f)
 
 
 def load_struc_mol_id():
     with open('./data/pkl_data/struc_mol_id_data.pkl', 'rb') as f:
-        struc_mol_id = pickle.load(f)
-    return struc_mol_id
+        return pickle.load(f)
 
 
 def save_struc_mol_id(struc_mol_id):
@@ -172,8 +168,7 @@ def save_ea_id(ea_id_data):
 
 def load_ea_data():
     with open('./data/pkl_data/EA_data.pkl', 'rb') as f:
-        ea_data = pickle.load(f)
-    return ea_data
+        return pickle.load(f)
 
 
 def save_ea_data(ea_data):
@@ -183,8 +178,7 @@ def save_ea_data(ea_data):
 
 def load_ea_vc_data():
     with open('./data/pkl_data/EA-vc_data.pkl','rb') as f:
-        ea_vc_data = pickle.load(f)
-    return ea_vc_data
+        return pickle.load(f)
 
 
 def save_ea_vc_data(ea_vc_data):
@@ -194,11 +188,9 @@ def save_ea_vc_data(ea_vc_data):
 
 def load_ext_opt_struc():
     with open('./ext/calc_data/ext_opt_struc_data.pkl', 'rb') as f:
-        ext_opt_struc_data = pickle.load(f)
-    return ext_opt_struc_data
+        return pickle.load(f)
 
 
 def load_ext_energy():
     with open('./ext/calc_data/ext_energy_data.pkl', 'rb') as f:
-        ext_energy_data = pickle.load(f)
-    return ext_energy_data
+        return pickle.load(f)

@@ -3,14 +3,13 @@ import random
 import numpy as np
 from pymatgen.transformations.site_transformations import ReplaceSiteSpeciesTransformation
 from ...IO import pkl_data
-from ...IO import read_input as rin
 from ...util.struc_util import get_nat
 
 
 logger = getLogger('cryspy')
 
 
-def convex_hull_check():
+def convex_hull_check(rin):
     '''
     convex hullのどの区間にどれくらいの構造があるかをカウントする
     とりあえずconvex hullを5分割して考える
@@ -76,7 +75,7 @@ def convex_hull_check():
 
     return rslt
 
-def operation_atoms(method,child, section):
+def operation_atoms(rin, method,child, section):
     """
     構造が少ないところをターゲットにして子構造生成を行う
     methondにはaddition, elimination, substitutionのいずれかを指定する
@@ -89,7 +88,7 @@ def operation_atoms(method,child, section):
     """
     # どの区間に対して子構造を生成するかを決める
     # 候補が多い場合はランダムで一つ決める
-    #section = convex_hull_check()
+    #section = convex_hull_check(rin)
     
     nat,ratio = get_nat(child,rin.atype)
     ratio = ratio[0]

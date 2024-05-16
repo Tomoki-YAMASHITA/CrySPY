@@ -1,18 +1,14 @@
-'''
-Strain class
-'''
 from logging import getLogger
-import sys
 
 import numpy as np
 from pymatgen.core import Structure
 from pymatgen.core.periodic_table import DummySpecie
 
-from ...IO import read_input as rin
 from ...util.struc_util import sort_by_atype, sort_by_atype_mol, check_distance, cal_g, find_site
 
 
 logger = getLogger('cryspy')
+
 
 class Strain:
     '''
@@ -25,7 +21,7 @@ class Strain:
     def __init__(self, mindist):
         self.mindist = mindist
 
-    def gen_child(self, struc):
+    def gen_child(self, rin, struc):
         '''
         generate child struture
 
@@ -73,7 +69,7 @@ class Strain:
                     self.child = None
                     return None    # change parent
 
-    def gen_child_mol(self, struc, mol_id):
+    def gen_child_mol(self, rin, struc, mol_id):
         '''
         generate child structures for mol
 

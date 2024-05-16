@@ -9,8 +9,8 @@ import os
 import pandas as pd
 
 from .gen_init_struc import gen_init_struc
-from ..IO import pkl_data, io_stat
-from ..IO import read_input as rin
+from ..IO import pkl_data, io_stat, write_input
+from ..IO.read_input import ReadInput
 from ..util.utility import get_version
 from ..util.struc_util import out_poscar
 
@@ -19,11 +19,10 @@ from ..util.struc_util import out_poscar
 #from ..BO import bo_init
 #from ..LAQA import laqa_init
 #from ..EA import ea_init
-#from ..RS.gen_struc_RS.gen_pyxtal import Rnd_struc_gen_pyxtal
-#from ..RS.gen_struc_RS.random_generation import Rnd_struc_gen
 
 
 logger = getLogger('cryspy')
+
 
 def initialize(comm, mpi_rank, mpi_size):
     # ---------- start
@@ -41,18 +40,18 @@ def initialize(comm, mpi_rank, mpi_size):
     if mpi_size > 1:
         comm.barrier()
     try:
-        rin.readin()          # read input data, cryspy,in
+        rin = ReadInput()    # read input data, cryspy,in
     except Exception as e:
         if mpi_rank == 0:
-            logger.error(str(e.args[0]))
+            logger.error(e)
         raise SystemExit(1)
     # ########## MPI end
     if mpi_rank == 0:
-        stat = io_stat.stat_init()    # initialize stat
-        rin.save_stat(stat)   # save input variables in cryspy.stat
-
         # ---------- make data directory
         os.makedirs('data/pkl_data', exist_ok=True)
+        # ---------- write and save input file
+        write_input.out_input(rin)    # log
+        pkl_data.save_input(rin)      # input_data.pkl
 
     # ---------- generate initial structures
     if not rin.load_struc_flag:
@@ -62,20 +61,11 @@ def initialize(comm, mpi_rank, mpi_size):
             # ------ time
             time_start = datetime.today()
         # ########## MPI start
-        # ------ from scratch
-        init_struc_data = {}
-        if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
-            struc_mol_id = {}
-        # ------ gen_init_struc()
+        # ------ structure generation
         # only init_struc_data in rank0 is important
-        if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
-            init_struc_data, struc_mol_id = gen_init_struc(init_struc_data, struc_mol_id,
-                                                           comm, mpi_rank, mpi_size)
-        else:
-            init_struc_data = gen_init_struc(init_struc_data, None,
-                                             comm, mpi_rank, mpi_size)
+        init_struc_data, struc_mol_id = gen_init_struc(rin, 0,
+                                                       comm, mpi_rank, mpi_size)
         # ########## MPI end
-
         if mpi_rank == 0:
             # ------ save
             pkl_data.save_init_struc(init_struc_data)
@@ -97,10 +87,12 @@ def initialize(comm, mpi_rank, mpi_size):
                                 f' len(init_struc_data) = {len(init_struc_data)}')
                 raise SystemExit(1)
             # -- init_POSCARS
-            for cid, struc in init_struc_data.items():
-                out_poscar(struc, cid, './data/init_POSCARS')
+            out_poscar(init_struc_data, './data/init_POSCARS', mode='w')
 
     if mpi_rank == 0:
+        # ---------- initialize stat
+        io_stat.stat_init()
+
         # ---------- initialize opt_struc_data
         opt_struc_data = {}
         pkl_data.save_opt_struc(opt_struc_data)
@@ -116,16 +108,16 @@ def initialize(comm, mpi_rank, mpi_size):
         # ---------- initialize for each algorithm
         if rin.algo == 'RS':
             from ..RS import rs_init
-            rs_init.initialize(stat)
+            rs_init.initialize(rin)
         elif rin.algo == 'BO':
             from ..BO import bo_init
-            bo_init.initialize(stat, init_struc_data, rslt_data)
+            bo_init.initialize(rin, init_struc_data, rslt_data)
         elif rin.algo == 'LAQA':
             from ..LAQA import laqa_init
-            laqa_init.initialize(stat)
+            laqa_init.initialize(rin)
         elif rin.algo in ['EA', 'EA-vc']:
             from ..EA import ea_init
-            ea_init.initialize(stat, init_struc_data, rslt_data)
+            ea_init.initialize(rin, init_struc_data, rslt_data)
 
         # ---------- initialize etc
         if rin.kpt_flag:

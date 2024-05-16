@@ -4,11 +4,9 @@ Structure generation by evolutionary algorithm
 
 from logging import getLogger
 
-from ...IO import read_input as rin
-from ...util.struc_util import out_poscar
-
 
 logger = getLogger('cryspy')
+
 
 class EA_generation:
     '''
@@ -18,8 +16,6 @@ class EA_generation:
     sp: instance of Select_parents class
     id_start (int or None): starting id
                             if None, id_start = max(self.fitness.keys()) + 1
-    init_pos_path (str or None): if not None, structure data in POSCAR format
-                                     is appended to init_pos_path
 
     # ---------- instance methods
     self.gen_crossover(self, co)
@@ -29,7 +25,7 @@ class EA_generation:
     self.gen_strain(self, st)
     '''
 
-    def __init__(self, sp, id_start=None, init_pos_path=None):
+    def __init__(self, sp, id_start=None):
         # ---------- check args
         self.sp = sp
         # ------ id_offset
@@ -43,19 +39,13 @@ class EA_generation:
                 self.cid = id_start
         else:
             logger.error('id_start must be int or None')
-        # ------ init_pos_path
-        if init_pos_path is not None:
-            if isinstance(init_pos_path, str):
-                self.init_pos_path = init_pos_path
-            else:
-                logger.error('init_pos_path must be str or None')
         # ---------- initialize data
         self.offspring = {}    # structure data
         self.offspring_mol_id = {}
         self.parents = {}    # tuple of parents ID
         self.operation = {}
 
-    def gen_crossover(self, co, struc_mol_id, molecular=False):
+    def gen_crossover(self, rin, co, struc_mol_id, molecular=False):
         '''
         generate structures by crossover
 
@@ -66,13 +56,14 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_crsov:
             # ------ select parents
-            pid_A, pid_B = self.sp.get_parents(n_parent=2)
+            pid_A, pid_B = self.sp.get_parents(rin=rin, n_parent=2)
             # ------ generate child
             if molecular:
-                child, mol_id = co.gen_child_mol(self.sp.struc_data[pid_A], self.sp.struc_data[pid_B],
+                child, mol_id = co.gen_child_mol(rin, self.sp.struc_data[pid_A], self.sp.struc_data[pid_B],
                                                  struc_mol_id[pid_A], struc_mol_id[pid_B])
             else:
-                child = co.gen_child(self.sp.struc_data[pid_A],
+                child = co.gen_child(rin,
+                                     self.sp.struc_data[pid_A],
                                      self.sp.struc_data[pid_B])
             # ------ success
             if child is not None:
@@ -90,12 +81,10 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                       f' from {pid_A:>6} and {pid_B:>6} by crossover.'
                       f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
                 struc_cnt += 1
 
-    def gen_permutation(self, pm, struc_mol_id, molecular=False):
+    def gen_permutation(self, rin, pm, struc_mol_id, molecular=False):
         '''
         generate structures by permutation
 
@@ -106,12 +95,14 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_perm:
             # ------ select parents
-            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            pid, = self.sp.get_parents(rin=rin, n_parent=1)    # comma for list[0]
             # ------ generate child
             if molecular:
-                child, mol_id = pm.gen_child_mol(self.sp.struc_data[pid], struc_mol_id[pid])
+                child, mol_id = pm.gen_child_mol(rin,
+                                                 self.sp.struc_data[pid],
+                                                 struc_mol_id[pid])
             else:
-                child = pm.gen_child(self.sp.struc_data[pid])
+                child = pm.gen_child(rin, self.sp.struc_data[pid])
             # ------ success
             if child is not None:
                 self.offspring[self.cid] = child
@@ -128,12 +119,10 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                       f' from {pid:>6} by permutation.'
                       f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
                 struc_cnt += 1
 
-    def gen_strain(self, st, struc_mol_id, molecular=False, protect_mol_struc=True):
+    def gen_strain(self, rin, st, struc_mol_id, molecular=False, protect_mol_struc=True):
         '''
         generate structures by strain
 
@@ -144,16 +133,18 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_strain:
             # ------ select parents
-            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            pid, = self.sp.get_parents(rin=rin, n_parent=1)    # comma for list[0]
             # ------ generate child
             if molecular:
                 if protect_mol_struc:
-                    child, mol_id = st.gen_child_mol(self.sp.struc_data[pid], struc_mol_id[pid])
+                    child, mol_id = st.gen_child_mol(rin,
+                                                     self.sp.struc_data[pid],
+                                                     struc_mol_id[pid])
                 else:
-                    child = st.gen_child(self.sp.struc_data[pid])
+                    child = st.gen_child(rin, self.sp.struc_data[pid])
                     mol_id = struc_mol_id[pid]
             else:
-                child = st.gen_child(self.sp.struc_data[pid])
+                child = st.gen_child(rin, self.sp.struc_data[pid])
             # ------ success
             if child is not None:
                 self.offspring[self.cid] = child
@@ -170,12 +161,10 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                       f' from {pid:>6} by strain.'
                       f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
                 struc_cnt += 1
 
-    def gen_rotation(self, struc_mol_id, rot):
+    def gen_rotation(self, rin, struc_mol_id, rot):
         '''
         generate structures by rotation
         only for mol
@@ -187,9 +176,9 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_rotation:
             # ------ select parents
-            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            pid, = self.sp.get_parents(rin=rin, n_parent=1)    # comma for list[0]
             # ------ generate child
-            child, mol_id = rot.gen_child(self.sp.struc_data[pid], struc_mol_id[pid])
+            child, mol_id = rot.gen_child(rin, self.sp.struc_data[pid], struc_mol_id[pid])
             # ------ success
             if child is not None:
                 self.offspring[self.cid] = child
@@ -204,12 +193,10 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                       f' from {pid:>6} by rotation.'
                       f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
                 self.cid += 1
                 struc_cnt += 1
 
-    def gen_addition(self, ad, nat_data):
+    def gen_addition(self, rin, ad, nat_data):
         '''
         generate structures by addition
 
@@ -221,7 +208,7 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_add:
             # ------ select parents
-            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            pid, = self.sp.get_parents(rin=rin, n_parent=1)    # comma for list[0]
             # ------ check nat limit
             atype_avail = []
             for i, at in enumerate(rin.atype):
@@ -231,7 +218,7 @@ class EA_generation:
                 logger.warning('Addition: reached nat limit (ul_nat). cannot add atoms')
                 logger.warning('Change parent')
                 continue
-            child = ad.gen_child(self.sp.struc_data[pid], atype_avail)
+            child = ad.gen_child(rin, self.sp.struc_data[pid], atype_avail)
             # ------ success
             if child is not None:
                 self.offspring[self.cid] = child
@@ -246,12 +233,10 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                     f' from {pid:>6} by addition.'
                     f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
-                    self.cid += 1
-                    struc_cnt += 1
+                self.cid += 1
+                struc_cnt += 1
 
-    def gen_elimination(self, el, nat_data):
+    def gen_elimination(self, rin, el, nat_data):
         '''
         generate structures by elimination
 
@@ -263,7 +248,7 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_elim:
             # ------ select parents
-            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            pid, = self.sp.get_parents(rin=rin, n_parent=1)    # comma for list[0]
             # ------ check nat limit
             atype_avail = []
             for i, at in enumerate(rin.atype):
@@ -288,12 +273,10 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                     f' from {pid:>6} by elimination.'
                     f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
-                    self.cid += 1
-                    struc_cnt += 1
+                self.cid += 1
+                struc_cnt += 1
 
-    def gen_substitution(self, su, nat_data):
+    def gen_substitution(self, rin, su, nat_data):
         '''
         generate structures by substitution
 
@@ -305,7 +288,7 @@ class EA_generation:
         struc_cnt = 0
         while struc_cnt < rin.n_subs:
             # ------ select parents
-            pid, = self.sp.get_parents(n_parent=1)    # comma for list[0]
+            pid, = self.sp.get_parents(rin=rin, n_parent=1)    # comma for list[0]
             # ------ check nat limit
             atype_avail_elim = []
             atype_avail_add = []
@@ -332,7 +315,7 @@ class EA_generation:
                 logger.warning('Substitution: reached nat limit (ll_nat).')
                 logger.warning('Change parent')
                 continue
-            child = su.gen_child(self.sp.struc_data[pid], atype_avail_add, atype_avail_elim)
+            child = su.gen_child(rin, self.sp.struc_data[pid], atype_avail_add, atype_avail_elim)
             # ------ success
             if child is not None:
                 self.offspring[self.cid] = child
@@ -347,8 +330,6 @@ class EA_generation:
                 logger.info(f'Structure ID {self.cid:>6} was generated'
                     f' from {pid:>6} by substitution.'
                     f' Space group: {spg_num:>3} {spg_sym}')
-                if self.init_pos_path is not None:
-                    out_poscar(child, self.cid, self.init_pos_path)
-                    self.cid += 1
-                    struc_cnt += 1
+                self.cid += 1
+                struc_cnt += 1
 

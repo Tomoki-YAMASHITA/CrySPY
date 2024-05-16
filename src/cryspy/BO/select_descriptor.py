@@ -1,18 +1,13 @@
-'''
-Select descriptors
-    - FP: FingerPrint
-'''
-
 from logging import getLogger
 
 from ..util.utility import check_fppath
 from ..calc_dscrpt.FP.calc_FP import Calc_FP
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def select_descriptor(struc_data):
+
+def select_descriptor(rin, struc_data):
     # ---------- fingerprint
     if rin.dscrpt == 'FP':
         logger.info('Calculate descriptors: FingerPrint')

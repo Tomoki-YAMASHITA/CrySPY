@@ -11,12 +11,11 @@ from pymatgen.io.vasp import Kpoints
 from . import structure as qe_structure
 from ...IO.out_results import out_kpts
 from ...IO import pkl_data
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def next_stage_qe(stage, work_path, nat, kpt_data, cid):
+def next_stage_qe(rin, stage, work_path, nat, kpt_data, cid):
     # ---------- skip_flag
     skip_flag = False
 
@@ -81,7 +80,7 @@ def next_stage_qe(stage, work_path, nat, kpt_data, cid):
     return skip_flag, kpt_data
 
 
-def next_struc_qe(structure, cid, work_path, nat, kpt_data):
+def next_struc_qe(rin, structure, cid, work_path, nat, kpt_data):
     # ---------- copy files
     calc_inputs = [rin.qe_infile]
     for f in calc_inputs:

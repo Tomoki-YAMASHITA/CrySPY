@@ -10,13 +10,12 @@ from .calc_hull import calc_convex_hull_2d
 from .ea_child import child_gen
 from .gen_struc_EA.select_parents import Select_parents
 from ..IO import change_input, io_stat, pkl_data
-from ..IO import read_input as rin
 from ..IO.out_results import out_ea_info, out_ea_origin, out_hdist
 
 logger = getLogger('cryspy')
 
 
-def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_id_data, ea_vc_data):
+def next_gen(rin, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_id_data, ea_vc_data):
     '''
     Input:
         struc_mol_id: struc_mol_id if rin.struc_mode in ['mol', 'mol_bs'], else None
@@ -45,7 +44,7 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
         nat_data, ratio_data, hdist_data = pkl_data.load_ea_vc_data()
 
         # ------ calc convex hull and hull distance
-        hdist = calc_convex_hull_2d(ratio_data, ef_all, c_ids, gen)
+        hdist = calc_convex_hull_2d(rin, ratio_data, ef_all, c_ids, gen)
         # -- update hdist
         out_hdist(gen, hdist, ratio_data)
         hdist_data[gen] = hdist
@@ -65,15 +64,15 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
 
     # ---------- instantiate Seclect_parents class
     logger.info('# -- select parents')
-    sp = Select_parents(opt_struc_data, c_fitness, elite_struc, elite_fitness, rin.n_fittest)
+    sp = Select_parents(rin, opt_struc_data, c_fitness, elite_struc, elite_fitness, rin.n_fittest)
     if rin.slct_func == 'TNM':
         sp.set_tournament()
     else:
-        sp.set_roulette()
+        sp.set_roulette(rin)
 
     # ---------- generate offspring by EA
     logger.info('# -- Generate structures')
-    _, eagen, _ = child_gen(sp, init_struc_data, struc_mol_id, ea_vc_data)
+    _, eagen, _ = child_gen(rin, sp, init_struc_data, struc_mol_id, ea_vc_data)
 
     # ---------- select elite for next generation
     if rin.n_elite > 0:
@@ -92,7 +91,7 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
             fitness = hdist
             n_elite = len(vert_id) + rin.n_elite    # temporary
         # ------ Select_parents also works as elite selection
-        se = Select_parents(opt_struc_data, fitness, None, None, n_elite)
+        se = Select_parents(rin, opt_struc_data, fitness, None, None, n_elite)
         if rin.algo == 'EA-vc':
             '''
             e.g.
@@ -170,15 +169,18 @@ def next_gen(stat, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_
     pkl_data.save_ea_data(ea_data)
 
     # ---------- change the value of tot_struc
-    config = change_input.config_read()
-    change_input.change_basic(config, 'tot_struc', rin.tot_struc + rin.n_pop)
+    next_tot = rin.tot_struc + rin.n_pop
+    config = change_input.read_config()
+    change_input.change_input(config, 'basic', 'tot_struc', next_tot)
     change_input.write_config(config)
     logger.info('# -- changed cryspy.in')
     logger.info('Changed the value of tot_struc in cryspy.in'
-          f' from {rin.tot_struc} to {rin.tot_struc + rin.n_pop}')
+          f' from {rin.tot_struc} to {next_tot}')
+    rin.tot_struc = next_tot
+    pkl_data.save_input(rin)
 
     # ---------- status
-    io_stat.set_input_common(stat, 'basic', 'tot_struc', rin.tot_struc + rin.n_pop)
+    stat = io_stat.stat_read()
     io_stat.set_common(stat, 'generation', gen)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)

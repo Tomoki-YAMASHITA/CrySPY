@@ -7,28 +7,27 @@ import os
 
 import numpy as np
 
-from pymatgen.core import Structure
+from pymatgen.core import Structure, Molecule
 from pymatgen.io.cif import CifWriter
+from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
-
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
+
+def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
+                dummy=False, mol_file=None, mpi_rank=0):
     # ---------- dummy atom in mol_bs
     if dummy:
-        atype = get_atype_dummy()
-    else:
-        atype = rin.atype
+        atype = get_atype_dummy(mol_file)
 
     # ---------- mindist
     if mindist_in is None:
         # ------ Tol matrix
-        if rin.struc_mode in ['crystal']:
+        if struc_mode in ['crystal']:
             tolmat = Tol_matrix(prototype='atomic', factor=factor)
-        elif rin.struc_mode in ['mol', 'mol_bs']:
+        elif struc_mode in ['mol', 'mol_bs']:
             tolmat = Tol_matrix(prototype='molecular', factor=factor)
         else:
             logger.error('struc_mode is wrong')
@@ -50,10 +49,10 @@ def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
             for j, jtype in enumerate(atype):
                 if i <= j:
                     if dummy:
-                        logger.info(f'{rin.mol_file[i]} - {rin.mol_file[j]}: {mindist[i][j]}')
+                        logger.info(f'{mol_file[i]} - {mol_file[j]}: {mindist[i][j]}')
                     else:
                         logger.info(f'{itype} - {jtype}: {mindist[i][j]}')
-        if rin.struc_mode == 'mol':
+        if struc_mode == 'mol':
             logger.info('When struc_mode is mol (only random structure, not EA part),\n'
             '- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)\n'
             '- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
@@ -62,28 +61,66 @@ def set_mindist(mindist_in, factor, dummy=False, mpi_rank=0):
     return mindist
 
 
-def get_atype_dummy():
+def get_atype_dummy(mol_file):
     noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
-    if len(rin.nmol) > len(noble_gas):
-        logger.error('len(nmol) > len(noble_gas)')
+    if len(mol_file) > len(noble_gas):
+        logger.error('len(mol_file) > len(noble_gas)')
         raise SystemExit(1)
-    atype = noble_gas[:len(rin.nmol)]
+    atype = noble_gas[:len(mol_file)]
     return atype
 
 
-def out_poscar(struc, cid, fpath):
-    # ---------- poscar format
-    pos = struc.to(fmt='poscar')
-    pos = pos.split('\n')
-    blank_indx = pos.index('')    # cut unnecessary parts
-    pos = pos[:blank_indx]
-    pos[0] = 'ID_{}'.format(cid)    # replace with ID
-    lines = [line+'\n' for line in pos]
+def get_mol_data(mol_file):
+    '''
+    get molecular data
 
-    # ---------- append POSCAR
-    with open(fpath, 'a') as f:
-        for line in lines:
-            f.write(line)
+    Input:
+        mol_file (tuple)
+            e.g. ('Li.xyz', 'PS4.xyz')
+
+    return:
+        mol_data (list)
+            Molecule data in pymatgen format
+    '''
+    # ----------
+    mol_data = []
+    pyxtal_mol_data = Collection('molecules')
+    pyxtal_mol_names = list(Collection('molecules'))
+    for i, mf in enumerate(mol_file):
+        if os.path.isfile(mf):
+            mol = Molecule.from_file(mf)
+        elif mf in pyxtal_mol_names:
+            mol = pyxtal_mol_data[mf]
+        else:
+            logger.error('no molecular files')
+            raise SystemExit(1)
+        mol_data.append(mol)
+    return mol_data
+
+
+def out_poscar(struc_data: dict, fpath: str, mode='a'):
+    '''
+    # ---------- args
+    struc_data (dict): {'ID': Structure, 'ID': Structure, ...}
+    fpath (str): file path for output
+    mode (str): 'w' or 'a'
+    '''
+    # ---------- if mode='w', clear file
+    with open(fpath, mode):
+        pass
+    # ---------- wrtie POSCAR
+    for cid, struc in struc_data.items():
+        # ---------- poscar format
+        pos = struc.to(fmt='poscar')
+        pos = pos.split('\n')
+        blank_indx = pos.index('')    # cut unnecessary parts
+        pos = pos[:blank_indx]
+        pos[0] = f'ID_{cid}'    # replace with ID
+        lines = [line+'\n' for line in pos]
+        # ---------- always mode='a'
+        with open(fpath, 'a') as f:
+            for line in lines:
+                f.write(line)
 
 
 def out_cif(struc, cid, tmp_path, fpath, symprec=0.1):
@@ -437,6 +474,6 @@ def sort_by_atype_mol(struc, atype, mol_id, group_id):
 
 def get_nat(struc, atype):
     compos = struc.composition.as_dict()
-    nat = [int(compos[at]) for at in atype]
-    ratio = [x/sum(nat) for x in nat]
+    nat = tuple([int(compos[at]) for at in atype])
+    ratio = tuple([x/sum(nat) for x in nat])
     return nat, ratio

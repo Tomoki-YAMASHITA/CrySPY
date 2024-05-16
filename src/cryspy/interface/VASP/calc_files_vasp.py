@@ -1,16 +1,11 @@
-'''
-Calculation files in VASP
-'''
-
 from logging import getLogger
 import os
-
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def check_input_vasp():
+
+def check_input_vasp(rin):
     # ---------- prepare rin.jobfile, POTCAR, INCAR
     calc_inputs = [rin.jobfile, 'POTCAR', 'INCAR']
 

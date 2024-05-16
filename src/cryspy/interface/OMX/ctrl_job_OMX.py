@@ -13,12 +13,11 @@ from pymatgen.io.vasp import Kpoints
 from . import structure as OMX_structure
 from ...IO.out_results import out_kpts
 from ...IO import pkl_data
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def next_stage_OMX(stage, work_path, nat, kpt_data, cid):
+def next_stage_OMX(rin, stage, work_path, nat, kpt_data, cid):
     # ---------- skip_flag
     skip_flag = False
 
@@ -41,7 +40,7 @@ def next_stage_OMX(stage, work_path, nat, kpt_data, cid):
             work_path+'stage{}_'.format(stage)+rin.OMX_outfile, nat)
         if lines_atom is None:
             lines_atom = OMX_structure.extract_atomic_positions_from_infile(
-                work_path+'stage{}_'.format(stage)+rin.OMX_infile, nat)
+                rin, work_path+'stage{}_'.format(stage)+rin.OMX_infile, nat)
         structure = OMX_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
         skip_flag = True
@@ -62,7 +61,7 @@ def next_stage_OMX(stage, work_path, nat, kpt_data, cid):
     # ---------- append structure info.
     with open(work_path+rin.OMX_infile, 'a') as fin:
         fin.write('\n')
-    OMX_structure.write(structure, work_path+rin.OMX_infile, mode='a')
+    OMX_structure.write(rin, structure, work_path+rin.OMX_infile, mode='a')
 
     # ---------- K_POINTS
     # kppvol[0]: <--> stage 1, kppvol[1] <--> stage2, ...
@@ -83,7 +82,7 @@ def next_stage_OMX(stage, work_path, nat, kpt_data, cid):
     return skip_flag, kpt_data
 
 
-def next_struc_OMX(structure, cid, work_path, nat, kpt_data):
+def next_struc_OMX(rin, structure, cid, work_path, nat, kpt_data):
     # ---------- copy files
     calc_inputs = [rin.OMX_infile]
     for f in calc_inputs:
@@ -100,7 +99,7 @@ def next_struc_OMX(structure, cid, work_path, nat, kpt_data):
     # ---------- append structure info. to the input file
     with open(work_path+rin.OMX_infile, 'a') as fin:
         fin.write('\n')
-    OMX_structure.write(structure, work_path+rin.OMX_infile, mode='a')
+    OMX_structure.write(rin, structure, work_path+rin.OMX_infile, mode='a')
 
     # ---------- K_POINTS
     kpoints = Kpoints.automatic_density_by_vol(structure=structure,

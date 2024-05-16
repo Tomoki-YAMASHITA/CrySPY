@@ -5,26 +5,24 @@ from logging import getLogger
 import numpy as np
 
 from ..interface import select_code
-from ..IO import read_input as rin
 from ..IO import io_stat, pkl_data
 from ..IO.out_results import out_rslt
 from ..util.struc_util import out_poscar, out_cif
 
-if rin.algo == 'BO':
-    from ..BO.select_descriptor import select_descriptor
-    from ..BO import bo_next_select
-if rin.algo in ['EA', 'EA-vc']:
-    from ..EA import ea_next_gen
-if rin.algo == 'EA-vc':
-    from ..EA.calc_ef import calc_ef
+# ---------- import later
+#from ..BO.select_descriptor import select_descriptor
+#from ..BO import bo_next_select
+#from ..EA import ea_next_gen
+#from ..EA.calc_ef import calc_ef
 
 
 logger = getLogger('cryspy')
 
+
 class Ctrl_ext:
 
-    def __init__(self, stat, init_struc_data):
-        self.stat = stat
+    def __init__(self, rin, init_struc_data):
+        self.rin = rin
         self.init_struc_data = init_struc_data
         self.opt_struc_data = pkl_data.load_opt_struc()
         self.rslt_data = pkl_data.load_rslt()
@@ -49,7 +47,7 @@ class Ctrl_ext:
 
     def check_job(self):
         # ---------- option: recalc
-        if rin.recalc is not None:
+        if self.rin.recalc is not None:
             self.set_recalc()
         # ---------- check job status
         try:
@@ -98,8 +96,9 @@ class Ctrl_ext:
         # ---------- queue --> running
         self.id_running = self.id_queueing[:]
         self.id_queueing = []
-        io_stat.set_id(self.stat, 'id_queueing', self.id_queueing)
-        io_stat.write_stat(self.stat)
+        stat = io_stat.stat_read()
+        io_stat.set_id(stat, 'id_queueing', self.id_queueing)
+        io_stat.write_stat(stat)
         self.save_id_data()
         # ---------- stat_job
         with open('ext/stat_job', 'w') as fstat:
@@ -113,11 +112,11 @@ class Ctrl_ext:
 
     def ctrl_collect(self):
         # ---------- each algo
-        if rin.algo == 'RS':
+        if self.rin.algo == 'RS':
             self.ctrl_collect_rs()
-        elif rin.algo == 'BO':
+        elif self.rin.algo == 'BO':
             self.ctrl_collect_bo()
-        elif rin.rin.algo in ['EA', 'EA-vc']:
+        elif self.rin.rin.algo in ['EA', 'EA-vc']:
             self.ctrl_collect_ea()
         else:
             logger.error('Error, algo')
@@ -139,7 +138,7 @@ class Ctrl_ext:
 
     def ctrl_collect_rs(self):
         # ---------- get opt data
-        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy', 'dummy')
+        ext_opt_struc_data, ext_energy_data = select_code.collect(self.rin, 'dummy', 'dummy', 'dummy')
         # ---------- register opt_struc
         ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, \
             ext_spg_sym_opt, ext_spg_num_opt = self.regist_opt(ext_opt_struc_data)
@@ -153,7 +152,7 @@ class Ctrl_ext:
 
     def ctrl_collect_bo(self):
         # ---------- get opt data
-        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy', 'dummy')
+        ext_opt_struc_data, ext_energy_data = select_code.collect(self.rin, 'dummy', 'dummy', 'dummy')
         # ---------- register opt_struc
         ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, \
             ext_spg_sym_opt, ext_spg_num_opt = self.regist_opt(ext_opt_struc_data)
@@ -169,7 +168,8 @@ class Ctrl_ext:
         for cid, opt_struc in ext_opt_struc_data.items():
             if opt_struc is not None:
                 # ------ calc descriptor for opt structure
-                tmp_dscrpt = select_descriptor({cid: opt_struc})
+                from ..BO.select_descriptor import select_descriptor
+                tmp_dscrpt = select_descriptor(self.rin, {cid: opt_struc})
                 # ------ update descriptors
                 self.opt_dscrpt_data.update(tmp_dscrpt)
                 # ---------- error
@@ -181,19 +181,21 @@ class Ctrl_ext:
 
     def ctrl_collect_ea(self):
         # ---------- get opt data
-        ext_opt_struc_data, ext_energy_data = select_code.collect('dummy', 'dummy', 'dummy')
+        ext_opt_struc_data, ext_energy_data = select_code.collect(self.rin, 'dummy', 'dummy', 'dummy')
         # ---------- register opt_struc
         ext_magmom, ext_check_opt, ext_spg_sym, ext_spg_num, \
             ext_spg_sym_opt, ext_spg_num_opt = self.regist_opt(ext_opt_struc_data)
         # ---------- save rslt
         for cid, opt_struc in ext_opt_struc_data.items():
-            if not rin.algo == 'EA-vc':
+            if not self.rin.algo == 'EA-vc':
                 self.rslt_data.loc[cid] = [self.gen,
                                            ext_spg_num[cid], ext_spg_sym[cid],
                                            ext_spg_num_opt[cid], ext_spg_sym_opt[cid],
                                            ext_energy_data[cid], ext_magmom[cid], ext_check_opt[cid]]
             else:    # for EA-vc
-                ef = calc_ef(ext_energy_data[cid], self.ratio_data[cid], rin.end_point)
+                from ..EA.calc_ef import calc_ef
+                ef = calc_ef(ext_energy_data[cid], self.ratio_data[cid],
+                             self.rin.end_point)
                 self.rslt_data.loc[cid] = [self.gen,
                                            ext_spg_num[cid], ext_spg_sym[cid],
                                            ext_spg_num_opt[cid], ext_spg_sym_opt[cid],
@@ -218,7 +220,7 @@ class Ctrl_ext:
             # ------ get initial spg info
             try:
                 ext_spg_sym[cid], ext_spg_num[cid] = self.init_struc_data[
-                    cid].get_space_group_info(symprec=rin.symprec)
+                    cid].get_space_group_info(symprec=self.rin.symprec)
             except TypeError:
                 ext_spg_num[cid] = 0
                 ext_spg_sym[cid] = None
@@ -227,15 +229,15 @@ class Ctrl_ext:
                 # -- get opt spg info
                 try:
                     ext_spg_sym_opt[cid], ext_spg_num_opt[cid] = opt_struc.get_space_group_info(
-                        symprec=rin.symprec)
+                        symprec=self.rin.symprec)
                 except TypeError:
                     ext_spg_num_opt[cid] = 0
                     ext_spg_sym_opt[cid] = None
                 # -- out opt_struc
-                out_poscar(opt_struc, cid, './data/opt_POSCARS')
+                out_poscar({cid:opt_struc}, './data/opt_POSCARS')
                 try:
                     out_cif(opt_struc, cid, './data/',
-                            './data/opt_CIFS.cif', rin.symprec)
+                            './data/opt_CIFS.cif', self.rin.symprec)
                 except TypeError:
                     logger.info('failed to write opt_CIF')
             # ------ error
@@ -252,27 +254,27 @@ class Ctrl_ext:
         '''
         next selection or generation
         '''
-        if rin.algo == 'BO':
+        if self.rin.algo == 'BO':
             self.next_select_BO(noprint)
-        if rin.rin.algo in ['EA', 'EA-vc']:
+        if self.rin.rin.algo in ['EA', 'EA-vc']:
             self.next_gen_EA()
 
     def next_select_BO(self, noprint=False):
         # ---------- log
         logger.info(f'Done selection {self.n_selection}')
         # ---------- done all structures
-        if len(self.rslt_data) == rin.tot_struc:
+        if len(self.rslt_data) == self.rin.tot_struc:
             logger.info('\nDone all structures!')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
-        if rin.stop_chkpt == 3:
+        if self.rin.stop_chkpt == 3:
             logger.info('\nStop at check point 3: BO is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- max_select_bo
-        if 0 < rin.max_select_bo <= self.n_selection:
-            logger.info(f'\nReached max_select_bo: {rin.max_select_bo}')
+        if 0 < self.rin.max_select_bo <= self.n_selection:
+            logger.info(f'\nReached max_select_bo: {self.rin.max_select_bo}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- BO
@@ -280,47 +282,49 @@ class Ctrl_ext:
                    self.bo_mean, self.bo_var, self.bo_score)
         bo_id_data = (self.n_selection, self.id_queueing,
                       self.id_running, self.id_select_hist)
-        bo_next_select.next_select(self.stat, self.rslt_data,
+        from ..BO import bo_next_select
+        bo_next_select.next_select(self.rin, self.rslt_data,
                                    bo_id_data, bo_data, noprint)
 
     def next_gen_EA(self):
         # ---------- log
         logger.info(f'Done generation {self.gen}')
         # ---------- check point 3
-        if rin.stop_chkpt == 3:
+        if self.rin.stop_chkpt == 3:
             logger.info('\nStop at check point 3: EA is ready')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- maxgen_ea
-        if 0 < rin.maxgen_ea <= self.gen:
-            logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
+        if 0 < self.rin.maxgen_ea <= self.gen:
+            logger.info(f'\nReached maxgen_ea: {self.rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- EA
         ea_id_data = (self.gen, self.id_queueing, self.id_running)
-        if rin.algo == 'EA-vc':
+        if self.rin.algo == 'EA-vc':
             ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
         else:
             ea_vc_data = None
-        ea_next_gen.next_gen(self.stat, self.init_struc_data, None,
+        from ..EA import ea_next_gen
+        ea_next_gen.next_gen(self.rin, self.init_struc_data, None,
                              self.opt_struc_data, self.rslt_data, ea_id_data, ea_vc_data)
 
     def save_id_data(self):
         # ---------- save id_data
-        if rin.algo == 'RS':
+        if self.rin.algo == 'RS':
             rs_id_data = (self.id_queueing, self.id_running)
             pkl_data.save_rs_id(rs_id_data)
-        if rin.algo == 'BO':
+        if self.rin.algo == 'BO':
             bo_id_data = (self.n_selection, self.id_queueing,
                           self.id_running, self.id_select_hist)
             pkl_data.save_bo_id(bo_id_data)
-        if rin.rin.algo in ['EA', 'EA-vc']:
+        if self.rin.rin.algo in ['EA', 'EA-vc']:
             ea_id_data = (self.gen, self.id_queueing, self.id_running)
             pkl_data.save_ea_id(ea_id_data)
 
     def save_data(self):
         # ---------- save ??_data
-        if rin.algo == 'BO':
+        if self.rin.algo == 'BO':
             bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
                        self.bo_mean, self.bo_var, self.bo_score)
             pkl_data.save_bo_data(bo_data)

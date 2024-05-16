@@ -9,12 +9,11 @@ import numpy as np
 from . import structure as soiap_structure
 from ...util import constants
 from ...IO import pkl_data
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def collect_soiap(cid, work_path, nat):
+def collect_soiap(rin, cid, work_path, nat):
     # ---------- check optimization in current stage
     try:
         with open(work_path+rin.soiap_outfile, 'r') as fout:
@@ -38,7 +37,7 @@ def collect_soiap(cid, work_path, nat):
         energy = energy * constants.HRT2EV        # Hartree/atom to eV/atom
     except Exception as e:
         energy = np.nan    # error
-        logger.warning(str(e.args[0]) + f'    Structure ID {cid},'
+        logger.warning(f'{e}:    Structure ID {cid},'
                     f' could not obtain energy from {rin.soiap_outfile}')
 
     # ---------- collect the last structure
@@ -47,7 +46,7 @@ def collect_soiap(cid, work_path, nat):
         with open(work_path+'log.struc', 'r') as f:
             lines = f.readlines()
             lines = lines[-(natot+5):]
-        opt_struc = soiap_structure.from_file(lines, nat)
+        opt_struc = soiap_structure.from_file(rin, lines, nat)
     except Exception:
         opt_struc = None
 
@@ -85,7 +84,7 @@ def get_energy_step_soiap(energy_step_data, cid, work_path):
         energy_step = np.array(energy_step, dtype='float') * constants.HRT2EV
     except Exception as e:
         energy_step = None
-        logger.warning(str(e.args[0]) + f'#### ID: {cid}: failed to parse log.tote')
+        logger.warning(f'{e}:    ID {cid}: failed to parse log.tote')
 
     # ---------- append energy_step
     if energy_step_data.get(cid) is None:
@@ -99,7 +98,7 @@ def get_energy_step_soiap(energy_step_data, cid, work_path):
     return energy_step_data
 
 
-def get_struc_step_soiap(struc_step_data, cid, work_path, nat):
+def get_struc_step_soiap(rin, struc_step_data, cid, work_path, nat):
     '''
     get structure step data
 
@@ -123,12 +122,12 @@ def get_struc_step_soiap(struc_step_data, cid, work_path, nat):
         for line in lines:
             tmp_lines.append(line)
             if len(tmp_lines) == natot + 5:
-                struc = soiap_structure.from_file(tmp_lines, nat)
+                struc = soiap_structure.from_file(rin, tmp_lines, nat)
                 struc_step.append(struc)
                 tmp_lines = []    # clear
     except Exception as e:
         struc_step = None
-        logger.warning(str(e.args[0]), f'#### ID: {cid}: failed to parse log.struc')
+        logger.warning(f'{e}    ID {cid}: failed to parse log.struc')
 
     # ---------- append struc_step
     if struc_step_data.get(cid) is None:
@@ -174,7 +173,7 @@ def get_force_step_soiap(force_step_data, cid, work_path, nat):
                     tmp_lines = []    # clear
     except Exception as e:
         force_step = None
-        logger.warning(str(e.args[0]) + f'#### ID: {cid}: failed to parse log.frc')
+        logger.warning(f'{e}    ID {cid}: failed to parse log.frc')
 
     # ---------- append force_step
     if force_step_data.get(cid) is None:
@@ -219,7 +218,7 @@ def get_stress_step_soiap(stress_step_data, cid, work_path):
                     tmp_lines = []    # clear
     except Exception as e:
         stress_step = None
-        logger.warning(str(e.args[0]), f'#### ID: {cid}: failed to parse log.strs')
+        logger.warning(f'{e}:    ID {cid}: failed to parse log.strs')
 
     # ---------- append stress_step
     if stress_step_data.get(cid) is None:

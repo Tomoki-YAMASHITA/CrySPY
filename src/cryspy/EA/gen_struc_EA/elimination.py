@@ -1,14 +1,12 @@
 from logging import getLogger
 
 import numpy as np
-from pymatgen.core import Structure
 
-from ...IO import read_input as rin
-from ...util.struc_util import sort_by_atype
 #from .adj_comp import operation_atoms, convex_hull_check
 
 
 logger = getLogger('cryspy')
+
 
 class Elimination:
     
@@ -30,8 +28,8 @@ class Elimination:
             self.child.remove_sites(elim_indx)
         # ---------- not implemented yet
         # elif tgt in ['depop', 'overpop']:
-        #     section = convex_hull_check()
-        #     self.child = operation_atoms('elimination', self.child, section)
+        #     section = convex_hull_check(rin)
+        #     self.child = operation_atoms(rin, 'elimination', self.child, section)
         # ---------- return
         #            no need to check distance in elimination
         return self.child

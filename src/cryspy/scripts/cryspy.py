@@ -7,7 +7,6 @@ import argparse
 from logging import getLogger
 import os
 
-from cryspy.IO import read_input as rin
 from cryspy.start import cryspy_init, cryspy_restart
 from cryspy.util.utility import set_logger, backup_cryspy, clean_cryspy
 
@@ -79,7 +78,7 @@ def main():
     # ---------- restart
     else:
         # only stat and init_struc_data in rank0 are important
-        stat, init_struc_data = cryspy_restart.restart(comm, mpi_rank, mpi_size)
+        rin, init_struc_data = cryspy_restart.restart(comm, mpi_rank, mpi_size)
     # ########## MPI end
 
     if mpi_rank == 0:
@@ -92,7 +91,7 @@ def main():
         if not rin.calc_code == 'ext':
             # ---------- check calc files in ./calc_in
             from cryspy.interface import select_code
-            select_code.check_calc_files()
+            select_code.check_calc_files(rin)
             # ---------- mkdir work/fin
             os.makedirs('work/fin', exist_ok=True)
 
@@ -100,12 +99,12 @@ def main():
         if rin.calc_code == 'ext':
             # ------ instantiate Ctrl_job class
             from cryspy.job.ctrl_ext import Ctrl_ext
-            jobs = Ctrl_ext(stat, init_struc_data)
+            jobs = Ctrl_ext(rin, init_struc_data)
         # ---------- internally
         else:
             # ---------- instantiate Ctrl_job class
             from cryspy.job.ctrl_job import Ctrl_job
-            jobs = Ctrl_job(stat, init_struc_data)
+            jobs = Ctrl_job(rin, init_struc_data)
 
         # ---------- check job status
         jobs.check_job()

@@ -1,18 +1,14 @@
-'''
-Selection in LAQA
-'''
-
 from logging import getLogger
 import os
 
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 from ..IO.out_results import out_laqa_id_hist
 
 
 logger = getLogger('cryspy')
 
-def next_selection(stat, laqa_id_data, laqa_data):
+
+def next_selection(rin, laqa_id_data, laqa_data):
     # ---------- laqa_id_data and laqa_data
     (id_queueing, id_running, id_select_hist) = laqa_id_data
     (tot_step_select, laqa_step, laqa_struc,
@@ -48,6 +44,7 @@ def next_selection(stat, laqa_id_data, laqa_data):
     pkl_data.save_laqa_data(laqa_data)
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_common(stat, 'selection', len(id_select_hist))
     io_stat.set_id(stat, 'selected_id', id_queueing)
     io_stat.set_id(stat, 'id_queueing', id_queueing)

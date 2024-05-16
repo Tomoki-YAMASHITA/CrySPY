@@ -1,11 +1,8 @@
-
 from logging import getLogger
 
 import numpy as np
 
-from ...IO import read_input as rin
 from ...util.struc_util import check_distance, sort_by_atype
-#from .adj_comp import operation_atoms, convex_hull_check
 
 
 logger = getLogger('cryspy')
@@ -17,7 +14,7 @@ class Substitution:
         self.mindist = mindist
         self.target = target
 
-    def gen_child(self, struc, atype_avail_add, atype_avail_elim):
+    def gen_child(self, rin, struc, atype_avail_add, atype_avail_elim):
         cnt = 0
         while True:
             # ---------- keep original structure

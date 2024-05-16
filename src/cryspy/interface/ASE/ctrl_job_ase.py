@@ -1,17 +1,11 @@
-'''
-Control jobs in ASE
-'''
-
 from logging import getLogger
 import os
 import shutil
 
-from ...IO import read_input as rin
-
 
 logger = getLogger('cryspy')
 
-def next_stage_ase(stage, work_path):
+def next_stage_ase(rin, stage, work_path):
     # ---------- skip_flag
     skip_flag = False
 
@@ -35,7 +29,7 @@ def next_stage_ase(stage, work_path):
     return skip_flag
 
 
-def next_struc_ase(structure, cid, work_path):
+def next_struc_ase(rin, structure, cid, work_path):
     # ---------- copy files
     calc_inputs = [rin.ase_python]
     for f in calc_inputs:

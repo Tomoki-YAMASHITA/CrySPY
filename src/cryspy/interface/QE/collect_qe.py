@@ -1,7 +1,3 @@
-'''
-Collect results in Quantum ESPRESSO
-'''
-
 from logging import getLogger
 
 import numpy as np
@@ -10,12 +6,11 @@ from pymatgen.core import Structure
 from . import structure as qe_structure
 from ...util import constants
 from ...IO import pkl_data
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def collect_qe(cid, work_path, nat):
+def collect_qe(rin, cid, work_path, nat):
     # ---------- check optimization in previous stage
     try:
         with open(work_path+rin.qe_outfile, 'r') as fpout:
@@ -25,7 +20,7 @@ def collect_qe(cid, work_path, nat):
             if 'End final coordinates' in line:
                 check_opt = 'done'
     except Exception as e:
-        logger.warning(str(e.args[0]))
+        logger.warning(e)
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom
@@ -52,7 +47,7 @@ def collect_qe(cid, work_path, nat):
     except Exception as e:
         energy = np.nan    # error
         magmom = np.nan    # error
-        logger.warning(str(e.args[0]) + f':    Structure ID {cid},'
+        logger.warning(f'{e}:    Structure ID {cid},'
                        f'could not obtain energy from {rin.qe_outfile}')
 
     # ---------- collect the last structure
@@ -74,7 +69,7 @@ def collect_qe(cid, work_path, nat):
             fstruc.write('# ID {0:d}\n'.format(cid))
         qe_structure.write(opt_struc, './data/opt_qe-structure', mode='a')
     except Exception as e:
-        logger.warning(str(e.args[0]))
+        logger.warning(e)
         opt_struc = None
 
     # ---------- check
@@ -88,7 +83,7 @@ def collect_qe(cid, work_path, nat):
     return opt_struc, energy, magmom, check_opt
 
 
-def get_energy_step_qe(energy_step_data, cid, work_path, nat):
+def get_energy_step_qe(rin, energy_step_data, cid, work_path, nat):
     '''
     get energy step data in eV/atom
 
@@ -126,7 +121,7 @@ def get_energy_step_qe(energy_step_data, cid, work_path, nat):
                                                                dtype='float')
     except Exception as e:
         energy_step = None
-        logger.warning(str(e.args[0]) + f'#### ID: {cid}: failed to parse energy_step')
+        logger.warning(f'{e}:    ID {cid}: failed to parse energy_step')
 
     # ---------- append energy_step
     if energy_step_data.get(cid) is None:
@@ -140,7 +135,7 @@ def get_energy_step_qe(energy_step_data, cid, work_path, nat):
     return energy_step_data
 
 
-def get_struc_step_qe(struc_step_data, cid, work_path, nat):
+def get_struc_step_qe(rin, struc_step_data, cid, work_path, nat):
     '''
     get structure step data
 
@@ -161,7 +156,7 @@ def get_struc_step_qe(struc_step_data, cid, work_path, nat):
         struc_step.pop(-1)
     except Exception as e:
         struc_step = None
-        logger.warning(str(e.args[0]) + f'#### ID: {cid}: failed to parse in struc_step')
+        logger.warning(f'{e}:    ID {cid}: failed to parse in struc_step')
 
     # ---------- append struc_step_data
     if struc_step_data.get(cid) is None:
@@ -214,7 +209,7 @@ def _extract_struc_qe(filename, struc_step, nat):
             coords = []
 
 
-def get_force_step_qe(force_step_data, cid, work_path, nat):
+def get_force_step_qe(rin, force_step_data, cid, work_path, nat):
     '''
     get force step data in eV/angstrom
 
@@ -274,7 +269,7 @@ def get_force_step_qe(force_step_data, cid, work_path, nat):
     return force_step_data
 
 
-def get_stress_step_qe(stress_step_data, cid, work_path):
+def get_stress_step_qe(rin, stress_step_data, cid, work_path):
     '''
     get stress step data in eV/ang**3
 

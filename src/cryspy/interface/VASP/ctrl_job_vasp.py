@@ -1,7 +1,3 @@
-'''
-Control jobs in VASP
-'''
-
 from logging import getLogger
 import os
 import shutil
@@ -11,12 +7,12 @@ from pymatgen.io.vasp import Kpoints
 
 from ...IO.out_results import out_kpts
 from ...IO import pkl_data
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def next_stage_vasp(stage, work_path, kpt_data, cid):
+
+def next_stage_vasp(rin, stage, work_path, kpt_data, cid):
     # ---------- skip_flag
     skip_flag = False
 
@@ -67,7 +63,7 @@ def next_stage_vasp(stage, work_path, kpt_data, cid):
     return skip_flag, kpt_data
 
 
-def next_struc_vasp(structure, cid, work_path, kpt_data):
+def next_struc_vasp(rin, structure, cid, work_path, kpt_data):
     # ---------- copy files
     calc_inputs = ['POTCAR', 'INCAR']
     for f in calc_inputs:

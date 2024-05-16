@@ -1,16 +1,11 @@
-'''
-Calculation files in LAMMPS
-'''
-
 from logging import getLogger
 import os
-
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def check_input_lammps():
+
+def check_input_lammps(rin):
     # ---------- prepare rin.jobfile, rin.lammps_potential, rin.rammps_infile
     if rin.lammps_potential is None:
         calc_inputs = [rin.jobfile, rin.lammps_infile]

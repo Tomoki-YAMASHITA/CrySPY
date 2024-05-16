@@ -1,17 +1,13 @@
-'''
-Initialize random search
-'''
-
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 
 
-def initialize(stat):
+def initialize(rin):
     # ---------- initialize
     id_queueing = [i for i in range(rin.tot_struc)]
     id_running = []
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
 

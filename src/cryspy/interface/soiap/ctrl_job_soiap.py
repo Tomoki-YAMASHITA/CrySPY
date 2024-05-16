@@ -7,12 +7,11 @@ import os
 import shutil
 
 from . import structure as soiap_structure
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def next_stage_soiap(stage, work_path, nat):
+def next_stage_soiap(rin, stage, work_path, nat):
     # ---------- skip_flag
     skip_flag = False
 
@@ -52,7 +51,7 @@ def next_stage_soiap(stage, work_path, nat):
     return skip_flag
 
 
-def next_struc_soiap(structure, cid, work_path):
+def next_struc_soiap(rin, structure, cid, work_path):
     # ---------- copy files
     calc_inputs = [rin.soiap_infile]
     for f in calc_inputs:

@@ -1,18 +1,14 @@
-'''
-Control jobs in LAMMPS
-'''
-
 from logging import getLogger
 import os
 import shutil
 
 from . import structure as lammps_structure
-from ...IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def next_stage_lammps(stage, work_path, nat):
+
+def next_stage_lammps(rin, stage, work_path, nat):
     # ---------- skip_flag
     skip_flag = False
 
@@ -32,7 +28,7 @@ def next_stage_lammps(stage, work_path, nat):
     # ---------- generate the structure data file
     try:
         structure = lammps_structure.from_file(
-            work_path+'stage{}_log.struc'.format(stage), nat)
+            rin, work_path+'stage{}_log.struc'.format(stage), nat)
     except ValueError:
         skip_flag = True
         logger.warning('    error in lammps,  skip this structure')
@@ -49,7 +45,7 @@ def next_stage_lammps(stage, work_path, nat):
     return skip_flag
 
 
-def next_struc_lammps(structure, cid, work_path, nat):
+def next_struc_lammps(rin, structure, cid, work_path, nat):
     # ---------- copy files
     if rin.lammps_potential is None:
         calc_inputs = [rin.lammps_infile]

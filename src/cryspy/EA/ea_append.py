@@ -9,13 +9,12 @@ import pandas as pd
 
 from .ea_child import child_gen
 from .gen_struc_EA.select_parents import Select_parents
-from ..IO import change_input, io_stat, out_results, pkl_data
-from ..IO import read_input as rin
+from ..IO import change_input, out_results, pkl_data
 
 
 logger = getLogger('cryspy')
 
-def append_struc(stat, init_struc_data):
+def append_struc(rin, init_struc_data):
     # ---------- append structures by EA
     logger.info('# ---------- Append structures by EA')
 
@@ -28,15 +27,15 @@ def append_struc(stat, init_struc_data):
 
     # ---------- instantiate Seclect_parents class
     logger.info('# ------ select parents')
-    sp = Select_parents(opt_struc_data, fitness, None, None, rin.n_fittest)
+    sp = Select_parents(rin, opt_struc_data, fitness, None, None, rin.n_fittest)
     if rin.slct_func == 'TNM':
         sp.set_tournament()
     else:
-        sp.set_roulette()
+        sp.set_roulette(rin)
 
     # ---------- generate offspring by EA
     logger.info('# ------ Generate structures')
-    init_struc_data, eagen = child_gen(sp, init_struc_data)
+    init_struc_data, eagen, _ = child_gen(rin, sp, init_struc_data)
 
     # ----------  ea_info
     if os.path.isfile('./data/pkl_data/EA_data.pkl'):
@@ -82,22 +81,19 @@ def append_struc(stat, init_struc_data):
     pkl_data.save_ea_data(ea_data)
 
     # ---------- change variables in cryspy.in
-    config = change_input.config_read()
+    next_tot = rin.tot_struc + rin.n_pop
+    config = change_input.read_config()
     logger.info('# -- Changed cryspy.in')
     # ------ tot_struc
-    change_input.change_basic(config, 'tot_struc', rin.tot_struc + rin.n_pop)
-    logger.info(f'Changed tot_struc in cryspy.in from {rin.tot_struc} to {rin.tot_struc + rin.n_pop}')
-    rin.tot_struc = rin.tot_struc + rin.n_pop
+    change_input.change_input(config, 'basic', 'tot_struc', next_tot)
+    logger.info(f'Changed the value of tot_struc in cryspy.in from {rin.tot_struc} to {next_tot}')
+    rin.tot_struc = next_tot
     # ------ append_struc_ea: True --> False
-    change_input.change_option(config, 'append_struc_ea', False)
-    logger.info('Changed append_struc_ea in cryspy.in from True to Flase')
-    # ------ write
+    change_input.change_input(config, 'option', 'append_struc_ea', False)
+    logger.info('Changed the value of append_struc_ea in cryspy.in from True to Flase')
+    # ------ write and save
     change_input.write_config(config)
-
-    # ---------- status
-    io_stat.set_input_common(stat, 'basic', 'tot_struc', rin.tot_struc)
-    io_stat.set_input_common(stat, 'option', 'append_struc_ea', False)
-    io_stat.write_stat(stat)
-
+    pkl_data.save_input(rin)
+    
     # ---------- return
     return init_struc_data

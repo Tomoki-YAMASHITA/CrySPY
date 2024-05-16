@@ -1,7 +1,3 @@
-'''
-Initialize evolutionary algorithm
-'''
-
 from logging import getLogger
 import os
 
@@ -9,13 +5,12 @@ import pandas as pd
 
 from ..IO.out_results import out_ea_info, out_nat_data
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 from ..util.struc_util import get_nat
 
 
 logger = getLogger('cryspy')
 
-def initialize(stat, init_struc_data, rslt_data):
+def initialize(rin, init_struc_data, rslt_data):
     # ---------- log
     logger.info('# ---------- Initialize evolutionary algorithm')
     logger.info('# ------ Generation 1')
@@ -92,6 +87,7 @@ def initialize(stat, init_struc_data, rslt_data):
         pkl_data.save_ea_vc_data(ea_vc_data)
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_common(stat, 'generation', gen)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)

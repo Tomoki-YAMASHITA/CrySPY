@@ -1,7 +1,3 @@
-'''
-Initialize Bayesian optimization
-'''
-
 import configparser
 from logging import getLogger
 import random
@@ -10,12 +6,12 @@ import pandas as pd
 
 from .select_descriptor import select_descriptor
 from ..IO import io_stat, pkl_data
-from ..IO import read_input as rin
 
 
 logger = getLogger('cryspy')
 
-def initialize(stat, init_struc_data, rslt_data):
+
+def initialize(rin, init_struc_data, rslt_data):
     # ---------- log
     logger.info('# ---------- Selection: 1')
 
@@ -45,7 +41,7 @@ def initialize(stat, init_struc_data, rslt_data):
         x = ' '.join(str(i) for i in rin.manual_select_bo)
         logger.info(f'Manual select: {x}')
         nselect = rin.nselect_bo - len(rin.manual_select_bo)
-        id_queueing = rin.manual_select_bo[:]    # shallow copy
+        id_queueing = list(rin.manual_select_bo[:])    # shallow copy
         if 0 < nselect:
             diff_id = list(set(all_id) - set(id_queueing))
             id_queueing.extend(random.sample(diff_id, nselect))
@@ -62,7 +58,7 @@ def initialize(stat, init_struc_data, rslt_data):
     id_select_hist.append(id_queueing[:])    # append shallow copy
 
     # ---------- calc descriptor
-    init_dscrpt_data = select_descriptor(init_struc_data)
+    init_dscrpt_data = select_descriptor(rin, init_struc_data)
     opt_dscrpt_data = {}  # initialize in dict
 
     # ---------- save for BO
@@ -72,6 +68,7 @@ def initialize(stat, init_struc_data, rslt_data):
     pkl_data.save_bo_data(bo_data)
 
     # ---------- status
+    stat = io_stat.stat_read()
     io_stat.set_common(stat, 'selection', n_selection)
     io_stat.set_id(stat, 'selected_id', id_queueing)
     io_stat.set_id(stat, 'id_queueing', id_queueing)

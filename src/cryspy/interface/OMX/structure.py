@@ -7,9 +7,9 @@ info at hikaruri.jp
 from pymatgen.core import Structure
 from pymatgen.core.units import Length
 
-from ...IO import read_input as rin
 
 import re
+
 
 def extract_cell_parameters_from_outfile(filename):
     # ---------- last Cell vectors a1, a2, a3
@@ -51,7 +51,7 @@ def extract_atomic_positions_from_outfile(filename, nat):
             break
     return lines_atom
 
-def extract_atomic_positions_from_infile(filename):
+def extract_atomic_positions_from_infile(rin, filename):
     # ---------- last atomic positions
     with open(filename, 'r') as f:
         lines = f.readlines()
@@ -79,7 +79,7 @@ def from_lines(lines_cell, lines_atom):
     structure = Structure(lattice, species, coords)
     return structure
 
-def write(structure, output, mode='w'):
+def write(rin, structure, output, mode='w'):
     # ---------- get in POSCAR format
     poscar = structure.to(fmt='poscar')
     lines = poscar.split('\n')[:-1]

@@ -8,11 +8,11 @@ import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 
-from ...IO import read_input as rin
 from ...util.struc_util import sort_by_atype, check_distance, cal_g, sort_by_atype_mol, find_site
 
 
 logger = getLogger('cryspy')
+
 
 class Permutation:
     '''
@@ -31,7 +31,7 @@ class Permutation:
     def __init__(self, mindist):
         self.mindist = mindist
 
-    def gen_child(self, struc):
+    def gen_child(self, rin, struc):
         '''
         generate child structure
 
@@ -91,7 +91,7 @@ class Permutation:
                     self.child = None
                     return None    # change parent
 
-    def gen_child_mol(self, struc, mol_id):
+    def gen_child_mol(self, rin, struc, mol_id):
         '''
         generate child structures for mol
 

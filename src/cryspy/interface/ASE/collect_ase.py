@@ -1,7 +1,3 @@
-'''
-Collect results in ASE
-'''
-
 from logging import getLogger
 
 import numpy as np
@@ -9,6 +5,7 @@ from pymatgen.core import Structure
 
 
 logger = getLogger('cryspy')
+
 
 def collect_ase(cid, work_path, nat):
     # ---------- natot
@@ -24,7 +21,7 @@ def collect_ase(cid, work_path, nat):
         energy = energy/float(natot)    # eV/cell --> eV/atom
     except Exception as e:
         energy = np.nan    # error
-        logger.warning(str(e.args[0]) + f':    Structure ID {cid}, could not obtain energy from log.tote')
+        logger.warning(f'{e}:    Structure ID {cid}, could not obtain energy from log.tote')
     # ---------- collect CONTCAR
     try:
         opt_struc = Structure.from_file(work_path+'CONTCAR')
