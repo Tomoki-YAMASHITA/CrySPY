@@ -96,10 +96,10 @@ class Ctrl_job:
         # ---------- check job status
         for cid in self.tmp_running[:self.rin.njob]:
             # ------ mkdir
-            if not os.path.isdir(f'work/{cid:06}'):
-                os.mkdir(f'work/{cid:06}')
+            if not os.path.isdir(f'work/{cid}'):
+                os.mkdir(f'work/{cid}')
             # ------ check stat_job file
-            stat_path = f'work/{cid:06}' + '/stat_job'
+            stat_path = f'work/{cid}' + '/stat_job'
             try:
                 with open(stat_path, 'r') as fstat:
                     istat = fstat.readline()    # id
@@ -107,7 +107,7 @@ class Ctrl_job:
                     jstat = fstat.readline()    # submitted or done or ...
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if not cid == int(istat.split()[0]):
-                    logger.error(f'ID is wrong in work/{cid:06}')
+                    logger.error(f'ID is wrong in work/{cid}')
                     raise SystemExit(1)
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if jstat[0:3] == 'sub':
@@ -149,7 +149,7 @@ class Ctrl_job:
         logger.info('# ---------- job status')
         for cid in self.tmp_running[:self.rin.njob]:
             # ---------- set work_path and cid
-            self.work_path = f'./work/{cid:06}/'
+            self.work_path = f'./work/{cid}/'
             self.cid = cid
             # ---------- handle job
             if self.job_stat[cid] == 'submitted':
@@ -215,7 +215,7 @@ class Ctrl_job:
             self.ctrl_skip()
             return
         # ---------- prepare jobfile
-        self.prepare_jobfile()
+        prepare_jobfile(self.rin, self.cid, self.work_path)
         # ---------- submit
         self.submit_next_stage()
 
@@ -274,12 +274,12 @@ class Ctrl_job:
         # ---------- move to fin
         if self.rin.algo == 'LAQA':
             if self.fin_laqa:
-                self.mv_fin()
+                mv_fin(self.cid)
             else:
                 os.rename(self.work_path+'stat_job',
                           self.work_path+'prev_stat_job')
         else:
-            self.mv_fin()
+            mv_fin(self.cid)
         # ---------- update status
         self.update_status(operation='fin')
         # ---------- recheck
@@ -290,29 +290,23 @@ class Ctrl_job:
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.rin, self.cid, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
-        # ---------- register opt_struc
-        spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
-        # ---------- save rslt
-        self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
-                                               spg_num_opt, spg_sym_opt,
-                                               energy, magmom, check_opt]
-        pkl_data.save_rslt(self.rslt_data)
-        out_rslt(self.rslt_data)
+        # ---------- register opt data
+        self.opt_struc_data, self.rslt_data = regist_opt(
+            self.rin, self.cid, self.work_path,
+            self.init_struc_data, self.opt_struc_data, self.rslt_data,
+            opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=None)
 
     def ctrl_collect_bo(self, nat):
         # ---------- get opt data
         opt_struc, energy, magmom, check_opt = \
             select_code.collect(self.rin, self.cid, self.work_path, nat)
         logger.info(f'    collect results: E = {energy} eV/atom')
-        # ---------- register opt_struc
-        spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
-        # ---------- save rslt
-        self.rslt_data.loc[self.cid] = [self.n_selection,
-                                               spg_num, spg_sym,
-                                               spg_num_opt, spg_sym_opt,
-                                               energy, magmom, check_opt]
-        pkl_data.save_rslt(self.rslt_data)
-        out_rslt(self.rslt_data)
+        # ---------- register opt data
+        self.opt_struc_data, self.rslt_data = regist_opt(
+            self.rin, self.cid, self.work_path,
+            self.init_struc_data, self.opt_struc_data, self.rslt_data,
+            opt_struc, energy, magmom, check_opt,
+            ef=None, n_selection=self.n_selection, gen=None)
         # ---------- success
         if opt_struc is not None:
             from ..BO.select_descriptor import select_descriptor
@@ -378,15 +372,11 @@ class Ctrl_job:
         if check_opt == 'done' or np.isnan(energy) or np.isnan(tmp_laqa_bias):
             self.fin_laqa = True
             logger.info(f'    collect results: E = {energy} eV/atom')
-            # ------ register opt_struc
-            (spg_sym, spg_num,
-             spg_sym_opt, spg_num_opt) = self.regist_opt(opt_struc)
-            # ------ save rslt
-            self.rslt_data.loc[self.cid] = [spg_num, spg_sym,
-                                                   spg_num_opt, spg_sym_opt,
-                                                   energy, magmom, check_opt]
-            pkl_data.save_rslt(self.rslt_data)
-            out_rslt(self.rslt_data)
+            # ------ register opt data
+            self.opt_struc_data, self.rslt_data = regist_opt(
+                self.rin, self.cid, self.work_path,
+                self.init_struc_data, self.opt_struc_data, self.rslt_data,
+                opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=None)
 
     def ctrl_collect_ea(self, nat):
         # ---------- get opt data
@@ -398,68 +388,17 @@ class Ctrl_job:
             from ..EA.calc_ef import calc_ef
             ef = calc_ef(energy, self.ratio_data[self.cid], self.rin.end_point)
             logger.info(f'                     Ef = {ef} eV/atom')
-        # ---------- register opt_struc
-        spg_sym, spg_num, spg_sym_opt, spg_num_opt = self.regist_opt(opt_struc)
-        # ---------- save rslt
-        if not self.rin.algo == 'EA-vc':
-            self.rslt_data.loc[self.cid] = [self.gen,
-                                            spg_num, spg_sym,
-                                            spg_num_opt, spg_sym_opt,
-                                            energy, magmom, check_opt]
         else:
-            self.rslt_data.loc[self.cid] = [self.gen,
-                                            spg_num, spg_sym,
-                                            spg_num_opt, spg_sym_opt,
-                                            energy, ef, magmom, check_opt]
-        pkl_data.save_rslt(self.rslt_data)
-        if self.rin.algo == 'EA':
-            out_rslt(self.rslt_data)
-        if self.rin.algo == 'EA-vc':
-            out_rslt(self.rslt_data, order_ef=True)
-
-    def regist_opt(self, opt_struc):
-        '''
-        Common part in ctrl_collect_*
-        '''
-        # ---------- get initial spg info
-        try:
-            spg_sym, spg_num = self.init_struc_data[
-                self.cid].get_space_group_info(symprec=self.rin.symprec)
-        except TypeError:
-            spg_num = 0
-            spg_sym = None
-        # ---------- success
-        if opt_struc is not None:
-            # ------ get opt spg info
-            try:
-                spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(
-                    symprec=self.rin.symprec)
-            except TypeError:
-                spg_num_opt = 0
-                spg_sym_opt = None
-            # ------ out opt_struc
-            out_poscar({self.cid:opt_struc}, './data/opt_POSCARS')
-            try:
-                out_cif(opt_struc, self.cid, self.work_path,
-                        './data/opt_CIFS.cif', self.rin.symprec)
-            except TypeError:
-                logger.warning('failed to write opt_CIF')
-        # ---------- error
-        else:
-            spg_num_opt = 0
-            spg_sym_opt = None
-        # ---------- register opt_struc
-        self.opt_struc_data[self.cid] = opt_struc
-        pkl_data.save_opt_struc(self.opt_struc_data)
-        # ---------- return
-        return spg_sym, spg_num, spg_sym_opt, spg_num_opt
+            ef = None
+        # ---------- register opt data
+        self.opt_struc_data, self.rslt_data = regist_opt(
+            self.rin, self.cid, self.work_path,
+            self.init_struc_data, self.opt_struc_data, self.rslt_data,
+            opt_struc, energy, magmom, check_opt, ef=ef, n_selection=None, gen=self.gen)
 
     def ctrl_next_struc(self):
-        # ---------- RS
-        if self.rin.algo == 'RS':
-            next_struc_data = self.init_struc_data[self.cid]
-        # ---------- BO
-        elif self.rin.algo == 'BO':
+        # ---------- RS, BO, EA, EA-vc
+        if self.rin.algo in ['RS', 'BO', 'EA', 'EA-vc']:
             next_struc_data = self.init_struc_data[self.cid]
         # ---------- LAQA
         elif self.rin.algo == 'LAQA':
@@ -467,9 +406,6 @@ class Ctrl_job:
                 next_struc_data = self.laqa_struc[self.cid][-1]
             else:
                 next_struc_data = self.init_struc_data[self.cid]
-        # ---------- EA
-        elif self.rin.algo in ['EA', 'EA-vc']:
-            next_struc_data = self.init_struc_data[self.cid]
         # ---------- algo is wrong
         else:
             logger.error('Error, algo in ctrl_next_struc')
@@ -497,24 +433,12 @@ class Ctrl_job:
                 select_code.next_struc(self.rin, next_struc_data, self.cid,
                                        self.work_path, nat)
             # -- prepare jobfile
-            self.prepare_jobfile()
+            prepare_jobfile(self.rin, self.cid, self.work_path)
             # -- submit
-            self.submit_next_struc()
+            submit_next_struc(self.rin, self.cid, self.work_path)
             logger.info(f'ID {self.cid:>6}: submit job, Stage 1')
             # -- update status
             self.update_status(operation='submit')
-
-    def submit_next_struc(self):
-        # ---------- submit job
-        os.chdir(self.work_path)    # cd work_path
-        with open('stat_job', 'w') as fwstat:
-            fwstat.write(f'{self.cid:<6}    # Structure ID\n')
-            fwstat.write(f'{1:<6}    # Stage\n')
-            fwstat.write('submitted\n')
-        with open('sublog', 'w') as logf:
-            subprocess.Popen([self.rin.jobcmd, self.rin.jobfile],
-                             stdout=logf, stderr=logf)
-        os.chdir('../../')    # go back to csp root dir
 
     def ctrl_skip(self):
         # ---------- log
@@ -602,7 +526,7 @@ class Ctrl_job:
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
         # ---------- move to fin
-        self.mv_fin()
+        mv_fin(self.cid)
         # ---------- update status
         self.update_status(operation='fin')
         # ---------- recheck
@@ -629,28 +553,6 @@ class Ctrl_job:
         io_stat.write_stat(stat)
         # ---------- save id_data
         self.save_id_data()
-
-    def prepare_jobfile(self):
-        if not os.path.isfile('./calc_in/' + self.rin.jobfile):
-            logger.error('Could not find ./calc_in' + self.rin.jobfile)
-            raise SystemExit(1)
-        with open('./calc_in/' + self.rin.jobfile, 'r') as f:
-            lines = f.readlines()
-        lines2 = []
-        for line in lines:
-            lines2.append(line.replace('CrySPY_ID', str(self.cid)))
-        with open(self.work_path + self.rin.jobfile, 'w') as f:
-            f.writelines(lines2)
-
-    def mv_fin(self):
-        if not os.path.isdir(f'work/fin/{self.cid:06}'):
-            shutil.move(f'work/{self.cid:06}', 'work/fin/')
-        else:    # rename for recalc
-            for i in itertools.count(1):
-                if not os.path.isdir(f'work/fin/{self.cid:06}_{i}'):
-                    shutil.move(f'work/{self.cid:06}',
-                                f'work/fin/{self.cid:06}_{i}')
-                    break
 
     def next_sg(self, noprint=False):
         '''
@@ -792,3 +694,116 @@ class Ctrl_job:
         # ea_data is used only in ea_next_gen.py
         # ea_vc_data is used in this class, but it is not updated.
         # ea_vc_data is saved in ea_next_gen.py
+
+
+
+
+
+
+def prepare_jobfile(rin, cid, work_path):
+    if not os.path.isfile('./calc_in/' + rin.jobfile):
+        logger.error('Could not find ./calc_in' + rin.jobfile)
+        raise SystemExit(1)
+    with open('./calc_in/' + rin.jobfile, 'r') as f:
+        lines = f.readlines()
+    lines2 = []
+    for line in lines:
+        lines2.append(line.replace('CrySPY_ID', str(cid)))
+    with open(work_path + rin.jobfile, 'w') as f:
+        f.writelines(lines2)
+
+
+def submit_next_struc(rin, cid, work_path, wait=False):
+    # ---------- submit job
+    os.chdir(work_path)    # cd work_path
+    # ---------- submit
+    with open('sublog', 'w') as logf:
+        if not wait:
+            subprocess.Popen([rin.jobcmd, rin.jobfile],
+                             stdout=logf, stderr=logf)
+        else:    # wait
+            subprocess.run([rin.jobcmd, rin.jobfile],
+                           stdout=logf, stderr=logf)
+    # ---------- write stat_job
+    with open('stat_job', 'w') as f:
+        f.write(f'{cid:<6}    # Structure ID\n')
+        f.write(f'{1:<6}    # Stage\n')
+        f.write('submitted\n')
+    os.chdir('../../')    # go back to csp root dir
+
+
+def regist_opt(rin, cid, work_path, init_struc_data, opt_struc_data, rslt_data,
+               opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=None):
+    '''
+    Common part in ctrl_collect_*
+    '''
+    # ---------- get initial spg info
+    try:
+        spg_sym, spg_num = init_struc_data[
+            cid].get_space_group_info(symprec=rin.symprec)
+    except TypeError:
+        spg_num = 0
+        spg_sym = None
+
+    # ---------- success
+    if opt_struc is not None:
+        # ------ get opt spg info
+        try:
+            spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(
+                symprec=rin.symprec)
+        except TypeError:
+            spg_num_opt = 0
+            spg_sym_opt = None
+        # ------ out opt_struc
+        out_poscar({cid:opt_struc}, './data/opt_POSCARS')
+        try:
+            out_cif(opt_struc, cid, work_path,
+                    './data/opt_CIFS.cif', rin.symprec)
+        except TypeError:
+            logger.warning('failed to write opt_CIF')
+    # ---------- error
+    else:
+        spg_num_opt = 0
+        spg_sym_opt = None
+
+    # ---------- register opt_struc
+    opt_struc_data[cid] = opt_struc
+    pkl_data.save_opt_struc(opt_struc_data)
+    # ---------- return
+    #return spg_sym, spg_num, spg_sym_opt, spg_num_opt
+    
+    # ---------- register rslt
+    if rin.algo in ['RS', 'LAQA']:
+        rslt_data.loc[cid] = [spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+                              energy, magmom, check_opt]
+    elif rin.algo == 'BO':
+        rslt_data.loc[cid] = [n_selection,
+                              spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+                              energy, magmom, check_opt]
+    elif rin.algo in ['EA']:
+        rslt_data.loc[cid] = [gen,
+                              spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+                              energy, magmom, check_opt]
+    elif rin.algo in ['EA-vc']:
+        rslt_data.loc[cid] = [gen,
+                              spg_num, spg_sym, spg_num_opt, spg_sym_opt,
+                              energy, ef, magmom, check_opt]
+    pkl_data.save_rslt(rslt_data)
+    if rin.algo != 'EA-vc':
+        out_rslt(rslt_data)
+    else:    # EA-vc
+        out_rslt(rslt_data, order_ef=True)
+
+    # ---------- return
+    return opt_struc_data, rslt_data
+
+
+def mv_fin(cid):
+    if not os.path.isdir(f'work/fin/{cid}'):
+        shutil.move(f'work/{cid}', 'work/fin/')
+    else:    # rename for recalc
+        for i in itertools.count(1):
+            if not os.path.isdir(f'work/fin/{cid}_{i}'):
+                shutil.move(f'work/{cid}',
+                            f'work/fin/{cid}_{i}')
+                break

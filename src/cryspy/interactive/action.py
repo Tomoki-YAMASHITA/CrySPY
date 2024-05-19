@@ -4,7 +4,7 @@ import os
 from ..start import cryspy_init
 from ..util.utility import set_logger, backup_cryspy, clean_cryspy
 
-from .restart_intract import restart_interact
+from .restart_interact import restart_interact
 from .rslt_energy import display_rslt
 from .view_atom import get_ase_atoms
 from .energy_plot import energy_plot

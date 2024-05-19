@@ -18,7 +18,7 @@ def check_input_OMX(rin):
     # ------ check required files
     for f in calc_inputs:
         if f == rin.OMX_infile:
-            finfiles = [rin.OMX_infile + '_{}'.format(i) for i in range(
+            finfiles = [rin.OMX_infile + f'_{i}' for i in range(
                 1, rin.nstage+1)]
             for ff in finfiles:
                 if not os.path.isfile('./calc_in/' + ff):

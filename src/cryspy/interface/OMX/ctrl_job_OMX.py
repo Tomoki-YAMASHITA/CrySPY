@@ -23,24 +23,24 @@ def next_stage_OMX(rin, stage, work_path, nat, kpt_data, cid):
 
     # ---------- rename OpenMX files at the current stage
     OMX_files = [rin.OMX_infile, rin.OMX_outfile]
-    for f in OMX_files:
-        if not os.path.isfile(work_path+f):
-            logger.error('Not found '+work_path+f)
+    for file in OMX_files:
+        if not os.path.isfile(work_path + file):
+            logger.error('Not found ' + work_path + file)
             raise SystemExit(1)
-        os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
+        os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- next structure
     try:
         lines_cell = OMX_structure.extract_cell_parameters_from_outfile(
-            work_path+'stage{}_'.format(stage)+rin.OMX_outfile)
+            work_path+f'stage{stage}_'+rin.OMX_outfile)
         if lines_cell is None:
             lines_cell = OMX_structure.extract_cell_parameters_from_infile(
-                work_path+'stage{}_'.format(stage)+rin.OMX_infile)
+                work_path+f'stage{stage}_'+rin.OMX_infile)
         lines_atom = OMX_structure.extract_atomic_positions_from_outfile(
-            work_path+'stage{}_'.format(stage)+rin.OMX_outfile, nat)
+            work_path+f'stage{stage}_'+rin.OMX_outfile, nat)
         if lines_atom is None:
             lines_atom = OMX_structure.extract_atomic_positions_from_infile(
-                rin, work_path+'stage{}_'.format(stage)+rin.OMX_infile, nat)
+                rin, work_path+f'stage{stage}_'+rin.OMX_infile, nat)
         structure = OMX_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
         skip_flag = True
@@ -51,7 +51,7 @@ def next_stage_OMX(rin, stage, work_path, nat, kpt_data, cid):
         return skip_flag, kpt_data
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finput = './calc_in/'+rin.OMX_infile+'_{}'.format(stage + 1)
+    finput = './calc_in/'+rin.OMX_infile+f'_{stage + 1}'
     shutil.copyfile(finput, work_path+rin.OMX_infile)
 
     # ---------- "Atoms.Number" (<-- natot) in OMX_infile for EA-vc

@@ -11,18 +11,17 @@ def next_stage_ase(rin, stage, work_path):
 
     # ---------- rename ASE files at the current stage
     ase_files = ['POSCAR', 'CONTCAR', 'log.tote']
-    for f in ase_files:
-        if not os.path.isfile(work_path+f):
-            logger.error('Not found '+work_path+f)
+    for file in ase_files:
+        if not os.path.isfile(work_path + file):
+            logger.error('Not found ' + work_path + file)
             raise SystemExit(1)
-        os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
+        os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- cp CONTCAR POSCAR
-    shutil.copyfile(work_path+'stage{}_CONTCAR'.format(stage),
-                    work_path+'POSCAR')
+    shutil.copyfile(work_path + f'stage{stage}_CONTCAR', work_path + 'POSCAR')
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finfile = './calc_in/'+rin.ase_python+'_{}'.format(stage + 1)
+    finfile = './calc_in/' +rin.ase_python + f'_{stage+1}'
     shutil.copyfile(finfile, work_path+rin.ase_python)
 
     # ---------- return
@@ -37,7 +36,7 @@ def next_struc_ase(rin, structure, cid, work_path):
         if not os.path.isfile('./calc_in/' + ff):
             logger.error('Could not find ./calc_in/' + ff)
             raise SystemExit(1)
-        # ------ e.g. cp ./calc_in/INCAR_1 work0001/INCAR
+        # ------ e.g. cp ./calc_in/INCAR_1 work/1/INCAR
         shutil.copyfile('./calc_in/'+ff, work_path+f)
 
     # ---------- generate POSCAR
@@ -48,7 +47,7 @@ def next_struc_ase(rin, structure, cid, work_path):
     # ---------- Change the title of POSCAR
     with open(work_path+'POSCAR', 'r') as f:
         lines = f.readlines()
-    lines[0] = 'ID_{}\n'.format(cid)
+    lines[0] = f'ID_{cid}\n'
     with open(work_path+'POSCAR', 'w') as f:
         for line in lines:
             f.write(line)

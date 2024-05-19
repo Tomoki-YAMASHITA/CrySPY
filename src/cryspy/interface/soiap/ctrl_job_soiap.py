@@ -18,20 +18,20 @@ def next_stage_soiap(rin, stage, work_path, nat):
     # ---------- rename soiap files at the current stage
     soiap_files = [rin.soiap_infile, rin.soiap_outfile, rin.soiap_cif,
                    'log.struc', 'log.tote', 'log.frc', 'log.strs']
-    for f in soiap_files:
-        if not os.path.isfile(work_path+f):
-            logger.error('Not found '+work_path+f)
+    for file in soiap_files:
+        if not os.path.isfile(work_path + file):
+            logger.error('Not found ' + work_path + file)
             raise SystemExit(1)
-        os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
+        os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finfile = './calc_in/'+rin.soiap_infile+'_{}'.format(stage + 1)
+    finfile = './calc_in/' + rin.soiap_infile + f'_{stage + 1}'
     shutil.copyfile(finfile, work_path+rin.soiap_infile)
 
     # ---------- generate the CIF file
     natot = sum(nat)    # do not use rin.natot here for EA-vc
     try:
-        with open(work_path+'stage{}_log.struc'.format(stage), 'r') as f:
+        with open(work_path+f'stage{stage}_log.struc', 'r') as f:
             lines = f.readlines()
             lines = lines[-(natot+5):]
         structure = soiap_structure.from_file(lines, nat)
@@ -39,7 +39,7 @@ def next_stage_soiap(rin, stage, work_path, nat):
         skip_flag = True
         logger.warning('    error in soiap,  skip this structure')
         return skip_flag
-    with open(work_path+'stage{}_'.format(stage)+rin.soiap_cif, 'r') as f:
+    with open(work_path + f'stage{stage}_' + rin.soiap_cif, 'r') as f:
         lines = f.readlines()
     title = lines[0][5:]    # string following 'data_'
     soiap_structure.write(structure,
@@ -65,4 +65,4 @@ def next_struc_soiap(rin, structure, cid, work_path):
     soiap_structure.write(structure,
                           work_path+rin.soiap_cif,
                           symprec=rin.symprec,
-                          title='ID_{0:d}'.format(cid))
+                          title=f'ID_{cid}')

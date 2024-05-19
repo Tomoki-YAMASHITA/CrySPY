@@ -15,7 +15,7 @@ def check_input_lammps(rin):
     # ----- check required files
     for f in calc_inputs:
         if f == rin.lammps_infile:
-            finfiles = [rin.lammps_infile + '_{}'.format(i) for i in range(
+            finfiles = [rin.lammps_infile + f'_{i}' for i in range(
                 1, rin.nstage+1)]
             for ff in finfiles:
                 if not os.path.isfile('./calc_in/'+ff):

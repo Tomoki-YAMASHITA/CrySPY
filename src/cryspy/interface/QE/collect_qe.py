@@ -66,7 +66,7 @@ def collect_qe(rin, cid, work_path, nat):
 
         # ------ opt_qe-structure
         with open('./data/opt_qe-structure', 'a') as fstruc:
-            fstruc.write('# ID {0:d}\n'.format(cid))
+            fstruc.write(f'# ID {cid}\n')
         qe_structure.write(opt_struc, './data/opt_qe-structure', mode='a')
     except Exception as e:
         logger.warning(e)

@@ -100,7 +100,7 @@ class Strain:
             dum_coords = cal_g(struc, mol_id[0], mol_id[1], mol_id[2])
             dum_species = []
             for i in range(len(dum_coords)):
-                dum_species.append(DummySpecie("X{}".format(i)))
+                dum_species.append(DummySpecie(f"X{i}"))
             dum_struc = Structure(strained_lattice, dum_species, dum_coords)
             # ------ scale lattice
             dum_struc.scale_lattice(struc.volume)

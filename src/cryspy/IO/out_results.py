@@ -21,24 +21,23 @@ def out_rslt(rslt_data, order_ef=False):
 def out_kpts(kpt_data):
     # ------ asc in ID
     with open('./data/kpts_rslt', 'w') as f:
-        f.write('{0:>10}  {1:>10}\n'.format('Struc_ID', 'k-points'))
+        f.write(f'{"Struc_ID":>10}  {"k-points":>10}\n')
         for key, value in sorted(kpt_data.items()):
-            f.write('{0:10d}  {1}\n'.format(key, value))
+            f.write(f'{key:10d}  {value}\n')
 
 
 # ---------- BO
 def out_bo_status(bo_mean, bo_var, bo_score, n_selection):
     with open('./data/BO_status', 'w') as f:
         # ------ label
-        f.write('{0:>10}{1:>14}{2:>14}{3:>14}\n'.format('Struc_ID', 'Score',
-                                                        'Mean', 'Variance'))
+        f.write(f'{"Struc_ID":>10}{"Score":>14}{"Mean":>14}{"Variance":>14}\n')
         # ------ sorted by score
         for cid, value in sorted(bo_score[n_selection].items(),
                                  key=lambda x: -x[1]):
-            f.write('{0:>10d}'.format(cid))
-            f.write('{0:>14.8f}'.format(value))
-            f.write('{0:>14.8f}'.format(bo_mean[n_selection][cid]))
-            f.write('{0:>14.8f}'.format(bo_var[n_selection][cid]))
+            f.write(f'{cid:>10d}')
+            f.write(f'{value:>14.8f}')
+            f.write(f'{bo_mean[n_selection][cid]:>14.8f}')
+            f.write(f'{bo_var[n_selection][cid]:>14.8f}')
             f.write('\n')
 
 
@@ -48,14 +47,14 @@ def out_bo_common(bo_str, bo_dict, tot_struc):
         # ------ label
         f.write('  Struc_ID')
         for i in range(len_select):
-            f.write('    Select {:<3d}'.format(i+1))
+            f.write(f'    Select {i+1:<3d}')
         f.write('\n')
         # ------ values
         for cid in range(tot_struc):
-            f.write('{0:>10d}'.format(cid))
+            f.write(f'{cid:>10d}')
             for i in range(2, len_select + 2):    # start from 2
                 if cid in bo_dict[i]:
-                    f.write('{0:14.8f}'.format(bo_dict[i][cid]))
+                    f.write(f'{bo_dict[i][cid]:14.8f}')
                 else:
                     f.write('              ')
             f.write('\n')
@@ -63,11 +62,11 @@ def out_bo_common(bo_str, bo_dict, tot_struc):
 
 def out_bo_id_hist(id_select_hist):
     with open('./data/BO_select_id', 'w') as f:
-        f.write('{0:>10}  {1:>5}\n'.format('Selection', 'ID'))
+        f.write(f'{"Selection":>10}  {"ID":>5}\n')
         for i, j in enumerate(id_select_hist):
-            f.write('{0:10d}'.format(i+1))
+            f.write(f'{i+1:10d}')
             for x in j:
-                f.write('  {:5d}'.format(x))
+                f.write(f'  {x:5d}')
             f.write('\n')
 
 
@@ -75,76 +74,69 @@ def out_bo_id_hist(id_select_hist):
 def out_laqa_status(laqa_step, laqa_score, laqa_energy, laqa_bias):
     # ------ desc in score
     with open('./data/LAQA_status', 'w') as f:
-        f.write('{0:>10}  {1:>14}  {2:>14}'
-                '  {3:>14}  {4:>12}  {5:>12}\n'.format(
-                        'Struc_ID', 'Score', 'E_eV_atom',
-                        'Bias', 'Selection', 'Step'))
+        f.write(f'{"Struc_ID":>10}  {"Score":>14}  {"E_eV_atom":>14}'
+                f'  {"Bias":>14}  {"Selection":>12}  {"Step":>12}\n')
         for key, value in sorted(laqa_score.items(), key=lambda x: -x[1][-1]):
             if laqa_energy[key]:    # whether list is vacant or not?
-                f.write('{0:10d}  {1: 14.8f}  {2: 14.8f}'
-                        '  {3: 14.8f}  {4:12d}  {5:12d}\n'.format(
-                                key, value[-1], laqa_energy[key][-1],
-                                laqa_bias[key][-1],
-                                len(laqa_step[key]), sum(laqa_step[key])))
+                f.write(f'{key:10d}  {value[-1]: 14.5f}  {laqa_energy[key][-1]: 14.5f}'
+                        f'  {laqa_bias[key][-1]: 14.5f}  {len(laqa_step[key]):12d}'
+                        f'  {sum(laqa_step[key]):12d}\n')
             else:
-                f.write('{0:10d}  {1: 14.8f}  {2:>14}'
-                        '  {3:>14}  {4:12d}  {5:12d}\n'.format(
-                                key, value[-1], '',
-                                '', len(laqa_step[key]),
-                                sum(laqa_step[key])))
+                f.write(f'{key:10d}  {value[-1]: 14.5f}  {"":>14}'
+                        f'  {"":>14}  {len(laqa_step[key]):12d}  {sum(laqa_step[key]):12d}\n')
 
 
 def out_laqa_step(laqa_step):
     # ------ asc in ID
     with open('./data/LAQA_step', 'w') as f:
-        f.write('{0:>10}  {1:>4}\n'.format('Struc_ID', 'Step'))
+        f.write(f'{"Struc_ID":>10}  {"Step":>4}\n')
         for key, value in sorted(laqa_step.items()):
-            f.write('{0:10d}'.format(key))
+            f.write(f'{key:10d}')
             for x in value:
-                f.write('  {:4d}'.format(x))
+                f.write(f'  {x:4d}')
             f.write('\n')
 
 
 def out_laqa_score(laqa_score):
     # ------ asc in ID
     with open('./data/LAQA_score', 'w') as f:
-        f.write('{0:>10}  {1:>14}\n'.format('Struc_ID', 'Score'))
+        f.write(f'{"Struc_ID":>10}  {"Score":>14}\n')
         for key, value in sorted(laqa_score.items()):
-            f.write('{0:10d}'.format(key))
+            f.write(f'{key:10d}')
             for x in value:
-                f.write('  {: 14.8f}'.format(x))
+                f.write(f'  {x: 14.5f}')
             f.write('\n')
 
 
 def out_laqa_energy(laqa_energy):
     # ------ asc in ID
     with open('./data/LAQA_energy', 'w') as f:
-        f.write('{0:>10}  {1:>12}\n'.format('Struc_ID', 'E(eV/atom)'))
+        f.write(f'{"Struc_ID":>10}  {"E(eV/atom)":>12}\n')
         for key, value in sorted(laqa_energy.items()):
-            f.write('{0:10d}'.format(key))
+            f.write(f'{key:10d}')
             for x in value:
-                f.write('  {: 12.8f}'.format(x))
+                f.write(f'  {x: 12.5f}')
             f.write('\n')
 
 
 def out_laqa_bias(laqa_bias):
     # ------ asc in ID
     with open('./data/LAQA_bias', 'w') as f:
-        f.write('{0:>10}  {1:>14}\n'.format('Struc_ID', 'Bias'))
+        f.write(f'{"Struc_ID":>10}  {"Bias":>14}\n')
         for key, value in sorted(laqa_bias.items()):
-            f.write('{0:10d}'.format(key))
+            f.write(f'{key:10d}')
             for x in value:
-                f.write('  {: 14.8f}'.format(x))
+                f.write(f'  {x: 14.5f}')
             f.write('\n')
 
 
 def out_laqa_id_hist(id_select_hist):
     with open('./data/LAQA_select_id', 'w') as f:
-        f.write('{0:>10}  {1:>5}\n'.format('Selection', 'ID'))
+        f.write(f'{"Selection":>10}  {"ID":>5}\n')
         for i, j in enumerate(id_select_hist):
-            f.write('{0:10d}'.format(i+1))
+            f.write(f'{i+1:10d}')
             for x in j:
-                f.write('  {:5d}'.format(x))
+                f.write(f'  {x:5d}')
             f.write('\n')
 
 

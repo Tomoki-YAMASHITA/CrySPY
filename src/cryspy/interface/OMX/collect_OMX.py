@@ -65,7 +65,7 @@ def collect_OMX(rin, cid, work_path, nat):
         opt_struc = OMX_structure.from_lines(lines_cell, lines_atom)
         # ------ opt_OMX-structure
         with open('./data/opt_OMX-structure', 'a') as fstruc:
-            fstruc.write('# ID {0:d}\n'.format(cid))
+            fstruc.write(f'# ID {cid}\n')
         OMX_structure.write(rin, opt_struc, './data/opt_OMX-structure', mode='a')
     except Exception as e:
         logger.warning(e)

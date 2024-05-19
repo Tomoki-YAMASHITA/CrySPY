@@ -7,6 +7,7 @@ from logging import getLogger
 import os
 
 import pandas as pd
+import pkg_resources
 
 from .gen_init_struc import gen_init_struc
 from ..IO import pkl_data, io_stat, write_input
@@ -30,9 +31,12 @@ def initialize(comm, mpi_rank, mpi_size):
         logger.info('\n\n\nStart CrySPY ' + get_version() + '\n\n')
     # ---------- check versions
     if mpi_rank == 0:
-        logger.info('# ---------- Check version')
+        logger.info('# ---------- Library version info')
         logger.info(f'pandas version: {pd.__version__}')
-
+        v_pymat = pkg_resources.get_distribution('pymatgen').version
+        v_pyxtal = pkg_resources.get_distribution('pyxtal').version
+        logger.info(f'pymatgen version: {v_pymat}')
+        logger.info(f'pyxtal version: {v_pyxtal}')
     # ---------- read input
     if mpi_rank == 0:
         logger.info('# ---------- Read input file, cryspy.in')

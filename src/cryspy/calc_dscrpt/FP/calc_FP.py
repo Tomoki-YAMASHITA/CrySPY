@@ -71,10 +71,10 @@ class Calc_FP:
             # ------ run cal_fingerprint
             with open('log_fingerprint', 'w') as logf:
                 subprocess.call([self.fppath, 'POSCAR',
-                                 '-rmin', '{}'.format(self.fp_rmin),
-                                 '-rmax', '{}'.format(self.fp_rmax),
-                                 '-npoints', '{}'.format(self.fp_npoints),
-                                 '-sigma', '{}'.format(self.fp_sigma)],
+                                 '-rmin', f'{self.fp_rmin}',
+                                 '-rmax', f'{self.fp_rmax}',
+                                 '-npoints', f'{self.fp_npoints}',
+                                 '-sigma', f'{self.fp_sigma}'],
                                 stdout=logf, stderr=logf)
             fp = np.loadtxt('feature_ffpf.dat')
             # ------ mv xxx --> fin_xxx

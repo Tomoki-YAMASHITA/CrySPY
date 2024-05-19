@@ -333,7 +333,7 @@ def gen_struc_mol_break_sym(rin, nstruc, mindist, mindist_dummy, mol_data, id_of
                                 #        DummySpecie X20+: 'Xe',
                                 #        DummySpecie X30+: 'Xe'}
             for i, site in enumerate(tmp_crystal.atom_sites):
-                dum = DummySpecie("X{}".format(i))
+                dum = DummySpecie(f"X{i}")
                 dums.append(dum)
                 dum_pos.append(site.position)
                 dum_type[dum] = site.specie
@@ -493,7 +493,7 @@ def _mp_mc(tolmat, spg, mol_data, nmol, vol_factor, q, algo):
             for i, site in enumerate(tmp_crystal.mol_sites):
                 for j, mol in enumerate(mol_data):
                     if mol.species == site.mol.species:
-                        dum = DummySpecie("X{}{}".format(j, i))
+                        dum = DummySpecie(f"X{j}{i}")
                         dums.append(dum)
                         dum_pos.append(site.position)
                         # -- calculate atom distance by pyxtal

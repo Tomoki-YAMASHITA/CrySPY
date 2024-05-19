@@ -49,7 +49,7 @@ def from_file(rin, name, nat):
     return structure
 
 
-def write(structure, output, nat, title="LAMMPS"):
+def write(rin, structure, output, nat, title="LAMMPS"):
     # ---------- convert lattice constants and angles to LAMMPS format
     cos = lambda x: np.cos(np.deg2rad(x))
     sqrt = lambda x: np.sqrt(x)

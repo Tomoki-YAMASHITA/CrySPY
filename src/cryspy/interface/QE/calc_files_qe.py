@@ -11,7 +11,7 @@ def check_input_qe(rin):
     # ------ check required files
     for f in calc_inputs:
         if f == rin.qe_infile:
-            finfiles = [rin.qe_infile + '_{}'.format(i) for i in range(
+            finfiles = [rin.qe_infile + f'_{i}' for i in range(
                 1, rin.nstage+1)]
             for ff in finfiles:
                 if not os.path.isfile('./calc_in/' + ff):

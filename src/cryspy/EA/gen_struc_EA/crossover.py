@@ -404,7 +404,7 @@ class Crossover:
 
         for i in range(len(self.mol_g_A)):
             if self.mol_g_A[i][self._axis] <= self._slice_point:
-                species_A.append(DummySpecie("Xa{}".format(i)))
+                species_A.append(DummySpecie(f"Xa{i}"))
                 coords_A.append(self.mol_g_A[i])
                 group_id_A.append(i)
                 for j, gid in enumerate(self.real_site_group_id_A):
@@ -412,7 +412,7 @@ class Crossover:
                         mol_id_A.append(self.real_site_mol_id_A[j])
                         break
             else:
-                species_B.append(DummySpecie("Xa{}".format(i)))
+                species_B.append(DummySpecie(f"Xa{i}"))
                 coords_B.append(self.mol_g_A[i])
                 group_id_B.append(i)
                 for j, gid in enumerate(self.real_site_group_id_A):
@@ -420,7 +420,7 @@ class Crossover:
                         mol_id_B.append(self.real_site_mol_id_A[j])
                         break
             if self.mol_g_B[i][self._axis] >= self._slice_point:
-                species_A.append(DummySpecie("Xb{}".format(i)))
+                species_A.append(DummySpecie(f"Xb{i}"))
                 coords_A.append(self.mol_g_B[i])
                 group_id_A.append(i+len(self.group_id_A))
                 for j, gid in enumerate(self.real_site_group_id_B):
@@ -428,7 +428,7 @@ class Crossover:
                         mol_id_A.append(self.real_site_mol_id_B[j])
                         break
             else:
-                species_B.append(DummySpecie("Xb{}".format(i)))
+                species_B.append(DummySpecie(f"Xb{i}"))
                 coords_B.append(self.mol_g_B[i])
                 group_id_B.append(i+len(self.group_id_A))
                 for j, gid in enumerate(self.real_site_group_id_B):
@@ -516,8 +516,8 @@ class Crossover:
                 self._mean_choice()
                 coords[self._axis] = np.random.normal(loc=self._mean,
                                                       scale=0.08)
-                self.child.append(species=DummySpecie("Xx{}".format(i)), coords=coords)
-                self._rm_dummy.append(DummySpecie("Xx{}".format(i)))
+                self.child.append(species=DummySpecie(f"Xx{i}"), coords=coords)
+                self._rm_dummy.append(DummySpecie(f"Xx{i}"))
                 self.decide_mol_from_dummy(self.child)
                 success, mindist_ij, dist = self.check_distance_mol(self.child, rin.mindist_mol_ea)
                 if success:

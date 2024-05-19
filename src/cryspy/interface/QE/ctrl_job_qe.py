@@ -21,24 +21,24 @@ def next_stage_qe(rin, stage, work_path, nat, kpt_data, cid):
 
     # ---------- rename QE files at the current stage
     qe_files = [rin.qe_infile, rin.qe_outfile]
-    for f in qe_files:
-        if not os.path.isfile(work_path+f):
-            logger.error('Not found '+work_path+f)
+    for file in qe_files:
+        if not os.path.isfile(work_path + file):
+            logger.error('Not found ' + work_path + file)
             raise SystemExit(1)
-        os.rename(work_path+f, work_path+'stage{}_'.format(stage)+f)
+        os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- next structure
     try:
         lines_cell = qe_structure.extract_cell_parameters(
-            work_path+'stage{}_'.format(stage)+rin.qe_outfile)
+            work_path+f'stage{stage}_'+rin.qe_outfile)
         if lines_cell is None:
             lines_cell = qe_structure.extract_cell_parameters(
-                work_path+'stage{}_'.format(stage)+rin.qe_infile)
+                work_path+f'stage{stage}_'+rin.qe_infile)
         lines_atom = qe_structure.extract_atomic_positions(
-            work_path+'stage{}_'.format(stage)+rin.qe_outfile, nat)
+            work_path+f'stage{stage}_'+rin.qe_outfile, nat)
         if lines_atom is None:
             lines_atom = qe_structure.extract_atomic_positions(
-                work_path+'stage{}_'.format(stage)+rin.qe_infile, nat)
+                work_path+f'stage{stage}_'+rin.qe_infile, nat)
         structure = qe_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
         skip_flag = True
@@ -49,7 +49,7 @@ def next_stage_qe(rin, stage, work_path, nat, kpt_data, cid):
         return skip_flag, kpt_data
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finput = './calc_in/'+rin.qe_infile+'_{}'.format(stage + 1)
+    finput = './calc_in/' + rin.qe_infile + f'_{stage + 1}'
     shutil.copyfile(finput, work_path+rin.qe_infile)
 
     # ---------- "nat" (<-- natot) in qe_infile for EA-vc

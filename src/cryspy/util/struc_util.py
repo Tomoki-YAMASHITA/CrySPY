@@ -132,7 +132,7 @@ def out_cif(struc, cid, tmp_path, fpath, symprec=0.1):
     #                (need to delete '_chemical_formula_sum'. i don't know why)
     with open(tmp_path+'tmp.cif', 'r') as fcif:
         ciflines = fcif.readlines()
-    ciflines[1] = 'data_ID_{}\n'.format(cid)
+    ciflines[1] = f'data_ID_{cid}\n'
     if ciflines[11][:21] == '_chemical_formula_sum':
         ciflines.pop(11)
     else:

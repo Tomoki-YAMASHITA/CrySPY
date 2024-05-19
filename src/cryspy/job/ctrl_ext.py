@@ -92,7 +92,7 @@ class Ctrl_ext:
         # ---------- out cifs
         os.makedirs('ext/queue', exist_ok=False)    # if dir exists, error --> stop
         for cid in self.id_queueing:
-            self.init_struc_data[cid].to(fmt='cif', filename='ext/queue/{}.cif'.format(cid))
+            self.init_struc_data[cid].to(fmt='cif', filename=f'ext/queue/{cid}.cif')
         # ---------- queue --> running
         self.id_running = self.id_queueing[:]
         self.id_queueing = []
@@ -116,7 +116,7 @@ class Ctrl_ext:
             self.ctrl_collect_rs()
         elif self.rin.algo == 'BO':
             self.ctrl_collect_bo()
-        elif self.rin.rin.algo in ['EA', 'EA-vc']:
+        elif self.rin.algo in ['EA', 'EA-vc']:
             self.ctrl_collect_ea()
         else:
             logger.error('Error, algo')
@@ -256,7 +256,7 @@ class Ctrl_ext:
         '''
         if self.rin.algo == 'BO':
             self.next_select_BO(noprint)
-        if self.rin.rin.algo in ['EA', 'EA-vc']:
+        if self.rin.algo in ['EA', 'EA-vc']:
             self.next_gen_EA()
 
     def next_select_BO(self, noprint=False):
@@ -318,7 +318,7 @@ class Ctrl_ext:
             bo_id_data = (self.n_selection, self.id_queueing,
                           self.id_running, self.id_select_hist)
             pkl_data.save_bo_id(bo_id_data)
-        if self.rin.rin.algo in ['EA', 'EA-vc']:
+        if self.rin.algo in ['EA', 'EA-vc']:
             ea_id_data = (self.gen, self.id_queueing, self.id_running)
             pkl_data.save_ea_id(ea_id_data)
 

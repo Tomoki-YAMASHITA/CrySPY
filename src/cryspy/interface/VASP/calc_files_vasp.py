@@ -12,7 +12,7 @@ def check_input_vasp(rin):
     # ------ check required files
     for f in calc_inputs:
         if f == 'INCAR':
-            fincars = ['INCAR_{}'.format(i) for i in range(1, rin.nstage+1)]
+            fincars = [f'INCAR_{i}' for i in range(1, rin.nstage+1)]
             for ff in fincars:
                 if not os.path.isfile('./calc_in/' + ff):
                     logger.error('Could not find ./calc_in/' + ff)
