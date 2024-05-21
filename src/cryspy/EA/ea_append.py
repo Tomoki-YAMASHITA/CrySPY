@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 from .ea_child import child_gen
-from .gen_struc_EA.select_parents import Select_parents
+from .survival import survival_fittest
 from ..IO import change_input, out_results, pkl_data
 
 
@@ -25,17 +25,24 @@ def append_struc(rin, init_struc_data):
     # ---------- fitness
     fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
 
-    # ---------- instantiate Seclect_parents class
-    logger.info('# ------ select parents')
-    sp = Select_parents(rin, opt_struc_data, fitness, None, None, rin.n_fittest)
-    if rin.slct_func == 'TNM':
-        sp.set_tournament()
-    else:
-        sp.set_roulette(rin)
+    # ---------- survival_fittest
+    logger.info('# ------ survival of the fittest')
+    ranking, _, _ = survival_fittest(fitness, opt_struc_data, None, None,
+                                     rin.n_fittest, rin.fit_reverse,
+                                     rin.emax_ea, rin.emin_ea)
+    logger.info('ranking without duplication:')
+    for cid in ranking:
+            logger.info(f'Structure ID {cid:>6}, fitness: {fitness[cid]:>10.5f}')
 
-    # ---------- generate offspring by EA
-    logger.info('# ------ Generate structures')
-    init_struc_data, eagen, _ = child_gen(rin, sp, init_struc_data)
+    # ---------- generate children by EA
+    logger.info('# ------ Generate children')
+    # init_struc_data will be updated and  saved in child_gen function
+    init_struc_data, parents, operation = child_gen(rin, ranking, fitness,
+                                                    opt_struc_data, init_struc_data,
+                                                    None, None)
+
+    # ---------- id_queueing
+    # id_queueing is treated after this append_struc function
 
     # ----------  ea_info
     if os.path.isfile('./data/pkl_data/EA_data.pkl'):
@@ -64,8 +71,8 @@ def append_struc(rin, init_struc_data):
     # ---------- ea_origin
     # ------ EA operation part
     for cid in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
-        tmp_origin = pd.DataFrame([[rin.tot_struc, cid, eagen.operation[cid],
-                                    eagen.parents[cid]]], columns=ea_origin.columns)
+        tmp_origin = pd.DataFrame([[rin.tot_struc, cid, operation[cid],
+                                    parents[cid]]], columns=ea_origin.columns)
         ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------ random part
     for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand,
@@ -94,6 +101,6 @@ def append_struc(rin, init_struc_data):
     # ------ write and save
     change_input.write_config(config)
     pkl_data.save_input(rin)
-    
+
     # ---------- return
     return init_struc_data

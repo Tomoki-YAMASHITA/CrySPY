@@ -71,8 +71,6 @@ def gen_init_struc(rin, prev_nstruc, comm, mpi_rank, mpi_size):
                                             )
         # ------ molecular crystal breaking symmetry
         elif rin.struc_mode == 'mol_bs':
-            if mpi_rank == 0:
-                logger.info('# -- mindist_mol_bs')
             mol_data = get_mol_data(rin.mol_file)
             init_struc_data, struc_mol_id = gen_pyxtal.gen_struc_mol_break_sym(
                                                 rin,

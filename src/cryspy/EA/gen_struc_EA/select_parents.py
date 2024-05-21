@@ -1,164 +1,33 @@
-from logging import getLogger
-
 import numpy as np
-from pymatgen.analysis.structure_matcher import StructureMatcher
 
 
-logger = getLogger('cryspy')
-
-
-class Select_parents:
+class SelectParents:
     '''
     select parents
 
     # ---------- args
-    struc_data (dict or list): structure data
-        You may include None in struc_data
-        if type of struc_data is list,
-            struc_data is converted into dict type
-            as {0: struc_data_0, 1: struc_data_1, ...}
-
-    fitness (dict, list, or np.ndarray): fitness
-        You may include None and np.nan in fitness
-        if type of fitness is list or np.ndarray,
-            fitness is converted into dict type
-            as {0: fitness_0, 1: fitness_1, ...}
-
-    elite_struc (dict or None): structure data of elite
-
-    elite_fitness (dict or None): fitness of elite
-
-    n_fittest (int): number of data which can survive
-        if 0 (deault), all candidates can survive
-        n_fittest <-- rin.n_fittest or rin.n_elite
+    ranking (list): [ID, ...], ranking of IDs based on fitness without duplication
 
     # ---------- instance methods
-    self.set_tournament(self)
-
-    self.set_roulette(self)
-
-    self.get_parents(n_parent)
+    self.set_tournament(self, t_size)
+    self.set_roulette(self, fitness, a_rlt, b_rlt, fit_reverse)
+    self.get_parents(n_parent) <-- self._tournament or self._roulette
     '''
 
-    def __init__(self, rin, struc_data, fitness,
-                 elite_struc=None, elite_fitness=None, n_fittest=0):
-        # ---------- check args
-        # ------ data
-        self.struc_data, self.fitness = self._check_data(struc_data,
-                                                         fitness,
-                                                         elite_struc,
-                                                         elite_fitness)
-        # ------ None and np.nan --> inf or -inf for fitness
-        for cid, value in self.fitness.items():
-            if value is None or np.isnan(value):
-                self.fitness[cid] = -np.inf if rin.fit_reverse else np.inf
-            # ---- emax_ea
-            if rin.emax_ea is not None:
-                if value > rin.emax_ea:
-                    self.fitness[cid] = -np.inf if rin.fit_reverse else np.inf
-                    logger.info(f'Eliminate ID {cid}: {value} > emax_ea')
-            # ---- emin_ea
-            if rin.emin_ea is not None:
-                if value < rin.emin_ea:
-                    self.fitness[cid] = -np.inf if rin.fit_reverse else np.inf
-                    logger.info(f'Eliminate ID {cid}: {value} < emin_ea')
-        # ------ self
-        self.n_fittest = n_fittest
-        # ---------- ranking of fitness: list of id
-        self.ranking = sorted(self.fitness, key=self.fitness.get,
-                              reverse=rin.fit_reverse)
-        #print('ranking', self.ranking)
-        # ---------- remove duplicated structures and
-        #                cut by survival of the fittest
-        self._dedupe()    # get self.ranking_dedupe
-        logger.info('Parent candidates:')
-        for cid in self.ranking_dedupe:
-            logger.info(f'Structure ID {cid:>6}, fitness: {self.fitness[cid]:>10.6f}')
+    def __init__(self, ranking):
+        # ---------- self
+        self.ranking = ranking
 
-    def _check_data(self, struc_data, fitness, elite_struc, elite_fitness):
-        # ---------- struc_data and fitness
-        if isinstance(struc_data, dict) and isinstance(fitness, dict):
-            pass    # if dict, allow len(struc_data) != len(fitness)
-        elif isinstance(struc_data, dict) and (
-                isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
-            logger.error('struc_data is dict,'
-                            ' so fitness should also be dict')
-        elif isinstance(fitness, dict) and (
-                isinstance(struc_data, list)
-                or isinstance(struc_data, np.ndarray)):
-            logger.error('fitness is dict,'
-                            ' so struc_data should also be dict')
-        elif isinstance(struc_data, list) and (
-                isinstance(fitness, list) or isinstance(fitness, np.ndarray)):
-            # ------ check number of data
-            if not len(struc_data) == len(fitness):
-                logger.error('not len(struc_data) == len(fitness)')
-            # ------ convert
-            struc_data = {i: struc_data[i] for i in range(len(struc_data))}
-            fitness = {i: fitness[i] for i in range(len(fitness))}
-        else:
-            logger.error('Type of struc_data and fitness is wrong')
-        # ---------- elite
-        if isinstance(elite_struc, dict) and isinstance(elite_fitness, dict):
-            # ------ check number of data
-            if not len(elite_struc) == len(elite_fitness):
-                logger.error('not len(elite_struc) == len(elite_fitness)')
-            if None in elite_struc.values():
-                logger.error('elite_struc includes None')
-            if (None in elite_fitness.values()) or (
-                    np.nan in elite_fitness.values()):
-                logger.error('elite_fitness includes None or np.nan')
-            # ------ add elite to data
-            struc_data.update(elite_struc)
-            fitness.update(elite_fitness)
-        elif elite_struc is elite_fitness is None:
-            pass
-        else:
-            logger.error('elite_struc and elite_fitness'
-                            ' must be dict or None')
-        # ---------- return
-        return struc_data, fitness
-
-    def _dedupe(self):
-        # ---------- remove duplicated structure data
-        # ------ initialize
-        ncheck = 5
-        self.ranking_dedupe = []
-        smatcher = StructureMatcher()    # instantiate
-        # ------ register not dupulicated data
-        for cid in self.ranking:
-            # -- init dupl_flag
-            dupl_flag = False
-            # -- for structure is None
-            if self.struc_data[cid] is None:
-                continue    # next cid
-            # -- duplication check
-            for tid in self.ranking_dedupe[:-(ncheck+1):-1]:
-                if smatcher.fit(self.struc_data[cid], self.struc_data[tid]):
-                    dupl_flag = True
-                    break
-            # -- register or skip
-            if dupl_flag:
-                continue    # next cid
-            else:
-                self.ranking_dedupe.append(cid)
-                # n_fittest
-                if self.n_fittest > 0:
-                    if len(self.ranking_dedupe) == self.n_fittest:
-                        break
-        # ---------- log
-        logger.info('Remove duplicated data')
-        if self.n_fittest > 0:
-            logger.info(f'Survival of the fittest: top {self.n_fittest} structures survive')
-
-    def set_tournament(self):
+    def set_tournament(self, t_size):
         '''
         setting for tournament selection
         '''
+        # ---------- self
+        self.t_size = t_size
         # ---------- set self.get_parents() <-- self._tournament or self._roulette
         self.get_parents = self._tournament
 
-    def _tournament(self, rin, n_parent):
+    def _tournament(self, n_parent):
         '''
         tournament selection
 
@@ -170,27 +39,38 @@ class Select_parents:
         '''
         parent_id = []
         while len(parent_id) < n_parent:
-            t_indx = np.random.choice(len(self.ranking_dedupe), rin.t_size,
-                                      replace=False)
+            t_indx = np.random.choice(len(self.ranking), self.t_size, replace=False)
             if parent_id:    # not allow the same parent in crossover
-                if parent_id[0] == self.ranking_dedupe[min(t_indx)]:
+                if parent_id[0] == self.ranking[min(t_indx)]:
                     continue
-            parent_id.append(self.ranking_dedupe[min(t_indx)])
+            parent_id.append(self.ranking[min(t_indx)])
         return parent_id
 
-    def set_roulette(self, rin):
+    def set_roulette(self, fitness, a_rlt, b_rlt, fit_reverse):
         '''
         setting for roulette selection
+
+        # ---------- args
+        fitness (dict) : {ID: fitness, ...}
+        a_rlt (float): a parameter in linear scaling
+        b_rlt (float): b parameter in linear scaling
+        fit_reverse (bool): if False, lower fitness is better
+
+        # ---------- instance variables
+        self.cum_fit (np.array): cumulative fitness
         '''
+        # ----------self
+        self.a_rlt = a_rlt
+        self.b_rlt = b_rlt
+        self.fit_reverse = fit_reverse
         # ---------- calculate cumulative fitness
-        fitness_dedupe = np.array(
-            [self.fitness[i] for i in self.ranking_dedupe])
-        fitness_dedupe = self._linear_scaling(rin, fitness_dedupe)
-        self.cum_fit = np.cumsum(fitness_dedupe/fitness_dedupe.sum())
+        fit_deduped = np.array([fitness[i] for i in self.ranking])
+        fit_deduped = self._linear_scaling(fit_deduped)
+        self.cum_fit = np.cumsum(fit_deduped/fit_deduped.sum())
         # ---------- set self.get_parents <-- self._tournament or self._roulette
         self.get_parents = self._roulette
 
-    def _roulette(self, rin, n_parent):
+    def _roulette(self, n_parent):
         '''
         roulette selection
 
@@ -208,33 +88,25 @@ class Select_parents:
             # select_indx: consider vacant or not
             select_indx = indx_array[-1] + 1 if indx_array.size != 0 else 0
             if parent_id:    # not allow same parent for crossover
-                if parent_id[0] == self.ranking_dedupe[select_indx]:
+                if parent_id[0] == self.ranking[select_indx]:
                     continue
-            parent_id.append(self.ranking_dedupe[select_indx])
+            parent_id.append(self.ranking[select_indx])
         return parent_id
 
-    def _linear_scaling(self, rin, fitness):
-        # ---------- check args
-        # ------ fitness
-        if isinstance(fitness, np.ndarray):
-            pass
-        elif isinstance(fitness, list):
-            fitness = np.array(fitness)
-        else:
-            logger.error('fitness must be list or np.array')
+    def _linear_scaling(self, fit_deduped):
         # ------ in case of int
-        a = float(rin.a_rlt)
-        b = float(rin.b_rlt)
+        a = float(self.a_rlt)
+        b = float(self.b_rlt)
         # ---------- for fit_reverse
-        if not rin.fit_reverse:
-            fitness = -fitness
+        if not self.fit_reverse:
+            fit_deduped = -fit_deduped
         # ---------- scaling
-        fmax = float(fitness.max())
-        fmin = float(fitness.min())
+        fmax = float(fit_deduped.max())
+        fmin = float(fit_deduped.min())
         # ------ in case the same values
         if fmax == fmin:
-            return fitness
-        fitness = (a - b)/(fmax - fmin)*fitness + (
+            return fit_deduped
+        fit_deduped = (a - b)/(fmax - fmin)*fit_deduped + (
             (b*fmax - a*fmin)/(fmax - fmin))
         # ---------- return
-        return fitness
+        return fit_deduped

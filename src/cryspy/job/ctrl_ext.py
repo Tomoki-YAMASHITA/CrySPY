@@ -47,8 +47,8 @@ class Ctrl_ext:
 
     def check_job(self):
         # ---------- option: recalc
-        if self.rin.recalc is not None:
-            self.set_recalc()
+        #if self.rin.recalc is not None:
+        #    self.set_recalc()
         # ---------- check job status
         try:
             with open('ext/stat_job') as fstat:
