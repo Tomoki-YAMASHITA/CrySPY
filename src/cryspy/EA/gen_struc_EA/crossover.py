@@ -13,7 +13,7 @@ logger = getLogger('cryspy')
 
 
 def gen_crossover(atype, nat, mindist, struc_data, sp, n_crsov,
-                  id_start=None, symprec=0.001,
+                  id_start=None, symprec=0.01,
                   crs_lat='random', nat_diff_tole=4,
                   maxcnt_ea=50, vc=False, ll_nat=None, ul_nat=None,
                   struc_mol_id=None, molecular=False):

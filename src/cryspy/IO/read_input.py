@@ -361,9 +361,10 @@ class ReadInput:
             try:
                 self.timeout_mol = self.config.getfloat('structure', 'timeout_mol')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.timeout_mol = 120.0
-            if self.timeout_mol <= 0:
-                raise ValueError('timeout_mol must be positive')
+                self.timeout_mol = None
+            if self.timeout_mol is not None:
+                if self.timeout_mol <= 0:
+                    raise ValueError('timeout_mol must be None or positive')
         # ---------- mol_bs
         if self.struc_mode == 'mol_bs':
             # ------ rot_mol

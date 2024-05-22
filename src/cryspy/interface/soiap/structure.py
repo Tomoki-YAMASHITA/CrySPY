@@ -30,7 +30,7 @@ def from_file(rin, lines, nat):
     return structure
 
 
-def write(structure, output, symprec=0.001, title="soiap"):
+def write(structure, output, symprec=0.01, title="soiap"):
     # ---------- symmetrized structure
     analyzer = SpacegroupAnalyzer(structure, symprec=symprec)
     structure_sym = analyzer.get_symmetrized_structure()

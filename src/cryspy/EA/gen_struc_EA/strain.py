@@ -11,7 +11,7 @@ logger = getLogger('cryspy')
 
 
 def gen_strain(atype, mindist, struc_data, sp, n_strain,
-                  id_start=None, symprec=0.001,
+                  id_start=None, symprec=0.01,
                   sigma_st=0.5, maxcnt_ea=50,
                   struc_mol_id=None, molecular=False, protect_mol_struc=True):
     '''

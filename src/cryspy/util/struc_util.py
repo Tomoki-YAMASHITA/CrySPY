@@ -20,7 +20,7 @@ def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
                 dummy=False, mol_file=None, mpi_rank=0):
     # ---------- dummy atom in mol_bs
     if dummy:
-        atype = get_atype_dummy(mol_file)
+        atype = get_atype_dummy(len(mol_file))
 
     # ---------- mindist
     if mindist_in is None:
@@ -61,12 +61,12 @@ def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
     return mindist
 
 
-def get_atype_dummy(mol_file):
+def get_atype_dummy(n_mol_file):
     noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
-    if len(mol_file) > len(noble_gas):
+    if n_mol_file > len(noble_gas):
         logger.error('len(mol_file) > len(noble_gas)')
         raise SystemExit(1)
-    atype = noble_gas[:len(mol_file)]
+    atype = noble_gas[:n_mol_file]
     return atype
 
 
@@ -123,7 +123,7 @@ def out_poscar(struc_data: dict, fpath: str, mode='a'):
                 f.write(line)
 
 
-def out_cif(struc, cid, tmp_path, fpath, symprec=0.1):
+def out_cif(struc, cid, tmp_path, fpath, symprec=0.01):
     # ---------- opt_CIFS
     cif = CifWriter(struc, symprec=symprec)
     cif.write_file(tmp_path+'tmp.cif')

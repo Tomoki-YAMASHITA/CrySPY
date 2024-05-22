@@ -11,7 +11,7 @@ logger = getLogger('cryspy')
 
 
 def gen_permutation(atype, mindist, struc_data, sp, n_perm,
-                  id_start=None, symprec=0.001,
+                  id_start=None, symprec=0.01,
                   ntimes=1, maxcnt_ea=50,
                   struc_mol_id=None, molecular=False):
     '''

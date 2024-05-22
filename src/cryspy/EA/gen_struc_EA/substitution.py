@@ -9,7 +9,7 @@ logger = getLogger('cryspy')
 
 
 def gen_substitution(atype, mindist, struc_data, sp, n_subs, nat_data, ll_nat, ul_nat,
-                 id_start=None, symprec=0.001, maxcnt_ea=50, target='random'):
+                 id_start=None, symprec=0.01, maxcnt_ea=50, target='random'):
     '''
 
         tuple may be replaced by list

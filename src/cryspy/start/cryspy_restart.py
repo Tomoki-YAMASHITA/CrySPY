@@ -6,10 +6,11 @@ from datetime import datetime
 from logging import getLogger
 import os
 
-from .gen_init_struc import gen_init_struc
 from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
+from ..RS.rs_gen import gen_random
 from ..util.utility import get_version, backup_cryspy
+from ..util.struc_util import out_poscar
 
 # ---------- import later
 #from ..RS import rs_restart
@@ -128,15 +129,15 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size):
 
     # ---------- generate structures
     # only init_struc_data in rank0 is important
-    tmp_struc_data, tmp_struc_mol_id = gen_init_struc(rin, len(init_struc_data),
+    nstruc = rin.tot_struc - len(init_struc_data)
+    tmp_struc_data, tmp_struc_mol_id = gen_random(rin, nstruc, len(init_struc_data),
                                         comm, mpi_rank, mpi_size)
 
-    # ---------- update
-    init_struc_data.update(tmp_struc_data)
-    # ToDo: struc_mol_id
-
     if mpi_rank == 0:
-        # ---------- save
+        out_poscar(tmp_struc_data, './data/init_POSCARS')
+        # ---------- update and save
+        init_struc_data.update(tmp_struc_data)
+        # ToDo: struc_mol_id
         pkl_data.save_init_struc(init_struc_data)
 
         # ---------- time

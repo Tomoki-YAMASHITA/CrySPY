@@ -9,7 +9,7 @@ logger = getLogger('cryspy')
 
 
 def gen_elimination(atype, struc_data, sp, n_elim, nat_data, ll_nat,
-                 id_start=None, symprec=0.001, target='random'):
+                 id_start=None, symprec=0.01, target='random'):
     '''
 
         tuple may be replaced by list

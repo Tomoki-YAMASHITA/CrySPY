@@ -18,18 +18,46 @@ from ...util.struc_util import check_distance
 logger = getLogger('cryspy')
 
 
-def gen_wo_spg(rin, nstruc, mindist, id_offset=0, vc=False):
+def gen_wo_spg(
+        nstruc,
+        atype,
+        nat,
+        mindist,
+        spgnum,
+        minlen,
+        maxlen,
+        dangle,
+        symprec=0.01,
+        maxcnt=50,
+        id_offset=0,
+        vol_mu=None,
+        vol_sigma=None,
+        vc=False,
+        ll_nat=None,
+        ul_nat=None,
+    ):
     '''
     Generate random structures without space group information
 
     # ---------- args
-    rin (instance of ReadInput): input parameters
     nstruc (int): number of structures to be generated
-    mindist (): minimum interatomic distance
+    atype (tuple): atom types, e.g. ('Na', 'Cl')
+    nat (tuple): number of atoms, e.g. (8, 8)
+    mindist (): minumum interatomic distance, e.g. ((2.0, 1.5), (1.5, 2.0))
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    minlen (float): minimum length of lattice vector
+    maxlen (float): maximum length of lattice vector
+    dangle (float): maximum deviation of lattice angle
+    symprec (float): tolerance to find space group
+    maxcnt (int): maximum trial to generate a structure
     id_offset (int): structure ID starts from id_offset
                         e.g. nstruc = 3, id_offset = 10
                             you obtain ID 10, ID 11, ID 12
+    vol_mu (float): mean of volume scaling
+    vol_sigma (float): standard deviation of volume scaling
     vc (bool): variable composition. it needs ll_nat and ul_nat
+    ll_nat (tuple): lower limit of number of atoms, e.g. (1, 1)
+    ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen structure data}
@@ -42,34 +70,31 @@ def gen_wo_spg(rin, nstruc, mindist, id_offset=0, vc=False):
     while len(init_struc_data) < nstruc:
         # ------ vc
         if not vc:
-            numIons = rin.nat
+            numIons = nat
         else:    # variable composition
-            numIons = [random.randint(l, u) for l, u in zip(rin.ll_nat, rin.ul_nat)]
+            numIons = [random.randint(l, u) for l, u in zip(ll_nat, ul_nat)]
             numIons = tuple(numIons)
-        atomlist = _get_atomlist(rin, numIons)
+        atomlist = _get_atomlist(atype, numIons)
         # ------ get spg, a, b, c, alpha, beta, gamma
-        spg, a, b, c, alpha, beta, gamma = _gen_lattice(rin)
+        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle)
         # ------ get a1, a2, a3
         a1, a2, a3 = _calc_latvec(a, b, c, alpha, beta, gamma)
         # ------ get structure
-        tmp_struc = _gen_struc_wo_spg(rin, numIons, atomlist, a1, a2, a3, mindist)
+        tmp_struc = _gen_struc_wo_spg(atype, numIons, atomlist, a1, a2, a3, mindist, maxcnt)
         if tmp_struc is not None:    # success of generation
             # ------ scale volume
-            if rin.vol_mu is not None:
-                vol = random.gauss(mu=rin.vol_mu, sigma=rin.vol_sigma)
+            if vol_mu is not None:
+                vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
                 tmp_struc.scale_lattice(volume=vol)
-                success, mindist_ij, dist = check_distance(tmp_struc,
-                                                            rin.atype,
-                                                            mindist)
+                success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
                 if not success:
-                    type0 = rin.atype[mindist_ij[0]]
-                    type1 = rin.atype[mindist_ij[1]]
+                    type0 = atype[mindist_ij[0]]
+                    type1 = atype[mindist_ij[1]]
                     logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
                     continue    # failure
             # ------ check actual space group using pymatgen
             try:
-                spg_sym, spg_num = tmp_struc.get_space_group_info(
-                    symprec=rin.symprec)
+                spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=symprec)
             except TypeError:
                 spg_num = 0
                 spg_sym = None
@@ -83,22 +108,51 @@ def gen_wo_spg(rin, nstruc, mindist, id_offset=0, vc=False):
     return init_struc_data
 
 
-def gen_with_find_wy(rin, nstruc, mindist, id_offset=0,
-                        fwpath='find_wy', mpi_rank=0, vc=False):
+def gen_with_find_wy(
+        nstruc,
+        atype,
+        nat,
+        mindist,
+        spgnum,
+        minlen,
+        maxlen,
+        dangle,
+        symprec=0.01,
+        maxcnt=50,
+        id_offset=0,
+        vol_mu=None,
+        vol_sigma=None,
+        fwpath='find_wy',
+        mpi_rank=0,
+        vc=False,
+        ll_nat=None,
+        ul_nat=None,
+    ):
     '''
     Generate random structures with space gruop information
     using find_wy program
 
     # ---------- args
-    rin (instance of ReadInput): input parameters
     nstruc (int): number of generated structures
-    mindist (): minimum interatomic distance
+    atype (tuple): atom types, e.g. ('Na', 'Cl')
+    nat (tuple): number of atoms, e.g. (8, 8)
+    mindist (): minimum interatomic distance e.g. ((2.0, 1.5), (1.5, 2.0))
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    minlen (float): minimum length of lattice vector
+    maxlen (float): maximum length of lattice vector
+    dangle (float): maximum deviation of lattice angle
+    symprec (float): tolerance to find space group
+    maxcnt (int): maximum trial to generate a structure
     id_offset (int): structure ID starts from id_offset
                         e.g. nstruc = 3, id_offset = 10
                             you obtain ID 10, ID 11, ID 12
+    vol_mu (float): mean of volume scaling
+    vol_sigma (float): standard deviation of volume scaling
     fwpath (str): specify a path for a executable file of find_wy program
     mpi_rank (int): rank of MPI process
     vc (bool): variable composition. it needs ll_nat and ul_nat
+    ll_nat (tuple): lower limit of number of atoms, e.g. (1, 1)
+    ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structre}
@@ -115,19 +169,19 @@ def gen_with_find_wy(rin, nstruc, mindist, id_offset=0,
     while len(init_struc_data) < nstruc:
         # ------ vc
         if not vc:
-            numIons = rin.nat
+            numIons = nat
         else:    # variable composition
-            numIons = [random.randint(l, u) for l, u in zip(rin.ll_nat, rin.ul_nat)]
+            numIons = [random.randint(l, u) for l, u in zip(ll_nat, ul_nat)]
             numIons = tuple(numIons)
         # ------ get spg, a, b, c, alpha, beta, gamma
-        spg, a, b, c, alpha, beta, gamma = _gen_lattice(rin)
+        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle)
         # ------ get cosa, cosb, and cosc
         cosa, cosb, cosg = _calc_cos(alpha, beta, gamma)
         # ------ write an input file for find_wy
-        _fw_input(rin, numIons, spg, a, b, c, cosa, cosb, cosg)
+        _fw_input(atype, numIons, spg, a, b, c, cosa, cosb, cosg)
         # ------ loop for same fw_input
         cnt = 0
-        while cnt <= rin.maxcnt:
+        while cnt <= maxcnt:
             # -- run find_wy
             with open('log_find_wy', 'w') as f:
                 subprocess.call([fwpath, 'input'], stdout=f, stderr=f)
@@ -135,7 +189,7 @@ def gen_with_find_wy(rin, nstruc, mindist, id_offset=0,
             if not os.path.isfile('POS_WY_SKEL_ALL.json'):
                 wyflag = False
                 break
-            wyflag, tmp_struc = _gen_struc_with_spg(rin, mindist)
+            wyflag, tmp_struc = _gen_struc_with_spg(atype, mindist, maxcnt)
             if wyflag is False:    # Failure
                 os.remove('POS_WY_SKEL_ALL.json')
                 cnt += 1
@@ -148,21 +202,19 @@ def gen_with_find_wy(rin, nstruc, mindist, id_offset=0,
             _rm_files()    # clean
             continue       # to new fw_input
         # ------ scale volume
-        if rin.vol_mu is not None:
-            vol = random.gauss(mu=rin.vol_mu, sigma=rin.vol_sigma)
+        if vol_mu is not None:
+            vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
             tmp_struc.scale_lattice(volume=vol)
-            success, mindist_ij, dist = check_distance(tmp_struc,
-                                                        rin.atype,
-                                                        mindist)
+            success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
             if not success:
-                type0 = rin.atype[mindist_ij[0]]
-                type1 = rin.atype[mindist_ij[1]]
+                type0 = atype[mindist_ij[0]]
+                type1 = atype[mindist_ij[1]]
                 logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
                 continue    # failure
         # ------ check actual space group using pymatgen
         try:
             spg_sym, spg_num = tmp_struc.get_space_group_info(
-                symprec=rin.symprec)
+                symprec=symprec)
         except TypeError:
             spg_num = 0
             spg_sym = None
@@ -181,19 +233,19 @@ def gen_with_find_wy(rin, nstruc, mindist, id_offset=0,
     return init_struc_data
 
 
-def _get_atomlist(rin, numIons):
+def _get_atomlist(atype, numIons):
     '''
     e.g. Na2Cl2
         atomlist = ['Na', 'Na', 'Cl', 'Cl']
     '''
     atomlist = []
-    for i in range(len(rin.atype)):
-        atomlist += [rin.atype[i]]*numIons[i]
+    for i in range(len(atype)):
+        atomlist += [atype[i]]*numIons[i]
     return atomlist
 
-def _gen_lattice(rin):
+def _gen_lattice(spgnum, minlen, maxlen, dangle):
     # ---------- for spgnum = 0: no space group
-    if rin.spgnum == 0:
+    if spgnum == 0:
         crystal_systems = ['Triclinic',
                             'Monoclinic',
                             'Orthorhombic',
@@ -206,10 +258,10 @@ def _gen_lattice(rin):
     # ---------- for spgnum 1--230
     else:
         # ------ spgnum --> spg
-        if rin.spgnum == 'all':
+        if spgnum == 'all':
             spg = random.randint(1, 230)
         else:
-            spg = random.choice(rin.spgnum)
+            spg = random.choice(spgnum)
         if 1 <= spg <= 2:
             csys = 'Triclinic'
         elif 3 <= spg <= 15:
@@ -230,57 +282,57 @@ def _gen_lattice(rin):
             raise SystemExit(1)
     # ---------- generate lattice constants a, b, c, alpha, beta, gamma
     if csys == 'Triclinic':
-        t1 = random.uniform(rin.minlen, rin.maxlen)
-        t2 = random.uniform(rin.minlen, rin.maxlen)
-        t3 = random.uniform(rin.minlen, rin.maxlen)
+        t1 = random.uniform(minlen, maxlen)
+        t2 = random.uniform(minlen, maxlen)
+        t3 = random.uniform(minlen, maxlen)
         t = [t1, t2, t3]
         t.sort()
         a, b, c = t
         r = random.random()
         if r < 0.5:    # Type I
-            alpha = 90.0 - random.uniform(0, rin.dangle)
-            beta  = 90.0 - random.uniform(0, rin.dangle)
-            gamma = 90.0 - random.uniform(0, rin.dangle)
+            alpha = 90.0 - random.uniform(0, dangle)
+            beta  = 90.0 - random.uniform(0, dangle)
+            gamma = 90.0 - random.uniform(0, dangle)
         else:    # Type II
-            alpha = 90.0 + random.uniform(0, rin.dangle)
-            beta  = 90.0 + random.uniform(0, rin.dangle)
-            gamma = 90.0 + random.uniform(0, rin.dangle)
+            alpha = 90.0 + random.uniform(0, dangle)
+            beta  = 90.0 + random.uniform(0, dangle)
+            gamma = 90.0 + random.uniform(0, dangle)
     elif csys == 'Monoclinic':
-        a = random.uniform(rin.minlen, rin.maxlen)
-        b = random.uniform(rin.minlen, rin.maxlen)
-        c = random.uniform(rin.minlen, rin.maxlen)
+        a = random.uniform(minlen, maxlen)
+        b = random.uniform(minlen, maxlen)
+        c = random.uniform(minlen, maxlen)
         if a > c:
             a, c = c, a
         alpha = gamma = 90.0
-        beta = 90.0 + random.uniform(0, rin.dangle)
+        beta = 90.0 + random.uniform(0, dangle)
     elif csys == 'Orthorhombic':
-        t1 = random.uniform(rin.minlen, rin.maxlen)
-        t2 = random.uniform(rin.minlen, rin.maxlen)
-        t3 = random.uniform(rin.minlen, rin.maxlen)
+        t1 = random.uniform(minlen, maxlen)
+        t2 = random.uniform(minlen, maxlen)
+        t3 = random.uniform(minlen, maxlen)
         t = [t1, t2, t3]
         t.sort()
         a, b, c = t
         alpha = beta = gamma = 90.0
     elif csys == 'Tetragonal':
-        a = b = random.uniform(rin.minlen, rin.maxlen)
-        c = random.uniform(rin.minlen, rin.maxlen)
+        a = b = random.uniform(minlen, maxlen)
+        c = random.uniform(minlen, maxlen)
         alpha = beta = gamma = 90.0
     elif csys == 'Trigonal':
-        a = b = random.uniform(rin.minlen, rin.maxlen)
-        c = random.uniform(rin.minlen, rin.maxlen)
+        a = b = random.uniform(minlen, maxlen)
+        c = random.uniform(minlen, maxlen)
         alpha = beta = 90.0
         gamma = 120.0
     elif csys == 'Rhombohedral':
-        a = b = c = random.uniform(rin.minlen, rin.maxlen)
-        alpha = beta = gamma = 90 + random.uniform(-rin.dangle,
-                                                    rin.dangle)
+        a = b = c = random.uniform(minlen, maxlen)
+        alpha = beta = gamma = 90 + random.uniform(-dangle,
+                                                    dangle)
     elif csys == 'Hexagonal':
-        a = b = random.uniform(rin.minlen, rin.maxlen)
-        c = random.uniform(rin.minlen, rin.maxlen)
+        a = b = random.uniform(minlen, maxlen)
+        c = random.uniform(minlen, maxlen)
         alpha = beta = 90.0
         gamma = 120.0
     elif csys == 'Cubic':
-        a = b = c = random.uniform(rin.minlen, rin.maxlen)
+        a = b = c = random.uniform(minlen, maxlen)
         alpha = beta = gamma = 90.0
 
     # ---------- return
@@ -319,7 +371,7 @@ def _calc_cos(alpha, beta, gamma):
     return cosa, cosb, cosg
 
 
-def _gen_struc_wo_spg(rin, numIons, atomlist, a1, a2, a3, mindist):
+def _gen_struc_wo_spg(atype, numIons, atomlist, a1, a2, a3, mindist, maxcnt=50):
     '''
     Success --> return structure data in pymatgen format
     Failure --> return None
@@ -335,25 +387,23 @@ def _gen_struc_wo_spg(rin, numIons, atomlist, a1, a2, a3, mindist):
         tmp_struc = Structure([a1, a2, a3],
                                 atomlist[:len(incoord)],
                                 incoord)
-        success, mindist_ij, dist = check_distance(tmp_struc,
-                                                    rin.atype,
-                                                    mindist)
+        success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
         if not success:
-            type0 = rin.atype[mindist_ij[0]]
-            type1 = rin.atype[mindist_ij[1]]
+            type0 = atype[mindist_ij[0]]
+            type1 = atype[mindist_ij[1]]
             logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
             incoord.pop(-1)    # cancel
             cnt += 1
-            if rin.maxcnt < cnt:
+            if maxcnt < cnt:
                 return None
     return tmp_struc
 
 
-def _fw_input(rin, numIons, spg, a, b, c, cosa, cosb, cosg):
+def _fw_input(atype, numIons, spg, a, b, c, cosa, cosb, cosg):
     with open('input', 'w') as f:
-        f.write(f'nspecies {len(rin.atype)}\n')
+        f.write(f'nspecies {len(atype)}\n')
         f.write('species_name')
-        for aa in rin.atype:
+        for aa in atype:
             f.write(f'  {aa}')
         f.write('\n')
         f.write('species_num')
@@ -374,7 +424,7 @@ def _fw_input(rin, numIons, spg, a, b, c, cosa, cosb, cosg):
         f.write('randomseed auto\n')
 
 
-def _gen_struc_with_spg(rin, mindist):
+def _gen_struc_with_spg(atype, mindist, maxcnt):
     '''
     Success --> return True, structure data
     Failure --> return False, _
@@ -413,17 +463,15 @@ def _gen_struc_with_spg(rin, mindist):
             # -- check minimum distance
             spgstruc = Structure(plat, atomnames, cart,
                                     coords_are_cartesian=True)
-            success, mindist_ij, dist = check_distance(spgstruc,
-                                                        rin.atype,
-                                                        mindist)
+            success, mindist_ij, dist = check_distance(spgstruc, atype, mindist)
             if not success:
-                type0 = rin.atype[mindist_ij[0]]
-                type1 = rin.atype[mindist_ij[1]]
+                type0 = atype[mindist_ij[0]]
+                type1 = atype[mindist_ij[1]]
                 logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
                 # failure
                 # num_uniqvar = 0 --> value == 0
-                cnt = rin.maxcnt + 1 if value == 0 else cnt + 1
-                if rin.maxcnt < cnt:
+                cnt = maxcnt + 1 if value == 0 else cnt + 1
+                if maxcnt < cnt:
                     return False, spgstruc    # spgstruc is dummy
             else:
                 break    # break while loop --> next eq atoms

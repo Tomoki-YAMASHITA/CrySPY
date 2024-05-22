@@ -9,9 +9,9 @@ import os
 import pandas as pd
 import pkg_resources
 
-from .gen_init_struc import gen_init_struc
 from ..IO import pkl_data, io_stat, write_input
 from ..IO.read_input import ReadInput
+from ..RS.rs_gen import gen_random
 from ..util.utility import get_version
 from ..util.struc_util import out_poscar
 
@@ -67,10 +67,12 @@ def initialize(comm, mpi_rank, mpi_size):
         # ########## MPI start
         # ------ structure generation
         # only init_struc_data in rank0 is important
-        init_struc_data, struc_mol_id = gen_init_struc(rin, 0,
+        init_struc_data, struc_mol_id = gen_random(rin, rin.tot_struc, 0,
                                                        comm, mpi_rank, mpi_size)
         # ########## MPI end
         if mpi_rank == 0:
+            # ------ init_POSCARS
+            out_poscar(init_struc_data, './data/init_POSCARS', mode='w')
             # ------ save
             pkl_data.save_init_struc(init_struc_data)
             if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:

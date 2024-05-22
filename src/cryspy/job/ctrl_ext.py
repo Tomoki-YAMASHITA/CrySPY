@@ -1,12 +1,13 @@
+from logging import getLogger
 import os
 import shutil
 
-from logging import getLogger
 import numpy as np
 
 from ..interface import select_code
 from ..IO import io_stat, pkl_data
-from ..IO.out_results import out_rslt
+from ..IO.out_results import out_rslt, out_hdist
+from ..util.utility import backup_cryspy
 from ..util.struc_util import out_poscar, out_cif
 
 # ---------- import later
@@ -296,10 +297,24 @@ class Ctrl_ext:
             raise SystemExit()
         # ---------- maxgen_ea
         if 0 < self.rin.maxgen_ea <= self.gen:
+            if self.rin.algo == 'EA-vc':
+                # ------ when gen reaches maxgen_ea,  next generation is not created
+                #        so convex hull is calculated here
+                #        update only convex hull and hdist, not elite_struc and elite_fitness
+                c_rslt = self.rslt_data[self.rslt_data['Gen'] == self.gen]
+                c_ids = c_rslt.index.values    # current IDs [array]
+                ef_all = self.rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
+                from ..EA.calc_hull import calc_convex_hull_2d
+                hdist = calc_convex_hull_2d(self.rin, self.ratio_data, ef_all, c_ids, self.gen)
+                out_hdist(self.gen, hdist, self.ratio_data)
+                self.hdist_data[self.gen] = hdist
+                ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
+                pkl_data.save_ea_vc_data(ea_vc_data)
             logger.info(f'\nReached maxgen_ea: {self.rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- EA
+        backup_cryspy()
         ea_id_data = (self.gen, self.id_queueing, self.id_running)
         if self.rin.algo == 'EA-vc':
             ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)

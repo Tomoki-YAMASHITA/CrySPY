@@ -771,7 +771,7 @@ def regist_opt(rin, cid, work_path, init_struc_data, opt_struc_data, rslt_data,
     pkl_data.save_opt_struc(opt_struc_data)
     # ---------- return
     #return spg_sym, spg_num, spg_sym_opt, spg_num_opt
-    
+
     # ---------- register rslt
     if rin.algo in ['RS', 'LAQA']:
         rslt_data.loc[cid] = [spg_num, spg_sym, spg_num_opt, spg_sym_opt,
