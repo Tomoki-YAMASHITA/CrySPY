@@ -37,11 +37,15 @@ def next_selection(rin, laqa_id_data, laqa_data):
     tot_step_select.append(0)
 
     # ---------- save
-    laqa_id_data = (id_queueing, id_running, id_select_hist)
-    pkl_data.save_laqa_id(laqa_id_data)
-    laqa_data = (tot_step_select, laqa_step, laqa_struc,
-                 laqa_energy, laqa_bias, laqa_score)
-    pkl_data.save_laqa_data(laqa_data)
+    pkl_data.save_id_queueing(id_queueing)
+    pkl_data.save_id_running(id_running)
+    pkl_data.save_id_select_hist(id_select_hist)
+    pkl_data.save_tot_step_select(tot_step_select)
+    pkl_data.save_laqa_step(laqa_step)
+    pkl_data.save_laqa_struc(laqa_struc)
+    pkl_data.save_laqa_energy(laqa_energy)
+    pkl_data.save_laqa_bias(laqa_bias)
+    pkl_data.save_laqa_score(laqa_score)
 
     # ---------- status
     stat = io_stat.stat_read()

@@ -114,7 +114,7 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
 
     # ---------- EA-vc
     if rin.algo == 'EA-vc':
-        nat_data, _, _ = ea_vc_data
+        nat_data, ratio_data, _ = ea_vc_data
 
         # ------ Addition
         if rin.n_add > 0:
@@ -183,118 +183,16 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
 
     # ---------- save EA-vc_data.pkl
     if rin.algo == 'EA-vc':
-        nat_data, ratio_data, hdist_data = ea_vc_data
+        # ea_vc_data is already loaded above
         for cid, struc in children.items():
             nat_data[cid], ratio_data[cid] = get_nat(struc, rin.atype)
-        ea_vc_data = (nat_data, ratio_data, hdist_data)
-        pkl_data.save_ea_vc_data(ea_vc_data)
+        pkl_data.save_nat_data(nat_data)
+        pkl_data.save_ratio_data(ratio_data)
 
     # ---------- random generation
     if rin.n_rand > 0:
         tmp_struc_data, tmp_mol_id = gen_random(rin, rin.n_rand, id_start,
                                                 comm=None, mpi_rank=0, mpi_size=1)
-        # # ------ pyxtal
-        # if not (rin.spgnum == 0 or rin.use_find_wy):
-        #     from ..RS.gen_struc_RS import gen_pyxtal
-        #     # -- crystal
-        #     if rin.struc_mode == 'crystal':
-        #         tmp_struc_data = gen_pyxtal.gen_struc(
-        #                              nstruc=rin.n_rand,
-        #                              atype=rin.atype,
-        #                              nat=rin.nat,
-        #                              mindist=mindist,
-        #                              spgnum=rin.spgnum,
-        #                              symprec=rin.symprec,
-        #                              id_offset=id_start,
-        #                              vol_factor=rin.vol_factor,
-        #                              vol_mu=rin.vol_mu,
-        #                              vol_sigma=rin.vol_sigma,
-        #                              vc=vc,
-        #                              ll_nat=rin.ll_nat,
-        #                              ul_nat=rin.ul_nat,
-        #                          )
-        #     # -- molecular crystal
-        #     elif rin.struc_mode == 'mol':
-        #         mol_data = get_mol_data(rin.mol_file)
-        #         tmp_struc_data, tmp_mol_id = gen_pyxtal.gen_struc_mol(
-        #                                         nstruc=rin.n_rand,
-        #                                         atype=rin.atype,
-        #                                         nat=rin.nat,
-        #                                         mindist=mindist,
-        #                                         spgnum=rin.spgnum,
-        #                                         mol_data=mol_data,
-        #                                         nmol=rin.nmol,
-        #                                         symprec=rin.symprec,
-        #                                         id_offset=id_start,
-        #                                         vol_factor=rin.vol_factor,
-        #                                         vol_mu=rin.vol_mu,
-        #                                         vol_sigma=rin.vol_sigma,
-        #                                         timeout_mol=rin.timeout_mol,
-        #                                     )
-        #     # ------ molecular crystal breaking symmetry
-        #     elif rin.struc_mode == 'mol_bs':
-        #         mol_data = get_mol_data(rin.mol_file)
-        #         tmp_struc_data, tmp_mol_id = gen_pyxtal.gen_struc_mol_break_sym(
-        #                                         nstruc=rin.n_rand,
-        #                                         atype=rin.atype,
-        #                                         nat=rin.nat,
-        #                                         mindist=mindist,
-        #                                         mindist_dummy=mindist_dummy,
-        #                                         spgnum=rin.spgnum,
-        #                                         mol_data=mol_data,
-        #                                         nmol=rin.nmol,
-        #                                         symprec=rin.symprec,
-        #                                         id_offset=id_start,
-        #                                         vol_factor=rin.vol_factor,
-        #                                         vol_mu=rin.vol_mu,
-        #                                         vol_sigma=rin.vol_sigma,
-        #                                         rot_mol=rin.rot_mol,
-        #                                         nrot=rin.nrot,
-        #                                     )
-        # # ------ w/o pyxtal
-        # else:
-        #     from ..RS.gen_struc_RS import random_generation
-        #     if rin.spgnum == 0:
-        #         init_struc_data = random_generation.gen_wo_spg(
-        #                             nstruc=rin.n_rand,
-        #                             atype=rin.atype,
-        #                             nat=rin.nat,
-        #                             mindist=mindist,
-        #                             spgnum=rin.spgnum,
-        #                             minlen=rin.minlen,
-        #                             maxlen=rin.maxlen,
-        #                             dangle=rin.dangle,
-        #                             symprec=rin.symprec,
-        #                             maxcnt=rin.maxcnt,
-        #                             id_offset=id_start,
-        #                             vol_mu=rin.vol_mu,
-        #                             vol_sigma=rin.vol_sigma,
-        #                             vc=vc,
-        #                             ll_nat=rin.ll_nat,
-        #                             ul_nat=rin.ul_nat,
-        #                         )
-        #     else:
-        #         fwpath = check_fwpath(rin.fwpath)
-        #         init_struc_data = random_generation.gen_with_find_wy(
-        #                             nstruc=rin.n_rand,
-        #                             atype=rin.atype,
-        #                             nat=rin.nat,
-        #                             mindist=mindist,
-        #                             spgnum=rin.spgnum,
-        #                             minlen=rin.minlen,
-        #                             maxlen=rin.maxlen,
-        #                             dangle=rin.dangle,
-        #                             symprec=rin.symprec,
-        #                             maxcnt=rin.maxcnt,
-        #                             id_offset=id_start,
-        #                             vol_mu=rin.vol_mu,
-        #                             vol_sigma=rin.vol_sigma,
-        #                             fwpath=fwpath,
-        #                             mpi_rank=0,
-        #                             vc=vc,
-        #                             ll_nat=rin.ll_nat,
-        #                             ul_nat=rin.ul_nat,
-        #                         )
         # ------ update
         init_struc_data.update(tmp_struc_data)
         # if rin.struc_mode in ['mol', 'mol_bs']:
@@ -304,8 +202,8 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
             # ea_vc_data is already loaded above
             for cid, struc in tmp_struc_data.items():
                 nat_data[cid], ratio_data[cid] = get_nat(struc, rin.atype)
-            ea_vc_data = (nat_data, ratio_data, hdist_data)
-            pkl_data.save_ea_vc_data(ea_vc_data)
+            pkl_data.save_nat_data(nat_data)
+            pkl_data.save_ratio_data(ratio_data)
         # ------ write init_POSCARS
         out_poscar(tmp_struc_data, './data/init_POSCARS')
 

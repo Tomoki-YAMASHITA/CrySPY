@@ -18,11 +18,16 @@ def initialize():
     comm = None
     mpi_rank = 0
     mpi_size = 1
+    if os.path.isfile('lock_cryspy'):
+        logger.error('lock_cryspy file exists')
+        raise SystemExit(1)
+    with open('lock_cryspy', 'w'):
+        pass    # create vacant file
     if not os.path.isfile('cryspy.stat'):
         cryspy_init.initialize(comm, mpi_rank, mpi_size)
     else:
         logger.error('cryspy.stat file exists. Clean files to start from the beginning.')
-
+    os.remove('lock_cryspy')
 
 def backup():
     backup_cryspy()
@@ -33,10 +38,16 @@ def clean():
 
 
 def restart(njob: int):
+    if os.path.isfile('lock_cryspy'):
+        logger.error('lock_cryspy file exists')
+        raise SystemExit(1)
+    with open('lock_cryspy', 'w'):
+        pass    # create vacant file
     if os.path.isfile('cryspy.stat'):
         restart_interact(njob)
     else:
         logger.error('cryspy.stat file does not exist.')
+    os.remove('lock_cryspy')
 
 
 def show_rslt(cid='all'):

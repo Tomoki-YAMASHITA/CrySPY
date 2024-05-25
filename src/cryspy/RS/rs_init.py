@@ -12,5 +12,5 @@ def initialize(rin):
     io_stat.write_stat(stat)
 
     # ---------- save
-    rs_id_data = (id_queueing, id_running)
-    pkl_data.save_rs_id(rs_id_data)
+    pkl_data.save_id_queueing(id_queueing)
+    pkl_data.save_id_running(id_running)

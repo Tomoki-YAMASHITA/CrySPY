@@ -28,7 +28,7 @@ def out_kpts(kpt_data):
 
 # ---------- BO
 def out_bo_status(bo_mean, bo_var, bo_score, n_selection):
-    with open('./data/BO_status', 'w') as f:
+    with open('./data/bo_status', 'w') as f:
         # ------ label
         f.write(f'{"Struc_ID":>10}{"Score":>14}{"Mean":>14}{"Variance":>14}\n')
         # ------ sorted by score
@@ -61,7 +61,7 @@ def out_bo_common(bo_str, bo_dict, tot_struc):
 
 
 def out_bo_id_hist(id_select_hist):
-    with open('./data/BO_select_id', 'w') as f:
+    with open('./data/bo_select_id', 'w') as f:
         f.write(f'{"Selection":>10}  {"ID":>5}\n')
         for i, j in enumerate(id_select_hist):
             f.write(f'{i+1:10d}')
@@ -73,7 +73,7 @@ def out_bo_id_hist(id_select_hist):
 # ---------- LAQA
 def out_laqa_status(laqa_step, laqa_score, laqa_energy, laqa_bias):
     # ------ desc in score
-    with open('./data/LAQA_status', 'w') as f:
+    with open('./data/laqa_status', 'w') as f:
         f.write(f'{"Struc_ID":>10}  {"Score":>14}  {"E_eV_atom":>14}'
                 f'  {"Bias":>14}  {"Selection":>12}  {"Step":>12}\n')
         for key, value in sorted(laqa_score.items(), key=lambda x: -x[1][-1]):
@@ -88,7 +88,7 @@ def out_laqa_status(laqa_step, laqa_score, laqa_energy, laqa_bias):
 
 def out_laqa_step(laqa_step):
     # ------ asc in ID
-    with open('./data/LAQA_step', 'w') as f:
+    with open('./data/laqa_step', 'w') as f:
         f.write(f'{"Struc_ID":>10}  {"Step":>4}\n')
         for key, value in sorted(laqa_step.items()):
             f.write(f'{key:10d}')
@@ -99,7 +99,7 @@ def out_laqa_step(laqa_step):
 
 def out_laqa_score(laqa_score):
     # ------ asc in ID
-    with open('./data/LAQA_score', 'w') as f:
+    with open('./data/laqa_score', 'w') as f:
         f.write(f'{"Struc_ID":>10}  {"Score":>14}\n')
         for key, value in sorted(laqa_score.items()):
             f.write(f'{key:10d}')
@@ -110,7 +110,7 @@ def out_laqa_score(laqa_score):
 
 def out_laqa_energy(laqa_energy):
     # ------ asc in ID
-    with open('./data/LAQA_energy', 'w') as f:
+    with open('./data/laqa_energy', 'w') as f:
         f.write(f'{"Struc_ID":>10}  {"E(eV/atom)":>12}\n')
         for key, value in sorted(laqa_energy.items()):
             f.write(f'{key:10d}')
@@ -121,7 +121,7 @@ def out_laqa_energy(laqa_energy):
 
 def out_laqa_bias(laqa_bias):
     # ------ asc in ID
-    with open('./data/LAQA_bias', 'w') as f:
+    with open('./data/laqa_bias', 'w') as f:
         f.write(f'{"Struc_ID":>10}  {"Bias":>14}\n')
         for key, value in sorted(laqa_bias.items()):
             f.write(f'{key:10d}')
@@ -131,7 +131,7 @@ def out_laqa_bias(laqa_bias):
 
 
 def out_laqa_id_hist(id_select_hist):
-    with open('./data/LAQA_select_id', 'w') as f:
+    with open('./data/laqa_select_id', 'w') as f:
         f.write(f'{"Selection":>10}  {"ID":>5}\n')
         for i, j in enumerate(id_select_hist):
             f.write(f'{i+1:10d}')
@@ -142,12 +142,12 @@ def out_laqa_id_hist(id_select_hist):
 
 # ---------- EA
 def out_ea_info(ea_info):
-    with open('./data/EA_info', 'w') as f:
+    with open('./data/ea_info', 'w') as f:
         f.write(ea_info.to_string(index=False))
 
 
 def out_ea_origin(ea_origin):
-    with open('./data/EA_origin', 'w') as f:
+    with open('./data/ea_origin', 'w') as f:
         f.write(ea_origin.to_string(index=False))
 
 

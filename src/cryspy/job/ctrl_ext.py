@@ -27,22 +27,27 @@ class Ctrl_ext:
         self.init_struc_data = init_struc_data
         self.opt_struc_data = pkl_data.load_opt_struc()
         self.rslt_data = pkl_data.load_rslt()
+        self.id_queueing = pkl_data.load_id_queueing()
+        self.id_running = pkl_data.load_id_running()
         self.recheck = False
         self.logic_next = False
         # ---------- for each algorithm
         if rin.algo == 'RS':
-            self.id_queueing, self.id_running = pkl_data.load_rs_id()
+            pass
         elif rin.algo == 'BO':
-            (self.n_selection, self.id_queueing,
-             self.id_running, self.id_select_hist) = pkl_data.load_bo_id()
-            (self.init_dscrpt_data, self.opt_dscrpt_data,
-             self.bo_mean, self.bo_var,
-             self.bo_score) = pkl_data.load_bo_data()
+            self.n_selection = pkl_data.load_n_selection()
+            self.id_select_hist = pkl_data.load_id_select_hist()
+            self.init_dscrpt_data = pkl_data.load_init_dscrpt_data()
+            self.opt_dscrpt_data = pkl_data.load_opt_dscrpt_data()
+            self.bo_mean = pkl_data.load_bo_mean()
+            self.bo_var = pkl_data.load_bo_var()
+            self.bo_score = pkl_data.load_bo_score()
         elif rin.rin.algo in ['EA', 'EA-vc']:
-            (self.gen, self.id_queueing,
-             self.id_running) = pkl_data.load_ea_id()
+            self.gen = pkl_data.load_gen()
             if rin.algo == 'EA-vc':
-                self.nat_data, self.ratio_data, self.hdist_data = pkl_data.load_ea_vc_data()
+                self.nat_data = pkl_data.load_nat_data()
+                self.ratio_data = pkl_data.load_ratio_data()
+                self.hdist_data = pkl_data.load_hdist_data()
             # do not have to load ea_data here.
             # ea_data is used only in ea_next_gen.py
 
@@ -308,8 +313,7 @@ class Ctrl_ext:
                 hdist = calc_convex_hull_2d(self.rin, self.ratio_data, ef_all, c_ids, self.gen)
                 out_hdist(self.gen, hdist, self.ratio_data)
                 self.hdist_data[self.gen] = hdist
-                ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
-                pkl_data.save_ea_vc_data(ea_vc_data)
+                pkl_data.save_hdist_data(self.hdist_data)
             logger.info(f'\nReached maxgen_ea: {self.rin.maxgen_ea}')
             os.remove('lock_cryspy')
             raise SystemExit()
@@ -326,21 +330,23 @@ class Ctrl_ext:
 
     def save_id_data(self):
         # ---------- save id_data
+        pkl_data.save_id_queueing(self.id_queueing)
+        pkl_data.save_id_running(self.id_running)
         if self.rin.algo == 'RS':
-            rs_id_data = (self.id_queueing, self.id_running)
-            pkl_data.save_rs_id(rs_id_data)
+            pass
         if self.rin.algo == 'BO':
-            bo_id_data = (self.n_selection, self.id_queueing,
-                          self.id_running, self.id_select_hist)
-            pkl_data.save_bo_id(bo_id_data)
+            pkl_data.save_n_selection(self.n_selection)
+            pkl_data.save_id_select_hist(self.id_select_hist)
         if self.rin.algo in ['EA', 'EA-vc']:
-            ea_id_data = (self.gen, self.id_queueing, self.id_running)
-            pkl_data.save_ea_id(ea_id_data)
+            pkl_data.save_gen(self.gen)
+
 
     def save_data(self):
         # ---------- save ??_data
         if self.rin.algo == 'BO':
-            bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
-                       self.bo_mean, self.bo_var, self.bo_score)
-            pkl_data.save_bo_data(bo_data)
+            pkl_data.save_init_dscrpt_data(self.init_dscrpt_data)
+            pkl_data.save_opt_dscrpt_data(self.opt_dscrpt_data)
+            pkl_data.save_bo_mean(self.bo_mean)
+            pkl_data.save_bo_var(self.bo_var)
+            pkl_data.save_bo_score(self.bo_score)
         # ea_data is used only in ea_next_gen.py

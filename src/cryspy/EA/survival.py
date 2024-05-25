@@ -24,6 +24,7 @@ def survival_fittest(fitness, struc_data, elite_struc=None, elite_fitness=None,
     ranking (list): [ID, ...]
     fit_with_elite (dict): {ID: fitness, ...} fitness + elite_fitness
     '''
+
     # ---------- initialize
     struc_with_elite = struc_data.copy()    # shallow copy to leave original data
     fit_with_elite = fitness.copy()          # shallow copy to leave original data

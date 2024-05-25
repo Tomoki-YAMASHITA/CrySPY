@@ -34,32 +34,37 @@ class Ctrl_job:
         self.init_struc_data = init_struc_data
         self.opt_struc_data = pkl_data.load_opt_struc()
         self.rslt_data = pkl_data.load_rslt()
+        self.id_queueing = pkl_data.load_id_queueing()
+        self.id_running = pkl_data.load_id_running()
         self.recheck = False
         self.logic_next = False
         # ---------- for each algorithm
         if self.rin.algo == 'RS':
-            self.id_queueing, self.id_running = pkl_data.load_rs_id()
+            pass
         elif self.rin.algo == 'BO':
-            (self.n_selection, self.id_queueing,
-             self.id_running, self.id_select_hist) = pkl_data.load_bo_id()
-            (self.init_dscrpt_data, self.opt_dscrpt_data,
-             self.bo_mean, self.bo_var, self.bo_score) = pkl_data.load_bo_data()
-            (self.init_dscrpt_data, self.opt_dscrpt_data,
-             self.bo_mean, self.bo_var,
-             self.bo_score) = pkl_data.load_bo_data()
+            self.n_selection = pkl_data.load_n_selection()
+            self.id_select_hist = pkl_data.load_id_select_hist()
+            self.init_dscrpt_data = pkl_data.load_init_dscrpt_data()
+            self.opt_dscrpt_data = pkl_data.load_opt_dscrpt_data()
+            self.bo_mean = pkl_data.load_bo_mean()
+            self.bo_var = pkl_data.load_bo_var()
+            self.bo_score = pkl_data.load_bo_score()
         elif self.rin.algo == 'LAQA':
-            (self.id_queueing, self.id_running,
-             self.id_select_hist) = pkl_data.load_laqa_id()
-            (self.tot_step_select, self.laqa_step,
-             self.laqa_struc, self.laqa_energy,
-             self.laqa_bias, self.laqa_score) = pkl_data.load_laqa_data()
+            self.id_select_hist = pkl_data.load_id_select_hist()
+            self.tot_step_select = pkl_data.load_tot_step_select()
+            self.laqa_step = pkl_data.load_laqa_step()
+            self.laqa_struc = pkl_data.load_laqa_struc()
+            self.laqa_energy = pkl_data.load_laqa_energy()
+            self.laqa_bias = pkl_data.load_laqa_bias()
+            self.laqa_score = pkl_data.load_laqa_score()
         elif self.rin.algo in ['EA', 'EA-vc']:
-            (self.gen, self.id_queueing,
-             self.id_running) = pkl_data.load_ea_id()
+            self.gen = pkl_data.load_gen()
             if self.rin.struc_mode in ['mol', 'mol_bs']:
                 self.struc_mol_id = pkl_data.load_struc_mol_id()
             if self.rin.algo == 'EA-vc':
-                self.nat_data, self.ratio_data, self.hdist_data = pkl_data.load_ea_vc_data()
+                self.nat_data = pkl_data.load_nat_data()
+                self.ratio_data = pkl_data.load_ratio_data()
+                self.hdist_data = pkl_data.load_hdist_data()
             # do not have to load ea_data here.
             # ea_data is used only in ea_next_gen.py
         # ---------- for option
@@ -130,7 +135,8 @@ class Ctrl_job:
                 raise SystemExit(1)
         # ---------- append IDs to the head of id_queueing
         self.id_queueing = list(self.rin.recalc) + self.id_queueing
-        self.save_id_data()
+        # ---------- save and update id_queueing
+        pkl_data.save_id_queueing(self.id_queueing)
         stat = io_stat.stat_read()
         io_stat.set_id(stat, 'id_queueing', self.id_queueing)
         io_stat.write_stat(stat)
@@ -143,7 +149,6 @@ class Ctrl_job:
         change_input.change_input(config, 'option', 'recalc', '')    # clear
         change_input.write_config(config)
         logger.info('Clear recalc in cryspy.in')
-
 
     def handle_job(self):
         logger.info('# ---------- job status')
@@ -281,7 +286,12 @@ class Ctrl_job:
         else:
             mv_fin(self.cid)
         # ---------- update status
-        self.update_status(operation='fin')
+        self.id_queueing, self.id_running = update_status(
+                                                self.cid,
+                                                self.id_queueing,
+                                                self.id_running,
+                                                operation='fin',
+                                            )
         # ---------- recheck
         self.recheck = True
 
@@ -319,7 +329,7 @@ class Ctrl_job:
             # ------ update descriptors and non_error_id
             self.opt_dscrpt_data[self.cid] = None
         # ---------- save bo_data
-        self.save_data()
+        pkl_data.save_opt_dscrpt_data(self.opt_dscrpt_data)
 
     def ctrl_collect_laqa(self, nat):
         # ---------- flag for finish
@@ -359,7 +369,12 @@ class Ctrl_job:
         else:
             self.laqa_score[self.cid].append(-energy + tmp_laqa_bias)
         # ---------- save and out laqa data
-        self.save_data()
+        pkl_data.save_tot_step_select(self.tot_step_select)
+        pkl_data.save_laqa_step(self.laqa_step)
+        pkl_data.save_laqa_struc(self.laqa_struc)
+        pkl_data.save_laqa_energy(self.laqa_energy)
+        pkl_data.save_laqa_bias(self.laqa_bias)
+        pkl_data.save_laqa_score(self.laqa_score)
         from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
         from ..IO.out_results import out_laqa_energy, out_laqa_bias
         out_laqa_status(self.laqa_step, self.laqa_score,
@@ -424,21 +439,34 @@ class Ctrl_job:
         else:
             # -- prepare input files for structure optimization
             if self.rin.kpt_flag:
-                self.kpt_data = select_code.next_struc(self.rin, next_struc_data,
-                                                       self.cid,
-                                                       self.work_path,
-                                                       nat,
-                                                       self.kpt_data)
+                self.kpt_data = select_code.next_struc(
+                                    self.rin,
+                                    next_struc_data,
+                                    self.cid,
+                                    self.work_path,
+                                    nat,
+                                    self.kpt_data,
+                                )
             else:
-                select_code.next_struc(self.rin, next_struc_data, self.cid,
-                                       self.work_path, nat)
+                select_code.next_struc(
+                    self.rin,
+                    next_struc_data,
+                    self.cid,
+                    self.work_path,
+                    nat,
+                )
             # -- prepare jobfile
             prepare_jobfile(self.rin, self.cid, self.work_path)
             # -- submit
             submit_next_struc(self.rin, self.cid, self.work_path)
             logger.info(f'ID {self.cid:>6}: submit job, Stage 1')
             # -- update status
-            self.update_status(operation='submit')
+            self.id_queueing, self.id_running = update_status(
+                                                    self.cid,
+                                                    self.id_queueing,
+                                                    self.id_running,
+                                                    operation='submit'
+                                                )
 
     def ctrl_skip(self):
         # ---------- log
@@ -480,11 +508,9 @@ class Ctrl_job:
                                             energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
-            # ------ update descriptors
+            # ------ update and save descriptors
             self.opt_dscrpt_data[self.cid] = None
-            # ------ save
-            self.save_id_data()
-            self.save_data()
+            pkl_data.save_opt_dscrpt_data(self.opt_dscrpt_data)
         # ---------- LAQA
         elif self.rin.algo == 'LAQA':
             # ------ save rslt
@@ -500,7 +526,12 @@ class Ctrl_job:
             self.laqa_bias[self.cid].append(np.nan)
             self.laqa_score[self.cid].append(-float('inf'))
             # ---------- save and out laqa data
-            self.save_data()
+            #pkl_data.save_tot_step_select(self.tot_step_select)    # not used here
+            pkl_data.save_laqa_step(self.laqa_step)
+            pkl_data.save_laqa_struc(self.laqa_struc)
+            pkl_data.save_laqa_energy(self.laqa_energy)
+            pkl_data.save_laqa_bias(self.laqa_bias)
+            pkl_data.save_laqa_score(self.laqa_score)
             from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
             from ..IO.out_results import out_laqa_energy, out_laqa_bias
             out_laqa_status(self.laqa_step, self.laqa_score,
@@ -528,31 +559,14 @@ class Ctrl_job:
         # ---------- move to fin
         mv_fin(self.cid)
         # ---------- update status
-        self.update_status(operation='fin')
+        self.id_queueing, self.id_running = update_status(
+                                                self.cid,
+                                                self.id_queueing,
+                                                self.id_running,
+                                                operation='fin',
+                                            )
         # ---------- recheck
         self.recheck = True
-
-    def update_status(self, operation):
-        # ---------- read stat
-        stat = io_stat.stat_read()
-        # ---------- update status
-        if operation == 'submit':
-            self.id_running.append(self.cid)
-            self.id_queueing.remove(self.cid)
-            io_stat.set_stage(stat, self.cid, 1)
-        elif operation == 'fin':
-            if self.cid in self.id_queueing:
-                self.id_queueing.remove(self.cid)
-            if self.cid in self.id_running:
-                self.id_running.remove(self.cid)
-            io_stat.clean_id(stat, self.cid)
-        else:
-            logger.error('operation is wrong')
-            raise SystemExit(1)
-        io_stat.set_id(stat, 'id_queueing', self.id_queueing)
-        io_stat.write_stat(stat)
-        # ---------- save id_data
-        self.save_id_data()
 
     def next_sg(self, noprint=False):
         '''
@@ -563,7 +577,22 @@ class Ctrl_job:
         if self.rin.algo == 'LAQA':
             self.next_select_LAQA()
         if self.rin.algo in ['EA', 'EA-vc']:
-            self.next_gen_EA()
+            if self.rin.algo == 'EA-vc':
+                ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
+            else:
+                ea_vc_data = None
+            next_gen_EA(
+                self.rin,
+                self.id_queueing,
+                self.id_running,
+                self.gen,
+                self.go_next_sg,
+                self.init_struc_data,
+                self.opt_struc_data,
+                self.rslt_data,
+                ea_vc_data=ea_vc_data,
+                struc_mol_id=None,
+            )
 
     def next_select_BO(self, noprint=False):
         # ---------- log
@@ -618,86 +647,10 @@ class Ctrl_job:
         from ..LAQA import laqa_next_selection
         laqa_next_selection.next_selection(self.rin, laqa_id_data, laqa_data)
 
-    def next_gen_EA(self):
-        # ---------- log
-        logger.info(f'Done generation {self.gen}')
-        # ---------- flag for next selection or generation
-        if not self.go_next_sg:
-            logger.info('\nEA is ready')
-            os.remove('lock_cryspy')
-            raise SystemExit()
-        # ---------- check point 3
-        if self.rin.stop_chkpt == 3:
-            logger.info('\nStop at check point 3: EA is ready')
-            os.remove('lock_cryspy')
-            raise SystemExit()
-        # ---------- maxgen_ea
-        if 0 < self.rin.maxgen_ea <= self.gen:
-            if self.rin.algo == 'EA-vc':
-                # ------ when gen reaches maxgen_ea,  next generation is not created
-                #        so convex hull is calculated here
-                #        update only convex hull and hdist, not elite_struc and elite_fitness
-                c_rslt = self.rslt_data[self.rslt_data['Gen'] == self.gen]
-                c_ids = c_rslt.index.values    # current IDs [array]
-                ef_all = self.rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
-                from ..EA.calc_hull import calc_convex_hull_2d
-                hdist = calc_convex_hull_2d(self.rin, self.ratio_data, ef_all, c_ids, self.gen)
-                out_hdist(self.gen, hdist, self.ratio_data)
-                self.hdist_data[self.gen] = hdist
-                ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
-                pkl_data.save_ea_vc_data(ea_vc_data)
-            logger.info(f'\nReached maxgen_ea: {self.rin.maxgen_ea}')
-            os.remove('lock_cryspy')
-            raise SystemExit()
-        # ---------- EA
-        backup_cryspy()
-        ea_id_data = (self.gen, self.id_queueing, self.id_running)
-        if self.rin.struc_mode in ['mol', 'mol_bs']:
-            struc_mol_id = self.struc_mol_id
-        else:
-            struc_mol_id = None
-        if self.rin.algo == 'EA-vc':
-            ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
-        else:
-            ea_vc_data = None
-        from ..EA import ea_next_gen
-        ea_next_gen.next_gen(self.rin, self.init_struc_data, struc_mol_id,
-                             self.opt_struc_data, self.rslt_data, ea_id_data, ea_vc_data)
 
-    def save_id_data(self):
-        # ---------- save id_data
-        if self.rin.algo == 'RS':
-            rs_id_data = (self.id_queueing, self.id_running)
-            pkl_data.save_rs_id(rs_id_data)
-        if self.rin.algo == 'BO':
-            bo_id_data = (self.n_selection, self.id_queueing,
-                          self.id_running, self.id_select_hist)
-            pkl_data.save_bo_id(bo_id_data)
-        if self.rin.algo == 'LAQA':
-            laqa_id_data = (self.id_queueing, self.id_running,
-                            self.id_select_hist)
-            pkl_data.save_laqa_id(laqa_id_data)
-        if self.rin.algo in ['EA', 'EA-vc']:
-            ea_id_data = (self.gen, self.id_queueing, self.id_running)
-            pkl_data.save_ea_id(ea_id_data)
-
-    def save_data(self):
-        # ---------- save ??_data
-        if self.rin.algo == 'BO':
-            bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
-                       self.bo_mean, self.bo_var, self.bo_score)
-            pkl_data.save_bo_data(bo_data)
-        if self.rin.algo == 'LAQA':
-            laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,
-                         self.laqa_energy, self.laqa_bias, self.laqa_score)
-            pkl_data.save_laqa_data(laqa_data)
-        # ea_data is used only in ea_next_gen.py
-        # ea_vc_data is used in this class, but it is not updated.
-        # ea_vc_data is saved in ea_next_gen.py
-
-
-
-
+#
+#  End Ctrl_job class
+#
 
 
 def prepare_jobfile(rin, cid, work_path):
@@ -732,8 +685,21 @@ def submit_next_struc(rin, cid, work_path, wait=False):
     os.chdir('../../')    # go back to csp root dir
 
 
-def regist_opt(rin, cid, work_path, init_struc_data, opt_struc_data, rslt_data,
-               opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=None):
+def regist_opt(
+        rin,
+        cid,
+        work_path,
+        init_struc_data,
+        opt_struc_data,
+        rslt_data,
+        opt_struc,
+        energy,
+        magmom,
+        check_opt,
+        ef=None,
+        n_selection=None,
+        gen=None
+    ):
     '''
     Common part in ctrl_collect_*
     '''
@@ -798,6 +764,36 @@ def regist_opt(rin, cid, work_path, init_struc_data, opt_struc_data, rslt_data,
     return opt_struc_data, rslt_data
 
 
+def update_status(cid, id_queueing, id_running, operation):
+
+    # ---------- read stat
+    stat = io_stat.stat_read()
+
+    # ---------- update status
+    if operation == 'submit':
+        id_running.append(cid)
+        id_queueing.remove(cid)
+        io_stat.set_stage(stat, cid, 1)
+    elif operation == 'fin':
+        if cid in id_queueing:
+            id_queueing.remove(cid)
+        if cid in id_running:
+            id_running.remove(cid)
+        io_stat.clean_id(stat, cid)
+    else:
+        logger.error('operation is wrong')
+        raise SystemExit(1)
+    io_stat.set_id(stat, 'id_queueing', id_queueing)
+    io_stat.write_stat(stat)
+
+    # ---------- save id_queueing and id_running
+    pkl_data.save_id_queueing(id_queueing)
+    pkl_data.save_id_running(id_running)
+
+    # ---------- return
+    return id_queueing, id_running
+
+
 def mv_fin(cid):
     if not os.path.isdir(f'work/fin/{cid}'):
         shutil.move(f'work/{cid}', 'work/fin/')
@@ -807,3 +803,66 @@ def mv_fin(cid):
                 shutil.move(f'work/{cid}',
                             f'work/fin/{cid}_{i}')
                 break
+
+
+def next_gen_EA(
+        rin,
+        id_queueing,
+        id_running,
+        gen,
+        go_next_sg,
+        init_struc_data,
+        opt_struc_data,
+        rslt_data,
+        ea_vc_data=None,
+        struc_mol_id=None,
+    ):
+
+    # ---------- log
+    logger.info(f'Done generation {gen}')
+
+    # ---------- flag for next selection or generation
+    if not go_next_sg:
+        logger.info('\nEA is ready')
+        os.remove('lock_cryspy')
+        raise SystemExit()
+
+    # ---------- check point 3
+    if rin.stop_chkpt == 3:
+        logger.info('\nStop at check point 3: EA is ready')
+        os.remove('lock_cryspy')
+        raise SystemExit()
+
+    # ---------- maxgen_ea
+    if 0 < rin.maxgen_ea <= gen:
+        if rin.algo == 'EA-vc':
+            # ------ when gen reaches maxgen_ea,  next generation is not created
+            #        so convex hull is calculated here
+            #        update only convex hull and hdist, not elite_struc and elite_fitness
+            c_rslt = rslt_data[rslt_data['Gen'] == gen]
+            c_ids = c_rslt.index.values    # current IDs [array]
+            ef_all = rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
+            from ..EA.calc_hull import calc_convex_hull_2d
+            nat_data, ratio_data, hdist_data = ea_vc_data
+            hdist = calc_convex_hull_2d(rin, ratio_data, ef_all, c_ids, gen)
+            out_hdist(gen, hdist, ratio_data)
+            hdist_data[gen] = hdist
+            pkl_data.save_hdist_data(hdist_data)
+        logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
+        os.remove('lock_cryspy')
+        raise SystemExit()
+
+    # ---------- EA
+    backup_cryspy()
+    from ..EA import ea_next_gen
+    ea_next_gen.next_gen(
+        rin,
+        id_queueing,
+        id_running,
+        gen,
+        init_struc_data,
+        opt_struc_data,
+        rslt_data,
+        ea_vc_data,
+        struc_mol_id,
+    )

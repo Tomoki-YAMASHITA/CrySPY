@@ -90,7 +90,7 @@ def draw_convex_hull_2d(rin, vpoints, ratio_data, ef_all, c_ids, gen):
 
     # ---------- lim
     min_ef = min(ef_all.values())
-    ymin = min_ef * 1.1 if min_ef < -0.01 else -0.01
+    ymin = min_ef - 0.01 if min_ef < 0 else -0.01
     ax.set_ylim(ymin, 0.05)
 
     # ---------- plot ef_all

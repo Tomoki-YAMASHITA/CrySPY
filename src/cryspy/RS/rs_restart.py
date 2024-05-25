@@ -3,7 +3,7 @@ from ..IO import io_stat, pkl_data
 
 def restart(rin, prev_nstruc):
     # ---------- load rs data
-    id_queueing, id_running = pkl_data.load_rs_id()
+    id_queueing = pkl_data.load_id_queueing()
 
     # ---------- append id_queueing
     id_queueing.extend([i for i in range(prev_nstruc, rin.tot_struc)])
@@ -14,8 +14,7 @@ def restart(rin, prev_nstruc):
     io_stat.write_stat(stat)
 
     # ---------- save
-    rs_id_data = (id_queueing, id_running)
-    pkl_data.save_rs_id(rs_id_data)
+    pkl_data.save_id_queueing(id_queueing)
 
     # ---------- ext
     if rin.calc_code == 'ext':

@@ -7,9 +7,12 @@ logger = getLogger('cryspy')
 
 def restart(rin, prev_nstruc):
     # ---------- load laqa data
-    id_queueing, id_running, id_select_hist = pkl_data.load_laqa_id()
-    tot_step_select, laqa_step, laqa_struc, \
-        laqa_energy, laqa_bias, laqa_score = pkl_data.load_laqa_data()
+    id_queueing = pkl_data.load_id_queueing()
+    laqa_step = pkl_data.load_laqa_step()
+    laqa_struc = pkl_data.load_laqa_struc()
+    laqa_energy = pkl_data.load_laqa_energy()
+    laqa_bias = pkl_data.load_laqa_bias()
+    laqa_score = pkl_data.load_laqa_score()
 
     # ---------- initialize for appended ID
     for i in range(prev_nstruc, rin.tot_struc):
@@ -27,8 +30,9 @@ def restart(rin, prev_nstruc):
     io_stat.write_stat(stat)
 
     # ---------- save for LAQA
-    laqa_id_data = (id_queueing, id_running, id_select_hist)
-    pkl_data.save_laqa_id(laqa_id_data)
-    laqa_data = (tot_step_select, laqa_step, laqa_struc,
-                 laqa_energy, laqa_bias, laqa_score)
-    pkl_data.save_laqa_data(laqa_data)
+    pkl_data.save_id_queueing(id_queueing)
+    pkl_data.save_laqa_step(laqa_step)
+    pkl_data.save_laqa_struc(laqa_struc)
+    pkl_data.save_laqa_energy(laqa_energy)
+    pkl_data.save_laqa_bias(laqa_bias)
+    pkl_data.save_laqa_score(laqa_score)

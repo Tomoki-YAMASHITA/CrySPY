@@ -105,23 +105,27 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
         else:
             bo_score[n_selection] = dict(zip(remaining_id, cryspy_score))
         # ------ out
-        out_results.out_bo_common('BO_mean', bo_mean, rin.tot_struc)
-        out_results.out_bo_common('BO_var', bo_var, rin.tot_struc)
-        out_results.out_bo_common('BO_score', bo_score, rin.tot_struc)
+        out_results.out_bo_common('bo_mean', bo_mean, rin.tot_struc)
+        out_results.out_bo_common('bo_var', bo_var, rin.tot_struc)
+        out_results.out_bo_common('bo_score', bo_score, rin.tot_struc)
         out_results.out_bo_status(bo_mean, bo_var, bo_score,
                                   n_selection)
         # ------ save bo_data
-        bo_data = (init_dscrpt_data, opt_dscrpt_data,
-                   bo_mean, bo_var, bo_score)
-        pkl_data.save_bo_data(bo_data)
+        pkl_data.save_init_dscrpt_data(init_dscrpt_data)
+        pkl_data.save_opt_dscrpt_data(opt_dscrpt_data)
+        pkl_data.save_bo_mean(bo_mean)
+        pkl_data.save_bo_var(bo_var)
+        pkl_data.save_bo_score(bo_score)
 
     # ---------- id_select_hist
     id_select_hist.append(id_queueing[:])    # append shallow copy
     out_results.out_bo_id_hist(id_select_hist)
 
     # ---------- save
-    bo_id_data = (n_selection, id_queueing, id_running, id_select_hist)
-    pkl_data.save_bo_id(bo_id_data)
+    pkl_data.save_id_queueing(id_queueing)
+    # pkl_data.save_id_running(id_running)    # not used here
+    pkl_data.save_n_selection(n_selection)
+    pkl_data.save_id_select_hist(id_select_hist)
 
     # ---------- status
     stat = io_stat.stat_read()

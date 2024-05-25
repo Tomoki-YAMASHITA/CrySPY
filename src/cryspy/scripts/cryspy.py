@@ -40,7 +40,13 @@ def main():
         mpi_size = 1
 
     # ---------- logger
-    set_logger(args.noprint, args.debug)
+    set_logger(
+        noprint=args.noprint,
+        debug=args.debug,
+        logfile='log_cryspy',
+        errfile='err_cryspy',
+        debugfile='debug_cryspy',
+    )
     logger = getLogger('cryspy')
 
     # ---------- backup option

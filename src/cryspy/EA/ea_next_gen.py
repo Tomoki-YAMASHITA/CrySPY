@@ -15,14 +15,17 @@ from ..IO.out_results import out_ea_info, out_ea_origin, out_hdist
 logger = getLogger('cryspy')
 
 
-def next_gen(rin, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_id_data, ea_vc_data):
-    '''
-    Input:
-        struc_mol_id: struc_mol_id if rin.struc_mode in ['mol', 'mol_bs'], else None
-        ea_vc_data: ea_vc_data if rin.algo == 'EA-vc', else None
-    '''
-    # ---------- ea_id_data
-    gen, id_queueing, id_running = ea_id_data
+def next_gen(
+        rin,
+        id_queueing,
+        id_running,
+        gen,
+        init_struc_data,
+        opt_struc_data,
+        rslt_data,
+        ea_vc_data=None,
+        struc_mol_id=None,
+    ):
 
     # ---------- log
     logger.info('# ---------- Evolutionary algorithm')
@@ -35,21 +38,24 @@ def next_gen(rin, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_i
     c_ids = c_rslt.index.values    # current IDs [array]
 
     # ---------- load ea_data. ea_data is used only in this module
-    elite_struc, elite_fitness, ea_info, ea_origin = pkl_data.load_ea_data()
+    elite_struc = pkl_data.load_elite_struc()
+    elite_fitness = pkl_data.load_elite_fitness()
+    ea_info = pkl_data.load_ea_info()
+    ea_origin = pkl_data.load_ea_origin()
 
     # ---------- EA-vc
     if rin.algo == 'EA-vc':
         # ------ data for EA-vc
         ef_all = rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
-        nat_data, ratio_data, hdist_data = pkl_data.load_ea_vc_data()
+        nat_data, ratio_data, hdist_data = ea_vc_data
 
         # ------ calc convex hull and hull distance
         hdist = calc_convex_hull_2d(rin, ratio_data, ef_all, c_ids, gen)
         # -- update hdist
         out_hdist(gen, hdist, ratio_data)
         hdist_data[gen] = hdist
-        ea_vc_data = (nat_data, ratio_data, hdist_data)
-        pkl_data.save_ea_vc_data(ea_vc_data)
+        ea_vc_data = (nat_data, ratio_data, hdist_data)    # to use later
+        pkl_data.save_hdist_data(hdist_data)
 
         # ------ fitness (= hull distance) of current generation
         c_fitness = {cid: hdist[cid] for cid in c_ids}
@@ -65,10 +71,16 @@ def next_gen(rin, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_i
     # ---------- survival_fittest
     logger.info('# ------ survival of the fittest')
     c_struc_data = {cid: opt_struc_data[cid] for cid in c_ids}
-    ranking, fit_with_elite, struc_wit_elite = survival_fittest(c_fitness, c_struc_data,
-                                               elite_struc, elite_fitness,
-                                               rin.n_fittest, rin.fit_reverse,
-                                               rin.emax_ea, rin.emin_ea)
+    ranking, fit_with_elite, struc_wit_elite = survival_fittest(
+                                                    c_fitness,
+                                                    c_struc_data,
+                                                    elite_struc,
+                                                    elite_fitness,
+                                                    rin.n_fittest,
+                                                    rin.fit_reverse,
+                                                    rin.emax_ea,
+                                                    rin.emin_ea,
+                                                )
     logger.info('ranking without duplication (including elite):')
     for cid in ranking:
             logger.info(f'Structure ID {cid:>6}, fitness: {fit_with_elite[cid]:>10.5f}')
@@ -76,9 +88,15 @@ def next_gen(rin, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_i
     # ---------- generate children by EA
     logger.info('# ------ Generate children')
     # init_struc_data will be updated and  saved in child_gen function
-    init_struc_data, parents, operation = child_gen(rin, ranking, fit_with_elite,
-                                                    struc_wit_elite, init_struc_data,
-                                                    struc_mol_id, ea_vc_data)
+    init_struc_data, parents, operation = child_gen(
+                                                rin,
+                                                ranking,
+                                                fit_with_elite,
+                                                struc_wit_elite,
+                                                init_struc_data,
+                                                struc_mol_id,
+                                                ea_vc_data,
+                                            )
 
     # ---------- select elite for next generation
     if rin.n_elite > 0:
@@ -169,12 +187,15 @@ def next_gen(rin, init_struc_data, struc_mol_id, opt_struc_data, rslt_data, ea_i
     out_ea_origin(ea_origin)
 
     # ---------- save ea_id_data
-    ea_id_data = (gen, id_queueing, id_running)
-    pkl_data.save_ea_id(ea_id_data)
+    pkl_data.save_id_queueing(id_queueing)
+    pkl_data.save_id_running(id_running)
+    pkl_data.save_gen(gen)
 
     # ---------- save ea_data
-    ea_data = (elite_struc, elite_fitness, ea_info, ea_origin)
-    pkl_data.save_ea_data(ea_data)
+    pkl_data.save_elite_struc(elite_struc)
+    pkl_data.save_elite_fitness(elite_fitness)
+    pkl_data.save_ea_info(ea_info)
+    pkl_data.save_ea_origin(ea_origin)
 
     # ---------- change the value of tot_struc
     next_tot = rin.tot_struc + rin.n_pop

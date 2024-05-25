@@ -29,9 +29,16 @@ def initialize(rin, init_struc_data, rslt_data):
 
     # ---------- rslt_data, add and sort
     rslt_data['Select'] = pd.Series(dtype=int)
-    rslt_data = rslt_data[['Select', 'Spg_num',
-                           'Spg_sym', 'Spg_num_opt',
-                           'Spg_sym_opt', 'E_eV_atom', 'Magmom', 'Opt']]
+    rslt_data = rslt_data[[
+                    'Select',
+                    'Spg_num',
+                    'Spg_sym',
+                    'Spg_num_opt',
+                    'Spg_sym_opt',
+                    'E_eV_atom',
+                    'Magmom',
+                    'Opt',
+                ]]
     pkl_data.save_rslt(rslt_data)
 
     # ---------- random select
@@ -62,10 +69,15 @@ def initialize(rin, init_struc_data, rslt_data):
     opt_dscrpt_data = {}  # initialize in dict
 
     # ---------- save for BO
-    bo_id_data = (n_selection, id_queueing, id_running, id_select_hist)
-    pkl_data.save_bo_id(bo_id_data)
-    bo_data = (init_dscrpt_data, opt_dscrpt_data, bo_mean, bo_var, bo_score)
-    pkl_data.save_bo_data(bo_data)
+    pkl_data.save_id_queueing(id_queueing)
+    pkl_data.save_id_running(id_running)
+    pkl_data.save_n_selection(n_selection)
+    pkl_data.save_id_select_hist(id_select_hist)
+    pkl_data.save_init_dscrpt_data(init_dscrpt_data)
+    pkl_data.save_opt_dscrpt_data(opt_dscrpt_data)
+    pkl_data.save_bo_mean(bo_mean)
+    pkl_data.save_bo_var(bo_var)
+    pkl_data.save_bo_score(bo_score)
 
     # ---------- status
     stat = io_stat.stat_read()

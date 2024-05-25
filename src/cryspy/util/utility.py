@@ -13,10 +13,10 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.3.0b4'
+    return '1.3.0b5'
 
 
-def set_logger(noprint=False, debug=False):
+def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
     # ---------- level and formatter
     logger.setLevel(DEBUG)
     fmt = Formatter("[%(asctime)s][%(module)s][%(levelname)s] %(message)s")
@@ -32,23 +32,26 @@ def set_logger(noprint=False, debug=False):
         logger.addHandler(shandler)
 
     # ---------- file handler for log (level == INFO)
-    fhandler = FileHandler('./log_cryspy')
-    fhandler.setFormatter(fmt)
-    fhandler.addFilter(lambda record: record.levelno == INFO)
-    logger.addHandler(fhandler)
+    if logfile is not None:
+        fhandler = FileHandler(logfile)
+        fhandler.setFormatter(fmt)
+        fhandler.addFilter(lambda record: record.levelno == INFO)
+        logger.addHandler(fhandler)
 
     # ---------- file handler for error (WARNING <= level)
-    ehandler = FileHandler('./err_cryspy')
-    ehandler.setFormatter(fmt)
-    ehandler.setLevel(WARNING)
-    logger.addHandler(ehandler)
+    if errfile is not None:
+        ehandler = FileHandler(errfile)
+        ehandler.setFormatter(fmt)
+        ehandler.setLevel(WARNING)
+        logger.addHandler(ehandler)
 
     # ---------- file handler for debug (level == DEBUG)
     if debug:
-        dhandler = FileHandler('./debug_cryspy')
-        dhandler.setFormatter(fmt)
-        dhandler.addFilter(lambda record: record.levelno == DEBUG)
-        logger.addHandler(dhandler)
+        if debugfile is not None:
+            dhandler = FileHandler(debugfile)
+            dhandler.setFormatter(fmt)
+            dhandler.addFilter(lambda record: record.levelno == DEBUG)
+            logger.addHandler(dhandler)
 
 
 def check_fwpath(fwpath):
