@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.3.0b5'
+    return '1.3.0b6'
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -68,22 +68,6 @@ def check_fwpath(fwpath):
             logger.error(f'There is no find_wy program in {fwpath}')
             raise SystemExit(1)
     return fwpath
-
-
-def check_fppath(fppath):
-    if fppath is None:
-        # ---------- check if find_wy is in your path
-        sr = subprocess.run(['which', 'cal_fingerprint'], capture_output=True, text=True)
-        fppath = sr.stdout.strip()    # to delete \n
-        if fppath == '':
-            logger.error('There is no cal_fingerprint program in your path')
-            raise SystemExit(1)
-    else:
-        # ---------- check fppath written in cryspy.in
-        if not os.path.isfile(fppath):
-            logger.error(f'There is no cal_fingerprint program in {fppath}')
-            raise SystemExit(1)
-    return fppath
 
 
 def backup_cryspy():

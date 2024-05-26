@@ -1,7 +1,6 @@
 from logging import getLogger
 
-from ..util.utility import check_fppath
-from ..calc_dscrpt.FP.calc_FP import Calc_FP
+from ..calc_dscrpt.FP.calc_FP import calc_fp
 
 
 logger = getLogger('cryspy')
@@ -10,14 +9,11 @@ logger = getLogger('cryspy')
 def select_descriptor(rin, struc_data):
     # ---------- fingerprint
     if rin.dscrpt == 'FP':
-        logger.info('Calculate descriptors: FingerPrint')
-        # ------ check cal_fingerprint executable file
-        fppath = check_fppath(rin.fppath)
+        logger.info('Calculate descriptors: FingerPrint by Valle and Oganov')
         # ------ calc fingerprint
-        cfp = Calc_FP(struc_data, rin.fp_rmin, rin.fp_rmax,
-                      rin.fp_npoints, rin.fp_sigma, fppath)
-        cfp.calc()
-        return cfp.descriptors
+        descriptors = calc_fp(struc_data, rin.atype, rin.fp_rmax,
+                              rin.fp_npoints, rin.fp_sigma)
+        return descriptors
     else:
         logger.error('Now FP only')
         raise SystemExit(1)

@@ -1,86 +1,41 @@
 '''
-Calculate Fingerprint
+Calculate fingerprint by Valle and Oganov using DScribe
 '''
 
-from logging import getLogger
-import os
-import subprocess
-
-import numpy as np
+from dscribe.descriptors import ValleOganov
+from pymatgen.io.ase import AseAtomsAdaptor
 
 
-logger = getLogger('cryspy')
-
-class Calc_FP:
+def calc_fp(struc_data, atype, fp_rmax, fp_npoints, fp_sigma):
     '''
-    calculate fingerprint using cal_fingerprint program
-
     # ---------- args
-    struc_data (dict or list): structure data
-        You may include None in struc_data
-        if type of struc_data is list,
-            struc_data is converted into dict type
-            as {0: struc_data_0, 1: struc_data_1, ...}
-
-    # ---------- instance methods
-    self.calc(self)
-
-    # ---------- comment
-    descriptor data in self.descriptors
+    struc_data (dict): {ID: pymatgen Structure, ...}
+    atype (tuple): e.g. ('Na', 'Cl')
+    fp_rmax (float): cutoff radius
+    fp_npoints (int): number of points
+    fp_sigma (float): standard deviation in Gaussian smearing
     '''
 
-    def __init__(self, struc_data, fp_rmin=0.5, fp_rmax=5.0, fp_npoints=10,
-                 fp_sigma=1.0, fppath='./cal_fingerprint'):
-        # ---------- check args
-        # ------ struc_data
-        if type(struc_data) is dict:
-            pass
-        elif type(struc_data) is list:
-            # -- convert to dict
-            struc_data = {i: struc_data[i] for i in range(len(struc_data))}
-        else:
-            logger.error('Type of struc_data is wrong')
-            raise SystemExit(1)
-        self.struc_data = struc_data
-        # ------ fp
-        self.fp_rmin = fp_rmin
-        self.fp_rmax = fp_rmax
-        self.fp_sigma = fp_sigma
-        self.fp_npoints = fp_npoints
-        self.fppath = os.path.abspath(fppath)
+    # ---------- initialize
+    descriptors = {}
 
-    def calc(self):
-        '''
-        calculate fingerprint
+    # ---------- calc fingerprint
+    for cid, struc in struc_data.items():
+        atoms = AseAtomsAdaptor.get_atoms(struc)
+        descriptors[cid] = calc_fp_describe(atoms, atype, fp_rmax, fp_npoints, fp_sigma)
 
-        # ---------- return
-        self.descriptors (dict): descriptor data
-        '''
-        # ---------- cd temporary directory
-        if not os.path.isdir('tmp_calc_FP'):
-            os.mkdir('tmp_calc_FP')
-        os.chdir('tmp_calc_FP')
-        # ---------- calc fingerprint
-        self.descriptors = {}
-        for cid, struc in self.struc_data.items():
-            # ------ output POSCAR
-            struc.to(fmt='poscar', filename='POSCAR')
-            if not os.path.isfile('POSCAR'):
-                logger.error('No POSCAR file')
-                raise SystemExit(1)
-            # ------ run cal_fingerprint
-            with open('log_fingerprint', 'w') as logf:
-                subprocess.call([self.fppath, 'POSCAR',
-                                 '-rmin', f'{self.fp_rmin}',
-                                 '-rmax', f'{self.fp_rmax}',
-                                 '-npoints', f'{self.fp_npoints}',
-                                 '-sigma', f'{self.fp_sigma}'],
-                                stdout=logf, stderr=logf)
-            fp = np.loadtxt('feature_ffpf.dat')
-            # ------ mv xxx --> fin_xxx
-            os.rename('POSCAR', 'fin_POSCAR')
-            os.rename('feature_ffpf.dat', 'fin_feature_ffpf.dat')
-            # ------ fp --> descriptors
-            self.descriptors[cid] = fp
-        # ---------- go back to ..
-        os.chdir('../')
+    # ---------- return
+    return descriptors
+
+
+
+def calc_fp_describe(atoms, atype, r_cut, n, sigma, function='distance'):
+    vo = ValleOganov(
+        species=atype,
+        function=function,
+        sigma=sigma,
+        n=n,
+        r_cut=r_cut,
+    )
+    vo_fp = vo.create(atoms)    # np.array
+    return vo_fp

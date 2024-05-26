@@ -72,7 +72,6 @@ class ReadInput:
     num_rand_basis: int = field(default=None)
     cdev: float = field(default=None)
     dscrpt: str = field(default=None)
-    fppath: str = field(default=None)
     fp_rmin: float = field(default=None)
     fp_rmax: float = field(default=None)
     fp_npoints: int = field(default=None)
@@ -544,27 +543,18 @@ class ReadInput:
         self.dscrpt = self.config.get('BO', 'dscrpt')
         # ---------- FP
         if self.dscrpt == 'FP':
-            # ------ fppath
+            # ------ ValleOganov
             try:
-                self.fppath = self.config.get('BO', 'fppath')
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                self.fppath = None
-            # -- check cal_fingerprint executable file
-            self.fppath = utility.check_fppath(self.fppath)
-            # ------ fp_rmin
-            try:
-                self.fp_rmin = self.config.getfloat('BO', 'fp_rmin')
-            except configparser.NoOptionError:
-                self.self.fp_rmin = 0.5
-            if self.fp_rmin < 0.0:
-                raise ValueError('fp_rmin < 0, check fp_rmin')
+                from dscribe.descriptors import ValleOganov
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError('DScribe is required for FP. --> pip3 install dscribe')
             # ------ fp_rmax
             try:
                 self.fp_rmax = self.config.getfloat('BO', 'fp_rmax')
             except configparser.NoOptionError:
-                self.fp_rmax = 5.0
-            if self.fp_rmax < self.fp_rmin:
-                raise ValueError('fp_rmax < fp_rmin, check fp_rmin and fp_rmax')
+                self.fp_rmax = 8.0
+            if self.fp_rmax < 0:
+                raise ValueError('fp_rmax < 0, check fp_rmin and fp_rmax')
             # ------ fp_npoints
             try:
                 self.fp_npoints = self.config.getint('BO', 'fp_npoints')
@@ -576,7 +566,7 @@ class ReadInput:
             try:
                 self.fp_sigma = self.config.getfloat('BO', 'fp_sigma')
             except configparser.NoOptionError:
-                self.fp_sigma = 1.0
+                self.fp_sigma = 0.7
             if self.fp_sigma < 0:
                 raise ValueError('fp_sigma < 0, check fp_sigma')
         else:
