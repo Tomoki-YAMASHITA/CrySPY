@@ -10,10 +10,20 @@ from ...util.struc_util import sort_by_atype, sort_by_atype_mol, check_distance,
 logger = getLogger('cryspy')
 
 
-def gen_strain(atype, mindist, struc_data, sp, n_strain,
-                  id_start=None, symprec=0.01,
-                  sigma_st=0.5, maxcnt_ea=50,
-                  struc_mol_id=None, molecular=False, protect_mol_struc=True):
+def gen_strain(
+        atype,
+        mindist,
+        struc_data,
+        sp,
+        n_strain,
+        id_start=None,
+        symprec=0.01,
+        sigma_st=0.5,
+        maxcnt_ea=50,
+        struc_mol_id=None,
+        molecular=False,
+        protect_mol_struc=True,
+    ):
     '''
 
         tuple may be replaced by list

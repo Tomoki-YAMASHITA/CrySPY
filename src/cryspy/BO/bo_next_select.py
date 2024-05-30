@@ -4,8 +4,8 @@ from logging import getLogger
 import os
 
 import numpy as np
+import physbo
 
-from .combo_cryspy import Policy_cryspy
 from ..IO import io_stat, out_results, pkl_data
 
 
@@ -77,9 +77,12 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
                 descriptors.append(opt_dscrpt_data[i])
             else:
                 # -- not yet
-                if i in rin.manual_select_bo:
-                    # remove manualy selected IDs not to select them
-                    non_error_id.remove(i)
+                if rin.manual_select_bo is not None:
+                    if i in rin.manual_select_bo:
+                        # remove manualy selected IDs not to select them
+                        non_error_id.remove(i)
+                    else:
+                        descriptors.append(init_dscrpt_data[i])
                 else:
                     descriptors.append(init_dscrpt_data[i])
         # ------ targets
@@ -92,6 +95,13 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
         actions, cryspy_mean, cryspy_var, cryspy_score = _bayes_opt(
             s_act, descriptors, targets, nselect,
             rin.score, rin.cdev, rin.num_rand_basis, noprint)
+        # t_act, t_mean, t_var, t_score = _bayes_opt2(
+        #     s_act, descriptors, targets, nselect,
+        #     rin.score, rin.cdev, rin.num_rand_basis, noprint)
+        # logger.debug(f't_act: {t_act}')
+        # logger.debug(f't_mean: {t_mean}')
+        # logger.debug(f't_var: {t_var}')
+        # logger.debug(f't_score: {t_score}')
         # ------ actions --> id_queueing
         for i in actions:
             id_queueing.append(non_error_id[i])
@@ -145,50 +155,68 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
             fstat.write('out\n')
 
 
-def _bayes_opt(s_act, descriptors, targets, nselect, score,
-               cdev=0.001, num_rand_basis=0, noprint=False):
-    # ---------- start COMBO part
-    # ------ standardization
-    # X = combo.misc.centering(descriptors)
+def _bayes_opt(
+    s_act,
+    descriptors,
+    targets,
+    nselect,
+    score,
+    cdev=0.001,
+    num_rand_basis=0,
+    noprint=False,
+):
+    '''
+    # ---------- args
+    s_act (ndarray): indexes of already calculated structures. NOT structure ID.
+    descriptors (ndarray): descriptors of all structures, without error
+    targets (ndarray): energies of already calculated structures
+    nselect (int): number of structures to be selected
+    score (str): 'PI', EI' or 'TS'
+    cdev (float): cutoff value for standard deviation
+    num_rand_basis (int): number of basis functions. if 0, gaussian process
+    noprint (bool): if True, suppress print
+
+    # ---------- return
+    actions (ndarray): indexes of selected structures
+    p_mean (ndarray): mean of predicted energies
+    p_var (ndarray): variance of predicted energies
+    p_score (ndarray): value of acquisition function
+    '''
+
+    # ---------- standardization
     dev = np.std(descriptors, axis=0)
     nonzero_indx = np.where(dev > cdev)[0]
     X = (descriptors[:, nonzero_indx] - np.mean(
         descriptors[:, nonzero_indx], axis=0)) / dev[nonzero_indx]
 
-    # ------ Declaring the policy by
-    pc = Policy_cryspy(test_X=X)
+    # ---------- Declaring the policy by
+    policy = physbo.search.discrete.policy(test_X=X, initial_data=[s_act, -targets])
 
-    # ------ pick up data, already optimized
-    actions = pc.specified_search(specified_actions=s_act, max_num_probes=1)
-
-    # ------ write
-    pc.write(actions, -targets)    # minus for minimum search
-
-    # ------ log
-    out_log(pc.history)
-
-    # ------ Bayes_search
+    # ---------- Bayes search
     if noprint:
         with redirect_stdout(open(os.devnull, 'w')):
-            actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
-                max_num_probes=1,
-                num_search_each_probe=nselect,
-                score=score,
-                num_rand_basis=num_rand_basis)
+            actions = policy.bayes_search(
+                                max_num_probes=1,
+                                num_search_each_probe=nselect,
+                                simulator=None,
+                                score=score,
+                                interval=0,
+                                num_rand_basis = num_rand_basis,
+                            )
     else:
-        actions, cryspy_mean, cryspy_var, cryspy_score = pc.bayes_search_cryspy(
-            max_num_probes=1,
-            num_search_each_probe=nselect,
-            score=score,
-            num_rand_basis=num_rand_basis)
+        actions = policy.bayes_search(
+                            max_num_probes=1,
+                            num_search_each_probe=nselect,
+                            simulator=None,
+                            score=score,
+                            interval=0,
+                            num_rand_basis = num_rand_basis,
+                        )
+
+    # ---------- mean, var, score
+    p_mean = policy.get_post_fmean(X)
+    p_var = policy.get_post_fcov(X)
+    p_score = policy.get_score(mode=score, xs=X)
 
     # ------ return
-    return actions, cryspy_mean, cryspy_var, cryspy_score
-
-
-# ---------- just for log
-def out_log(history):
-    n = history.total_num_search
-    index = np.argmax(history.fx[0:n])
-
-    logger.info(f'current best E = {-history.fx[index]}')
+    return actions, p_mean, p_var, p_score

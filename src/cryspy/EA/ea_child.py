@@ -56,13 +56,23 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
     if rin.n_crsov > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
             co_children, co_parents, co_operation = gen_crossover(
-                                                        rin.atype, rin.nat,
-                                                        mindist, struc_data, sp, rin.n_crsov,
-                                                        id_start, rin.symprec,
-                                                        rin.crs_lat, rin.nat_diff_tole,
-                                                        rin.maxcnt_ea, vc, rin.ll_nat,
-                                                        rin.ul_nat,
-                                                        struc_mol_id=None, molecular=False)
+                rin.atype,
+                rin.nat,
+                mindist,
+                struc_data,
+                sp,
+                rin.n_crsov,
+                id_start,
+                rin.symprec,
+                rin.crs_lat,
+                rin.nat_diff_tole,
+                rin.maxcnt_ea,
+                vc,
+                rin.ll_nat,
+                rin.ul_nat,
+                struc_mol_id=None,
+                molecular=False,
+            )
         else:
             logger.error('Crossover is not implemented for mol or mol_bs')
             # co = Crossover(rin, mindist)
@@ -77,11 +87,18 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
     if rin.n_perm > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
             pm_children, pm_parents, pm_operation = gen_permutation(
-                                                        rin.atype, mindist,
-                                                        struc_data, sp, rin.n_perm,
-                                                        id_start, rin.symprec,
-                                                        rin.ntimes, rin.maxcnt_ea,
-                                                        struc_mol_id=None, molecular=False)
+                rin.atype,
+                mindist,
+                struc_data,
+                sp,
+                rin.n_perm,
+                id_start,
+                rin.symprec,
+                rin.ntimes,
+                rin.maxcnt_ea,
+                struc_mol_id=None,
+                molecular=False,
+            )
         else:
             logger.error('Permutation is not implemented for mol or mol_bs')
             # pm = Permutation(mindist)
@@ -96,12 +113,19 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
     if rin.n_strain > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
             st_children, st_parents, st_operation = gen_strain(
-                                                        rin.atype, mindist, struc_data, sp,
-                                                        rin.n_strain,
-                                                        id_start, rin.symprec,
-                                                        rin.sigma_st, rin.maxcnt_ea,
-                                                        struc_mol_id=None, molecular=False,
-                                                        protect_mol_struc=True)
+                rin.atype,
+                mindist,
+                struc_data,
+                sp,
+                rin.n_strain,
+                id_start,
+                rin.symprec,
+                rin.sigma_st,
+                rin.maxcnt_ea,
+                struc_mol_id=None,
+                molecular=False,
+                protect_mol_struc=True,
+            )
         else:
             logger.error('Strain is not implemented for mol or mol_bs')
             # st = Strain(mindist)
@@ -120,9 +144,18 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
         if rin.n_add > 0:
             if rin.struc_mode not in ['mol', 'mol_bs']:
                 ad_children, ad_parents, ad_operation = gen_addition(
-                                                            rin.atype, mindist, struc_data, sp, rin.n_add, nat_data, rin.ul_nat,
-                                                            id_start, rin.symprec,
-                                                            rin.maxcnt_ea, rin.target)
+                    rin.atype,
+                    mindist,
+                    struc_data,
+                    sp,
+                    rin.n_add,
+                    nat_data,
+                    rin.ul_nat,
+                    id_start,
+                    rin.symprec,
+                    rin.maxcnt_ea,
+                    rin.target,
+                )
             else:
                 logger.error('Addition is not implemented for mol or mol_bs')
                 raise SystemExit(1)
@@ -136,10 +169,16 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
         if rin.n_elim > 0:
             if rin.struc_mode not in ['mol', 'mol_bs']:
                 el_children, el_parents, el_operation = gen_elimination(
-                                                            rin.atype, struc_data, sp,
-                                                            rin.n_elim, nat_data, rin.ll_nat,
-                                                            id_start, rin.symprec,
-                                                            rin.target)
+                    rin.atype,
+                    struc_data,
+                    sp,
+                    rin.n_elim,
+                    nat_data,
+                    rin.ll_nat,
+                    id_start,
+                    rin.symprec,
+                    rin.target,
+                )
             else:
                 logger.error('Elimination is not implemented for mol or mol_bs')
                 raise SystemExit(1)
@@ -153,11 +192,19 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
         if rin.n_subs > 0:
             if rin.struc_mode not in ['mol', 'mol_bs']:
                 sb_children, sb_parents, sb_operation = gen_substitution(
-                                                            rin.atype, mindist, struc_data,
-                                                            sp, rin.n_subs, nat_data,
-                                                            rin.ll_nat, rin.ul_nat,
-                                                            id_start, rin.symprec,
-                                                            rin.maxcnt_ea, rin.target)
+                    rin.atype,
+                    mindist,
+                    struc_data,
+                    sp,
+                    rin.n_subs,
+                    nat_data,
+                    rin.ll_nat,
+                    rin.ul_nat,
+                    id_start,
+                    rin.symprec,
+                    rin.maxcnt_ea,
+                    rin.target,
+                )
             else:
                 logger.error('Substitution is not implemented for mol or mol_bs')
                 raise SystemExit(1)
@@ -191,8 +238,14 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
 
     # ---------- random generation
     if rin.n_rand > 0:
-        tmp_struc_data, tmp_mol_id = gen_random(rin, rin.n_rand, id_start,
-                                                comm=None, mpi_rank=0, mpi_size=1)
+        tmp_struc_data, tmp_mol_id = gen_random(
+            rin,
+            rin.n_rand,
+            id_start,
+            comm=None,
+            mpi_rank=0,
+            mpi_size=1,
+        )
         # ------ update
         init_struc_data.update(tmp_struc_data)
         # if rin.struc_mode in ['mol', 'mol_bs']:

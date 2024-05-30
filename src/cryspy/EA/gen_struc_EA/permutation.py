@@ -10,10 +10,19 @@ from ...util.struc_util import sort_by_atype, check_distance, cal_g, sort_by_aty
 logger = getLogger('cryspy')
 
 
-def gen_permutation(atype, mindist, struc_data, sp, n_perm,
-                  id_start=None, symprec=0.01,
-                  ntimes=1, maxcnt_ea=50,
-                  struc_mol_id=None, molecular=False):
+def gen_permutation(
+        atype,
+        mindist,
+        struc_data,
+        sp,
+        n_perm,
+        id_start=None,
+        symprec=0.01,
+        ntimes=1,
+        maxcnt_ea=50,
+        struc_mol_id=None,
+        molecular=False,
+    ):
     '''
 
         tuple may be replaced by list

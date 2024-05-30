@@ -8,8 +8,20 @@ from ...util.struc_util import check_distance, sort_by_atype
 logger = getLogger('cryspy')
 
 
-def gen_substitution(atype, mindist, struc_data, sp, n_subs, nat_data, ll_nat, ul_nat,
-                 id_start=None, symprec=0.01, maxcnt_ea=50, target='random'):
+def gen_substitution(
+        atype,
+        mindist,
+        struc_data,
+        sp,
+        n_subs,
+        nat_data,
+        ll_nat,
+        ul_nat,
+        id_start=None,
+        symprec=0.01,
+        maxcnt_ea=50,
+        target='random',
+    ):
     '''
 
         tuple may be replaced by list

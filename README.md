@@ -43,8 +43,8 @@ version 1.2.5 (2024 May 10)
 - [PyXtal >= 0.5.3](https://pyxtal.readthedocs.io/en/latest "PyXtal")
 
 (optional)
-- [COMBO](https://github.com/Tomoki-YAMASHITA/combo3 "COMBO") (required if algo is BO)
-- mpi4py
+- [PHYSBO](https://www.pasums.issp.u-tokyo.ac.jp/physbo/en/about "PHYSBO") (required if algo is BO)
+- [mpi4py](https://mpi4py.readthedocs.io/en/stable "mpi4py")
 
 
 See [CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc/installation/requirements/ "CrySPY document") in detail.
@@ -57,11 +57,8 @@ At least one optimizer is required.
 - [OpenMX](http://www.openmx-square.org "OpenMX")
 - [soiap](https://github.com/nbsato/soiap "soiap") (tested with version 0.2.2)
 - [LAMMPS](http://lammps.sandia.gov "LAMMPS")
+- [ASE](https://wiki.fysik.dtu.dk/ase "ASE")
 
-### Others
-(optional)
-- cal-fingerprint: (required if algo is BO)
-- [find_wy](https://github.com/nim-hrkn/find_wy "find_wy"): find_wy can randomly select a combination of Wyckoff positions for a given chemical composition and space group. 
 
 ## Document (English/Japanese)
 [CrySPY document](https://tomoki-yamashita.github.io/CrySPY_doc "CrySPY documment")
