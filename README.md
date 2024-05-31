@@ -9,9 +9,11 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.2.5 (2024 May 10)
+version 1.3.0 (2024 May 31)
 
 ## News
+- [2024 May 31] CrySPY 1.3.0 released.
+    + There are important changes. See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
 - [2024 May 10] CrySPY 1.2.5 released.
     + bug fix for order_ef in out_results.py
 - [2024 May 7] CrySPY 1.2.4 released.
@@ -44,6 +46,7 @@ version 1.2.5 (2024 May 10)
 
 (optional)
 - [PHYSBO](https://www.pasums.issp.u-tokyo.ac.jp/physbo/en/about "PHYSBO") (required if algo is BO)
+- [DScribe](https://singroup.github.io/dscribe/latest/ "DScribe") (required if algo is BO)
 - [mpi4py](https://mpi4py.readthedocs.io/en/stable "mpi4py")
 
 
