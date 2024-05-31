@@ -92,14 +92,15 @@ def backup_cryspy():
     logger.info('Backup data')
 
 
-def clean_cryspy():
+def clean_cryspy(skip_yes=False):
     # ---------- yes/no
-    while True:
-        choice = input("Are you sure you want to clean the data? 'yes' or 'no' [y/n]: ").lower()
-        if choice in ['y', 'yes']:
-            break
-        elif choice in ['n', 'no']:
-            return
+    if not skip_yes:
+        while True:
+            choice = input("Are you sure you want to clean the data? 'yes' or 'no' [y/n]: ").lower()
+            if choice in ['y', 'yes']:
+                break
+            elif choice in ['n', 'no']:
+                return
 
     # ---------- file/directory list
     fdlist = ['cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'lock_cryspy',

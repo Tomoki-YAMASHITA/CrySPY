@@ -517,6 +517,11 @@ class ReadInput:
             self.stress_step_flag = True
 
     def _read_bo(self):
+        # ---------- check physbo
+        try:
+            import physbo
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError('PHYSBO is required for BO. --> pip3 install physbo')
         # ---------- nselect_bo
         self.nselect_bo = self.config.getint('BO', 'nselect_bo')
         if self.nselect_bo < 1:
