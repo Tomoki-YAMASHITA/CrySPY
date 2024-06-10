@@ -61,7 +61,7 @@ def collect_OMX(rin, cid, work_path, nat):
             work_path+rin.OMX_outfile, nat)
         if lines_atom is None:
             lines_atom = OMX_structure.extract_atomic_positions_from_infile(
-                rin, work_path+rin.OMX_infile, nat)
+                work_path+rin.OMX_infile, nat)
         opt_struc = OMX_structure.from_lines(lines_cell, lines_atom)
         # ------ opt_OMX-structure
         with open('./data/opt_OMX-structure', 'a') as fstruc:

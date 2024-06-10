@@ -51,14 +51,16 @@ def extract_atomic_positions_from_outfile(filename, nat):
             break
     return lines_atom
 
-def extract_atomic_positions_from_infile(rin, filename):
+def extract_atomic_positions_from_infile(filename, nat):
+    # ---------- natot
+    natot = sum(nat)    # do not use rin.natot here for EA-vc
     # ---------- last atomic positions
     with open(filename, 'r') as f:
         lines = f.readlines()
     lines_atom = []
     for i,line in enumerate(lines):
         if re.search('<Atoms.SpeciesAndCoordinates', line):
-            for j in range(0,rin.natot):
+            for j in range(0, natot):
                 Atom_Row = lines[i+j+1].split()
                 Row = ' '.join(Atom_Row[0:5])
                 lines_atom.append(Row)

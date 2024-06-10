@@ -26,7 +26,6 @@ class ReadInput:
 
     # ---------- structure section
     struc_mode: str = field(default=None)
-    natot: int = field(default=None)
     atype: tuple = field(default=None)
     nat: tuple = field(default=None)
     mindist: tuple = field(default=None)
@@ -233,27 +232,16 @@ class ReadInput:
         #if self.struc_mode not in ['crystal', 'mol', 'mol_bs', 'host']:
         #    raise ValueError('struc_mode must be crystal, mol, mol_bs, or host')
         if self.algo in ['EA', 'EA-vc'] and self.struc_mode in ['mol', 'mol_bs']:
-            if self.calc_code == 'ext':
-                raise ValueError('EA, mol or mol_bs, ext, not yet')
-        # ---------- natot
-        if not self.algo == 'EA-vc':
-            self.natot = self.config.getint('structure', 'natot')
-            if self.natot < 1:
-                raise ValueError('natot < 1, check natot')
+                raise ValueError('currently, molecular structure is not allowed in EA or EA-vc')
         # ---------- atype
         self.atype = self.config.get('structure', 'atype')
         self.atype = tuple([a for a in self.atype.split()])    # str --> list --> tuple
-        if self.algo =='EA-vc':
-            if not len(self.atype) == 2:
-                raise ValueError('len(atype) must be 2 in EA-vc for now')
         # ---------- nat
         if not self.algo == 'EA-vc':
             self.nat = self.config.get('structure', 'nat')
             self.nat = tuple([int(x) for x in self.nat.split()])    # str --> int --> list --> tuple
             if not len(self.nat) == len(self.atype):
                 raise ValueError('not len(nat) == len(atype), check atype and nat')
-            if not sum(self.nat) == self.natot:
-                raise ValueError('not sum(nat) == natot, check natot and nat')
         # ---------- mindist
         try:
             self.mindist = []
@@ -626,203 +614,202 @@ class ReadInput:
             self.ws = 10.0
 
     def _read_ea(self):
-        if self.algo in ['EA', 'EA-vc'] or self.append_struc_ea:
-            # ---------- n_pop
-            self.n_pop = self.config.getint('EA', 'n_pop')
-            if self.n_pop < 1:
-                raise ValueError('n_pop must be positive int')
-            # ---------- n_crsov
-            self.n_crsov = self.config.getint('EA', 'n_crsov')
-            if self.n_crsov < 0:
-                raise ValueError('n_crsov must be non-negative int')
-            # ---------- n_perm
-            self.n_perm = self.config.getint('EA', 'n_perm')
-            if self.n_perm < 0:
-                raise ValueError('n_perm must be non-negative int')
-            if self.n_perm != 0 and len(self.atype) == 1:
-                raise ValueError('When the number of atom type is 1, n_perm must be 0')
-            # ---------- n_strain
-            self.n_strain = self.config.getint('EA', 'n_strain')
-            if self.n_strain < 0:
-                raise ValueError('n_strain must be non-negative int')
-            # ---------- n_rand
-            self.n_rand = self.config.getint('EA', 'n_rand')
-            if self.n_rand < 0:
-                raise ValueError('n_rand must be non-negative int')
-            # ---------- check n_pop for EA
-            if self.algo == 'EA' and self.struc_mode not in ['mol', 'mol_bs']:
-                if self.n_crsov + self.n_perm + self.n_strain + self.n_rand != self.n_pop:
-                    raise ValueError('n_crsov + n_perm + n_strain + n_rand must be n_pop')
-            # ---------- n_elite
-            self.n_elite = self.config.getint('EA', 'n_elite')
-            if self.n_elite < 0:
-                raise ValueError('n_elite must be non-negative int')
-            # ---------- fit_reverse
+        # ---------- n_pop
+        self.n_pop = self.config.getint('EA', 'n_pop')
+        if self.n_pop < 1:
+            raise ValueError('n_pop must be positive int')
+        # ---------- n_crsov
+        self.n_crsov = self.config.getint('EA', 'n_crsov')
+        if self.n_crsov < 0:
+            raise ValueError('n_crsov must be non-negative int')
+        # ---------- n_perm
+        self.n_perm = self.config.getint('EA', 'n_perm')
+        if self.n_perm < 0:
+            raise ValueError('n_perm must be non-negative int')
+        if self.n_perm != 0 and len(self.atype) == 1:
+            raise ValueError('When the number of atom type is 1, n_perm must be 0')
+        # ---------- n_strain
+        self.n_strain = self.config.getint('EA', 'n_strain')
+        if self.n_strain < 0:
+            raise ValueError('n_strain must be non-negative int')
+        # ---------- n_rand
+        self.n_rand = self.config.getint('EA', 'n_rand')
+        if self.n_rand < 0:
+            raise ValueError('n_rand must be non-negative int')
+        # ---------- check n_pop for EA
+        if self.algo == 'EA' and self.struc_mode not in ['mol', 'mol_bs']:
+            if self.n_crsov + self.n_perm + self.n_strain + self.n_rand != self.n_pop:
+                raise ValueError('n_crsov + n_perm + n_strain + n_rand must be n_pop')
+        # ---------- n_elite
+        self.n_elite = self.config.getint('EA', 'n_elite')
+        if self.n_elite < 0:
+            raise ValueError('n_elite must be non-negative int')
+        # ---------- fit_reverse
+        try:
+            self.fit_reverse = self.config.getboolean('EA', 'fit_reverse')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.fit_reverse = False
+        # ---------- n_fittest
+        try:
+            self.n_fittest = self.config.getint('EA', 'n_fittest')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.n_fittest = 0
+        if self.n_fittest < 0:
+            raise ValueError('n_fittest must be non-negative int')
+        # ---------- slct_func
+        self.slct_func = self.config.get('EA', 'slct_func')
+        if self.slct_func not in ['TNM', 'RLT']:
+            raise ValueError('slct_func must be TNM or RLT')
+        # ------ TNM
+        if self.slct_func == 'TNM':
+            # -- t_size
             try:
-                self.fit_reverse = self.config.getboolean('EA', 'fit_reverse')
+                self.t_size = self.config.getint('EA', 't_size')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.fit_reverse = False
-            # ---------- n_fittest
+                self.t_size = 3
+            if self.t_size < 2:
+                raise ValueError('t_size must be greater than or equal to 2')
+        # ------ RLT
+        elif self.slct_func == 'RLT':
+            # -- a_rlt
             try:
-                self.n_fittest = self.config.getint('EA', 'n_fittest')
+                self.a_rlt = self.config.getfloat('EA', 'a_rlt')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.n_fittest = 0
-            if self.n_fittest < 0:
-                raise ValueError('n_fittest must be non-negative int')
-            # ---------- slct_func
-            self.slct_func = self.config.get('EA', 'slct_func')
-            if self.slct_func not in ['TNM', 'RLT']:
-                raise ValueError('slct_func must be TNM or RLT')
-            # ------ TNM
-            if self.slct_func == 'TNM':
-                # -- t_size
-                try:
-                    self.t_size = self.config.getint('EA', 't_size')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.t_size = 3
-                if self.t_size < 2:
-                    raise ValueError('t_size must be greater than or equal to 2')
-            # ------ RLT
-            elif self.slct_func == 'RLT':
-                # -- a_rlt
-                try:
-                    self.a_rlt = self.config.getfloat('EA', 'a_rlt')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.a_rlt = 10.0
-                # -- b_rlt
-                try:
-                    self.b_rlt = self.config.getfloat('EA', 'b_rlt')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.b_rlt = 1.0
-                # -- check
-                if not 0 < self.b_rlt < self.a_rlt:
-                    raise ValueError('must be 0 < b_rlt < a_rlt')
-            # ---------- crossover
-            if self.n_crsov > 0:
-                # ------ crs_lat
-                try:
-                    self.crs_lat = self.config.get('EA', 'crs_lat')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.crs_lat = 'random'
-                if self.crs_lat not in ['equal', 'random']:
-                    raise ValueError('crs_lat must be equal or random')
-                # ------ nat_diff_tole
-                try:
-                    self.nat_diff_tole = self.config.getint('EA', 'nat_diff_tole')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.nat_diff_tole = 4
-                if self.nat_diff_tole < 0:
-                    raise ValueError('nat_diff_tole must be non-negative int')
-            # ---------- permutation
-            if self.n_perm > 0:
-                # ------ ntimes
-                try:
-                    self.ntimes = self.config.getint('EA', 'ntimes')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.ntimes = 1
-                if self.ntimes < 1:
-                    raise ValueError('ntimes must be positive int')
-            # ---------- strain
-            if self.n_strain > 0:
-                # ------ sigma_st
-                try:
-                    self.sigma_st = self.config.getfloat('EA', 'sigma_st')
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    self.sigma_st = 0.5
-                if self.sigma_st <= 0:
-                    raise ValueError('sigma_st must be positive float')
-            # ---------- other params
-            # ------ maxcnt_ea
+                self.a_rlt = 10.0
+            # -- b_rlt
             try:
-                self.maxcnt_ea = self.config.getint('EA', 'maxcnt_ea')
+                self.b_rlt = self.config.getfloat('EA', 'b_rlt')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.b_rlt = 1.0
+            # -- check
+            if not 0 < self.b_rlt < self.a_rlt:
+                raise ValueError('must be 0 < b_rlt < a_rlt')
+        # ---------- crossover
+        if self.n_crsov > 0:
+            # ------ crs_lat
+            try:
+                self.crs_lat = self.config.get('EA', 'crs_lat')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.crs_lat = 'random'
+            if self.crs_lat not in ['equal', 'random']:
+                raise ValueError('crs_lat must be equal or random')
+            # ------ nat_diff_tole
+            try:
+                self.nat_diff_tole = self.config.getint('EA', 'nat_diff_tole')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.nat_diff_tole = 4
+            if self.nat_diff_tole < 0:
+                raise ValueError('nat_diff_tole must be non-negative int')
+        # ---------- permutation
+        if self.n_perm > 0:
+            # ------ ntimes
+            try:
+                self.ntimes = self.config.getint('EA', 'ntimes')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.ntimes = 1
+            if self.ntimes < 1:
+                raise ValueError('ntimes must be positive int')
+        # ---------- strain
+        if self.n_strain > 0:
+            # ------ sigma_st
+            try:
+                self.sigma_st = self.config.getfloat('EA', 'sigma_st')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.sigma_st = 0.5
+            if self.sigma_st <= 0:
+                raise ValueError('sigma_st must be positive float')
+        # ---------- other params
+        # ------ maxcnt_ea
+        try:
+            self.maxcnt_ea = self.config.getint('EA', 'maxcnt_ea')
+        except configparser.NoOptionError:
+            self.maxcnt_ea = 50
+        # ------ maxgen_ea
+        try:
+            self.maxgen_ea = self.config.getint('EA', 'maxgen_ea')
+        except configparser.NoOptionError:
+            self.maxgen_ea = 0
+        if self.maxgen_ea < 0:
+            raise ValueError('maxgen_ea must be non-negative int')
+        # ------ emin_ea, emax_ea
+        try:
+            self.emin_ea = self.config.getfloat('EA', 'emin_ea')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.emin_ea = None
+        try:
+            self.emax_ea = self.config.getfloat('EA', 'emax_ea')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.emax_ea = None
+        if self.emax_ea is not None and self.emin_ea is not None:
+            if self.emin_ea > self.emax_ea:
+                raise ValueError('emax_ea < emin_ea, check emax_ea and emin_ea')
+        # ---------- EA-vc
+        if self.algo == 'EA-vc':
+            # ------ n_add
+            self.n_add = self.config.getint('EA', 'n_add')
+            if self.n_add < 0:
+                raise ValueError('n_add must be non-negative int')
+            # ------ n_elim
+            self.n_elim = self.config.getint('EA', 'n_elim')
+            if self.n_elim < 0:
+                raise ValueError('n_elim must be non-negative int')
+            # ------ n_subs
+            self.n_subs = self.config.getint('EA', 'n_subs')
+            if self.n_subs < 0:
+                raise ValueError('n_subs must be non-negative int')
+            # ------ target
+            self.target = self.config.get('EA', 'target')
+            #if self.target not in ['random','depop','overpop']:
+            if self.target not in ['random']:
+                raise ValueError('target must be random for now')
+            # ------ check n_pop for EA-vc
+            if self.n_crsov + self.n_perm + self.n_strain + self.n_rand \
+                + self.n_add + self.n_elim + self.n_subs != self.n_pop:
+                raise ValueError('n_crsov + n_perm + n_strain + n_rand'
+                                    ' + n_add + n_elim + n_subs must be n_pop')
+            # ------ end_point
+            self.end_point = self.config.get('EA', 'end_point')
+            self.end_point = tuple([float(x) for x in self.end_point.split()])
+            if not len(self.end_point) == len(self.atype):
+                raise ValueError('len(end_point) == len(atype), check end_point')
+        # ---------- mol or mol_bs
+        if self.struc_mode in ['mol', 'mol_bs']:
+            # ------ n_rotation
+            self.n_rotation = self.config.getint('EA', 'n_rotation')
+            if self.n_rotation < 0:
+                raise ValueError('n_rotation must be non-negative int')
+            # ------ check n_pop for mol or mol_bs
+            if self.n_crsov + self.n_perm + self.n_strain + self.n_rand \
+                + self.n_rotation != self.n_pop:
+                raise ValueError('n_crsov + n_perm + n_strain + n_rand + n_rotation must be n_pop')
+            # ------ mindist_mol_ea
+            self.mindist_mol_ea = []
+            for i in range(len(self.mol_file)):
+                tmp = self.config.get('EA', f'mindist_mol_ea_{i+1}')
+                tmp = tuple([float(x) for x in tmp.split()])    # str --> float
+                if not len(tmp) == len(self.mol_file):
+                    raise ValueError(f'not len(mindist_mol_ea_{i+1}) == len(mol_file)')
+                self.mindist_mol_ea.append(tmp)
+            self.mindist_mol_ea = tuple(self.mindist_mol_ea)    # list --> tuple
+            # check symmetric matrix
+            for i in range(len(self.mindist_mol_ea)):
+                for j in range(len(self.mindist_mol_ea)):
+                    if i < j:
+                        if not self.mindist_mol_ea[i][j] == self.mindist_mol_ea[j][i]:
+                            raise ValueError(f'mindist_mol_ea is not symmetric. ({i}, {j}) -->'
+                                                f' {self.mindist_mol_ea[i][j]}, ({j}, {i}) --> {self.mindist_mol_ea[j][i]}')
+            # ------ rot_max_angle
+            try:
+                self.rot_max_angle = self.config.getint('EA', 'rot_max_angle')
             except configparser.NoOptionError:
-                self.maxcnt_ea = 50
-            # ------ maxgen_ea
+                self.rot_max_angle = 360
+            if self.rot_max_angle <= 0:
+                raise ValueError('rot_max_angle must be positive int')
+            # ------ protect_mol_struc
             try:
-                self.maxgen_ea = self.config.getint('EA', 'maxgen_ea')
+                self.protect_mol_struc = self.config.getboolean('EA', 'protect_mol_struc')
             except configparser.NoOptionError:
-                self.maxgen_ea = 0
-            if self.maxgen_ea < 0:
-                raise ValueError('maxgen_ea must be non-negative int')
-            # ------ emin_ea, emax_ea
-            try:
-                self.emin_ea = self.config.getfloat('EA', 'emin_ea')
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                self.emin_ea = None
-            try:
-                self.emax_ea = self.config.getfloat('EA', 'emax_ea')
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                self.emax_ea = None
-            if self.emax_ea is not None and self.emin_ea is not None:
-                if self.emin_ea > self.emax_ea:
-                    raise ValueError('emax_ea < emin_ea, check emax_ea and emin_ea')
-            # ---------- EA-vc
-            if self.algo == 'EA-vc':
-                # ------ n_add
-                self.n_add = self.config.getint('EA', 'n_add')
-                if self.n_add < 0:
-                    raise ValueError('n_add must be non-negative int')
-                # ------ n_elim
-                self.n_elim = self.config.getint('EA', 'n_elim')
-                if self.n_elim < 0:
-                    raise ValueError('n_elim must be non-negative int')
-                # ------ n_subs
-                self.n_subs = self.config.getint('EA', 'n_subs')
-                if self.n_subs < 0:
-                    raise ValueError('n_subs must be non-negative int')
-                # ------ target
-                self.target = self.config.get('EA', 'target')
-                #if self.target not in ['random','depop','overpop']:
-                if self.target not in ['random']:
-                    raise ValueError('target must be random for now')
-                # ------ check n_pop for EA-vc
-                if self.n_crsov + self.n_perm + self.n_strain + self.n_rand \
-                    + self.n_add + self.n_elim + self.n_subs != self.n_pop:
-                    raise ValueError('n_crsov + n_perm + n_strain + n_rand'
-                                     ' + n_add + n_elim + n_subs must be n_pop')
-                # ------ end_point
-                self.end_point = self.config.get('EA', 'end_point')
-                self.end_point = tuple([float(x) for x in self.end_point.split()])
-                if not len(self.end_point) == len(self.atype):
-                    raise ValueError('len(end_point) == len(atype), check end_point')
-            # ---------- mol or mol_bs
-            if self.struc_mode in ['mol', 'mol_bs']:
-                # ------ n_rotation
-                self.n_rotation = self.config.getint('EA', 'n_rotation')
-                if self.n_rotation < 0:
-                    raise ValueError('n_rotation must be non-negative int')
-                # ------ check n_pop for mol or mol_bs
-                if self.n_crsov + self.n_perm + self.n_strain + self.n_rand \
-                    + self.n_rotation != self.n_pop:
-                    raise ValueError('n_crsov + n_perm + n_strain + n_rand + n_rotation must be n_pop')
-                # ------ mindist_mol_ea
-                self.mindist_mol_ea = []
-                for i in range(len(self.mol_file)):
-                    tmp = self.config.get('EA', f'mindist_mol_ea_{i+1}')
-                    tmp = tuple([float(x) for x in tmp.split()])    # str --> float
-                    if not len(tmp) == len(self.mol_file):
-                        raise ValueError(f'not len(mindist_mol_ea_{i+1}) == len(mol_file)')
-                    self.mindist_mol_ea.append(tmp)
-                self.mindist_mol_ea = tuple(self.mindist_mol_ea)    # list --> tuple
-                # check symmetric matrix
-                for i in range(len(self.mindist_mol_ea)):
-                    for j in range(len(self.mindist_mol_ea)):
-                        if i < j:
-                            if not self.mindist_mol_ea[i][j] == self.mindist_mol_ea[j][i]:
-                                raise ValueError(f'mindist_mol_ea is not symmetric. ({i}, {j}) -->'
-                                                 f' {self.mindist_mol_ea[i][j]}, ({j}, {i}) --> {self.mindist_mol_ea[j][i]}')
-                # ------ rot_max_angle
-                try:
-                    self.rot_max_angle = self.config.getint('EA', 'rot_max_angle')
-                except configparser.NoOptionError:
-                    self.rot_max_angle = 360
-                if self.rot_max_angle <= 0:
-                    raise ValueError('rot_max_angle must be positive int')
-                # ------ protect_mol_struc
-                try:
-                    self.protect_mol_struc = self.config.getboolean('EA', 'protect_mol_struc')
-                except configparser.NoOptionError:
-                    self.protect_mol_struc = False
+                self.protect_mol_struc = False
 
     def _read_vasp(self):
         # ---------- kpt_flag

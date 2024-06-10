@@ -40,7 +40,7 @@ def next_stage_OMX(rin, stage, work_path, nat, kpt_data, cid):
             work_path+f'stage{stage}_'+rin.OMX_outfile, nat)
         if lines_atom is None:
             lines_atom = OMX_structure.extract_atomic_positions_from_infile(
-                rin, work_path+f'stage{stage}_'+rin.OMX_infile, nat)
+                work_path+f'stage{stage}_'+rin.OMX_infile, nat)
         structure = OMX_structure.from_lines(lines_cell, lines_atom)
     except ValueError:
         skip_flag = True
