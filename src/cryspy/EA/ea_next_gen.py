@@ -6,7 +6,7 @@ from logging import getLogger
 
 import pandas as pd
 
-from .calc_hull import calc_convex_hull_2d
+from .calc_hull import calc_convex_hull
 from .ea_child import child_gen
 from .survival import survival_fittest
 from ..IO import change_input, io_stat, pkl_data
@@ -50,7 +50,7 @@ def next_gen(
         nat_data, ratio_data, hdist_data = ea_vc_data
 
         # ------ calc convex hull and hull distance
-        hdist = calc_convex_hull_2d(rin, ratio_data, ef_all, c_ids, gen)
+        hdist = calc_convex_hull(rin.atype, ratio_data, ef_all, c_ids, gen, rin.vmax)
         # -- update hdist
         out_hdist(gen, hdist, ratio_data)
         hdist_data[gen] = hdist

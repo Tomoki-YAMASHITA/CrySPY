@@ -3,8 +3,6 @@ from dataclasses import dataclass, field
 from logging import getLogger
 import os
 
-from ..util import utility
-
 
 logger = getLogger('cryspy')
 
@@ -111,7 +109,8 @@ class ReadInput:
     n_subs: int = field(default=None)
     target: str = field(default=None)
     end_point: tuple = field(default=None)
-    n_rotation: int = field(default=None)
+    vmax: float = field(default=None)
+    n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
     rot_max_angle: float = field(default=None)     # not implemented yet, for EA mol
     protect_mol_struc: bool = field(default=None)  # not implemented yet, for EA mol
@@ -236,6 +235,9 @@ class ReadInput:
         # ---------- atype
         self.atype = self.config.get('structure', 'atype')
         self.atype = tuple([a for a in self.atype.split()])    # str --> list --> tuple
+        if self.algo == 'EA-vc':
+            if len(self.atype) < 2:
+                raise ValueError('EA-vc: atype must have at least 2 elements')
         # ---------- nat
         if not self.algo == 'EA-vc':
             self.nat = self.config.get('structure', 'nat')
@@ -332,7 +334,7 @@ class ReadInput:
             if not len(self.atype) == len(self.ll_nat) == len(self.ul_nat):
                 raise ValueError('not len(atype) == len(ll_nat) == len(ul_nat), check ll_nat and ul_nat')
             for i in range(len(self.ll_nat)):
-                if not 1 <= self.ll_nat[i] <= self.ul_nat[i]:
+                if not 0 <= self.ll_nat[i] <= self.ul_nat[i]:
                     raise ValueError(f'not 1 <= ll_nat[{i}] <= ul_nat[{i}], check ll_nat and ul_nat')
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
@@ -772,6 +774,11 @@ class ReadInput:
             self.end_point = tuple([float(x) for x in self.end_point.split()])
             if not len(self.end_point) == len(self.atype):
                 raise ValueError('len(end_point) == len(atype), check end_point')
+            # ------ vmax
+            try:
+                self.vmax = self.config.getfloat('EA', 'vmax')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.emin_ea = None
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ n_rotation

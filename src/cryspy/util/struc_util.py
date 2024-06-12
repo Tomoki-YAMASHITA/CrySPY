@@ -474,6 +474,6 @@ def sort_by_atype_mol(struc, atype, mol_id, group_id):
 
 def get_nat(struc, atype):
     compos = struc.composition.as_dict()
-    nat = tuple([int(compos[at]) for at in atype])
+    nat = tuple([compos.get(at, 0) for at in atype])
     ratio = tuple([x/sum(nat) for x in nat])
     return nat, ratio
