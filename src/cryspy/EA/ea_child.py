@@ -37,13 +37,15 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
     logger.info('# -- mindist')
     mindist = set_mindist(rin.atype, rin.mindist, rin.mindist_factor, rin.struc_mode)
     if rin.struc_mode == 'mol_bs':
-        mindist_dummy = set_mindist(rin.atype,
-                                    rin.mindist_mol_bs,
-                                    rin.mindist_mol_bs_factor,
-                                    rin.struc_mode,
-                                    dummy=True,
-                                    mol_file=rin.mol_file,
-                                    mpi_rank=0)
+        mindist_dummy = set_mindist(
+            rin.atype,
+            rin.mindist_mol_bs,
+            rin.mindist_mol_bs_factor,
+            rin.struc_mode,
+            dummy=True,
+            mol_file=rin.mol_file,
+            mpi_rank=0,
+        )
     # ---------- initialize
     children = {}
     #children_mol_id = {}

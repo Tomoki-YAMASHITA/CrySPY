@@ -759,6 +759,11 @@ class ReadInput:
             self.n_subs = self.config.getint('EA', 'n_subs')
             if self.n_subs < 0:
                 raise ValueError('n_subs must be non-negative int')
+            if self.n_subs != 0:
+                diff_nat = [u - l for u, l in zip(self.ul_nat, self.ll_nat)]
+                non_zero_count = len([x for x in diff_nat if x != 0])
+                if non_zero_count < 2:
+                    raise ValueError('n_subs: at least two atomic types are variable.')
             # ------ target
             self.target = self.config.get('EA', 'target')
             #if self.target not in ['random','depop','overpop']:

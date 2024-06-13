@@ -84,9 +84,19 @@ def gen_crossover(
             #child, mol_id = co.gen_child_mol(rin, struc_data[pid_A], struc_data[pid_B],
             #                                    struc_mol_id[pid_A], struc_mol_id[pid_B])
         else:
-            child = gen_child(atype, nat, mindist, parent_A, parent_B,
-                              crs_lat, nat_diff_tole, maxcnt_ea,
-                              vc, ll_nat, ul_nat)
+            child = gen_child(
+                atype,
+                nat,
+                mindist,
+                parent_A,
+                parent_B,
+                crs_lat,
+                nat_diff_tole,
+                maxcnt_ea,
+                vc,
+                ll_nat,
+                ul_nat,
+            )
         # ------ success
         if child is not None:
             children[cid] = child
@@ -109,9 +119,19 @@ def gen_crossover(
     return children, parents, operation
 
 
-def gen_child(atype, nat, mindist, parent_A, parent_B,
-              crs_lat='random', nat_diff_tole=4, maxcnt_ea=50,
-              vc=False, ll_nat=None, ul_nat=None):
+def gen_child(
+        atype,
+        nat,
+        mindist,
+        parent_A,
+        parent_B,
+        crs_lat='random',
+        nat_diff_tole=4,
+        maxcnt_ea=50,
+        vc=False,
+        ll_nat=None,
+        ul_nat=None,
+    ):
     '''
     # ---------- args
 
@@ -156,15 +176,12 @@ def gen_child(atype, nat, mindist, parent_A, parent_B,
         # ------ child structure
         child = Structure(lattice, species, coords)
         # ------ check nat_diff
-        if not vc:
-            nat_diff = _get_nat_diff(atype, nat, child)
-            if any([abs(n) > nat_diff_tole for n in nat_diff]):
-                logger.debug(f'nat_diff = {nat_diff}')
-                if count > maxcnt_ea:    # fail
-                    return None
-                continue    # slice again
-        else:    # EA-vc
-            nat_diff = [0, 0]    # dummy
+        nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)
+        if any([abs(n) > nat_diff_tole for n in nat_diff]):
+            logger.debug(f'nat_diff = {nat_diff}')
+            if count > maxcnt_ea:    # fail
+                return None
+            continue    # slice again
         # ------ check mindist
         success, _, _ = check_distance(child, atype, mindist, check_all=False)
         # ------ something smaller than mindist
@@ -180,25 +197,17 @@ def gen_child(atype, nat, mindist, parent_A, parent_B,
                 if count > maxcnt_ea:
                     return None
                 continue    # fail --> slice again
-        if not vc:
-            # ------ recheck nat_diff
-            # ------ excess of atoms
-            nat_diff = _get_nat_diff(atype, nat, child)    # recheck
-            if any([n > 0 for n in nat_diff]):
-                child = _remove_border_line(child, atype, axis,
-                                            slice_point, nat_diff)
-            # ------ lack of atoms
-            nat_diff = _get_nat_diff(atype, nat, child)    # recheck
-            if any([n < 0 for n in nat_diff]):
-                child = _add_border_line(child, atype, mindist, axis, slice_point,
-                                         nat_diff, maxcnt_ea)
-        # ------ nat check for EA-vc
-        if vc:
-            child_nat, _ = get_nat(child, atype)
-            for i, na in enumerate(child_nat):
-                if not ll_nat[i] <= na <= ul_nat[i]:
-                    logger.warning(f'Crossover: nat = {nat}, ll_nat = {ll_nat}, ul_nat = {ul_nat}')
-                    child = None
+        # ------ recheck nat_diff
+        # ------ excess of atoms
+        nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)    # recheck
+        if any([n > 0 for n in nat_diff]):
+            child = _remove_border_line(child, atype, axis,
+                                        slice_point, nat_diff)
+        # ------ lack of atoms
+        nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)    # recheck
+        if any([n < 0 for n in nat_diff]):
+            child = _add_border_line(child, atype, mindist, axis, slice_point,
+                                        nat_diff, maxcnt_ea)
         # ------ success --> break while loop
         if child is not None:
             break
@@ -209,10 +218,9 @@ def gen_child(atype, nat, mindist, parent_A, parent_B,
             continue
 
     # ---------- final check for nat
-    if not vc:
-        nat_diff = _get_nat_diff(atype, nat, child)
-        if not all([n == 0 for n in nat_diff]):
-            return None    # failure
+    nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)
+    if not all([n == 0 for n in nat_diff]):
+        return None    # failure
 
     # ---------- sort by atype
     child = sort_by_atype(child, atype)
@@ -286,16 +294,33 @@ def _one_point_crossover(parent_A, parent_B):
     return axis, slice_point, species, coords
 
 
-def _get_nat_diff(atype, nat, child):
+def _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat):
     '''
-    original nat - child nat
-    e.g.
-        nat = [4, 4]        # original
-        tmp_nat = [3, 5]    # child
-        nat_diff = [-1, 1]
+    if not vc:
+        original nat - child nat
+        e.g.
+            nat = [4, 4]        # original
+            tmp_nat = [3, 5]    # child
+            nat_diff = [-1, 1]
+    if vc:
+        e.g.
+            ll_nat = [4, 4, 4]
+            ul_nat = [8, 8, 8]
+            tmp_nat = [2, 6, 12]    # child
+            nat_diff = [-2, 0, 4]
     '''
     tmp_nat, _ = get_nat(child, atype)
-    nat_diff = [i - j for i, j in zip(tmp_nat, nat)]
+    if not vc:
+        nat_diff = [i - j for i, j in zip(tmp_nat, nat)]
+    else:
+        nat_diff = []
+        for i, n in enumerate(tmp_nat):
+            if n > ul_nat[i]:
+                nat_diff.append(n - ul_nat[i])
+            elif n < ll_nat[i]:
+                nat_diff.append(n - ll_nat[i])
+            else:
+                nat_diff.append(0)
     return nat_diff
 
 

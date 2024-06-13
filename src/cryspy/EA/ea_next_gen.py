@@ -72,15 +72,15 @@ def next_gen(
     logger.info('# ------ survival of the fittest')
     c_struc_data = {cid: opt_struc_data[cid] for cid in c_ids}
     ranking, fit_with_elite, struc_wit_elite = survival_fittest(
-                                                    c_fitness,
-                                                    c_struc_data,
-                                                    elite_struc,
-                                                    elite_fitness,
-                                                    rin.n_fittest,
-                                                    rin.fit_reverse,
-                                                    rin.emax_ea,
-                                                    rin.emin_ea,
-                                                )
+        c_fitness,
+        c_struc_data,
+        elite_struc,
+        elite_fitness,
+        rin.n_fittest,
+        rin.fit_reverse,
+        rin.emax_ea,
+        rin.emin_ea,
+    )
     logger.info('ranking without duplication (including elite):')
     for cid in ranking:
             logger.info(f'Structure ID {cid:>6}, fitness: {fit_with_elite[cid]:>10.5f}')
@@ -89,14 +89,14 @@ def next_gen(
     logger.info('# ------ Generate children')
     # init_struc_data will be updated and  saved in child_gen function
     init_struc_data, parents, operation = child_gen(
-                                                rin,
-                                                ranking,
-                                                fit_with_elite,
-                                                struc_wit_elite,
-                                                init_struc_data,
-                                                struc_mol_id,
-                                                ea_vc_data,
-                                            )
+        rin,
+        ranking,
+        fit_with_elite,
+        struc_wit_elite,
+        init_struc_data,
+        struc_mol_id,
+        ea_vc_data,
+    )
 
     # ---------- select elite for next generation
     if rin.n_elite > 0:
@@ -115,8 +115,16 @@ def next_gen(
             fitness = hdist
             n_elite = len(vert_id) + rin.n_elite    # temporary
         # ------ ranking for all data
-        ranking, _, _ = survival_fittest(fitness, opt_struc_data, None, None,
-                                         n_elite, rin.fit_reverse, rin.emax_ea, rin.emin_ea)
+        ranking, _, _ = survival_fittest(
+            fitness,
+            opt_struc_data,
+            None,
+            None,
+            n_elite,
+            rin.fit_reverse,
+            rin.emax_ea,
+            rin.emin_ea,
+        )
         if rin.algo == 'EA-vc':
             '''
             e.g.
