@@ -75,7 +75,7 @@ def gen_crossover(
     # ---------- generate structures by crossover
     while struc_cnt < n_crsov:
         # ------ select parents
-        pid_A, pid_B = sp.get_parents(n_parent=2)
+        pid_A, pid_B = sp.get_parents(n_parent=2)    # get IDs
         parent_A = struc_data[pid_A]
         parent_B = struc_data[pid_B]
         # ------ generate child
@@ -109,7 +109,8 @@ def gen_crossover(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            logger.info(f'Structure ID {cid:>6} was generated'
+            tmp_nat, _ = get_nat(child, atype)
+            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} and {pid_B:>6} by crossover.'
                     f' Space group: {spg_num:>3} {spg_sym}')
             cid += 1
@@ -183,6 +184,7 @@ def gen_child(
                 return None
             continue    # slice again
         # ------ check mindist
+        # either tmp_atype or atype is OK in check_distance()
         success, _, _ = check_distance(child, atype, mindist, check_all=False)
         # ------ something smaller than mindist
         if not success:

@@ -474,6 +474,33 @@ def sort_by_atype_mol(struc, atype, mol_id, group_id):
 
 def get_nat(struc, atype):
     compos = struc.composition.as_dict()
-    nat = tuple([compos.get(at, 0) for at in atype])
+    nat = tuple([int(compos.get(at, 0)) for at in atype])
     ratio = tuple([x/sum(nat) for x in nat])
     return nat, ratio
+
+
+def remove_zero(atype_in, nat_in, mindist_in):
+    '''
+    nat_in = (4, 0, 2) --> nat_out = (4, 2)
+    atype_in = ('Li', 'Co', 'O') --> atype_out = ('Li', 'O')
+    mindist_in = [[1.0, 2.0, 3.0], --> mindist_out = [[1.0, 3.0],
+                  [2.0, 1.5, 1.8],                    [3.0, 1.9]]
+                  [3.0, 1.8, 1.9]]
+    '''
+
+    # ---------- remove from nat
+    nat_out = tuple([value for value in nat_in if value != 0])
+
+    # ---------- remove from atype
+    atype_out = tuple(
+        element for i, element in enumerate(atype_in) if nat_in[i] != 0
+    )
+
+    # ---------- remove from mindist
+    mindist_out = tuple([
+        [value for j, value in enumerate(row) if nat_in[j] != 0]
+        for i, row in enumerate(mindist_in) if nat_in[i] != 0
+    ])
+
+    # ---------- return
+    return atype_out, nat_out, mindist_out

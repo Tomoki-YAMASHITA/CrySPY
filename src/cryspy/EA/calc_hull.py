@@ -9,7 +9,7 @@ from scipy.spatial import ConvexHull
 logger = getLogger('cryspy')
 
 
-def calc_convex_hull(atype, ratio_data, ef_all, c_ids, gen, vmax=None):
+def calc_convex_hull(atype, ratio_data, ef_all, c_ids, gen, emax_ea=None, emin_ea=None, vmax=None):
     '''
     Input:
         atype (tuple): atom type, e.g. ('Na', 'Cl')
@@ -17,6 +17,8 @@ def calc_convex_hull(atype, ratio_data, ef_all, c_ids, gen, vmax=None):
         ef_all [dict]: formation energy of all structures, {ID: Ef, ...}
         c_ids [array]: ID array of current generation structures, just for plot
         gen [int]: current generation, just for plot
+        emax_ea (float): maximum energy for cutoff
+        emin_ea (float): minimum energy for cutoff
         vmax [float]: max value of colorbar for hull distance, just for plot
 
     Return:
@@ -28,14 +30,39 @@ def calc_convex_hull(atype, ratio_data, ef_all, c_ids, gen, vmax=None):
     ef_chull = []
     for cid in ef_all:
         if ef_all[cid] < 0.0:
+            # ------ emax_ea
+            if emax_ea is not None:
+                if ef_all[cid] > emax_ea:
+                    logger.info(f'Eliminate ID {cid} from convex hull: {ef_all[cid]} > emax_ea')
+                    continue
+            # ------ emin_ea
+            if emin_ea is not None:
+                if ef_all[cid] < emin_ea:
+                    logger.info(f'Eliminate ID {cid} from convex hull: {ef_all[cid]} < emin_ea')
+                    continue
             ratio_chull.append(ratio_data[cid])
             ef_chull.append(ef_all[cid])
 
     # ---------- no negative Ef
     #            in this case, hull distance is equivalent to Ef
     if not ef_chull:
-        # np.nan --> np.inf in hdist
-        hdist = {cid: np.inf if np.isnan(ef_all[cid]) else ef_all[cid] for cid in ef_all}
+        # np.nan or (ef > emax_ea) or (ef < emin_ea) --> np.inf in hdist
+        hdist = {}
+        for cid in ef_all:
+            if np.isnan(ef_all[cid]):
+                hdist[cid] = np.inf
+                continue
+            if emax_ea is not None:
+                if ef_all[cid] > emax_ea:
+                    hdist[cid] = np.inf
+                    logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} > emax_ea')
+                    continue
+            if emin_ea is not None:
+                if ef_all[cid] < emin_ea:
+                    hdist[cid] = np.inf
+                    logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} < emin_ea')
+                    continue
+            hdist[cid] = ef_all[cid]
         if len(atype) == 2:
             draw_convex_hull_2d(atype, ratio_data, ef_all, c_ids, gen, None)
         elif len(atype) == 3:
@@ -74,11 +101,23 @@ def calc_convex_hull(atype, ratio_data, ef_all, c_ids, gen, vmax=None):
         x = [(ratio_data[cid][:-1]) for cid in ef_all]    # (n-1) dim. composition ratio, order: ID in ef_all
         ef_on_hull = interp(x)    # order: ID in ef_all
     # ------ calc hull distance
-    hdist = {
-        cid: np.inf if np.isnan(ef_all[cid])
-        else ef_all[cid] - ef_on_hull[i]
-        for i, cid in enumerate(ef_all)
-    }
+    # np.nan or (ef > emax_ea) or (ef < emin_ea) --> np.inf in hdist
+    hdist = {}
+    for i, cid in enumerate(ef_all):
+        if np.isnan(ef_all[cid]):
+            hdist[cid] = np.inf
+            continue
+        if emax_ea is not None:
+            if ef_all[cid] > emax_ea:
+                hdist[cid] = np.inf
+                logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} > emax_ea')
+                continue
+        if emin_ea is not None:
+            if ef_all[cid] < emin_ea:
+                hdist[cid] = np.inf
+                logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} < emin_ea')
+                continue
+        hdist[cid] = ef_all[cid] - ef_on_hull[i]
 
     # ---------- draw convex hull
     if len(atype) == 2:
@@ -102,6 +141,8 @@ def draw_convex_hull_2d(atype, ratio_data, ef_all, c_ids, gen, hull):
     '''
 
     # ---------- setting
+    import matplotlib
+    matplotlib.set_loglevel("error")    # to avoid warning about Font
     plt.rcParams.update(_set_params())
 
     # ---------- fig
@@ -152,6 +193,8 @@ def draw_convex_hull_3d(atype, ratio_data, hdist, c_ids, gen, hull, vmax=None):
     '''
 
     # ---------- setting
+    import matplotlib
+    matplotlib.set_loglevel("error")    # to avoid warning about Font
     plt.rcParams.update(_set_params())
 
     # ---------- fig
@@ -213,7 +256,7 @@ def _set_params():
         # ---------- grid
         'grid.linestyle': ':',
         # ---------- font
-        'font.family': 'Times New Roman',
+        'font.family': ['Times New Roman', 'Liberation Serif'],
         'mathtext.fontset': 'cm',
         #'mathtext.fontset': 'stix',
         'font.size': 20,

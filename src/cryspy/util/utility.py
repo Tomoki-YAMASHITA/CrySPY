@@ -71,6 +71,10 @@ def check_fwpath(fwpath):
 
 
 def backup_cryspy():
+
+    # ---------- print
+    logger.info('Backup data')
+
     # ---------- make directory
     dname = datetime.now().strftime("%Y%m%d_%H%M%S")
     dst = 'backup/' + dname + '/'
@@ -87,9 +91,6 @@ def backup_cryspy():
     for d in dlist:
         if os.path.isdir(d):
             shutil.copytree(d, dst + d)
-
-    # ---------- print
-    logger.info('Backup data')
 
 
 def clean_cryspy(skip_yes=False):

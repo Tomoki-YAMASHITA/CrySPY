@@ -2,7 +2,7 @@ from logging import getLogger
 
 import numpy as np
 
-from ...util.struc_util import check_distance, sort_by_atype
+from ...util.struc_util import check_distance, sort_by_atype, get_nat
 #from .adj_comp import operation_atoms, convex_hull_check
 
 
@@ -84,7 +84,8 @@ def gen_addition(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            logger.info(f'Structure ID {cid:>6} was generated'
+            tmp_nat, _ = get_nat(child, atype)
+            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by addition.'
                 f' Space group: {spg_num:>3} {spg_sym}')
             cid += 1
@@ -112,10 +113,16 @@ def gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea=50, target='rando
 
     # ---------- initialize
     cnt = 0
+    vol10per = False
+    vol20per = False
 
     # ---------- generate child
     while True:
         child = parent_A.copy()    # keep original structure
+        if vol10per and not vol20per:
+            child.scale_lattice(parent_A.volume * 1.1)
+        elif vol20per:
+            child.scale_lattice(parent_A.volume * 1.2)
         if target == 'random':
             # ------ random choice for atom type
             at = np.random.choice(atype_avail)
@@ -137,6 +144,18 @@ def gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea=50, target='rando
             logger.warning(f'mindist in addition: {type0} - {type1}, {dist}. retry.')
             cnt += 1
             if cnt >= maxcnt_ea:
+                # ------ volume change
+                if not vol10per:
+                    vol10per = True
+                    cnt = 0    # reset cnt
+                    logger.warning('Addition: increase volume by 10%')
+                    continue
+                elif vol10per and not vol20per:
+                    vol20per = True
+                    cnt = 0
+                    logger.warning('Addition: increase volume by 20%')
+                    continue
+                # ------ fail
                 logger.warning('Addition: could not satisfy min_dist' +
                         f' in {maxcnt_ea} times')
                 logger.warning('Change parent')

@@ -4,7 +4,8 @@ import numpy as np
 from pymatgen.core import Structure
 from pymatgen.core.periodic_table import DummySpecie
 
-from ...util.struc_util import sort_by_atype, sort_by_atype_mol, check_distance, cal_g, find_site
+from ...util.struc_util import sort_by_atype, get_nat
+from ...util.struc_util import sort_by_atype_mol, check_distance, cal_g, find_site
 
 
 logger = getLogger('cryspy')
@@ -87,7 +88,8 @@ def gen_strain(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            logger.info(f'Structure ID {cid:>6} was generated'
+            tmp_nat, _ = get_nat(child, atype)
+            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} by strain.'
                     f' Space group: {spg_num:>3} {spg_sym}')
             cid += 1

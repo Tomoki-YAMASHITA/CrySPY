@@ -15,7 +15,7 @@ from pymatgen.core.periodic_table import DummySpecie
 from pyxtal import pyxtal
 from pyxtal.tolerance import Tol_matrix
 
-from ...util.struc_util import check_distance, sort_by_atype, get_nat
+from ...util.struc_util import check_distance, sort_by_atype, get_nat, remove_zero
 from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
 
 
@@ -65,9 +65,10 @@ def gen_struc(
 
     # ---------- initialize
     init_struc_data = {}
-
-    # ---------- Tol_matrix
-    tolmat = _set_tol_mat(atype, mindist)
+    if not vc:
+        tmp_nat = nat
+        tmp_atype = atype
+        tolmat = _set_tol_mat(tmp_atype, mindist)
 
     # ---------- loop for structure generation
     while len(init_struc_data) < nstruc:
@@ -78,16 +79,22 @@ def gen_struc(
             spg = random.choice(spgnum)
         # ------ generate structure
         tmp_crystal = pyxtal()
-        if not vc:
-            numIons = nat
-        else:    # variable composition
-            numIons = [random.randint(l, u) for l, u in zip(ll_nat, ul_nat)]
-            numIons = tuple(numIons)
+        if vc:    # variable composition
+            nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            if sum(nat) == 0:
+                continue    # restart
+            if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
+                tmp_atype, tmp_nat, tmp_mindist = remove_zero(atype, nat, mindist)
+                tolmat = _set_tol_mat(tmp_atype, tmp_mindist)
+            else:
+                tmp_nat = tuple(nat)
+                tmp_atype = atype
+                tolmat = _set_tol_mat(tmp_atype, mindist)
         try:
             f = StringIO()    # to get output from pyxtal
             with redirect_stdout(f):
-                tmp_crystal.from_random(dim=3, group=spg, species=atype,
-                                        numIons=numIons, factor=vol_factor,
+                tmp_crystal.from_random(dim=3, group=spg, species=tmp_atype,
+                                        numIons=tmp_nat, factor=vol_factor,
                                         conventional=False, tm=tolmat)
             s = f.getvalue().rstrip()    # to delete \n
             if s:
@@ -97,18 +104,19 @@ def gen_struc(
             continue
         if tmp_crystal.valid:
             tmp_struc = tmp_crystal.to_pymatgen(resort=False)
-            tmp_nat, _ = get_nat(tmp_struc, atype)
+            tmp2_nat, _ = get_nat(tmp_struc, tmp_atype)
             # -- check the number of atoms
-            if tmp_nat != numIons:
+            if tmp2_nat != tmp_nat:
                 # (pyxtal 0.1.4) cryspy adopts "conventional=False",
                 #     which is better for DFT calculation
                 # pyxtal returns conventional cell, that is, too many atoms
                 tmp_struc = tmp_struc.get_primitive_structure()
                 # recheck nat
-                if tmp_nat != numIons:    # failure
+                tmp2_nat, _ = get_nat(tmp_struc, tmp_atype)
+                if tmp2_nat != tmp_nat:    # failure
                     continue
             # -- sort, just in case
-            tmp_struc = sort_by_atype(tmp_struc, atype)
+            tmp_struc = sort_by_atype(tmp_struc, tmp_atype)
             # -- scale volume
             if vol_mu is not None:
                 vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
@@ -123,7 +131,7 @@ def gen_struc(
             # -- tmp_struc --> init_struc_data
             cid = len(init_struc_data) + id_offset
             init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6}: {numIons}'
+            logger.info(f'Structure ID {cid:>6}: {nat}'
                     f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
 
     # ---------- return
@@ -283,6 +291,7 @@ def gen_struc_mol(
                 # too many atoms if centering
                 tmp_struc = tmp_struc.get_primitive_structure()
                 # recheck nat
+                tmp_nat, _ = get_nat(tmp_struc, atype)
                 if tmp_nat != nat:    # failure
                     logger.warning(f'different num. of atoms. {tmp_nat}, {nat} retry.')
                     continue
@@ -533,6 +542,7 @@ def gen_struc_mol_break_sym(
                     # too many atoms if centering
                     tmp_struc = tmp_struc.get_primitive_structure()
                     # recheck nat
+                    tmp_nat, _ = get_nat(tmp_struc, atype)
                     if tmp_nat != nat:    # failure
                         if rot_mol is None:
                             break    # go back to the while loop

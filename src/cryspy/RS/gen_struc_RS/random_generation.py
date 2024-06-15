@@ -12,7 +12,7 @@ import subprocess
 import numpy as np
 from pymatgen.core import Structure
 
-from ...util.struc_util import check_distance
+from ...util.struc_util import check_distance, remove_zero
 
 
 logger = getLogger('cryspy')
@@ -65,27 +65,38 @@ def gen_wo_spg(
 
     # ---------- initialize
     init_struc_data = {}
+    if not vc:
+        tmp_nat = nat
+        tmp_atype = atype
+        tmp_mindist = mindist
 
     # ---------- generate structures
     while len(init_struc_data) < nstruc:
         # ------ vc
-        if not vc:
-            numIons = nat
-        else:    # variable composition
-            numIons = [random.randint(l, u) for l, u in zip(ll_nat, ul_nat)]
-            numIons = tuple(numIons)
-        atomlist = _get_atomlist(atype, numIons)
+        if vc:
+            nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            if sum(nat) == 0:
+                continue    # restart
+            if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
+                tmp_atype, tmp_nat, tmp_mindist = remove_zero(atype, nat, mindist)
+            else:
+                tmp_nat = tuple(nat)
+                tmp_atype = atype
+                tmp_mindist = mindist
+        # either tmp_atype or atype is OK in _get_atomlist()
+        atomlist = _get_atomlist(tmp_atype, tmp_nat)
         # ------ get spg, a, b, c, alpha, beta, gamma
         spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle)
         # ------ get a1, a2, a3
         a1, a2, a3 = _calc_latvec(a, b, c, alpha, beta, gamma)
         # ------ get structure
-        tmp_struc = _gen_struc_wo_spg(atype, numIons, atomlist, a1, a2, a3, mindist, maxcnt)
+        tmp_struc = _gen_struc_wo_spg(tmp_atype, tmp_nat, atomlist, a1, a2, a3, tmp_mindist, maxcnt)
         if tmp_struc is not None:    # success of generation
             # ------ scale volume
             if vol_mu is not None:
                 vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
                 tmp_struc.scale_lattice(volume=vol)
+                # either tmp_atype or atype is OK in check_distance()
                 success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
                 if not success:
                     type0 = atype[mindist_ij[0]]
@@ -101,7 +112,7 @@ def gen_wo_spg(
             # ------ register the structure in pymatgen format
             cid = len(init_struc_data) + id_offset
             init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6}: {numIons}'
+            logger.info(f'Structure ID {cid:>6}: {nat}'
                     f' Space group: {spg_num:>3} {spg_sym}')
 
     # ---------- return
@@ -160,6 +171,10 @@ def gen_with_find_wy(
 
     # ---------- initialize
     init_struc_data = {}
+    if not vc:
+        tmp_nat = nat
+        tmp_atype = atype
+        tmp_mindist = mindist
 
     # ---------- cd tmp_gen_struc
     os.makedirs(f'tmp_gen_struc/rank_{mpi_rank}', exist_ok=True)
@@ -168,17 +183,22 @@ def gen_with_find_wy(
     # ---------- generate structures
     while len(init_struc_data) < nstruc:
         # ------ vc
-        if not vc:
-            numIons = nat
-        else:    # variable composition
-            numIons = [random.randint(l, u) for l, u in zip(ll_nat, ul_nat)]
-            numIons = tuple(numIons)
+        if vc:
+            nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            if sum(nat) == 0:
+                continue    # restart
+            if 0 in nat:    # remove 0 from nat and corresponding index in atype, mindist
+                tmp_atype, tmp_nat, tmp_mindist = remove_zero(atype, nat, mindist)
+            else:
+                tmp_nat = tuple(nat)
+                tmp_atype = atype
+                tmp_mindist = mindist
         # ------ get spg, a, b, c, alpha, beta, gamma
         spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle)
         # ------ get cosa, cosb, and cosc
         cosa, cosb, cosg = _calc_cos(alpha, beta, gamma)
         # ------ write an input file for find_wy
-        _fw_input(atype, numIons, spg, a, b, c, cosa, cosb, cosg)
+        _fw_input(tmp_atype, tmp_nat, spg, a, b, c, cosa, cosb, cosg)
         # ------ loop for same fw_input
         cnt = 0
         while cnt <= maxcnt:
@@ -189,7 +209,7 @@ def gen_with_find_wy(
             if not os.path.isfile('POS_WY_SKEL_ALL.json'):
                 wyflag = False
                 break
-            wyflag, tmp_struc = _gen_struc_with_spg(atype, mindist, maxcnt)
+            wyflag, tmp_struc = _gen_struc_with_spg(tmp_atype, tmp_mindist, maxcnt)
             if wyflag is False:    # Failure
                 os.remove('POS_WY_SKEL_ALL.json')
                 cnt += 1
@@ -221,7 +241,7 @@ def gen_with_find_wy(
         # ------ tmp_struc --> init_struc_data
         cid = len(init_struc_data) + id_offset
         init_struc_data[cid] = tmp_struc
-        logger.info(f'Structure ID {cid:>6}: {numIons}'
+        logger.info(f'Structure ID {cid:>6}: {nat}'
                 f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
         # ------ clean
         _rm_files()

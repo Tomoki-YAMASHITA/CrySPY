@@ -50,7 +50,16 @@ def next_gen(
         nat_data, ratio_data, hdist_data = ea_vc_data
 
         # ------ calc convex hull and hull distance
-        hdist = calc_convex_hull(rin.atype, ratio_data, ef_all, c_ids, gen, rin.vmax)
+        hdist = calc_convex_hull(
+            rin.atype,
+            ratio_data,
+            ef_all,
+            c_ids,
+            gen,
+            rin.emax_ea,
+            rin.emin_ea,
+            rin.vmax,
+        )
         # -- update hdist
         out_hdist(gen, hdist, ratio_data)
         hdist_data[gen] = hdist
@@ -70,16 +79,23 @@ def next_gen(
 
     # ---------- survival_fittest
     logger.info('# ------ survival of the fittest')
+    if rin.algo == 'EA-vc':
+        # emax_ea and emin_ea are used in hdist, not in survival_fittest
+        emax_ea = None
+        emin_ea = None
+    else:
+        emax_ea = rin.emax_ea
+        emin_ea = rin.emin_ea
     c_struc_data = {cid: opt_struc_data[cid] for cid in c_ids}
-    ranking, fit_with_elite, struc_wit_elite = survival_fittest(
+    ranking, fit_with_elite, struc_with_elite = survival_fittest(
         c_fitness,
         c_struc_data,
         elite_struc,
         elite_fitness,
         rin.n_fittest,
         rin.fit_reverse,
-        rin.emax_ea,
-        rin.emin_ea,
+        emax_ea,
+        emin_ea,
     )
     logger.info('ranking without duplication (including elite):')
     for cid in ranking:
@@ -92,7 +108,7 @@ def next_gen(
         rin,
         ranking,
         fit_with_elite,
-        struc_wit_elite,
+        struc_with_elite,
         init_struc_data,
         struc_mol_id,
         ea_vc_data,
@@ -122,8 +138,8 @@ def next_gen(
             None,
             n_elite,
             rin.fit_reverse,
-            rin.emax_ea,
-            rin.emin_ea,
+            emax_ea,
+            emin_ea,
         )
         if rin.algo == 'EA-vc':
             '''

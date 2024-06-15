@@ -27,14 +27,14 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size):
                           False, None, mpi_rank)
     if rin.struc_mode == 'mol_bs':
         mindist_dummy = set_mindist(
-                            rin.atype,
-                            rin.mindist_mol_bs,
-                            rin.mindist_mol_bs_factor,
-                            rin.struc_mode,
-                            dummy=True,
-                            mol_file=rin.mol_file,
-                            mpi_rank=mpi_rank
-                        )
+            rin.atype,
+            rin.mindist_mol_bs,
+            rin.mindist_mol_bs_factor,
+            rin.struc_mode,
+            dummy=True,
+            mol_file=rin.mol_file,
+            mpi_rank=mpi_rank
+        )
 
     # ---------- nstruc, offset for MPI
     nstruc_list, offset_list = _divide_task(nstruc, mpi_size, id_offset)

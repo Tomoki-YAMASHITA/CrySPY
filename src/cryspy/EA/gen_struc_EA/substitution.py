@@ -2,7 +2,7 @@ from logging import getLogger
 
 import numpy as np
 
-from ...util.struc_util import check_distance, sort_by_atype
+from ...util.struc_util import check_distance, sort_by_atype, get_nat
 
 
 logger = getLogger('cryspy')
@@ -104,7 +104,8 @@ def gen_substitution(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            logger.info(f'Structure ID {cid:>6} was generated'
+            tmp_nat, _ = get_nat(child, atype)
+            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by substitution.'
                 f' Space group: {spg_num:>3} {spg_sym}')
             cid += 1

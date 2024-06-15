@@ -783,7 +783,7 @@ class ReadInput:
             try:
                 self.vmax = self.config.getfloat('EA', 'vmax')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.emin_ea = None
+                self.vmax = None
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ n_rotation

@@ -310,7 +310,16 @@ class Ctrl_ext:
                 c_ids = c_rslt.index.values    # current IDs [array]
                 ef_all = self.rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
                 from ..EA.calc_hull import calc_convex_hull
-                hdist = calc_convex_hull(self.rin.atype, self.ratio_data, ef_all, c_ids, self.gen, self.rin.vmax)
+                hdist = calc_convex_hull(
+                    self.rin.atype,
+                    self.ratio_data,
+                    ef_all,
+                    c_ids,
+                    self.gen,
+                    self.rin.emax_ea,
+                    self.rin.emin_ea,
+                    self.rin.vmax,
+                )
                 out_hdist(self.gen, hdist, self.ratio_data)
                 self.hdist_data[self.gen] = hdist
                 pkl_data.save_hdist_data(self.hdist_data)

@@ -844,7 +844,16 @@ def next_gen_EA(
             ef_all = rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
             from ..EA.calc_hull import calc_convex_hull
             nat_data, ratio_data, hdist_data = ea_vc_data
-            hdist = calc_convex_hull(rin.atype, ratio_data, ef_all, c_ids, gen, rin.vmax)
+            hdist = calc_convex_hull(
+                rin.atype,
+                ratio_data,
+                ef_all,
+                c_ids,
+                gen,
+                rin.emax_ea,
+                rin.emin_ea,
+                rin.vmax,
+            )
             out_hdist(gen, hdist, ratio_data)
             hdist_data[gen] = hdist
             pkl_data.save_hdist_data(hdist_data)

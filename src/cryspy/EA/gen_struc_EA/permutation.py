@@ -4,7 +4,8 @@ import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 
-from ...util.struc_util import sort_by_atype, check_distance, cal_g, sort_by_atype_mol, find_site
+from ...util.struc_util import sort_by_atype, check_distance, get_nat, remove_zero
+#from ...util.struc_util import cal_g, sort_by_atype_mol, find_site
 
 
 logger = getLogger('cryspy')
@@ -64,6 +65,10 @@ def gen_permutation(
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
+        # ------ check nat for vc
+        if len(parent_A.composition) == 1:
+            logger.warning(f'Permutation: {pid_A} is composed of only single element')
+            continue
         # ------ generate child
         if molecular:
             logger.error('Permutation for molecular is not implemented yet')
@@ -84,7 +89,8 @@ def gen_permutation(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            logger.info(f'Structure ID {cid:>6} was generated'
+            tmp_nat, _ = get_nat(child, atype)
+            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} by permutation.'
                     f' Space group: {spg_num:>3} {spg_sym}')
             cid += 1
@@ -111,7 +117,7 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
     '''
 
     # ---------- initialize
-    smatcher = StructureMatcher()    # instantiate StructureMatcher
+    #smatcher = StructureMatcher()    # instantiate StructureMatcher
     cnt = 0
 
     # ---------- ntimes permutation
@@ -126,8 +132,8 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
                     [i for i, site in enumerate(child)
                         if site.species_string == a])
             # ------ choose two atom type
-            type_choice = np.random.choice(len(atype), 2,
-                                            replace=False)
+            non_empty_indices = [i for i, sublist in enumerate(indx_each_type) if sublist]
+            type_choice = np.random.choice(non_empty_indices, 2, replace=False)
             # ------ choose index
             indx_choice = []
             for tc in type_choice:
@@ -138,11 +144,13 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
             child.replace(indx_choice[1],
                                 species=atype[type_choice[0]])
             # ------ compare to original one
-            if smatcher.fit(child, parent_A):
-                n = ntimes    # back to the start
-                continue
-            else:
-                n -= 1
+            # 2024_06_15: many errors in StructureMatcher. I don't know why.
+            # if smatcher.fit(child, parent_A):
+            #     n = ntimes    # back to the start
+            #     continue
+            # else:
+            #     n -= 1
+            n -= 1
 
         # ------ check distance
         success, mindist_ij, dist = check_distance(child, atype, mindist)

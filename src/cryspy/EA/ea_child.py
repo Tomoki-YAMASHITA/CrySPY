@@ -11,7 +11,6 @@ from .gen_struc_EA.substitution import gen_substitution
 from ..IO import pkl_data
 from ..IO.out_results import out_nat_data
 from ..RS.rs_gen import gen_random
-from ..util.utility import check_fwpath
 from ..util.struc_util import set_mindist, get_mol_data, out_poscar, get_nat
 
 # ---------- import later

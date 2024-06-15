@@ -2,6 +2,7 @@ from logging import getLogger
 
 import numpy as np
 
+from ...util.struc_util import get_nat
 #from .adj_comp import operation_atoms, convex_hull_check
 
 
@@ -80,7 +81,8 @@ def gen_elimination(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            logger.info(f'Structure ID {cid:>6} was generated'
+            tmp_nat, _ = get_nat(child, atype)
+            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by elimination.'
                 f' Space group: {spg_num:>3} {spg_sym}')
             cid += 1
