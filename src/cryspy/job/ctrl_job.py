@@ -873,7 +873,7 @@ def next_gen_EA(
         if gen not in hdist_data:
             logger.info(f'Calculate convex hull for generation {gen}')
             from ..EA.calc_hull import calc_convex_hull
-            hdist = calc_convex_hull(
+            _, hdist = calc_convex_hull(
                 atype=rin.atype,
                 gen=gen,
                 end_point=rin.end_point,

@@ -21,6 +21,7 @@ def calc_convex_hull(
         vmax,
         emax_ea=None,
         emin_ea=None,
+        mpl_draw=True,
     ):
     '''
     Input:
@@ -72,13 +73,14 @@ def calc_convex_hull(
     hdist = {cid: pd.get_e_above_hull(entries[cid]) for cid in entries}
 
     # ---------- draw convex hull
-    if len(atype) == 2:
-        draw_convex_hull_2d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
-    elif len(atype) == 3:
-        draw_convex_hull_3d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
+    if mpl_draw:
+        if len(atype) == 2:
+            draw_convex_hull_2d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
+        elif len(atype) == 3:
+            draw_convex_hull_3d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
 
     # ---------- return
-    return hdist
+    return pd, hdist
 
 
 def draw_convex_hull_2d(
