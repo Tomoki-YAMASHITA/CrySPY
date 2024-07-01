@@ -88,7 +88,7 @@ def gen_strain(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            tmp_nat, _ = get_nat(child, atype)
+            tmp_nat = get_nat(child, atype)
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} by strain.'
                     f' Space group: {spg_num:>3} {spg_sym}')

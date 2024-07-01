@@ -63,10 +63,9 @@ class Ctrl_job:
                 self.struc_mol_id = pkl_data.load_struc_mol_id()
             if self.rin.algo == 'EA-vc':
                 self.nat_data = pkl_data.load_nat_data()
-                self.ratio_data = pkl_data.load_ratio_data()
-                self.hdist_data = pkl_data.load_hdist_data()
-            # do not have to load ea_data here.
+            # do not have to load ea_data and hdist_data here.
             # ea_data is used only in ea_next_gen.py
+            # hdist_data is loaded each time hull distance is calculated
         # ---------- for option
         if self.rin.kpt_flag:
             self.kpt_data = pkl_data.load_kpt()
@@ -302,9 +301,21 @@ class Ctrl_job:
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt data
         self.opt_struc_data, self.rslt_data = regist_opt(
-            self.rin, self.cid, self.work_path,
-            self.init_struc_data, self.opt_struc_data, self.rslt_data,
-            opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=None)
+            self.rin,
+            self.cid,
+            self.work_path,
+            self.init_struc_data,
+            self.opt_struc_data,
+            self.rslt_data,
+            opt_struc,
+            energy,
+            magmom,
+            check_opt,
+            ef=None,
+            nat=None,
+            n_selection=None,
+            gen=None,
+        )
 
     def ctrl_collect_bo(self, nat):
         # ---------- get opt data
@@ -313,10 +324,21 @@ class Ctrl_job:
         logger.info(f'    collect results: E = {energy} eV/atom')
         # ---------- register opt data
         self.opt_struc_data, self.rslt_data = regist_opt(
-            self.rin, self.cid, self.work_path,
-            self.init_struc_data, self.opt_struc_data, self.rslt_data,
-            opt_struc, energy, magmom, check_opt,
-            ef=None, n_selection=self.n_selection, gen=None)
+            self.rin,
+            self.cid,
+            self.work_path,
+            self.init_struc_data,
+            self.opt_struc_data,
+            self.rslt_data,
+            opt_struc,
+            energy,
+            magmom,
+            check_opt,
+            ef=None,
+            nat=None,
+            n_selection=self.n_selection,
+            gen=None,
+        )
         # ---------- success
         if opt_struc is not None:
             from ..BO.select_descriptor import select_descriptor
@@ -389,9 +411,21 @@ class Ctrl_job:
             logger.info(f'    collect results: E = {energy} eV/atom')
             # ------ register opt data
             self.opt_struc_data, self.rslt_data = regist_opt(
-                self.rin, self.cid, self.work_path,
-                self.init_struc_data, self.opt_struc_data, self.rslt_data,
-                opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=None)
+                self.rin,
+                self.cid,
+                self.work_path,
+                self.init_struc_data,
+                self.opt_struc_data,
+                self.rslt_data,
+                opt_struc,
+                energy,
+                magmom,
+                check_opt,
+                ef=None,
+                nat=None,
+                n_selection=None,
+                gen=None,
+            )
 
     def ctrl_collect_ea(self, nat):
         # ---------- get opt data
@@ -401,15 +435,29 @@ class Ctrl_job:
         # ---------- calculate Ef
         if self.rin.algo == 'EA-vc':
             from ..EA.calc_ef import calc_ef
-            ef = calc_ef(energy, self.ratio_data[self.cid], self.rin.end_point)
+            ef = calc_ef(energy, nat, self.rin.end_point)
             logger.info(f'                     Ef = {ef} eV/atom')
+            regist_nat = nat
         else:
             ef = None
+            regist_nat = None
         # ---------- register opt data
         self.opt_struc_data, self.rslt_data = regist_opt(
-            self.rin, self.cid, self.work_path,
-            self.init_struc_data, self.opt_struc_data, self.rslt_data,
-            opt_struc, energy, magmom, check_opt, ef=ef, n_selection=None, gen=self.gen)
+            self.rin,
+            self.cid,
+            self.work_path,
+            self.init_struc_data,
+            self.opt_struc_data,
+            self.rslt_data,
+            opt_struc,
+            energy,
+            magmom,
+            check_opt,
+            ef=ef,
+            nat=regist_nat,
+            n_selection=None,
+            gen=self.gen,
+        )
 
     def ctrl_next_struc(self):
         # ---------- RS, BO, EA, EA-vc
@@ -440,13 +488,13 @@ class Ctrl_job:
             # -- prepare input files for structure optimization
             if self.rin.kpt_flag:
                 self.kpt_data = select_code.next_struc(
-                                    self.rin,
-                                    next_struc_data,
-                                    self.cid,
-                                    self.work_path,
-                                    nat,
-                                    self.kpt_data,
-                                )
+                    self.rin,
+                    next_struc_data,
+                    self.cid,
+                    self.work_path,
+                    nat,
+                    self.kpt_data,
+                )
             else:
                 select_code.next_struc(
                     self.rin,
@@ -462,11 +510,11 @@ class Ctrl_job:
             logger.info(f'ID {self.cid:>6}: submit job, Stage 1')
             # -- update status
             self.id_queueing, self.id_running = update_status(
-                                                    self.cid,
-                                                    self.id_queueing,
-                                                    self.id_running,
-                                                    operation='submit'
-                                                )
+                self.cid,
+                self.id_queueing,
+                self.id_running,
+                operation='submit'
+            )
 
     def ctrl_skip(self):
         # ---------- log
@@ -550,10 +598,11 @@ class Ctrl_job:
             out_rslt(self.rslt_data)
         elif self.rin.algo == 'EA-vc':
             ef = np.nan
+            nat = self.nat_data[self.cid]
             self.rslt_data.loc[self.cid] = [self.gen,
                                             spg_num, spg_sym,
                                             spg_num_opt, spg_sym_opt,
-                                            energy, ef, magmom, check_opt]
+                                            energy, ef, nat, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
             out_rslt(self.rslt_data)
         # ---------- move to fin
@@ -578,19 +627,17 @@ class Ctrl_job:
             self.next_select_LAQA()
         if self.rin.algo in ['EA', 'EA-vc']:
             if self.rin.algo == 'EA-vc':
-                ea_vc_data = (self.nat_data, self.ratio_data, self.hdist_data)
+                nat_data = self.nat_data
             else:
-                ea_vc_data = None
+                nat_data=None
             next_gen_EA(
                 self.rin,
-                self.id_queueing,
-                self.id_running,
                 self.gen,
                 self.go_next_sg,
                 self.init_struc_data,
                 self.opt_struc_data,
                 self.rslt_data,
-                ea_vc_data=ea_vc_data,
+                nat_data=nat_data,
                 struc_mol_id=None,
             )
 
@@ -697,6 +744,7 @@ def regist_opt(
         magmom,
         check_opt,
         ef=None,
+        nat=None,
         n_selection=None,
         gen=None
     ):
@@ -753,7 +801,7 @@ def regist_opt(
     elif rin.algo in ['EA-vc']:
         rslt_data.loc[cid] = [gen,
                               spg_num, spg_sym, spg_num_opt, spg_sym_opt,
-                              energy, ef, magmom, check_opt]
+                              energy, ef, nat, magmom, check_opt]
     pkl_data.save_rslt(rslt_data)
     if rin.algo != 'EA-vc':
         out_rslt(rslt_data)
@@ -807,19 +855,39 @@ def mv_fin(cid):
 
 def next_gen_EA(
         rin,
-        id_queueing,
-        id_running,
         gen,
         go_next_sg,
         init_struc_data,
         opt_struc_data,
         rslt_data,
-        ea_vc_data=None,
+        nat_data=None,
         struc_mol_id=None,
     ):
 
     # ---------- log
     logger.info(f'Done generation {gen}')
+
+    # ---------- EA-vc: calc convex hull
+    if rin.algo == 'EA-vc':
+        hdist_data = pkl_data.load_hdist_data()
+        if gen not in hdist_data:
+            logger.info(f'Calculate convex hull for generation {gen}')
+            from ..EA.calc_hull import calc_convex_hull
+            hdist = calc_convex_hull(
+                atype=rin.atype,
+                gen=gen,
+                end_point=rin.end_point,
+                rslt_data=rslt_data,
+                nat_data=nat_data,
+                show_max=rin.show_max,
+                label_stable=rin.label_stable,
+                vmax=rin.vmax,
+                emax_ea=rin.emax_ea,
+                emin_ea=rin.emin_ea,
+            )
+            out_hdist(gen, hdist, nat_data)
+            hdist_data[gen] = hdist
+            pkl_data.save_hdist_data(hdist_data)
 
     # ---------- flag for next selection or generation
     if not go_next_sg:
@@ -835,28 +903,6 @@ def next_gen_EA(
 
     # ---------- maxgen_ea
     if 0 < rin.maxgen_ea <= gen:
-        if rin.algo == 'EA-vc':
-            # ------ when gen reaches maxgen_ea,  next generation is not created
-            #        so convex hull is calculated here
-            #        update only convex hull and hdist, not elite_struc and elite_fitness
-            c_rslt = rslt_data[rslt_data['Gen'] == gen]
-            c_ids = c_rslt.index.values    # current IDs [array]
-            ef_all = rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
-            from ..EA.calc_hull import calc_convex_hull
-            nat_data, ratio_data, hdist_data = ea_vc_data
-            hdist = calc_convex_hull(
-                rin.atype,
-                ratio_data,
-                ef_all,
-                c_ids,
-                gen,
-                rin.emax_ea,
-                rin.emin_ea,
-                rin.vmax,
-            )
-            out_hdist(gen, hdist, ratio_data)
-            hdist_data[gen] = hdist
-            pkl_data.save_hdist_data(hdist_data)
         logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
         os.remove('lock_cryspy')
         raise SystemExit()
@@ -866,12 +912,10 @@ def next_gen_EA(
     from ..EA import ea_next_gen
     ea_next_gen.next_gen(
         rin,
-        id_queueing,
-        id_running,
         gen,
         init_struc_data,
         opt_struc_data,
         rslt_data,
-        ea_vc_data,
+        nat_data,
         struc_mol_id,
     )

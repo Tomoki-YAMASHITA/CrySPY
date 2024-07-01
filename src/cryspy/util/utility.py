@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.4.0b2'
+    return '1.4.0b4'
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -82,7 +82,7 @@ def backup_cryspy():
 
     # ---------- file/directory list
     flist = ['cryspy.in', 'cryspy.stat', 'err_cryspy', 'log_cryspy']
-    dlist = ['calc_in', 'data', 'ext']
+    dlist = ['calc_in', 'data']
 
     # ---------- backup
     for f in flist:
@@ -105,7 +105,7 @@ def clean_cryspy(skip_yes=False):
 
     # ---------- file/directory list
     fdlist = ['cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'lock_cryspy',
-              'data', 'work', 'ext', 'tmp_calc_FP', 'tmp_gen_struc']
+              'data', 'work', 'tmp_calc_FP', 'tmp_gen_struc']
 
     # ---------- clean
     dname = datetime.now().strftime("%Y%m%d_%H%M%S")

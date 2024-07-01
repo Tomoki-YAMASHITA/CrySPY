@@ -40,8 +40,5 @@ def out_input(rin):
         if rin.calc_code == 'ASE' and key == 'kpt_flag':
             logger.info('')
             logger.info('[ASE]')
-        if rin.calc_code == 'ext' and key == 'kpt_flag':
-            logger.info('')
-            logger.info('[ext]')
         if getattr(rin, key) is not None:
             logger.info(f'{key} = {getattr(rin, key)}')

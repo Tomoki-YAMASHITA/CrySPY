@@ -12,7 +12,6 @@ from cryspy.util.utility import set_logger, backup_cryspy, clean_cryspy
 
 # ---------- import later
 # from mpi4py import MPI
-# from cryspy.job.ctrl_ext import Ctrl_ext
 # from cryspy.job.ctrl_job import Ctrl_job
 # from cryspy.interface import select_code
 
@@ -94,23 +93,16 @@ def main():
             os.remove('lock_cryspy')
             raise SystemExit()
 
-        if not rin.calc_code == 'ext':
-            # ---------- check calc files in ./calc_in
-            from cryspy.interface import select_code
-            select_code.check_calc_files(rin)
-            # ---------- mkdir work/fin
-            os.makedirs('work/fin', exist_ok=True)
+        # ---------- check calc files in ./calc_in
+        from cryspy.interface import select_code
+        select_code.check_calc_files(rin)
 
-        # ---------- Perform structure optimization externally
-        if rin.calc_code == 'ext':
-            # ------ instantiate Ctrl_job class
-            from cryspy.job.ctrl_ext import Ctrl_ext
-            jobs = Ctrl_ext(rin, init_struc_data)
-        # ---------- internally
-        else:
-            # ---------- instantiate Ctrl_job class
-            from cryspy.job.ctrl_job import Ctrl_job
-            jobs = Ctrl_job(rin, init_struc_data)
+        # ---------- mkdir work/fin
+        os.makedirs('work/fin', exist_ok=True)
+
+        # ---------- instantiate Ctrl_job class
+        from cryspy.job.ctrl_job import Ctrl_job
+        jobs = Ctrl_job(rin, init_struc_data)
 
         # ---------- check job status
         jobs.check_job()
@@ -119,15 +111,14 @@ def main():
         jobs.handle_job()
 
         # ---------- recheck for skip and done
-        if not rin.calc_code == 'ext':
-            if jobs.id_queueing:
-                cnt_recheck = 0
-                while jobs.recheck:
-                    cnt_recheck += 1
-                    jobs.recheck = False    # True --> False
-                    logger.info(f'\n\nrecheck {cnt_recheck}\n')
-                    jobs.check_job()
-                    jobs.handle_job()
+        if jobs.id_queueing:
+            cnt_recheck = 0
+            while jobs.recheck:
+                cnt_recheck += 1
+                jobs.recheck = False    # True --> False
+                logger.info(f'\n\nrecheck {cnt_recheck}\n')
+                jobs.check_job()
+                jobs.handle_job()
 
         # ---------- next selection or generation
         if not (jobs.id_queueing or jobs.id_running):

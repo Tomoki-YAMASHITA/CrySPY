@@ -320,16 +320,6 @@ def save_nat_data(nat_data):
         pickle.dump(nat_data, f)
 
 
-def load_ratio_data():
-    with open('./data/pkl_data/ratio_data.pkl', 'rb') as f:
-        return pickle.load(f)
-
-
-def save_ratio_data(ratio_data):
-    with open('./data/pkl_data/ratio_data.pkl', 'wb') as f:
-        pickle.dump(ratio_data, f)
-
-
 def load_hdist_data():
     with open('./data/pkl_data/hdist_data.pkl', 'rb') as f:
         return pickle.load(f)
@@ -338,14 +328,3 @@ def load_hdist_data():
 def save_hdist_data(hdist_data):
     with open('./data/pkl_data/hdist_data.pkl', 'wb') as f:
         pickle.dump(hdist_data, f)
-
-
-# ---------- ext
-def load_ext_opt_struc():
-    with open('./ext/calc_data/ext_opt_struc_data.pkl', 'rb') as f:
-        return pickle.load(f)
-
-
-def load_ext_energy():
-    with open('./ext/calc_data/ext_energy_data.pkl', 'rb') as f:
-        return pickle.load(f)

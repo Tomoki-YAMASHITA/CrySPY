@@ -3,7 +3,6 @@ from logging import getLogger
 import numpy as np
 
 from ...util.struc_util import get_nat
-#from .adj_comp import operation_atoms, convex_hull_check
 
 
 logger = getLogger('cryspy')
@@ -81,7 +80,7 @@ def gen_elimination(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            tmp_nat, _ = get_nat(child, atype)
+            tmp_nat = get_nat(child, atype)
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by elimination.'
                 f' Space group: {spg_num:>3} {spg_sym}')
@@ -104,6 +103,7 @@ def gen_child(parent_A, atype_avail, target='random'):
 
     # ---------- keep original structure
     child = parent_A.copy()    # keep original structure
+
     # ---------- elimination
     if target == 'random':
         # ------ random choice for atom type
@@ -113,10 +113,7 @@ def gen_child(parent_A, atype_avail, target='random'):
         elim_indx = np.random.choice(aindx, 1)  # ", 1" to get array
         # ------ remove atom
         child.remove_sites(elim_indx)
-    # ---------- not implemented yet
-    # elif tgt in ['depop', 'overpop']:
-    #     section = convex_hull_check(rin)
-    #     child = operation_atoms(rin, 'elimination', child, section)
+
     # ---------- return
     #            no need to check distance in elimination
     return child

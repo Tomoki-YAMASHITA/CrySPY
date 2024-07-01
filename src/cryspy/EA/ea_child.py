@@ -11,18 +11,22 @@ from .gen_struc_EA.substitution import gen_substitution
 from ..IO import pkl_data
 from ..IO.out_results import out_nat_data
 from ..RS.rs_gen import gen_random
-from ..util.struc_util import set_mindist, get_mol_data, out_poscar, get_nat
-
-# ---------- import later
-#from ..RS.gen_struc_RS import gen_pyxtal
-#from ..RS.gen_struc_RS import random_generation
+from ..util.struc_util import set_mindist, out_poscar, get_nat
+#from ..util.struc_util import get_mol_data
 
 
 logger = getLogger('cryspy')
 
 
-def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
-              struc_mol_id=None, ea_vc_data=None):
+def child_gen(
+        rin,
+        ranking,
+        fittest,
+        struc_data,
+        init_struc_data,
+        struc_mol_id=None,
+        nat_data=None,
+    ):
 
     # ---------- instantiate SelectParents class
     sp = SelectParents(ranking)    # after set_xxx, we can use sp.get_parents(n_parent)
@@ -139,7 +143,6 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
 
     # ---------- EA-vc
     if rin.algo == 'EA-vc':
-        nat_data, ratio_data, _ = ea_vc_data
 
         # ------ Addition
         if rin.n_add > 0:
@@ -231,11 +234,9 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
 
     # ---------- save EA-vc_data.pkl
     if rin.algo == 'EA-vc':
-        # ea_vc_data is already loaded above
         for cid, struc in children.items():
-            nat_data[cid], ratio_data[cid] = get_nat(struc, rin.atype)
+            nat_data[cid] = get_nat(struc, rin.atype)
         pkl_data.save_nat_data(nat_data)
-        pkl_data.save_ratio_data(ratio_data)
 
     # ---------- random generation
     if rin.n_rand > 0:
@@ -253,11 +254,9 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
         #     struc_mol_id.update(tmp_mol_id)
         # ------ save EA-vc_data.pkl
         if rin.algo == 'EA-vc':
-            # ea_vc_data is already loaded above
             for cid, struc in tmp_struc_data.items():
-                nat_data[cid], ratio_data[cid] = get_nat(struc, rin.atype)
+                nat_data[cid] = get_nat(struc, rin.atype)
             pkl_data.save_nat_data(nat_data)
-            pkl_data.save_ratio_data(ratio_data)
         # ------ write init_POSCARS
         out_poscar(tmp_struc_data, './data/init_POSCARS')
 
@@ -273,25 +272,3 @@ def child_gen(rin, ranking, fittest, struc_data, init_struc_data,
     # ----------return
     return init_struc_data, parents, operation
     #return init_struc_data, parents, operation, struc_mol_id
-
-
-# not used in this version
-# this is used in adj_comp.py
-# def check_vcnat(rin, child):
-#     from ..util.struc_util import get_nat
-#     nat, ratio = get_nat(child, rin.atype)
-
-#     if len(rin.atype) == 2:
-#         for i in range(len(rin.atype)):
-#             if (nat[i] >= rin.ll_nat[i]) and (nat[i]<= rin.ul_nat[i]):
-#                 check_nat = True
-#             else:
-#                 #check_nat = False
-#                 return False
-
-#         return True
-        
-#     elif len(rin.atype) == 3:
-#         SystemExit(1) #temporary
-#     else:
-#         SystemExit(1) #temporary

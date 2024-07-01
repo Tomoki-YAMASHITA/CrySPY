@@ -3,7 +3,6 @@ from logging import getLogger
 import numpy as np
 
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
-#from .adj_comp import operation_atoms, convex_hull_check
 
 
 logger = getLogger('cryspy')
@@ -84,7 +83,7 @@ def gen_addition(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            tmp_nat, _ = get_nat(child, atype)
+            tmp_nat = get_nat(child, atype)
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by addition.'
                 f' Space group: {spg_num:>3} {spg_sym}')
@@ -129,10 +128,6 @@ def gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea=50, target='rando
             # ------ add atom
             coords = np.random.rand(3)
             child.append(species=at, coords=coords)
-        # ---------- not implemented yet
-        # elif target in ['depop', 'overpop']:
-        #     section = convex_hull_check(rin)
-        #     child = operation_atoms(rin, 'addition', child, section)
         # ------ check distance
         success, mindist_ij, dist = check_distance(child, atype, mindist)
         if success:

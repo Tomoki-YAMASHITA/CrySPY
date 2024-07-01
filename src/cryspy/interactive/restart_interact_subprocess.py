@@ -116,6 +116,6 @@ def restart_interact(njob: int):
                 init_struc_data,
                 opt_struc_data,
                 rslt_data,
-                ea_vc_data=None,
+                nat_data=None,
                 struc_mol_id=None,
             )

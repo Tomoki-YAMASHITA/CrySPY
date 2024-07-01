@@ -141,9 +141,3 @@ def initialize(comm, mpi_rank, mpi_size):
         if rin.stress_step_flag:
             stress_step_data = {}
             pkl_data.save_stress_step(stress_step_data)
-
-        # ---------- for ext
-        if rin.calc_code == 'ext':
-            os.makedirs('ext', exist_ok=True)
-            with open('ext/stat_job', 'w') as fstat:
-                fstat.write('out\n')

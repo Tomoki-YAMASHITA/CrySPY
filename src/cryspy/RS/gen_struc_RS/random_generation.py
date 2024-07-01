@@ -12,7 +12,7 @@ import subprocess
 import numpy as np
 from pymatgen.core import Structure
 
-from ...util.struc_util import check_distance, remove_zero
+from ...util.struc_util import check_distance, remove_zero, get_cn_comb
 
 
 logger = getLogger('cryspy')
@@ -35,6 +35,7 @@ def gen_wo_spg(
         vc=False,
         ll_nat=None,
         ul_nat=None,
+        charge=None,
     ):
     '''
     Generate random structures without space group information
@@ -56,8 +57,9 @@ def gen_wo_spg(
     vol_mu (float): mean of volume scaling
     vol_sigma (float): standard deviation of volume scaling
     vc (bool): variable composition. it needs ll_nat and ul_nat
-    ll_nat (tuple): lower limit of number of atoms, e.g. (1, 1)
+    ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
+    charge (tuple): charge of atoms (e.g. (1, -1)). Set if you want to check charge neutrality
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen structure data}
@@ -69,12 +71,21 @@ def gen_wo_spg(
         tmp_nat = nat
         tmp_atype = atype
         tmp_mindist = mindist
+    if vc and charge is not None:
+        cn_comb = get_cn_comb(ll_nat, ul_nat, charge)
+        if not cn_comb:
+            logger.error('No charge neutral combinations')
+            raise SystemExit(1)
+        logger.info(f'Consider charge neutrality: {charge}')
 
     # ---------- generate structures
     while len(init_struc_data) < nstruc:
         # ------ vc
         if vc:
-            nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            if charge is None:
+                nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            else:
+                nat = random.choice(cn_comb)
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
@@ -138,6 +149,7 @@ def gen_with_find_wy(
         vc=False,
         ll_nat=None,
         ul_nat=None,
+        charge=None,
     ):
     '''
     Generate random structures with space gruop information
@@ -162,8 +174,9 @@ def gen_with_find_wy(
     fwpath (str): specify a path for a executable file of find_wy program
     mpi_rank (int): rank of MPI process
     vc (bool): variable composition. it needs ll_nat and ul_nat
-    ll_nat (tuple): lower limit of number of atoms, e.g. (1, 1)
+    ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
+    charge (tuple): charge of atoms (e.g. (1, -1)). Set if you want to check charge neutrality
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structre}
@@ -175,6 +188,12 @@ def gen_with_find_wy(
         tmp_nat = nat
         tmp_atype = atype
         tmp_mindist = mindist
+    if vc and charge is not None:
+        cn_comb = get_cn_comb(ll_nat, ul_nat, charge)
+        if not cn_comb:
+            logger.error('No charge neutral combinations')
+            raise SystemExit(1)
+        logger.info(f'Consider charge neutrality: {charge}')
 
     # ---------- cd tmp_gen_struc
     os.makedirs(f'tmp_gen_struc/rank_{mpi_rank}', exist_ok=True)
@@ -184,7 +203,10 @@ def gen_with_find_wy(
     while len(init_struc_data) < nstruc:
         # ------ vc
         if vc:
-            nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            if charge is None:
+                nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            else:
+                nat = random.choice(cn_comb)
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from nat and corresponding index in atype, mindist

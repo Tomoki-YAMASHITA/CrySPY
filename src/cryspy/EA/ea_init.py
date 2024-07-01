@@ -102,6 +102,7 @@ def initialize(rin, init_struc_data, rslt_data):
                 ]]
     if rin.algo == 'EA-vc':
         rslt_data['Ef_eV_atom'] = pd.Series(dtype='float64')
+        rslt_data['Num_atom'] = pd.Series(dtype='object')
         rslt_data = rslt_data[[
                         'Gen',
                         'Spg_num',
@@ -110,18 +111,17 @@ def initialize(rin, init_struc_data, rslt_data):
                         'Spg_sym_opt',
                         'E_eV_atom',
                         'Ef_eV_atom',
+                        'Num_atom',
                         'Magmom',
                         'Opt',
                     ]]
-    # ------ nat, ratio, etc for EA-vc
+    # ------ nat, hdist, etc for EA-vc
     if rin.algo == 'EA-vc':
         nat_data = {}      # {ID: [nat], ...}
-        ratio_data = {}    # {ID: [ratio], ...}
         hdist_data = {}    # {gen: {ID: hdist, ...}, ...}
         for cid, struc in init_struc_data.items():
-            tmp_nat, tmp_ratio = get_nat(struc, rin.atype)
+            tmp_nat = get_nat(struc, rin.atype)
             nat_data[cid] = tmp_nat
-            ratio_data[cid] = tmp_ratio
         out_nat_data(nat_data, rin.atype)
         os.makedirs('data/convex_hull', exist_ok=True)
 
@@ -136,7 +136,6 @@ def initialize(rin, init_struc_data, rslt_data):
     pkl_data.save_rslt(rslt_data)
     if rin.algo == 'EA-vc':
         pkl_data.save_nat_data(nat_data)
-        pkl_data.save_ratio_data(ratio_data)
         pkl_data.save_hdist_data(hdist_data)
 
     # ---------- status

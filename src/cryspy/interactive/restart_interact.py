@@ -109,13 +109,11 @@ def restart_interact(njob: int):
         if rin.algo == 'EA':
             next_gen_EA(
                 rin,
-                id_queueing,
-                id_running,
                 gen,
                 go_next_sg,
                 init_struc_data,
                 opt_struc_data,
                 rslt_data,
-                ea_vc_data=None,
+                nat_data=None,
                 struc_mol_id=None,
             )

@@ -1,243 +1,234 @@
 from logging import getLogger
 
 import matplotlib.pyplot as plt
+from matplotlib import set_loglevel
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator
-from scipy.spatial import ConvexHull
+from pymatgen.entries.computed_entries import ComputedEntry
+from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
 
 
 logger = getLogger('cryspy')
 
 
-def calc_convex_hull(atype, ratio_data, ef_all, c_ids, gen, emax_ea=None, emin_ea=None, vmax=None):
+def calc_convex_hull(
+        atype,
+        gen,
+        end_point,
+        rslt_data,
+        nat_data,
+        show_max,
+        label_stable,
+        vmax,
+        emax_ea=None,
+        emin_ea=None,
+    ):
     '''
     Input:
         atype (tuple): atom type, e.g. ('Na', 'Cl')
-        ratio_data [dict]: ratio of all structures, {ID: (ratio tuple), ...}
-        ef_all [dict]: formation energy of all structures, {ID: Ef, ...}
-        c_ids [array]: ID array of current generation structures, just for plot
-        gen [int]: current generation, just for plot
+        gen (int): current generation
+        end_point (tuple): end points e.g. (0.0  0.0)
+        rslt_data (DataFrame): result data
+        nat_data (dict): number of atoms of all structures, {ID: (nat1, nat2, ...), ...}
+        show_max (float): max value of y-axis (binary) or hull distance (ternary)
+        label_stable (bool): whether to show stable compositions
+        vmax (float): max value of colorbar for hull distance
         emax_ea (float): maximum energy for cutoff
         emin_ea (float): minimum energy for cutoff
-        vmax [float]: max value of colorbar for hull distance, just for plot
 
     Return:
         hdist [dict]: hull distance of all structures, {ID: distance, ...}
     '''
 
-    # ---------- remove Ef >= 0.0
-    ratio_chull = []
-    ef_chull = []
-    for cid in ef_all:
-        if ef_all[cid] < 0.0:
-            # ------ emax_ea
-            if emax_ea is not None:
-                if ef_all[cid] > emax_ea:
-                    logger.info(f'Eliminate ID {cid} from convex hull: {ef_all[cid]} > emax_ea')
-                    continue
-            # ------ emin_ea
-            if emin_ea is not None:
-                if ef_all[cid] < emin_ea:
-                    logger.info(f'Eliminate ID {cid} from convex hull: {ef_all[cid]} < emin_ea')
-                    continue
-            ratio_chull.append(ratio_data[cid])
-            ef_chull.append(ef_all[cid])
+    # ---------- current generation
+    c_rslt = rslt_data[rslt_data['Gen'] == gen]
+    cgen_ids = c_rslt.index.values    # current IDs [array]
 
-    # ---------- no negative Ef
-    #            in this case, hull distance is equivalent to Ef
-    if not ef_chull:
-        # np.nan or (ef > emax_ea) or (ef < emin_ea) --> np.inf in hdist
-        hdist = {}
-        for cid in ef_all:
-            if np.isnan(ef_all[cid]):
-                hdist[cid] = np.inf
-                continue
-            if emax_ea is not None:
-                if ef_all[cid] > emax_ea:
-                    hdist[cid] = np.inf
-                    logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} > emax_ea')
-                    continue
-            if emin_ea is not None:
-                if ef_all[cid] < emin_ea:
-                    hdist[cid] = np.inf
-                    logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} < emin_ea')
-                    continue
-            hdist[cid] = ef_all[cid]
-        if len(atype) == 2:
-            draw_convex_hull_2d(atype, ratio_data, ef_all, c_ids, gen, None)
-        elif len(atype) == 3:
-            draw_convex_hull_3d(atype, ratio_data, hdist, c_ids, gen, None, vmax)
-        return hdist
-
-    # ---------- add end points
-    n = len(atype)
-    end_ratio = [[1 if i == j else 0 for j in range(n)] for i in range(n)]    # identity_matrix
-    end_ef = [0.0 for i in range(n)]
-    # ------ extend
-    ratio_chull.extend(end_ratio)    # last n data are end points
-    ef_chull.extend(end_ef)
-
-    # ---------- to array
-    ratio_chull = np.array(ratio_chull)
-    ratio_chull = ratio_chull[:, :-1]    # last composition is not used
-    ef_chull = np.array(ef_chull)
-    points = np.hstack([ratio_chull, ef_chull[:, np.newaxis]])
-
-    # ---------- calc convex hull
-    hull = ConvexHull(points)
-    vpoints = hull.points[hull.vertices]    # hull.vertices: index of vertices in hull.points
-
-    # ---------- hull distance
-    # ------ binary
-    if len(atype) == 2:
-        sorted_indices = np.argsort(vpoints[:, 0])
-        sorted_vx = vpoints[:, 0][sorted_indices]
-        sorted_vef = vpoints[:, 1][sorted_indices]
-        x = [ratio_data[cid][0] for cid in ef_all]    # first composition ratio, order: ID in ef_all
-        ef_on_hull = np.interp(x, sorted_vx, sorted_vef)    # order: ID in ef_all
-    # ------ ternary or more
-    else:
-        interp = LinearNDInterpolator(vpoints[:, :-1], vpoints[:, -1])    # no need to sort
-        x = [(ratio_data[cid][:-1]) for cid in ef_all]    # (n-1) dim. composition ratio, order: ID in ef_all
-        ef_on_hull = interp(x)    # order: ID in ef_all
-    # ------ calc hull distance
-    # np.nan or (ef > emax_ea) or (ef < emin_ea) --> np.inf in hdist
-    hdist = {}
-    for i, cid in enumerate(ef_all):
-        if np.isnan(ef_all[cid]):
-            hdist[cid] = np.inf
+    # ---------- rslt --> entries
+    e_all = rslt_data['E_eV_atom'].to_dict()
+    entries = {}
+    for cid, e in e_all.items():
+        # ------ np.nan
+        if np.isnan(e):
             continue
+        # ------ emax_ea
         if emax_ea is not None:
-            if ef_all[cid] > emax_ea:
-                hdist[cid] = np.inf
-                logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} > emax_ea')
+            if e > emax_ea:
+                print(f'Eliminate ID {cid} from convex hull: {e} > emax_ea')
                 continue
+        # ------ emin_ea
         if emin_ea is not None:
-            if ef_all[cid] < emin_ea:
-                hdist[cid] = np.inf
-                logger.info(f'Eliminate ID {cid} from hdist: {ef_all[cid]} < emin_ea')
+            if e < emin_ea:
+                print(f'Eliminate ID {cid} from convex hull: {e} < emin_ea')
                 continue
-        hdist[cid] = ef_all[cid] - ef_on_hull[i]
+        # ------ entry
+        composition = "".join(f"{element}{nat_i}" for element, nat_i in zip(atype, nat_data[cid]))
+        entries[cid] = ComputedEntry(composition, e*sum(nat_data[cid]), entry_id=cid)
+
+    # ---------- end points
+    end_entry_values = [ComputedEntry(element, end_e) for element, end_e in zip(atype, end_point)]
+
+    # ---------- PhaseDiagram and hull distance
+    pd = PhaseDiagram(end_entry_values + list(entries.values()))
+    hdist = {cid: pd.get_e_above_hull(entries[cid]) for cid in entries}
 
     # ---------- draw convex hull
     if len(atype) == 2:
-        draw_convex_hull_2d(atype, ratio_data, ef_all, c_ids, gen, hull)
+        draw_convex_hull_2d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
     elif len(atype) == 3:
-        draw_convex_hull_3d(atype, ratio_data, hdist, c_ids, gen, hull, vmax)
+        draw_convex_hull_3d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
 
     # ---------- return
     return hdist
 
 
-def draw_convex_hull_2d(atype, ratio_data, ef_all, c_ids, gen, hull):
+def draw_convex_hull_2d(
+        pd,
+        hdist,
+        cgen_ids,
+        gen,
+        show_max=0.05,
+        label_stable=True,
+        vmax=0.05,
+    ):
     '''
     # ---------- args
-    atype (tuple): atom type, e.g. ('Na', 'Cl')
-    ratio_data [dict]: ratio of all structures, {ID: (ratio tuple), ...}
-    ef_all [dict]: formation energy of all structures, {ID: Ef, ...}
-    c_ids [array]: ID array of current generation structures
-    gen [int]: current generation
-    hull [ConvexHull]: convex hull object
+    pd (PhaseDiagram): phase diagram object
+    hdist (dict): hull distance of all structures, {ID: distance, ...}
+    cgen_ids (array): ID array of current generation structures
+    gen (int): current generation
+    show_max (float): max value of y-axis (binary) or hull distance (ternary)
+    label_stable (bool): whether to show stable compositions
+    vmax (float): max value of colorbar for hull distance
     '''
 
     # ---------- setting
-    import matplotlib
-    matplotlib.set_loglevel("error")    # to avoid warning about Font
-    plt.rcParams.update(_set_params())
+    _set_params()
 
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
+    plotter_mpl = PDPlotter(pd, show_unstable=0.0, backend='matplotlib', linewidth=1.5, markerfacecolor='darkslateblue', markersize=10)
+    plotter_mpl.get_plot(label_stable=label_stable, label_unstable=False, ax=ax)
+    ax.set_axisbelow(True)
 
     # ---------- hline
-    ax.axhline(y=0, xmin=0, xmax=1, color='black', linestyle='--')
+    ax.axhline(y=0, xmin=0, xmax=1, color='black', linestyle='--', zorder=1)
 
-    # ---------- label
-    ax.set_xlabel('$x$ in '+f'{atype[0]}'+'$_{x}$'+f'{atype[1]}'+'$_{1-x}$')
-    ax.set_ylabel('Formation energy (eV/atom)')
+    # ---------- label for only binary system
+    # default fontweight is 'bold' in PDPlotter, so set 'normal'
+    ax.set_xlabel('Composition', fontsize=24, fontweight='normal')
+    ax.set_ylabel('Formation energy (eV/atom)', fontsize=24, fontweight='normal')
 
-    # ---------- lim
-    min_ef = min(ef_all.values())
-    ymin = min_ef - 0.01 if min_ef < 0 else -0.01
-    ax.set_ylim(ymin, 0.05)
+    # ---------- texts
+    for text in ax.texts:
+        text.set_fontsize(14)
+        text.set_fontweight('normal')    # bold --> normal
 
-    # ---------- plot ef_all
-    for cid in ef_all:
-        ax.plot(ratio_data[cid][0], ef_all[cid], 'o', color='thistle', markeredgecolor='navy', alpha=0.75)
+    # ---------- scatter: unstable entries
+    scat_x = []
+    scat_y= []
+    scat_c = []
+    lines, stable_entries, unstable_entries = plotter_mpl.pd_plot_data
+    for entry, coord in unstable_entries.items():
+        if entry.entry_id is not None:
+            scat_x.append(coord[0])
+            scat_y.append(coord[1])
+            scat_c.append(hdist[entry.entry_id])
+    mappable = ax.scatter(scat_x, scat_y, s=50, c=scat_c, vmin=0, vmax=vmax, cmap='Oranges_r', marker='D', edgecolors='black', zorder=2)
+    cbar = fig.colorbar(mappable, ax=ax, shrink=0.8, pad=0.05)
+    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('Hull distance (eV/atom)', size=20, rotation=270, labelpad=30)
 
-    # ---------- plot convex hull
-    if hull is None:    # no negative Ef, plot only end points
-        ax.plot([0, 1], [0, 0], 'o', color='darkslateblue', markeredgecolor='navy')
-    else:
-        for i, simplex in enumerate(hull.simplices):
-            if i != 0:    # i == 0 --> remove line from (1, 0) to (0, 0)
-                ax.plot(hull.points[simplex, 0], hull.points[simplex, 1], '-o', color='darkslateblue', markeredgecolor='navy')
+    # ---------- mark the current generation
+    stable_compos = {entry.entry_id: compos for compos, entry in stable_entries.items()}
+    unstable_compos = {entry.entry_id: compos for entry, compos in unstable_entries.items()}
+    for cid in cgen_ids:
+        if cid in stable_compos:
+            mx, my = stable_compos[cid][0], stable_compos[cid][1]
+            ax.plot(mx, my, '+', markeredgecolor='white')
+        elif cid in unstable_compos:
+            mx, my = unstable_compos[cid][0], unstable_compos[cid][1]
+            ax.plot(mx, my, '+', markersize=10, markeredgewidth=0.5,  markeredgecolor='navy')
 
-    # ---------- plot current generation
-    for cid in c_ids:
-        ax.plot(ratio_data[cid][0], ef_all[cid], '+', markeredgecolor='hotpink')
+    # ---------- ylim
+    stable_y = list(stable_entries.keys())
+    ymin = min(stable_y, key=lambda x: x[1])[1] -0.01
+    ax.set_ylim(ymin, show_max)
 
     # ---------- save figure
     fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
+    plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
 
 
-def draw_convex_hull_3d(atype, ratio_data, hdist, c_ids, gen, hull, vmax=None):
+def draw_convex_hull_3d(
+        pd,
+        hdist,
+        cgen_ids,
+        gen,
+        show_max=0.05,
+        label_stable=True,
+        vmax=0.05,
+    ):
     '''
     # ---------- args
-    atype (tuple): atom type, e.g. ('Na', 'Cl')
-    ratio_data [dict]: ratio of all structures, {ID: (ratio tuple), ...}
-    hdist [dict]: hull distance of all structures, {ID: distance, ...}
-    c_ids [array]: ID array of current generation structures
-    gen [int]: current generation
-    hull [ConvexHull]: convex hull object
-    vmax [float]: max value of colorbar for hull distance
+    pd (PhaseDiagram): phase diagram object
+    hdist (dict): hull distance of all structures, {ID: distance, ...}
+    cgen_ids (array): ID array of current generation structures
+    gen (int): current generation
+    show_max (float): max value of y-axis (binary) or hull distance (ternary)
+    label_stable (bool): whether to show stable compositions
+    vmax (float): max value of colorbar for hull distance
     '''
 
     # ---------- setting
-    import matplotlib
-    matplotlib.set_loglevel("error")    # to avoid warning about Font
-    plt.rcParams.update(_set_params())
+    _set_params()
 
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
-    ax.axis('equal')
-    ticks = np.arange(0, 1.1, 0.2)
-    ax.set_xticks(ticks)
-    ax.set_yticks(ticks)
+    plotter_mpl = PDPlotter(pd, show_unstable=0.0, backend='matplotlib', linewidth=1.5, markerfacecolor='darkslateblue', markersize=10)
+    plotter_mpl.get_plot(label_stable=label_stable, label_unstable=False, ax=ax)
 
-    # ---------- label
-    ax.set_xlabel('$x$ in ' + f'{atype[0]}'+'$_{x}$' + f'{atype[1]}'+'$_{y}$' + f'{atype[2]}'+'$_{z}$')
-    ax.set_ylabel('$y$ in ' + f'{atype[0]}'+'$_{x}$' + f'{atype[1]}'+'$_{y}$' + f'{atype[2]}'+'$_{z}$')
+    # ---------- texts
+    for text in ax.texts:
+        text.set_fontsize(14)
+        text.set_fontweight('normal')    # bold --> normal
 
-    # ---------- plot convex hull
-    if hull is None:    # no negative Ef, plot only end points
-        ax.plot([0, 0, 1, 0], [0, 1, 0, 0], '-o', color='darkslateblue', markeredgecolor='navy')
-    else:
-        for i, simplex in enumerate(hull.simplices):
-            spoints_closed = np.vstack([hull.points[simplex], hull.points[simplex[0]]])    # append the first point to close the line
-            ax.plot(spoints_closed[:, 0], spoints_closed[:, 1], '-o', color='darkslateblue', markeredgecolor='navy')
+    # ---------- scatter: unstable entries
+    scat_x = []
+    scat_y= []
+    scat_c = []
+    lines, stable_entries, unstable_entries = plotter_mpl.pd_plot_data
+    for entry, coord in unstable_entries.items():
+        if entry.entry_id is not None:
+            if hdist[entry.entry_id] <= show_max:
+                scat_x.append(coord[0])
+                scat_y.append(coord[1])
+                scat_c.append(hdist[entry.entry_id])
+    mappable = ax.scatter(scat_x, scat_y, s=30, c=scat_c, vmin=0, vmax=vmax, cmap='Oranges_r', marker='D', edgecolors='black', zorder=3)
+    cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=-0.1)
+    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('Hull distance (eV/atom)', size=20, rotation=270, labelpad=30)
 
-    # ---------- hdist
-    #            scatter is drawn on the back of the normal plot
-    vmin = 0
-    cmap = 'Purples_r'
-    x = [ratio_data[cid][0] for cid in hdist]
-    y = [ratio_data[cid][1] for cid in hdist]
-    c = list(hdist.values())
-    mappable = ax.scatter(x, y, c=c, vmin=vmin, vmax=vmax, cmap=cmap, edgecolors='navy', alpha=0.75)
-    fig.colorbar(mappable, ax=ax)
-
-    # ---------- current generation
-    for cid in c_ids:
-        ax.plot(ratio_data[cid][0], ratio_data[cid][1], '+', markeredgecolor='hotpink')
+    # ---------- mark the current generation
+    stable_compos = {entry.entry_id: compos for compos, entry in stable_entries.items()}
+    unstable_compos = {entry.entry_id: compos for entry, compos in unstable_entries.items()}
+    for cid in cgen_ids:
+        if cid in hdist and hdist[cid] <= show_max:
+            if cid in stable_compos:
+                mx, my = stable_compos[cid][0], stable_compos[cid][1]
+                ax.plot(mx, my, '+', markeredgecolor='white', zorder=2)
+            elif cid in unstable_compos:
+                mx, my = unstable_compos[cid][0], unstable_compos[cid][1]
+                ax.plot(mx, my, '+', markersize=6, markeredgewidth=0.5,  markeredgecolor='navy', zorder=4)
 
     # ---------- save figure
     fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
+    plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
 
 
 def _set_params():
     rcParams_dict = {
         # ---------- figure
-        'figure.figsize': [8, 6],
+        'figure.figsize': (8, 6),
         'figure.dpi': 120,
         'figure.facecolor': 'white',
         # ---------- axes
@@ -252,93 +243,20 @@ def _set_params():
         'ytick.major.size': 8.0,
         # ---------- lines
         'lines.linewidth': 1.5,
-        'lines.markersize': 12,
+        'lines.markersize': 8,
         # ---------- grid
         'grid.linestyle': ':',
         # ---------- font
         'font.family': ['Times New Roman', 'Liberation Serif'],
         'mathtext.fontset': 'cm',
         #'mathtext.fontset': 'stix',
-        'font.size': 20,
-        'axes.labelsize': 26,
-        'legend.fontsize': 26,
+        'font.size': 16,
+        'axes.labelsize': 20,
+        'legend.fontsize': 20,
         'svg.fonttype': 'path',  # Embed characters as paths
         #'svg.fonttype': 'none',  # Assume fonts are installed on the machine
         'pdf.fonttype': 42,  # embed fonts in PDF using type42 (True type)
     }
-    return rcParams_dict
 
-
-
-
-
-
-
-
-
-
-# def calc_convex_hull_2d(rin, ratio_data, ef_all, c_ids, gen):
-#     '''
-#     Input:
-#         ratio_data [dict]: ratio of all structures, {ID: (ratio tuple), ...}
-#         ef_all [dict]: formation energy of all structures, {ID: Ef, ...}
-#         c_ids [array]: ID array of current generation structures
-#         gen [int]: current generation
-
-#     Return:
-#         hdist [dict]: hull distance of all structures, {ID: distance, ...}
-#     '''
-#     # ---------- initialize
-#     ratio_chull =  [0.0, 1.0]    # only ef < 0 for calculation of convex hull
-#     ef_chull =  [0.0, 0.0]       # only ef < 0 for calculation of convex hull
-
-#     # ---------- dict to list
-#     for cid in ratio_data:
-#         if ef_all[cid] < 0.0:
-#             ratio_chull.append(ratio_data[cid][0])
-#             ef_chull.append(ef_all[cid])
-
-#     # ---------- no negative Ef
-#     #            in this case, hull distance is equivalent to Ef
-#     if len(ef_chull) == 2:    # only end points
-#         # np.nan --> np.inf in hdist
-#         hdist = {cid: np.inf if np.isnan(ef_all[cid]) else ef_all[cid] for cid in ef_all}
-#         draw_convex_hull_2d(rin, None, ratio_data, ef_all, c_ids, gen)
-#         return hdist
-
-#     # ---------- calc convex hull
-#     points = list(zip(ratio_chull, ef_chull))
-#     hull = ConvexHull(points)
-#     vpoints = hull.points[hull.vertices]    # hull.vertices: index of vertices in hull.points
-#     vpoints = np.vstack((vpoints, vpoints[0]))    # just for plot. vpoints[0] should be [1, 0] by ConvexHull()
-
-#     # ---------- hull distance
-#     hdist = {
-#         cid: np.inf if np.isnan(ef_all[cid])
-#         else hull_distance_2d(ratio_data[cid][0], ef_all[cid], hull.equations)
-#         for cid in ef_all
-#     }
-
-#     # ---------- draw convex hull
-#     draw_convex_hull_2d(rin, vpoints, ratio_data, ef_all, c_ids, gen)
-
-#     # ---------- return
-#     return hdist
-
-
-
-# def hull_distance_2d(x, y, equations):
-#     '''
-#     equations: [eq0, eq1, eq2, ...], eq0: [a, b, c] for a*x + b*y + c = 0
-
-#     Find the distance from all equations and adopt the minimum distance.
-#     '''
-#     hdists = []
-#     for eq in equations:
-#         if eq[0] != 0.0:
-#             dist = y - (-eq[0]*x - eq[2])/eq[1]
-#             if dist < 0.0:
-#                 logger.warning('hdist <= 0.0, check hull distance.')
-#             hdists.append(dist)
-
-#     return min(hdists)
+    set_loglevel('error')
+    plt.rcParams.update(rcParams_dict)

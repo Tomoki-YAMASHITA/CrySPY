@@ -37,6 +37,8 @@ class ReadInput:
     # ------ EA-vc
     ll_nat: tuple = field(default=None)
     ul_nat: tuple = field(default=None)
+    charge: tuple = field(default=None)
+    cn_nmax: int = field(default=None)
     # ------ mol or mol_bs
     mol_file: tuple = field(default=None)
     nmol: tuple = field(default=None)
@@ -109,6 +111,8 @@ class ReadInput:
     n_subs: int = field(default=None)
     target: str = field(default=None)
     end_point: tuple = field(default=None)
+    show_max: float = field(default=None)
+    lable_stable: bool = field(default=None)
     vmax: float = field(default=None)
     n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
@@ -148,9 +152,6 @@ class ReadInput:
     # ---------- ASE section
     ase_python: str = field(default=None)
 
-    # ---------- ext
-    # no inputs other than kpt_flag
-
     def __post_init__(self):
         self._read_cryspyin()    # self.config is created
         self._read_basic()       # read basic section in cryspy.in
@@ -174,8 +175,6 @@ class ReadInput:
             self._read_lammps()  # read LAMMPS section in cryspy.in
         if self.calc_code == 'ASE':
             self._read_ase()     # read ASE section in cryspy.in
-        if self.calc_code == 'ext':
-            self._read_ext()     # read ext section in cryspy.in
 
     def _read_cryspyin(self):
         filename = 'cryspy.in'
@@ -191,8 +190,8 @@ class ReadInput:
             raise ValueError('algo must be RS, BO, LAQA, EA or EA-vc')
         # ---------- calc_code
         self.calc_code = self.config.get('basic', 'calc_code')
-        if self.calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX', 'ASE', 'ext']:
-            raise ValueError('calc_code must be VASP, QE, OMX, soiap, LAMMPS, ASE, or ext')
+        if self.calc_code not in ['VASP', 'QE', 'soiap', 'LAMMPS', 'OMX', 'ASE']:
+            raise ValueError('calc_code must be VASP, QE, OMX, soiap, LAMMPS, or ASE')
         if self.algo == 'LAQA':
             if self.calc_code not in ['VASP', 'QE', 'soiap']:
                 raise ValueError('LAQA: only VASP, QE, or soiap for now')
@@ -201,24 +200,20 @@ class ReadInput:
         if self.tot_struc < 1:
             raise ValueError('tot_struc < 1, check tot_struc')
         # ---------- nstage
-        if not self.calc_code == 'ext':
-            self.nstage = self.config.getint('basic', 'nstage')
-            if self.nstage < 1:
-                raise ValueError('nstage < 1, check nstage')
-            if self.algo == 'LAQA':
-                if not self.nstage == 1:
-                    raise ValueError('nstage must be 1 in LAQA')
+        self.nstage = self.config.getint('basic', 'nstage')
+        if self.nstage < 1:
+            raise ValueError('nstage < 1, check nstage')
+        if self.algo == 'LAQA':
+            if not self.nstage == 1:
+                raise ValueError('nstage must be 1 in LAQA')
         # ---------- njob
-        if not self.calc_code == 'ext':
-            self.njob = self.config.getint('basic', 'njob')
-            if self.njob < 1:
-                raise ValueError('njob < 1, check njob')
+        self.njob = self.config.getint('basic', 'njob')
+        if self.njob < 1:
+            raise ValueError('njob < 1, check njob')
         # ---------- jobcmd
-        if not self.calc_code == 'ext':
-            self.jobcmd = self.config.get('basic', 'jobcmd')
+        self.jobcmd = self.config.get('basic', 'jobcmd')
         # ---------- jobfile
-        if not self.calc_code == 'ext':
-            self.jobfile = self.config.get('basic', 'jobfile')
+        self.jobfile = self.config.get('basic', 'jobfile')
 
     def _read_structure(self):
         # ---------- struc_mode
@@ -324,9 +319,8 @@ class ReadInput:
             if not self.struc_mode == 'crystal':
                 raise ValueError('find_wy can be use if struc_mode is crystal')
         # ---------- EA-vc
-        # ------ ll_nat, ul_nat
-        # --
         if self.algo =='EA-vc':
+            # ------ ll_nat, ul_nat
             self.ll_nat = self.config.get('structure', 'll_nat')
             self.ll_nat = tuple([int(x) for x in self.ll_nat.split()])    # str --> int --> list --> tuple
             self.ul_nat = self.config.get('structure', 'ul_nat')
@@ -336,6 +330,29 @@ class ReadInput:
             for i in range(len(self.ll_nat)):
                 if not 0 <= self.ll_nat[i] <= self.ul_nat[i]:
                     raise ValueError(f'not 1 <= ll_nat[{i}] <= ul_nat[{i}], check ll_nat and ul_nat')
+            # ------ charge
+            try:
+                self.charge = self.config.get('structure', 'charge')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.charge = None
+            if self.charge is not None:
+                self.charge = tuple([int(x) for x in self.charge.split()])    # str --> tuple
+                if not len(self.charge) == len(self.atype):
+                    raise ValueError('not len(charge) == len(atype), check charge')
+                if any(x > 0 for x in self.charge) and any(x < 0 for x in self.charge):
+                    pass
+                else:
+                    raise ValueError('charge must have both positive and negative integers')
+            # ------ cn_nmax
+            try:
+                self.cn_nmax = self.config.getint('structure', 'cn_nmax')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.cn_nmax = None
+            if self.cn_nmax is not None:
+                if self.cn_nmax < 2:
+                    raise ValueError('cn_nmax must be more than 1')
+            if self.charge is not None and self.cn_nmax is None:
+                self.cn_nmax = 3
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ mol_file
@@ -479,19 +496,19 @@ class ReadInput:
         # ---------- energy_step_flag
         try:
             self.energy_step_flag = self.config.getboolean('option', 'energy_step_flag')
-            if self.calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
+            if self.calc_code in ['LAMMPS', 'OMX', 'ASE']:
                 raise ValueError('energy_step_flag: only VASP, QE, and soiap for now')
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.energy_step_flag = False
         try:
             self.struc_step_flag = self.config.getboolean('option', 'struc_step_flag')
-            if self.calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
+            if self.calc_code in ['LAMMPS', 'OMX', 'ASE']:
                 raise ValueError('struc_step_flag: only VASP, QE, and soiap for now')
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.struc_step_flag = False
         try:
             self.force_step_flag = self.config.getboolean('option', 'force_step_flag')
-            if self.calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
+            if self.calc_code in ['LAMMPS', 'OMX', 'ASE']:
                 raise ValueError('force_step_flag: only VASP, QE, and soiap for now')
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.force_step_flag = False
@@ -499,7 +516,7 @@ class ReadInput:
             self.force_step_flag = True
         try:
             self.stress_step_flag = self.config.getboolean('option', 'stress_step_flag')
-            if self.calc_code in ['LAMMPS', 'OMX', 'ASE', 'ext']:
+            if self.calc_code in ['LAMMPS', 'OMX', 'ASE']:
                 raise ValueError('stress_step_flag: only VASP, QE, and soiap for now')
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.stress_step_flag = False
@@ -779,11 +796,21 @@ class ReadInput:
             self.end_point = tuple([float(x) for x in self.end_point.split()])
             if not len(self.end_point) == len(self.atype):
                 raise ValueError('len(end_point) == len(atype), check end_point')
+            # ------ show_max
+            try:
+                self.show_max = self.config.getfloat('EA', 'show_max')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.show_max = 0.05
+            # ------ label_stable
+            try:
+                self.label_stable = self.config.getboolean('EA', 'label_stable')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.label_stable = True
             # ------ vmax
             try:
                 self.vmax = self.config.getfloat('EA', 'vmax')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.vmax = None
+                self.vmax = 0.05
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ n_rotation
@@ -920,7 +947,3 @@ class ReadInput:
         self.force_gamma = False
         # ---------- ase_python
         self.ase_python = self.config.get('ASE', 'ase_python')
-
-    def _read_ext(self):
-        # ---------- kpt_flag
-        self.kpt_flag = False

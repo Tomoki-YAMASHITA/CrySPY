@@ -47,7 +47,7 @@ def gen_crossover(
     nat_diff_tole (int): tolerance for nat_diff
     maxcnt_ea (int): maximum number of trial in crossover
     vc (bool): set True if algo == 'EA-vc'
-    ll_nat (tuple): lower limit of nat for EA-vc, e.g. (1, 1)
+    ll_nat (tuple): lower limit of nat for EA-vc, e.g. (0, 0)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
 
     # ---------- return
@@ -109,7 +109,7 @@ def gen_crossover(
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            tmp_nat, _ = get_nat(child, atype)
+            tmp_nat = get_nat(child, atype)
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} and {pid_B:>6} by crossover.'
                     f' Space group: {spg_num:>3} {spg_sym}')
@@ -311,7 +311,7 @@ def _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat):
             tmp_nat = [2, 6, 12]    # child
             nat_diff = [-2, 0, 4]
     '''
-    tmp_nat, _ = get_nat(child, atype)
+    tmp_nat = get_nat(child, atype)
     if not vc:
         nat_diff = [i - j for i, j in zip(tmp_nat, nat)]
     else:

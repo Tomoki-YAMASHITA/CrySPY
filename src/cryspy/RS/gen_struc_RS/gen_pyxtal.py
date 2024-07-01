@@ -15,7 +15,8 @@ from pymatgen.core.periodic_table import DummySpecie
 from pyxtal import pyxtal
 from pyxtal.tolerance import Tol_matrix
 
-from ...util.struc_util import check_distance, sort_by_atype, get_nat, remove_zero
+from ...util.struc_util import check_distance, sort_by_atype
+from ...util.struc_util import get_nat, remove_zero, get_cn_comb
 from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
 
 
@@ -35,7 +36,8 @@ def gen_struc(
         vol_sigma=None,
         vc=False,
         ll_nat=None,
-        ul_nat=None
+        ul_nat=None,
+        charge=None,
     ):
     '''
     Generate random structures for given space groups
@@ -55,9 +57,11 @@ def gen_struc(
     vol_factor (float): volume factor for structure generation
     vol_mu (float): mean for volume scaling
     vol_sigma (float): standard deviation for volume scaling
+    # ------ for EA-vc
     vc (bool): variable composition. it needs ll_nat and ul_nat
-    ll_nat (tuple): lower limit of number of atoms (e.g. (1, 1))
+    ll_nat (tuple): lower limit of number of atoms (e.g. (0, 0))
     ul_nat (tuple): upper limit of number of atoms (e.g. (8, 8))
+    charge (tuple): charge of atoms (e.g. (1, -1)). Set if you want to check charge neutrality
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
@@ -69,6 +73,12 @@ def gen_struc(
         tmp_nat = nat
         tmp_atype = atype
         tolmat = _set_tol_mat(tmp_atype, mindist)
+    if vc and charge is not None:
+        cn_comb = get_cn_comb(ll_nat, ul_nat, charge)
+        if not cn_comb:
+            logger.error('No charge neutral combinations')
+            raise SystemExit(1)
+        logger.info(f'Consider charge neutrality: {charge}')
 
     # ---------- loop for structure generation
     while len(init_struc_data) < nstruc:
@@ -80,7 +90,10 @@ def gen_struc(
         # ------ generate structure
         tmp_crystal = pyxtal()
         if vc:    # variable composition
-            nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            if charge is None:
+                nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+            else:
+                nat = random.choice(cn_comb)
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
@@ -93,9 +106,15 @@ def gen_struc(
         try:
             f = StringIO()    # to get output from pyxtal
             with redirect_stdout(f):
-                tmp_crystal.from_random(dim=3, group=spg, species=tmp_atype,
-                                        numIons=tmp_nat, factor=vol_factor,
-                                        conventional=False, tm=tolmat)
+                tmp_crystal.from_random(
+                    dim=3,
+                    group=spg,
+                    species=tmp_atype,
+                    numIons=tmp_nat,
+                    factor=vol_factor,
+                    conventional=False,
+                    tm=tolmat,
+                )
             s = f.getvalue().rstrip()    # to delete \n
             if s:
                 logger.warning(s)
@@ -104,7 +123,7 @@ def gen_struc(
             continue
         if tmp_crystal.valid:
             tmp_struc = tmp_crystal.to_pymatgen(resort=False)
-            tmp2_nat, _ = get_nat(tmp_struc, tmp_atype)
+            tmp2_nat = get_nat(tmp_struc, tmp_atype)
             # -- check the number of atoms
             if tmp2_nat != tmp_nat:
                 # (pyxtal 0.1.4) cryspy adopts "conventional=False",
@@ -112,7 +131,7 @@ def gen_struc(
                 # pyxtal returns conventional cell, that is, too many atoms
                 tmp_struc = tmp_struc.get_primitive_structure()
                 # recheck nat
-                tmp2_nat, _ = get_nat(tmp_struc, tmp_atype)
+                tmp2_nat = get_nat(tmp_struc, tmp_atype)
                 if tmp2_nat != tmp_nat:    # failure
                     continue
             # -- sort, just in case
@@ -284,14 +303,14 @@ def gen_struc_mol(
                     logger.warning('failed scale cell. retry.')
                     continue
             # -- check nat
-            tmp_nat, _ = get_nat(tmp_struc, atype)
+            tmp_nat = get_nat(tmp_struc, atype)
             if tmp_nat != nat:
                 # cryspy adopts conventional=True
                 # pyxtal returns conventional cell,
                 # too many atoms if centering
                 tmp_struc = tmp_struc.get_primitive_structure()
                 # recheck nat
-                tmp_nat, _ = get_nat(tmp_struc, atype)
+                tmp_nat = get_nat(tmp_struc, atype)
                 if tmp_nat != nat:    # failure
                     logger.warning(f'different num. of atoms. {tmp_nat}, {nat} retry.')
                     continue
@@ -536,13 +555,13 @@ def gen_struc_mol_break_sym(
                     # if rin.algo in ['EA', 'EA-vc']:
                     #     tmp_id_cnt += 1
                 # -- check nat
-                tmp_nat, _ = get_nat(tmp_struc, atype)
+                tmp_nat = get_nat(tmp_struc, atype)
                 if tmp_nat != nat:
                     # pyxtal returns conventional cell,
                     # too many atoms if centering
                     tmp_struc = tmp_struc.get_primitive_structure()
                     # recheck nat
-                    tmp_nat, _ = get_nat(tmp_struc, atype)
+                    tmp_nat = get_nat(tmp_struc, atype)
                     if tmp_nat != nat:    # failure
                         if rot_mol is None:
                             break    # go back to the while loop

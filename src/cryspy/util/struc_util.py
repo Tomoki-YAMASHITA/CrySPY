@@ -2,11 +2,11 @@
 Utility for structures
 '''
 
+from itertools import combinations_with_replacement, product
 from logging import getLogger
 import os
 
 import numpy as np
-
 from pymatgen.core import Structure, Molecule
 from pymatgen.io.cif import CifWriter
 from pyxtal.database.collection import Collection
@@ -475,8 +475,7 @@ def sort_by_atype_mol(struc, atype, mol_id, group_id):
 def get_nat(struc, atype):
     compos = struc.composition.as_dict()
     nat = tuple([int(compos.get(at, 0)) for at in atype])
-    ratio = tuple([x/sum(nat) for x in nat])
-    return nat, ratio
+    return nat
 
 
 def remove_zero(atype_in, nat_in, mindist_in):
@@ -504,3 +503,74 @@ def remove_zero(atype_in, nat_in, mindist_in):
 
     # ---------- return
     return atype_out, nat_out, mindist_out
+
+
+#
+# ---------- charge neutrarity
+#
+
+
+def check_charge_neutrality(nat, charge):
+    '''
+    e.g. Na4Cl4
+    nat = (4, 4)
+    charge = (1, -1)
+    4*(+1) + 4*(-1) = 0
+    '''
+    return sum(n * c for n, c in zip(nat, charge)) == 0
+
+
+def get_cn_comb(ll_nat, ul_nat, charge):
+    '''
+    Find charge neutral combinations of atoms
+
+    # ---------- args
+    ll_nat (tuple): lower limit of the number of atoms
+    ul_nat (tuple): upper limit of the number of atoms
+    charge (tuple): charge of atoms
+
+    # ---------- retrun
+    combinations (tuple): charge neutral combinations of atoms
+
+    # ---------- example
+    e.g. Na-Cl
+    ll_nat = (0, 0)
+    ul_nat = (4, 4)
+    charge = (1, -1)
+
+    ((1, 1), (2, 2), (3, 3), (4, 4)) <-- combinations
+    '''
+    ranges = [range(ll, ul + 1) for ll, ul in zip(ll_nat, ul_nat)]
+    combinations = []
+    for combination in product(*ranges):
+        if sum(combination) == 0:
+            continue
+        if check_charge_neutrality(combination, charge):
+            combinations.append(combination)
+    return tuple(combinations)
+
+
+def get_cn_comb_within_n(charge, cn_nmax):
+    '''
+    Find charge neutral combinations of atoms within n atoms
+
+    # ---------- args
+    charge (tuple): charge of atoms
+    cn_nmax (int): maximum number of atoms
+
+    # ---------- retrun
+    zero_sum_combinations (tuple): charge neutral combinations of atoms within n atoms
+
+    # ---------- example
+    charge = (2, 4, -2)
+    n = 3
+
+    ((1, 0, 1), (0, 1, 2))  <-- zero_sum_combinations
+    '''
+    zero_sum_combinations = []
+    for r in range(2, cn_nmax + 1):
+        for comb in combinations_with_replacement(range(len(charge)), r):
+            if sum(charge[i] for i in comb) == 0:
+                count = tuple([comb.count(i) for i in range(len(charge))])
+                zero_sum_combinations.append(count)
+    return tuple(zero_sum_combinations)

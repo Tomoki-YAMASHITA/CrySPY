@@ -149,11 +149,6 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
     x = ' '.join(str(a) for a in id_queueing)
     logger.info(f'selected_id: {x}')
 
-    # ---------- ext
-    if rin.calc_code == 'ext':
-        with open('ext/stat_job', 'w') as fstat:
-            fstat.write('out\n')
-
 
 def _bayes_opt(
     s_act,

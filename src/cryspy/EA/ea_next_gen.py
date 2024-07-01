@@ -6,24 +6,22 @@ from logging import getLogger
 
 import pandas as pd
 
-from .calc_hull import calc_convex_hull
 from .ea_child import child_gen
 from .survival import survival_fittest
 from ..IO import change_input, io_stat, pkl_data
-from ..IO.out_results import out_ea_info, out_ea_origin, out_hdist
+from ..IO.out_results import out_ea_info, out_ea_origin
+
 
 logger = getLogger('cryspy')
 
 
 def next_gen(
         rin,
-        id_queueing,
-        id_running,
         gen,
         init_struc_data,
         opt_struc_data,
         rslt_data,
-        ea_vc_data=None,
+        nat_data=None,
         struc_mol_id=None,
     ):
 
@@ -31,47 +29,29 @@ def next_gen(
     logger.info('# ---------- Evolutionary algorithm')
     logger.info(f'Generation {gen + 1}')
 
-    # ---------- current generation
-    c_rslt = rslt_data[rslt_data['Gen'] == gen]
-    if rin.algo != 'EA-vc':
-        c_fitness = c_rslt['E_eV_atom'].to_dict()    # {ID: energy, ...}
-    c_ids = c_rslt.index.values    # current IDs [array]
-
     # ---------- load ea_data. ea_data is used only in this module
+    #                load hdist_data in EA-vc
     elite_struc = pkl_data.load_elite_struc()
     elite_fitness = pkl_data.load_elite_fitness()
     ea_info = pkl_data.load_ea_info()
     ea_origin = pkl_data.load_ea_origin()
-
-    # ---------- EA-vc
     if rin.algo == 'EA-vc':
-        # ------ data for EA-vc
-        ef_all = rslt_data['Ef_eV_atom'].to_dict()    # formation energy of all structures
-        nat_data, ratio_data, hdist_data = ea_vc_data
+        hdist_data = pkl_data.load_hdist_data()
 
-        # ------ calc convex hull and hull distance
-        hdist = calc_convex_hull(
-            rin.atype,
-            ratio_data,
-            ef_all,
-            c_ids,
-            gen,
-            rin.emax_ea,
-            rin.emin_ea,
-            rin.vmax,
-        )
-        # -- update hdist
-        out_hdist(gen, hdist, ratio_data)
-        hdist_data[gen] = hdist
-        ea_vc_data = (nat_data, ratio_data, hdist_data)    # to use later
-        pkl_data.save_hdist_data(hdist_data)
+    # ---------- current generation
+    c_rslt = rslt_data[rslt_data['Gen'] == gen]
+    cgen_ids = c_rslt.index.values    # current IDs [array]
 
-        # ------ fitness (= hull distance) of current generation
-        c_fitness = {cid: hdist[cid] for cid in c_ids}
+    # ---------- fitness
+    if rin.algo != 'EA-vc':
+        c_fitness = c_rslt['E_eV_atom'].to_dict()    # {ID: energy, ...}
         logger.debug(f'c_fitness: {c_fitness}')
-
+    else:
+        hdist = hdist_data[gen]
+        c_fitness = {cid: hdist[cid] for cid in cgen_ids}
+        logger.debug(f'c_fitness: {c_fitness}')
         # ------ update elite_fitness
-        #        need to update elite_fitness every time hull distance (convex hull) is updated
+        #        need to update elite_fitness every time hull distance is updated
         if elite_fitness is not None:
             for cid in elite_fitness:
                 elite_fitness[cid] = hdist[cid]
@@ -86,7 +66,7 @@ def next_gen(
     else:
         emax_ea = rin.emax_ea
         emin_ea = rin.emin_ea
-    c_struc_data = {cid: opt_struc_data[cid] for cid in c_ids}
+    c_struc_data = {cid: opt_struc_data[cid] for cid in cgen_ids}
     ranking, fit_with_elite, struc_with_elite = survival_fittest(
         c_fitness,
         c_struc_data,
@@ -111,7 +91,7 @@ def next_gen(
         struc_with_elite,
         init_struc_data,
         struc_mol_id,
-        ea_vc_data,
+        nat_data,
     )
 
     # ---------- select elite for next generation
@@ -173,17 +153,42 @@ def next_gen(
 
     # ---------- ea_info
     if rin.algo == 'EA':
-        tmp_info = pd.DataFrame(data=[[gen, rin.n_pop, rin.n_crsov, rin.n_perm,
-                                       rin.n_strain, rin.n_rand, rin.n_elite,
-                                       rin.crs_lat, rin.slct_func]],
-                                       columns=ea_info.columns)
+        tmp_info = pd.DataFrame(
+            data=[
+                [
+                    gen,
+                    rin.n_pop,
+                    rin.n_crsov,
+                    rin.n_perm,
+                    rin.n_strain,
+                    rin.n_rand,
+                    rin.n_elite,
+                    rin.crs_lat,
+                    rin.slct_func
+                ]
+            ],
+            columns=ea_info.columns
+        )
     if rin.algo == 'EA-vc':
-        tmp_info = pd.DataFrame(data=[[gen, rin.n_pop,
-                                    rin.n_crsov, rin.n_perm, rin.n_strain,
-                                    rin.n_add, rin.n_elim, rin.n_subs,
-                                    rin.n_rand, rin.n_elite,
-                                    rin.crs_lat, rin.slct_func]],
-                                    columns=ea_info.columns)
+        tmp_info = pd.DataFrame(
+            data=[
+                [
+                    gen,
+                    rin.n_pop,
+                    rin.n_crsov,
+                    rin.n_perm,
+                    rin.n_strain,
+                    rin.n_add,
+                    rin.n_elim,
+                    rin.n_subs,
+                    rin.n_rand,
+                    rin.n_elite,
+                    rin.crs_lat,
+                    rin.slct_func,
+                ]
+            ],
+            columns=ea_info.columns
+        )
     ea_info = pd.concat([ea_info, tmp_info], axis=0, ignore_index=True)
     # ------ out ea_info
     out_ea_info(ea_info)
@@ -212,7 +217,6 @@ def next_gen(
 
     # ---------- save ea_id_data
     pkl_data.save_id_queueing(id_queueing)
-    pkl_data.save_id_running(id_running)
     pkl_data.save_gen(gen)
 
     # ---------- save ea_data
@@ -238,7 +242,3 @@ def next_gen(
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
 
-    # ---------- ext
-    if rin.calc_code == 'ext':
-        with open('ext/stat_job', 'w') as fstat:
-            fstat.write('out\n')

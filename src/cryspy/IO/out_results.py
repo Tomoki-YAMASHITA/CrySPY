@@ -159,8 +159,8 @@ def out_nat_data(nat_data, atype):
             f.write(f'{cid:6}    {nat}\n')
 
 
-def out_hdist(gen, hdist, ratio_data):
+def out_hdist(gen, hdist, nat_data):
     with open(f'./data/convex_hull/hull_dist_all_gen_{gen}', 'w') as f:
-        f.write(f'    ID    hull distance (eV/atom)    ratio\n')
+        f.write(f'    ID    hull distance (eV/atom)    Num_atom\n')
         for cid, dist in sorted(hdist.items(), key=lambda x: x[1]):
-            f.write(f'{cid:6}    {dist:>23.6f}    {ratio_data[cid]}\n')
+            f.write(f'{cid:6}    {dist:>23.6f}    {nat_data[cid]}\n')

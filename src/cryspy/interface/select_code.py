@@ -7,7 +7,6 @@ from logging import getLogger
 # from .soiap import calc_files_soiap, ctrl_job_soiap, collect_soiap
 # from .LAMMPS import calc_files_lammps, ctrl_job_lammps, collect_lammps
 # from .ASE import calc_files_ase, ctrl_job_ase, collect_ase
-# from .ext import collect_ext
 
 
 logger = getLogger('cryspy')
@@ -32,8 +31,6 @@ def check_calc_files(rin):
     elif rin.calc_code == 'ASE':
         from .ASE import calc_files_ase
         calc_files_ase.check_input_ase(rin)
-    elif rin.calc_code == 'ext':
-        pass
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
@@ -142,10 +139,6 @@ def collect(rin, cid, work_path, nat):
         # rin is not used in collect_ase
         opt_struc, energy, magmom, check_opt = \
             collect_ase.collect_ase(cid, work_path, nat)
-    elif rin.calc_code == 'ext':
-        from .ext import collect_ext
-        ext_opt_struc_data, ext_energy_data = collect_ext.collect_ext()
-        return ext_opt_struc_data, ext_energy_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
