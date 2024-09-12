@@ -120,8 +120,8 @@ class ReadInput:
     protect_mol_struc: bool = field(default=None)  # not implemented yet, for EA mol
 
     # ---------- common in VASP, QE, OMX
-    kppvol: int = field(default=None)
     kpt_flag: bool = field(default=None)
+    kppvol: int = field(default=None)
     force_gamma: bool = field(default=None)
 
     # ---------- VASP section

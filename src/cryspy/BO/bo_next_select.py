@@ -109,11 +109,7 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
         remaining_id = list(set(non_error_id) - set(done_id))
         bo_mean[n_selection] = dict(zip(remaining_id, cryspy_mean))
         bo_var[n_selection] = dict(zip(remaining_id, cryspy_var))
-        if rin.score == 'TS':
-            # -- in TS, nested list [[score1, socre2, ...]] is used
-            bo_score[n_selection] = dict(zip(remaining_id, cryspy_score[0]))
-        else:
-            bo_score[n_selection] = dict(zip(remaining_id, cryspy_score))
+        bo_score[n_selection] = dict(zip(remaining_id, cryspy_score))
         # ------ out
         out_results.out_bo_common('bo_mean', bo_mean, rin.tot_struc)
         out_results.out_bo_common('bo_var', bo_var, rin.tot_struc)

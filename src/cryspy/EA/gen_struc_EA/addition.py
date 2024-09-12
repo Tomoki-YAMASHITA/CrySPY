@@ -3,7 +3,7 @@ from logging import getLogger
 import numpy as np
 
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
-
+from ...util.struc_util import get_cn_comb_within_n
 
 logger = getLogger('cryspy')
 
@@ -20,6 +20,8 @@ def gen_addition(
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
+        charge=None,
+        cn_nmax=3,
     ):
     '''
 
@@ -39,7 +41,7 @@ def gen_addition(
     # ---------- return
     children (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, )}
-    operation (dict): {id: 'strain'}
+    operation (dict): {id: 'addition'}
     '''
 
     # ---------- initialize
@@ -72,6 +74,10 @@ def gen_addition(
             logger.warning('Addition: reached nat limit (ul_nat). cannot add atoms')
             logger.warning('Change parent')
             continue
+        # ------ charge neutrality
+        if charge is not None:
+            cn_comb = get_cn_comb_within_n(charge, cn_nmax)
+        # ------ generate child
         child = gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea, target)
         # ------ success
         if child is not None:

@@ -530,7 +530,7 @@ def get_cn_comb(ll_nat, ul_nat, charge):
     charge (tuple): charge of atoms
 
     # ---------- retrun
-    combinations (tuple): charge neutral combinations of atoms
+    cn_comb (tuple): charge neutral combinations of atoms
 
     # ---------- example
     e.g. Na-Cl
@@ -538,16 +538,16 @@ def get_cn_comb(ll_nat, ul_nat, charge):
     ul_nat = (4, 4)
     charge = (1, -1)
 
-    ((1, 1), (2, 2), (3, 3), (4, 4)) <-- combinations
+    ((1, 1), (2, 2), (3, 3), (4, 4)) <-- cn_comb
     '''
     ranges = [range(ll, ul + 1) for ll, ul in zip(ll_nat, ul_nat)]
-    combinations = []
+    cn_comb = []
     for combination in product(*ranges):
         if sum(combination) == 0:
             continue
         if check_charge_neutrality(combination, charge):
-            combinations.append(combination)
-    return tuple(combinations)
+            cn_comb.append(combination)
+    return tuple(cn_comb)
 
 
 def get_cn_comb_within_n(charge, cn_nmax):
@@ -559,18 +559,18 @@ def get_cn_comb_within_n(charge, cn_nmax):
     cn_nmax (int): maximum number of atoms
 
     # ---------- retrun
-    zero_sum_combinations (tuple): charge neutral combinations of atoms within n atoms
+    combinations (tuple): charge neutral combinations of atoms within n atoms
 
     # ---------- example
     charge = (2, 4, -2)
-    n = 3
+    cn_nmax = 3
 
-    ((1, 0, 1), (0, 1, 2))  <-- zero_sum_combinations
+    ((1, 0, 1), (0, 1, 2))  <-- cn_comb
     '''
-    zero_sum_combinations = []
+    cn_comb = []
     for r in range(2, cn_nmax + 1):
         for comb in combinations_with_replacement(range(len(charge)), r):
             if sum(charge[i] for i in comb) == 0:
                 count = tuple([comb.count(i) for i in range(len(charge))])
-                zero_sum_combinations.append(count)
-    return tuple(zero_sum_combinations)
+                cn_comb.append(count)
+    return tuple(cn_comb)

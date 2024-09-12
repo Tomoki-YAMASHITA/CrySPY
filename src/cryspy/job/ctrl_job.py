@@ -765,7 +765,7 @@ def regist_opt(
         try:
             spg_sym_opt, spg_num_opt = opt_struc.get_space_group_info(
                 symprec=rin.symprec)
-        except TypeError:
+        except:
             spg_num_opt = 0
             spg_sym_opt = None
         # ------ out opt_struc
