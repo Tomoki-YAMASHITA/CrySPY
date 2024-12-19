@@ -24,7 +24,7 @@ def diff_in(rin, pin):
         )
     else:    # EA, EA-vc
         immutables = (
-            'algo', 'calc_code', 'atype', 'tot_struc',
+            'algo', 'calc_code', 'atype',
             'energy_step_flag', 'struc_step_flag', 'force_step_flag', 'stress_step_flag',
         )
 

@@ -54,7 +54,8 @@ def child_gen(
     #children_mol_id = {}
     parents = {}
     operation = {}
-    id_start = rin.tot_struc
+    pre_nstruc = len(init_struc_data)
+    id_start = pre_nstruc
     vc = True if rin.algo == 'EA-vc' else False
 
     # ---------- Crossover

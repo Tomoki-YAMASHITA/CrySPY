@@ -1,4 +1,5 @@
 from logging import getLogger
+import warnings
 
 import numpy as np
 from pymatgen.core import Structure
@@ -24,7 +25,10 @@ def collect_ase(cid, work_path, nat):
         logger.warning(f'{e}:    Structure ID {cid}, could not obtain energy from log.tote')
     # ---------- collect CONTCAR
     try:
-        opt_struc = Structure.from_file(work_path+'CONTCAR')
+        with warnings.catch_warnings():
+            # to avoid BadPoscarWarning message from Pymatgen
+            warnings.simplefilter('ignore')
+            opt_struc = Structure.from_file(work_path+'CONTCAR')
     except Exception:
         opt_struc = None
     # ---------- check

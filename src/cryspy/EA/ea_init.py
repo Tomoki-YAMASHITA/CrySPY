@@ -14,11 +14,11 @@ def initialize(rin, init_struc_data, rslt_data):
     # ---------- log
     logger.info('# ---------- Initialize evolutionary algorithm')
     logger.info('# ------ Generation 1')
-    logger.info(f'{rin.tot_struc} structures by random')
+    logger.info(f'{rin.n_pop} structures by random')
 
     # ---------- initialize
     gen = 1
-    id_queueing = [i for i in range(rin.tot_struc)]
+    id_queueing = [i for i in range(rin.n_pop)]
     id_running = []
     # ------ ea_info
     if rin.algo == 'EA':
@@ -36,11 +36,11 @@ def initialize(rin, init_struc_data, rslt_data):
         ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
         tmp_info = pd.DataFrame([[
                                     1,
-                                    rin.tot_struc,
+                                    rin.n_pop,
                                     0,
                                     0,
                                     0,
-                                    rin.tot_struc,
+                                    rin.n_pop,
                                     0,
                                     rin.crs_lat,
                                     rin.slct_func,
@@ -64,14 +64,14 @@ def initialize(rin, init_struc_data, rslt_data):
         ea_info.iloc[:, 0:10] = ea_info.iloc[:, 0:10].astype(int)
         tmp_info = pd.DataFrame([[
                             1,
-                            rin.tot_struc,
+                            rin.n_pop,
                             0,
                             0,
                             0,
                             0,
                             0,
                             0,
-                            rin.tot_struc,
+                            rin.n_pop,
                             0,
                             rin.crs_lat,
                             rin.slct_func,
@@ -81,7 +81,7 @@ def initialize(rin, init_struc_data, rslt_data):
     # ------ ea_origin
     ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID', 'Operation', 'Parent'])
     ea_origin.iloc[:, 0:2] = ea_origin.iloc[:, 0:2].astype(int)
-    for cid in range(rin.tot_struc):
+    for cid in range(rin.n_pop):
         tmp_origin = pd.DataFrame([[1, cid, 'random', None]],
                                   columns=ea_origin.columns)
         ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)

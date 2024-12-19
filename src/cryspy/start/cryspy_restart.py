@@ -57,41 +57,43 @@ def restart(comm, mpi_rank, mpi_size):
     append_flag = False
 
     # ---------- append structures
-    if len(init_struc_data) < rin.tot_struc:
-        # ------ append_flag
-        append_flag = True
-        # ------ backup
-        if mpi_rank == 0:
-            backup_cryspy()
-        # ------ barrier for MPI
-        if mpi_size > 1:
-            comm.barrier()
-        # ------ append struc.
-        if mpi_rank == 0:
-            prev_nstruc = len(init_struc_data)
-        #        init_struc_data is saved in _append_struc
-        init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size)
-    elif rin.tot_struc < len(init_struc_data):
-        logger.error('tot_struc < len(init_struc_data)')
-        raise SystemExit(1)
+    if rin.algo not in ['EA', 'EA-vc']:
+        if len(init_struc_data) < rin.tot_struc:
+            # ------ append_flag
+            append_flag = True
+            # ------ backup
+            if mpi_rank == 0:
+                backup_cryspy()
+            # ------ barrier for MPI
+            if mpi_size > 1:
+                comm.barrier()
+            # ------ append struc.
+            if mpi_rank == 0:
+                prev_nstruc = len(init_struc_data)
+            #        init_struc_data is saved in _append_struc
+            init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size)
+        elif rin.tot_struc < len(init_struc_data):
+            logger.error('tot_struc < len(init_struc_data)')
+            raise SystemExit(1)
 
     # ---------- append structures by EA (option)
     # not support MPI
-    if rin.append_struc_ea:
-        # ------ append_flag
-        append_flag = True
-        if mpi_rank == 0:
-            # ------ backup
-            backup_cryspy()
+    if rin.algo not in ['EA', 'EA-vc']:
+        if rin.append_struc_ea:
+            # ------ append_flag
+            append_flag = True
+            if mpi_rank == 0:
+                # ------ backup
+                backup_cryspy()
     #
     # struc_mol_id has not developed yet here
     #if rin.struc_mode in ['mol', 'mol_bs']:
     #    struc_mol_id = pkl_data.load_struc_mol_id()
     #
-            from ..EA import ea_append
-            prev_nstruc = len(init_struc_data)
-            # init_struc_data is saved in ea_append.append_struc()
-            init_struc_data = ea_append.append_struc(rin, init_struc_data)
+                from ..EA import ea_append
+                prev_nstruc = len(init_struc_data)
+                # init_struc_data is saved in ea_append.append_struc()
+                init_struc_data = ea_append.append_struc(rin, init_struc_data)
 
     # ---------- post append
     if append_flag:

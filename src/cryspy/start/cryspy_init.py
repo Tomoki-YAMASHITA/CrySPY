@@ -67,7 +67,11 @@ def initialize(comm, mpi_rank, mpi_size):
         # ########## MPI start
         # ------ structure generation
         # only init_struc_data in rank0 is important
-        init_struc_data, struc_mol_id = gen_random(rin, rin.tot_struc, 0,
+        if rin.algo in ['EA', 'EA-vc']:
+            nstruc = rin.n_pop
+        else:
+            nstruc = rin.tot_struc
+        init_struc_data, struc_mol_id = gen_random(rin, nstruc, 0,
                                                        comm, mpi_rank, mpi_size)
         # ########## MPI end
         if mpi_rank == 0:
@@ -88,10 +92,11 @@ def initialize(comm, mpi_rank, mpi_size):
             logger.info('Load ./data/pkl_data/init_struc_data.pkl')
             init_struc_data = pkl_data.load_init_struc()
             # -- check
-            if not rin.tot_struc == len(init_struc_data):
-                logger.error(f'rin.tot_struc = {rin.tot_struc},'
-                                f' len(init_struc_data) = {len(init_struc_data)}')
-                raise SystemExit(1)
+            if rin.algo not in ['EA', 'EA-vc']:
+                if not rin.tot_struc == len(init_struc_data):
+                    logger.error(f'rin.tot_struc = {rin.tot_struc},'
+                                    f' len(init_struc_data) = {len(init_struc_data)}')
+                    raise SystemExit(1)
             # -- init_POSCARS
             out_poscar(init_struc_data, './data/init_POSCARS', mode='w')
 

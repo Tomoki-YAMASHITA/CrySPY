@@ -77,8 +77,18 @@ def gen_addition(
         # ------ charge neutrality
         if charge is not None:
             cn_comb = get_cn_comb_within_n(charge, cn_nmax)
+        else:
+            cn_comb = None
         # ------ generate child
-        child = gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea, target)
+        child = gen_child(
+            atype,
+            mindist,
+            parent_A,
+            atype_avail,
+            maxcnt_ea,
+            target,
+            cn_comb,
+        )
         # ------ success
         if child is not None:
             children[cid] = child
@@ -100,7 +110,15 @@ def gen_addition(
     return children, parents, operation
 
 
-def gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea=50, target='random'):
+def gen_child(
+        atype,
+        mindist,
+        parent_A,
+        atype_avail,
+        maxcnt_ea=50,
+        target='random',
+        cn_comb=None,
+    ):
     '''
         tuple may be replaced by list
 
@@ -110,6 +128,7 @@ def gen_child(atype, mindist, parent_A, atype_avail, maxcnt_ea=50, target='rando
     atype_avail (list): available atom type for addition
     maxcnt_ea (int): maximum number of trial in crossover
     target (str): only 'random' for now
+    cn_comb (tuple): charge neutral combinations of atoms within n atoms
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object

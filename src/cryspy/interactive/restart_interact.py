@@ -1,36 +1,48 @@
+from contextlib import redirect_stdout
 from logging import getLogger
 import os
 
+import numpy as np
+from tqdm.notebook import tqdm
+
+from .opt_ase import opt_ase
 from ..start import cryspy_restart
-
 from ..IO import io_stat, pkl_data
-from ..job.ctrl_job import prepare_jobfile, submit_next_struc, regist_opt, mv_fin, next_gen_EA
-from ..util.utility import get_version
-#from ..start.gen_init_struc import gen_init_struc
+from ..job.ctrl_job import regist_opt, mv_fin, next_gen_EA
 
-# ---------- import later (after rin = ReadInput())
-#from ..interface import select_code
+# ---------- import later
+#from ..EA.calc_ef import calc_ef
 
 
 logger = getLogger('cryspy')
 
 
-def restart_interact(njob: int):
-    # ---------- logger etc
+def restart_interact(
+        njob: int,
+        calculator,
+        optimizer,
+        symmetry=True,
+        mask=None,
+        fmax=0.01,
+        steps=2000,
+    ):
+    # ---------- ignore MPI
     comm = None
     mpi_rank = 0
     mpi_size = 1
 
     # ---------- restart
     rin, init_struc_data = cryspy_restart.restart(comm, mpi_rank, mpi_size)
+    if rin.calc_code != 'ASE':
+        logger.error('Use ASE for calc_code in interactive mode')
+        raise ValueError('Use ASE for calc_code in interactive mode')
+    if rin.algo not in ['RS', 'EA', 'EA-vc']:
+        logger.error(f'algo = {rin.algo} is not supported in interactive mode')
+        raise ValueError(f'algo = {rin.algo} is not supported in interactive mode')
     if rin.nstage > 1:
         logger.warning('nstage is ignored in interactive mode')
     if njob == 0:
         njob = rin.njob
-
-    # ---------- check calc files in ./calc_in
-    from ..interface import select_code    # after rin = ReadInput()
-    select_code.check_calc_files(rin)
 
     # ---------- mkdir work/fin
     os.makedirs('work/fin', exist_ok=True)
@@ -39,15 +51,9 @@ def restart_interact(njob: int):
     # ---------- Ctrl_job
     # ----------
 
-    # ---------- load data
-    opt_struc_data = pkl_data.load_opt_struc()
-    rslt_data = pkl_data.load_rslt()
+    # ---------- load id data
     id_queueing = pkl_data.load_id_queueing()
     id_running = pkl_data.load_id_running()
-    if rin.algo == 'RS':
-        gen = None
-    elif rin.algo == 'EA':
-        gen = pkl_data.load_gen()
 
     # ---------- flag for next selection or generation
     if rin.algo in ['BO', 'LAQA', 'EA', 'EA-vc']:
@@ -57,37 +63,90 @@ def restart_interact(njob: int):
             go_next_sg = True
 
     # ----------  check_job
+    # id_running is supposed to be empty list at the beginning in interactive mode
     if not rin.stop_next_struc:
         while len(id_running) < njob and id_queueing:
             id_running.append(id_queueing.pop(0))
 
+    # ---------- load data
+    if id_running:
+        init_struc_data = pkl_data.load_init_struc()
+        opt_struc_data = pkl_data.load_opt_struc()
+        rslt_data = pkl_data.load_rslt()
+        if rin.algo in ['EA', 'EA-vc']:
+            gen = pkl_data.load_gen()
+        else:
+            gen = None
+        if rin.algo == 'EA-vc':
+            nat_data = pkl_data.load_nat_data()
+
+    # ---------- structure optimization
     # in interactive mode, tmp_id_running is not used
     # because id_running does not change during the for loop below
-    for cid in id_running:
-        # --------- mkdir
+    for cid in tqdm(id_running):
+        # ------ work path
         os.makedirs(f'work/{cid}', exist_ok=True)
         work_path = f'work/{cid}/'
+        # ------ struc data
+        struc = init_struc_data[cid]
+        # ------ optimize structure
+        with open(work_path + 'log.out', 'w') as f:    # work/xx/log.out
+            with redirect_stdout(f):
+                opt_struc, energy = opt_ase(
+                                        work_path,
+                                        struc,
+                                        calculator,
+                                        optimizer,
+                                        symmetry,
+                                        mask,
+                                        fmax,
+                                        steps,
+                                    )    # eV/cell
 
-        # ---------- next_struc
-        #            interactive mode always starts with next_struc
-        select_code.next_struc(rin, init_struc_data[cid], cid, work_path, rin.nat)
+        # ---------- eV/cell --> eV/atom
+        if not np.isnan(energy):
+            if rin.algo == 'EA-vc':
+                nat = nat_data[cid]
+            else:
+                nat = rin.nat
+            natot = sum(nat)
+            energy = energy/float(natot)    # eV/cell --> eV/atom
 
-        # ---------- prepare jobfile
-        prepare_jobfile(rin, cid, work_path)
+        # ---------- check
+        if np.isnan(energy):
+            opt_struc = None
+        if opt_struc is None:
+            energy = np.nan
 
-        # ---------- submit job
-        submit_next_struc(rin, cid, work_path, wait=True)
+        # ----------  magmom and check_opt
+        magmom = np.nan    # not implemented
+        check_opt = 'no_file'    # not implemented
 
-        # ---------- collect
-        opt_struc, energy, magmom, check_opt = \
-            select_code.collect(rin, cid, work_path, rin.nat)
-        logger.info(f'{cid}    collect results: E = {energy} eV/atom')
+        # ---------- calculate Ef for EA-vc
+        if rin.algo == 'EA-vc':
+            from ..EA.calc_ef import calc_ef
+            ef = calc_ef(energy, nat, rin.end_point)
+            regist_nat = nat
+        else:
+            ef = None
+            regist_nat = None
 
         # ---------- register opt data
         opt_struc_data, rslt_data = regist_opt(
-            rin, cid, work_path,
-            init_struc_data, opt_struc_data, rslt_data,
-            opt_struc, energy, magmom, check_opt, ef=None, n_selection=None, gen=gen)
+            rin,
+            cid,
+            work_path,
+            init_struc_data,
+            opt_struc_data,
+            rslt_data,
+            opt_struc,
+            energy,
+            magmom,
+            check_opt,
+            ef,
+            n_selection=None,
+            gen=gen,
+        )
 
         # ---------- mv work to fin
         mv_fin(cid)
@@ -106,7 +165,9 @@ def restart_interact(njob: int):
         if rin.algo == 'RS':
             logger.info('\nDone all structures!')
         # ---------- EA
-        if rin.algo == 'EA':
+        if rin.algo in ['EA', 'EA-vc']:
+            if rin.algo == 'EA':
+                nat_data = None
             next_gen_EA(
                 rin,
                 gen,
@@ -114,6 +175,6 @@ def restart_interact(njob: int):
                 init_struc_data,
                 opt_struc_data,
                 rslt_data,
-                nat_data=None,
+                nat_data,
                 struc_mol_id=None,
             )

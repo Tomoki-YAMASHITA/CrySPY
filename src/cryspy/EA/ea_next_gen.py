@@ -83,6 +83,7 @@ def next_gen(
 
     # ---------- generate children by EA
     logger.info('# ------ Generate children')
+    pre_nstruc = len(init_struc_data)
     # init_struc_data will be updated and  saved in child_gen function
     init_struc_data, parents, operation = child_gen(
         rin,
@@ -149,7 +150,7 @@ def next_gen(
     gen += 1
 
     # ---------- id_queueing
-    id_queueing = [i for i in range(rin.tot_struc, rin.tot_struc + rin.n_pop)]
+    id_queueing = [i for i in range(pre_nstruc, pre_nstruc + rin.n_pop)]
 
     # ---------- ea_info
     if rin.algo == 'EA':
@@ -195,13 +196,13 @@ def next_gen(
 
     # ---------- ea_origin
     # ------ EA operation part
-    for cid in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
+    for cid in range(pre_nstruc, pre_nstruc + rin.n_pop - rin.n_rand):
         tmp_origin = pd.DataFrame([[gen, cid, operation[cid],
                                     parents[cid]]], columns=ea_origin.columns)
         ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------ random part
-    for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand,
-                     rin.tot_struc + rin.n_pop):
+    for cid in range(pre_nstruc + rin.n_pop - rin.n_rand,
+                     pre_nstruc + rin.n_pop):
         tmp_origin = pd.DataFrame([[gen, cid, 'random', None]],
                                   columns=ea_origin.columns)
         ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
@@ -224,17 +225,6 @@ def next_gen(
     pkl_data.save_elite_fitness(elite_fitness)
     pkl_data.save_ea_info(ea_info)
     pkl_data.save_ea_origin(ea_origin)
-
-    # ---------- change the value of tot_struc
-    next_tot = rin.tot_struc + rin.n_pop
-    config = change_input.read_config()
-    change_input.change_input(config, 'basic', 'tot_struc', next_tot)
-    change_input.write_config(config)
-    logger.info('# -- changed cryspy.in')
-    logger.info('Changed the value of tot_struc in cryspy.in'
-          f' from {rin.tot_struc} to {next_tot}')
-    rin.tot_struc = next_tot
-    pkl_data.save_input(rin)
 
     # ---------- status
     stat = io_stat.stat_read()

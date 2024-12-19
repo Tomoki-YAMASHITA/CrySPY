@@ -1,7 +1,7 @@
 from logging import getLogger
 
 import matplotlib.pyplot as plt
-from matplotlib import set_loglevel
+import matplotlib.font_manager as fm
 import numpy as np
 from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
@@ -228,6 +228,14 @@ def draw_convex_hull_3d(
 
 
 def _set_params():
+    # ---------- font check
+    available_fonts = fm.findSystemFonts(fontpaths=None, fontext='ttf')
+    if any('Times New Roman' in font for font in available_fonts):
+        plt_font = 'Times New Roman'    # for macOS
+    else:
+        plt_font = 'Liberation Serif'    # for Linux
+
+    # ---------- rcParams
     rcParams_dict = {
         # ---------- figure
         'figure.figsize': (8, 6),
@@ -249,7 +257,7 @@ def _set_params():
         # ---------- grid
         'grid.linestyle': ':',
         # ---------- font
-        'font.family': ['Times New Roman', 'Liberation Serif'],
+        'font.family': plt_font,
         'mathtext.fontset': 'cm',
         #'mathtext.fontset': 'stix',
         'font.size': 16,
@@ -259,6 +267,4 @@ def _set_params():
         #'svg.fonttype': 'none',  # Assume fonts are installed on the machine
         'pdf.fonttype': 42,  # embed fonts in PDF using type42 (True type)
     }
-
-    set_loglevel('error')
     plt.rcParams.update(rcParams_dict)

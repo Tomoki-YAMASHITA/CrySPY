@@ -196,9 +196,10 @@ class ReadInput:
             if self.calc_code not in ['VASP', 'QE', 'soiap']:
                 raise ValueError('LAQA: only VASP, QE, or soiap for now')
         # ---------- tot_struc
-        self.tot_struc = self.config.getint('basic', 'tot_struc')
-        if self.tot_struc < 1:
-            raise ValueError('tot_struc < 1, check tot_struc')
+        if self.algo not in ['EA', 'EA-vc']:
+            self.tot_struc = self.config.getint('basic', 'tot_struc')
+            if self.tot_struc < 1:
+                raise ValueError('tot_struc < 1, check tot_struc')
         # ---------- nstage
         self.nstage = self.config.getint('basic', 'nstage')
         if self.nstage < 1:
@@ -485,9 +486,10 @@ class ReadInput:
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.recalc = None
         if self.recalc is not None:
-            for cid in self.recalc:
-                if not 0 <= cid < self.tot_struc:
-                    raise ValueError('recalc must be non-negative int and less than tot_struc')
+            if self.algo not in ['EA', 'EA-vc']:
+                for cid in self.recalc:
+                    if not 0 <= cid < self.tot_struc:
+                        raise ValueError('recalc must be non-negative int and less than tot_struc')
         # ---------- append_struc_ea
         try:
             self.append_struc_ea = self.config.getboolean('option', 'append_struc_ea')
