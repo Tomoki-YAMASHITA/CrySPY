@@ -7,7 +7,8 @@ from ..util.utility import set_logger, backup_cryspy, clean_cryspy
 from .restart_interact import restart_interact
 from .rslt_energy import display_rslt
 from .view_atom import get_ase_atoms
-from .energy_plot import energy_plot
+from .energy_plot import energy_plot, energy_plot_EA, convex_hull_plot
+from .show_dist import show_dist
 
 
 set_logger(
@@ -85,3 +86,15 @@ def get_atoms(status, cid):
 
 def plot_e(y_max=2.0, y_min=-0.5):
     energy_plot(y_max, y_min)
+
+
+def plot_e_EA(y_max=2.0, y_min=-0.5):
+    energy_plot_EA(y_max, y_min)
+
+
+def interactive_plot_convex_hull(show_unstable=0.05, ternary_style='2d'):
+    convex_hull_plot(show_unstable, ternary_style)
+
+
+def structure_distance(r_cut=6.0, n_max=8, l_max=2, add_str=None, add_e=None):
+    show_dist(r_cut, n_max, l_max, add_str, add_e)

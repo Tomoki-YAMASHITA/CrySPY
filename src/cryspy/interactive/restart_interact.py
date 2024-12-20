@@ -51,9 +51,18 @@ def restart_interact(
     # ---------- Ctrl_job
     # ----------
 
-    # ---------- load id data
+    # ---------- load data
     id_queueing = pkl_data.load_id_queueing()
     id_running = pkl_data.load_id_running()
+    init_struc_data = pkl_data.load_init_struc()
+    opt_struc_data = pkl_data.load_opt_struc()
+    rslt_data = pkl_data.load_rslt()
+    if rin.algo in ['EA', 'EA-vc']:
+        gen = pkl_data.load_gen()
+    else:
+        gen = None
+    if rin.algo == 'EA-vc':
+        nat_data = pkl_data.load_nat_data()
 
     # ---------- flag for next selection or generation
     if rin.algo in ['BO', 'LAQA', 'EA', 'EA-vc']:
@@ -67,18 +76,6 @@ def restart_interact(
     if not rin.stop_next_struc:
         while len(id_running) < njob and id_queueing:
             id_running.append(id_queueing.pop(0))
-
-    # ---------- load data
-    if id_running:
-        init_struc_data = pkl_data.load_init_struc()
-        opt_struc_data = pkl_data.load_opt_struc()
-        rslt_data = pkl_data.load_rslt()
-        if rin.algo in ['EA', 'EA-vc']:
-            gen = pkl_data.load_gen()
-        else:
-            gen = None
-        if rin.algo == 'EA-vc':
-            nat_data = pkl_data.load_nat_data()
 
     # ---------- structure optimization
     # in interactive mode, tmp_id_running is not used
