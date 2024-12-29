@@ -81,7 +81,7 @@ def backup_cryspy():
     os.makedirs(dst, exist_ok=True)
 
     # ---------- file/directory list
-    flist = ['cryspy.in', 'cryspy.stat', 'err_cryspy', 'log_cryspy']
+    flist = ['cryspy.in', 'cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'cryspy_interactive.ipynb']
     dlist = ['calc_in', 'data']
 
     # ---------- backup
@@ -105,7 +105,7 @@ def clean_cryspy(skip_yes=False):
 
     # ---------- file/directory list
     fdlist = ['cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'lock_cryspy',
-              'data', 'work', 'tmp_calc_FP', 'tmp_gen_struc']
+              'data', 'work', 'tmp_gen_struc']
 
     # ---------- clean
     dname = datetime.now().strftime("%Y%m%d_%H%M%S")

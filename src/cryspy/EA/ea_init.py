@@ -119,6 +119,7 @@ def initialize(rin, init_struc_data, rslt_data):
     if rin.algo == 'EA-vc':
         nat_data = {}      # {ID: [nat], ...}
         hdist_data = {}    # {gen: {ID: hdist, ...}, ...}
+        pd_data = {}       # {gen: pd, ...}
         for cid, struc in init_struc_data.items():
             tmp_nat = get_nat(struc, rin.atype)
             nat_data[cid] = tmp_nat
@@ -137,6 +138,7 @@ def initialize(rin, init_struc_data, rslt_data):
     if rin.algo == 'EA-vc':
         pkl_data.save_nat_data(nat_data)
         pkl_data.save_hdist_data(hdist_data)
+        pkl_data.save_pd_data(pd_data)
 
     # ---------- status
     stat = io_stat.stat_read()

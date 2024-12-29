@@ -1,6 +1,7 @@
 from contextlib import redirect_stdout
 from logging import getLogger
 import os
+from typing import Callable
 
 import numpy as np
 from tqdm.notebook import tqdm
@@ -19,13 +20,26 @@ logger = getLogger('cryspy')
 
 def restart_interact(
         njob: int,
-        calculator,
-        optimizer,
-        symmetry=True,
-        mask=None,
-        fmax=0.01,
-        steps=2000,
-    ):
+        calculator: Callable,
+        optimizer: str,
+        symmetry: bool = True,
+        fmax: float = 0.01,
+        steps: int = 2000,
+    ) -> None:
+    """
+    Restart the interactive CrySPY process.
+
+    Args:
+        njob (int): Number of jobs to run.
+        calculator (Callable): Calculator function to use.
+        optimizer (str): Optimizer to use ('BFGS', 'LBFGS', 'FIRE').
+        symmetry (bool, optional): Whether to use symmetry. Default is True.
+        fmax (float, optional): Maximum force. Default is 0.01.
+        steps (int, optional): Number of steps. Default is 2000.
+
+    Raises:
+        ValueError: If the calculation code is not 'ASE' or the algorithm is not supported in interactive mode.
+    """
     # ---------- ignore MPI
     comm = None
     mpi_rank = 0
@@ -89,13 +103,12 @@ def restart_interact(
         # ------ optimize structure
         with open(work_path + 'log.out', 'w') as f:    # work/xx/log.out
             with redirect_stdout(f):
-                opt_struc, energy = opt_ase(
+                opt_struc, energy, converged = opt_ase(
                                         work_path,
                                         struc,
                                         calculator,
                                         optimizer,
                                         symmetry,
-                                        mask,
                                         fmax,
                                         steps,
                                     )    # eV/cell
@@ -109,15 +122,22 @@ def restart_interact(
             natot = sum(nat)
             energy = energy/float(natot)    # eV/cell --> eV/atom
 
+        # ---------- check_opt
+        if converged:
+            check_opt = 'done'
+        else:
+            check_opt = 'not_yet'
+
         # ---------- check
         if np.isnan(energy):
             opt_struc = None
+            check_opt = 'no_file'
         if opt_struc is None:
             energy = np.nan
+            check_opt = 'no_file'
 
         # ----------  magmom and check_opt
         magmom = np.nan    # not implemented
-        check_opt = 'no_file'    # not implemented
 
         # ---------- calculate Ef for EA-vc
         if rin.algo == 'EA-vc':
@@ -141,6 +161,7 @@ def restart_interact(
             magmom,
             check_opt,
             ef,
+            nat=regist_nat,
             n_selection=None,
             gen=gen,
         )

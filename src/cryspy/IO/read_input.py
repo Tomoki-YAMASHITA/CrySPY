@@ -114,6 +114,7 @@ class ReadInput:
     show_max: float = field(default=None)
     lable_stable: bool = field(default=None)
     vmax: float = field(default=None)
+    bottom_margin: float = field(default=None)
     n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
     rot_max_angle: float = field(default=None)     # not implemented yet, for EA mol
@@ -802,7 +803,7 @@ class ReadInput:
             try:
                 self.show_max = self.config.getfloat('EA', 'show_max')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.show_max = 0.05
+                self.show_max = 0.2
             # ------ label_stable
             try:
                 self.label_stable = self.config.getboolean('EA', 'label_stable')
@@ -812,7 +813,12 @@ class ReadInput:
             try:
                 self.vmax = self.config.getfloat('EA', 'vmax')
             except (configparser.NoOptionError, configparser.NoSectionError):
-                self.vmax = 0.05
+                self.vmax = 0.2
+            # ------ bottom_margin
+            try:
+                self.bottom_margin = self.config.getfloat('EA', 'bottom_margin')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.bottom_margin = 0.02
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ n_rotation

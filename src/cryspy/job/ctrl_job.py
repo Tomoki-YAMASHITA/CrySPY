@@ -868,10 +868,11 @@ def next_gen_EA(
     # ---------- EA-vc: calc convex hull
     if rin.algo == 'EA-vc':
         hdist_data = pkl_data.load_hdist_data()
+        pd_data = pkl_data.load_pd_data()
         if gen not in hdist_data:
             logger.info(f'Calculate convex hull for generation {gen}')
             from ..EA.calc_hull import calc_convex_hull
-            _, hdist = calc_convex_hull(
+            pd, hdist = calc_convex_hull(
                 atype=rin.atype,
                 gen=gen,
                 end_point=rin.end_point,
@@ -880,12 +881,15 @@ def next_gen_EA(
                 show_max=rin.show_max,
                 label_stable=rin.label_stable,
                 vmax=rin.vmax,
+                bottom_margin=rin.bottom_margin,
                 emax_ea=rin.emax_ea,
                 emin_ea=rin.emin_ea,
             )
             out_hdist(gen, hdist, nat_data)
             hdist_data[gen] = hdist
+            pd_data[gen] = pd
             pkl_data.save_hdist_data(hdist_data)
+            pkl_data.save_pd_data(pd_data)
 
     # ---------- flag for next selection or generation
     if not go_next_sg:

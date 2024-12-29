@@ -328,3 +328,13 @@ def load_hdist_data():
 def save_hdist_data(hdist_data):
     with open('./data/pkl_data/hdist_data.pkl', 'wb') as f:
         pickle.dump(hdist_data, f)
+
+
+def load_pd_data():
+    with open('./data/pkl_data/pd_data.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
+def save_pd_data(pd_data):
+    with open('./data/pkl_data/pd_data.pkl', 'wb') as f:
+        pickle.dump(pd_data, f)

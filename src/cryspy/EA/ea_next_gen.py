@@ -8,7 +8,7 @@ import pandas as pd
 
 from .ea_child import child_gen
 from .survival import survival_fittest
-from ..IO import change_input, io_stat, pkl_data
+from ..IO import io_stat, pkl_data
 from ..IO.out_results import out_ea_info, out_ea_origin
 
 

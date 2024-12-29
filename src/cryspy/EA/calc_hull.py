@@ -1,7 +1,8 @@
+from ..util.visual_util import set_params
+
 from logging import getLogger
 
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 import numpy as np
 from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
@@ -19,6 +20,7 @@ def calc_convex_hull(
         show_max,
         label_stable,
         vmax,
+        bottom_margin,
         emax_ea=None,
         emin_ea=None,
         mpl_draw=True,
@@ -33,6 +35,7 @@ def calc_convex_hull(
         show_max (float): max value of y-axis (binary) or hull distance (ternary)
         label_stable (bool): whether to show stable compositions
         vmax (float): max value of colorbar for hull distance
+        bottom_margin (float): bottom margin of y-axis
         emax_ea (float): maximum energy for cutoff
         emin_ea (float): minimum energy for cutoff
 
@@ -75,36 +78,38 @@ def calc_convex_hull(
     # ---------- draw convex hull
     if mpl_draw:
         if len(atype) == 2:
-            draw_convex_hull_2d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
+            fig, _ = draw_convex_hull_binary(pd, hdist, cgen_ids, show_max, label_stable, vmax, bottom_margin)
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
         elif len(atype) == 3:
-            draw_convex_hull_3d(pd, hdist, cgen_ids, gen, show_max, label_stable, vmax)
+            fig, _ = draw_convex_hull_ternary(pd, hdist, cgen_ids, show_max, label_stable, vmax)
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
 
     # ---------- return
     return pd, hdist
 
 
-def draw_convex_hull_2d(
+def draw_convex_hull_binary(
         pd,
         hdist,
         cgen_ids,
-        gen,
-        show_max=0.05,
+        show_max=0.2,
         label_stable=True,
-        vmax=0.05,
+        vmax=0.2,
+        bottom_margin=0.02,
     ):
     '''
     # ---------- args
     pd (PhaseDiagram): phase diagram object
     hdist (dict): hull distance of all structures, {ID: distance, ...}
     cgen_ids (array): ID array of current generation structures
-    gen (int): current generation
     show_max (float): max value of y-axis (binary) or hull distance (ternary)
     label_stable (bool): whether to show stable compositions
     vmax (float): max value of colorbar for hull distance
+    bottom_margin (float): bottom margin of y-axis
     '''
 
     # ---------- setting
-    _set_params()
+    set_params()
 
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
@@ -153,36 +158,34 @@ def draw_convex_hull_2d(
 
     # ---------- ylim
     stable_y = list(stable_entries.keys())
-    ymin = min(stable_y, key=lambda x: x[1])[1] -0.01
+    ymin = min(stable_y, key=lambda x: x[1])[1] - bottom_margin
     ax.set_ylim(ymin, show_max)
 
-    # ---------- save figure
-    fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
+    # ---------- return
     plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
+    return fig, ax
 
 
-def draw_convex_hull_3d(
+def draw_convex_hull_ternary(
         pd,
         hdist,
         cgen_ids,
-        gen,
-        show_max=0.05,
+        show_max=0.2,
         label_stable=True,
-        vmax=0.05,
+        vmax=0.2,
     ):
     '''
     # ---------- args
     pd (PhaseDiagram): phase diagram object
     hdist (dict): hull distance of all structures, {ID: distance, ...}
     cgen_ids (array): ID array of current generation structures
-    gen (int): current generation
     show_max (float): max value of y-axis (binary) or hull distance (ternary)
     label_stable (bool): whether to show stable compositions
     vmax (float): max value of colorbar for hull distance
     '''
 
     # ---------- setting
-    _set_params()
+    set_params()
 
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
@@ -222,49 +225,6 @@ def draw_convex_hull_3d(
                 mx, my = unstable_compos[cid][0], unstable_compos[cid][1]
                 ax.plot(mx, my, '+', markersize=6, markeredgewidth=0.5,  markeredgecolor='navy', zorder=4)
 
-    # ---------- save figure
-    fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
+    # ---------- return
     plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
-
-
-def _set_params():
-    # ---------- font check
-    available_fonts = fm.findSystemFonts(fontpaths=None, fontext='ttf')
-    if any('Times New Roman' in font for font in available_fonts):
-        plt_font = 'Times New Roman'    # for macOS
-    else:
-        plt_font = 'Liberation Serif'    # for Linux
-
-    # ---------- rcParams
-    rcParams_dict = {
-        # ---------- figure
-        'figure.figsize': (8, 6),
-        'figure.dpi': 120,
-        'figure.facecolor': 'white',
-        # ---------- axes
-        'axes.grid': True,
-        'axes.linewidth': 1.5,
-        # ---------- ticks
-        'xtick.direction': 'in',
-        'ytick.direction': 'in',
-        'xtick.major.width': 1.0,
-        'ytick.major.width': 1.0,
-        'xtick.major.size': 8.0,
-        'ytick.major.size': 8.0,
-        # ---------- lines
-        'lines.linewidth': 1.5,
-        'lines.markersize': 8,
-        # ---------- grid
-        'grid.linestyle': ':',
-        # ---------- font
-        'font.family': plt_font,
-        'mathtext.fontset': 'cm',
-        #'mathtext.fontset': 'stix',
-        'font.size': 16,
-        'axes.labelsize': 20,
-        'legend.fontsize': 20,
-        'svg.fonttype': 'path',  # Embed characters as paths
-        #'svg.fonttype': 'none',  # Assume fonts are installed on the machine
-        'pdf.fonttype': 42,  # embed fonts in PDF using type42 (True type)
-    }
-    plt.rcParams.update(rcParams_dict)
+    return fig, ax
