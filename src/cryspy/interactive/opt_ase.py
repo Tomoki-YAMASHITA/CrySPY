@@ -64,11 +64,10 @@ def opt_ase(
 
     # ---------- result
     try:
-        with warnings.catch_warnings():
-            # to avoid UserWarning: Only FixAtoms ~~ from Pymatgen
-            warnings.simplefilter('ignore')
-            opt_struc = AseAtomsAdaptor.get_structure(cell_filter.atoms.copy())
-            # ".copy()" <-- to prevent "TypeError: cannot pickle 'kimpy.model.PyModel' object" when using KIM
+        lattice = cell_filter.atoms.cell[:]
+        species = cell_filter.atoms.get_chemical_symbols()
+        coords = cell_filter.atoms.get_scaled_positions()
+        opt_struc = Structure(lattice=lattice, species=species, coords=coords)
         energy = cell_filter.atoms.get_total_energy()    # eV/cell
     except Exception as e:
         opt_struc = None

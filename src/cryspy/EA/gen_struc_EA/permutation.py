@@ -117,7 +117,7 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
     '''
 
     # ---------- initialize
-    #smatcher = StructureMatcher()    # instantiate StructureMatcher
+    smatcher = StructureMatcher()    # instantiate StructureMatcher
     cnt = 0
 
     # ---------- ntimes permutation
@@ -144,13 +144,11 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
             child.replace(indx_choice[1],
                                 species=atype[type_choice[0]])
             # ------ compare to original one
-            # 2024_06_15: many errors in StructureMatcher. I don't know why.
-            # if smatcher.fit(child, parent_A):
-            #     n = ntimes    # back to the start
-            #     continue
-            # else:
-            #     n -= 1
-            n -= 1
+            if smatcher.fit(child, parent_A):
+                n = ntimes    # back to the start
+                continue
+            else:
+                n -= 1
 
         # ------ check distance
         success, mindist_ij, dist = check_distance(child, atype, mindist)
