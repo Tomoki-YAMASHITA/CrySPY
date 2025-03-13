@@ -27,7 +27,7 @@ def collect_OMX(rin, cid, work_path, nat):
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom (done)
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         with open(work_path+rin.OMX_outfile, 'r') as fpout:
             lines = fpout.readlines()

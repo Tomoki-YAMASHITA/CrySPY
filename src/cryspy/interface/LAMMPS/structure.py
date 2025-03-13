@@ -9,7 +9,7 @@ from pymatgen.core import Structure
 
 def from_file(rin, name, nat):
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- last structure
     with open(name, 'r') as f:
         lines = f.readlines()

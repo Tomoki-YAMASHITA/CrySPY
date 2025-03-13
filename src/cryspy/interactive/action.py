@@ -35,7 +35,6 @@ def initialize():
         cryspy_init.initialize(comm, mpi_rank, mpi_size)
     else:
         logger.error('cryspy.stat file exists. Clean files to start from the beginning.')
-        raise IOError('cryspy.stat file exists. Clean files to start from the beginning.')
     os.remove('lock_cryspy')
 
 

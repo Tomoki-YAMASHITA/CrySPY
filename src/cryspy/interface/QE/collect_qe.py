@@ -24,7 +24,7 @@ def collect_qe(rin, cid, work_path, nat):
         check_opt = 'no_file'
 
     # ---------- obtain energy and magmom
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         with open(work_path+rin.qe_outfile, 'r') as fpout:
             lines = fpout.readlines()
@@ -92,7 +92,7 @@ def get_energy_step_qe(rin, energy_step_data, cid, work_path, nat):
     energy_step_data[ID][1] <-- stage 2
     '''
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         # ---------- read output file
         with open(work_path+rin.qe_outfile, 'r') as f:
@@ -175,7 +175,7 @@ def _extract_struc_qe(filename, struc_step, nat):
     with open(filename, 'r') as f:
         lines = f.readlines()
     # ---------- extract struc
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     read_cell = False
     read_coords = False
     vc_flag = False      # in case of vc-relax
@@ -221,7 +221,7 @@ def get_force_step_qe(rin, force_step_data, cid, work_path, nat):
     force_step_data[ID][1] <-- stage 2
     '''
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         # ---------- read output file
         with open(work_path+rin.qe_outfile, 'r') as f:

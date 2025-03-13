@@ -421,7 +421,7 @@ def _gen_struc_wo_spg(atype, numIons, atomlist, a1, a2, a3, mindist, maxcnt=50):
     # ---------- initialize
     cnt = 0
     incoord = []
-    natot = sum(numIons)    # do not use rin.natot because of vc
+    natot = sum(numIons)
     # ---------- generate internal coordinates
     while len(incoord) < natot:
         tmp_coord = np.random.rand(3)

@@ -29,7 +29,7 @@ def next_stage_soiap(rin, stage, work_path, nat):
     shutil.copyfile(finfile, work_path+rin.soiap_infile)
 
     # ---------- generate the CIF file
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         with open(work_path+f'stage{stage}_log.struc', 'r') as f:
             lines = f.readlines()

@@ -48,7 +48,7 @@ def next_gen(
         logger.debug(f'c_fitness: {c_fitness}')
     else:
         hdist = hdist_data[gen]
-        c_fitness = {cid: hdist[cid] for cid in cgen_ids}
+        c_fitness = {cid: hdist.get(cid, None) for cid in cgen_ids}
         logger.debug(f'c_fitness: {c_fitness}')
         # ------ update elite_fitness
         #        need to update elite_fitness every time hull distance is updated

@@ -38,7 +38,7 @@ def extract_cell_parameters_from_infile(filename):
 
 def extract_atomic_positions_from_outfile(filename, nat):
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- last atomic positions
     with open(filename, 'r') as f:
         lines = f.readlines()
@@ -53,7 +53,7 @@ def extract_atomic_positions_from_outfile(filename, nat):
 
 def extract_atomic_positions_from_infile(filename, nat):
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- last atomic positions
     with open(filename, 'r') as f:
         lines = f.readlines()

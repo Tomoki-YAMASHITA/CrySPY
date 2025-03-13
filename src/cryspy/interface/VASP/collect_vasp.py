@@ -56,7 +56,7 @@ def check_opt_vasp(file_path):
 
 def get_energy_magmom_vasp(work_path, nat):
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- obtain energy and magmom
     energy = np.nan
     magmom = np.nan
@@ -83,7 +83,7 @@ def get_energy_step_vasp(energy_step_data, cid, work_path, nat):
     energy_step_data[ID][1] <-- stage 2
     '''
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- get energy step from vasprun
     try:
         # ------ read file

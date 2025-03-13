@@ -10,7 +10,7 @@ logger = getLogger('cryspy')
 
 def collect_ase(cid, work_path, nat):
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- etc
     magmom = np.nan
     check_opt = 'no_file'    # always no_file in ASE for now

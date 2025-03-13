@@ -7,8 +7,10 @@ def set_params():
     available_fonts = fm.findSystemFonts(fontpaths=None, fontext='ttf')
     if any('Times New Roman' in font for font in available_fonts):
         plt_font = 'Times New Roman'    # for macOS
-    else:
+    elif any('Liberation Serif' in font for font in available_fonts):
         plt_font = 'Liberation Serif'    # for Linux
+    else:
+        plt_font = 'sans-serif'
 
     # ---------- rcParams
     rcParams_dict = {

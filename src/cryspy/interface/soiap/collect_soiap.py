@@ -41,7 +41,7 @@ def collect_soiap(rin, cid, work_path, nat):
                     f' could not obtain energy from {rin.soiap_outfile}')
 
     # ---------- collect the last structure
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         with open(work_path+'log.struc', 'r') as f:
             lines = f.readlines()
@@ -110,7 +110,7 @@ def get_struc_step_soiap(rin, struc_step_data, cid, work_path, nat):
     struc_step_data[ID][1] <-- stage 2
     '''
     # ---------- get struc step from log.struc
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         # ------ read file
         with open(work_path+'log.struc', 'r') as f:
@@ -153,7 +153,7 @@ def get_force_step_soiap(force_step_data, cid, work_path, nat):
     force_step_data[ID][1] <-- stage 2
     '''
     # ---------- get force step from log.frc
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     try:
         # ------ read file
         with open(work_path+'log.frc', 'r') as f:

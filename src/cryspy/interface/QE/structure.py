@@ -29,7 +29,7 @@ def extract_atomic_positions(filename, nat):
     with open(filename, 'r') as f:
         lines = f.readlines()
     lines_atom = None
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     for i, line in enumerate(reversed(lines)):
         if 'ATOMIC_POSITIONS' in line:
             ibegin = len(lines) - 1 - i

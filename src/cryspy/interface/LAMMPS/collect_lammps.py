@@ -9,7 +9,7 @@ logger = getLogger('cryspy')
 
 def collect_lammps(rin, cid, work_path, nat):
     # ---------- natot
-    natot = sum(nat)    # do not use rin.natot here for EA-vc
+    natot = sum(nat)
     # ---------- check optimization in current stage & obtain energy
     energy = np.nan
     check_opt = 'not_yet'
