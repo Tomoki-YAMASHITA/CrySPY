@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.4.0b11'
+    return '1.4.0b12'
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -52,6 +52,16 @@ def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile
             dhandler.setFormatter(fmt)
             dhandler.addFilter(lambda record: record.levelno == DEBUG)
             logger.addHandler(dhandler)
+
+    # ---------- hook for uncaught exceptions
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            # For Ctrl+C (KeyboardInterrupt), fall back to the default handler
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        logger.critical("Unhandled exception detected:", exc_info=(exc_type, exc_value, exc_traceback))
+
+    sys.excepthook = handle_exception
 
 
 def check_fwpath(fwpath):

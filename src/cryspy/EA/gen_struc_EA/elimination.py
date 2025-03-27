@@ -61,12 +61,15 @@ def gen_elimination(
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
         # ------ check nat limit
+        if parent_A.num_sites == 1:
+            logger.warning('Elimination: parent has only one atom. Change parent')
+            continue
         atype_avail = []
         for i, at in enumerate(atype):
             if nat_data[pid_A][i] > ll_nat[i]:
                 atype_avail.append(at)
         if len(atype_avail) == 0:
-            logger.warning('Elimination: reached nat limit (ll_nat). cannot add atoms')
+            logger.warning('Elimination: reached nat limit (ll_nat). cannot eliminate atoms')
             logger.warning('Change parent')
             continue
         child = gen_child(parent_A, atype_avail, target)
