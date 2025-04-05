@@ -79,10 +79,10 @@ def calc_convex_hull(
     if mpl_draw:
         if len(atype) == 2:
             fig, _ = draw_convex_hull_binary(pd, hdist, cgen_ids, show_max, label_stable, vmax, bottom_margin)
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.svg', bbox_inches='tight')
         elif len(atype) == 3:
             fig, _ = draw_convex_hull_ternary(pd, hdist, cgen_ids, show_max, label_stable, vmax)
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.png', bbox_inches='tight')
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.svg', bbox_inches='tight')
 
     # ---------- return
     return pd, hdist

@@ -250,11 +250,8 @@ def _lattice_crossover(parent_A, parent_B, w_lat):
 
 
 def _one_point_crossover(parent_A, parent_B):
-    # ---------- slice point
-    while True:
-        slice_point = np.random.normal(loc=0.5, scale=0.1)
-        if 0.3 <= slice_point <= 0.7:
-            break
+    # ---------- slice point and axis
+    slice_point = np.clip(np.random.normal(loc=0.5, scale=0.1), 0.3, 0.7)
     axis = np.random.choice([0, 1, 2])
 
     # ---------- crossover

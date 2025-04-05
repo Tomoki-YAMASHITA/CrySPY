@@ -1,4 +1,5 @@
 from logging import getLogger
+import random
 
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -53,10 +54,19 @@ def survival_fittest(fitness, struc_data, elite_struc=None, elite_fitness=None,
                 logger.info(f'Eliminate ID {cid}: {value} < emin_ea')
 
     # ---------- sort fit_with_elite
-    sorted_fit_with_elite = sorted(fit_with_elite, key=fit_with_elite.get, reverse=fit_reverse)
+    sorted_ids = sorted(fit_with_elite, key=fit_with_elite.get, reverse=fit_reverse)
+
+    # ---------- shuffle within 0.001 from min_val
+    min_val = fit_with_elite[sorted_ids[0]]
+    tiny_keys = [k for k in sorted_ids if fit_with_elite[k] - min_val < 0.001]
+    random.shuffle(tiny_keys)
+    rest_keys = [k for k in sorted_ids if fit_with_elite[k] - min_val >= 0.001]
+    sorted_ids = tiny_keys + rest_keys
+    if len(tiny_keys) > ncheck:
+        ncheck = len(tiny_keys)
 
     # ---------- ranking without duplication
-    for cid in sorted_fit_with_elite:
+    for cid in sorted_ids:
         # ------ init dupl_flag
         dupl_flag = False
         # ------ for structure is None

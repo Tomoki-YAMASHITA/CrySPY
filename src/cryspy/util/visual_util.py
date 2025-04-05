@@ -1,17 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 
 
 def set_params():
-    # ---------- font check
-    available_fonts = fm.findSystemFonts(fontpaths=None, fontext='ttf')
-    if any('Times New Roman' in font for font in available_fonts):
-        plt_font = 'Times New Roman'    # for macOS
-    elif any('Liberation Serif' in font for font in available_fonts):
-        plt_font = 'Liberation Serif'    # for Linux
-    else:
-        plt_font = 'sans-serif'
-
     # ---------- rcParams
     rcParams_dict = {
         # ---------- figure
@@ -21,6 +11,7 @@ def set_params():
         # ---------- axes
         'axes.grid': True,
         'axes.linewidth': 1.5,
+        'axes.labelsize': 20,
         # ---------- ticks
         'xtick.direction': 'in',
         'ytick.direction': 'in',
@@ -28,20 +19,23 @@ def set_params():
         'ytick.major.width': 1.0,
         'xtick.major.size': 8.0,
         'ytick.major.size': 8.0,
+        'xtick.labelsize': 16,
+        'ytick.labelsize': 16,
         # ---------- lines
-        'lines.linewidth': 1.5,
-        'lines.markersize': 8,
+        'lines.linewidth': 2.0,
+        'lines.markersize': 12,
         # ---------- grid
         'grid.linestyle': ':',
-        # ---------- font
-        'font.family': plt_font,
-        'mathtext.fontset': 'cm',
-        #'mathtext.fontset': 'stix',
-        'font.size': 16,
-        'axes.labelsize': 20,
+        # ---------- legend
         'legend.fontsize': 20,
-        'svg.fonttype': 'path',  # Embed characters as paths
-        #'svg.fonttype': 'none',  # Assume fonts are installed on the machine
+        # ---------- other fonts
+        'font.family': 'sans-serif',
+        'font.sans-serif': ['Helvetica Neue', 'Arial', 'Liberation Sans', 'DejaVu Sans', 'sans'],
+        #'mathtext.fontset': 'cm',
+        'mathtext.fontset': 'stix',
+        #'font.size': 20,
+        #'svg.fonttype': 'path',  # Embed characters as paths
+        'svg.fonttype': 'none',  # Assume fonts are installed on the machine
         'pdf.fonttype': 42,  # embed fonts in PDF using type42 (True type)
     }
     plt.rcParams.update(rcParams_dict)

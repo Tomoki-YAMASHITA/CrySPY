@@ -3,6 +3,7 @@ Generational change in evolutionary algorithm
 '''
 
 from logging import getLogger
+import random
 
 import pandas as pd
 
@@ -57,8 +58,8 @@ def next_gen(
                 elite_fitness[cid] = hdist[cid]
             logger.debug(f'elite_fitness in EA-vc: {elite_fitness}')
 
-    # ---------- survival_fittest
-    logger.info('# ------ survival of the fittest')
+    # ---------- natural selection
+    logger.info('# ------ natural selection')
     if rin.algo == 'EA-vc':
         # emax_ea and emin_ea are used in hdist, not in survival_fittest
         emax_ea = None
@@ -102,41 +103,19 @@ def next_gen(
         elite_fitness = {}
         if rin.algo == 'EA':
             fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
-            n_elite = rin.n_elite
-        if rin.algo == 'EA-vc':
-            '''
-            In EA-vc, the num. of elite structure is
-                the num. of vertices in the convex hull (hull distance < 0.001) + rin.n_elite
-            '''
-            vert_id = [cid for cid, value in hdist.items() if value < 0.001]
+        elif rin.algo == 'EA-vc':
             fitness = hdist
-            n_elite = len(vert_id) + rin.n_elite    # temporary
         # ------ ranking for all data
         ranking, _, _ = survival_fittest(
             fitness,
             opt_struc_data,
             None,
             None,
-            n_elite,
+            rin.n_elite,
             rin.fit_reverse,
             emax_ea,
             emin_ea,
         )
-        if rin.algo == 'EA-vc':
-            '''
-            e.g.
-            vert_id = [3, 8, 4] <-- assume: structure 3, 8, 4 are identical
-            rin.n_elite = 2
-            n_elite = len(vert_id) + rin.n_elite = 3 + 2 = 5
-            ranking = [3, 6, 9, 11, 15] <-- 8 and 4 are removed because of duplication.
-                                            so n_elite should be 1 + 2 = 3.
-                        11 and 15 were not originally supposed to be chosen as elite
-
-            Trim the terminals of ranking by the number of duplicated structures in vert_id
-            '''
-            for cid in vert_id:
-                if cid not in ranking:
-                    ranking.pop(-1)
         for cid in ranking:
             logger.info(f'Structure ID {cid:>6} keeps as the elite')
             elite_struc[cid] = opt_struc_data[cid]

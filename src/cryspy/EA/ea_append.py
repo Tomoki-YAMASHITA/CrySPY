@@ -25,8 +25,8 @@ def append_struc(rin, init_struc_data):
     # ---------- fitness
     fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
 
-    # ---------- survival_fittest
-    logger.info('# ------ survival of the fittest')
+    # ---------- natural selection
+    logger.info('# ------ natural selection')
     ranking, _, _ = survival_fittest(
                         fitness,
                         opt_struc_data,
