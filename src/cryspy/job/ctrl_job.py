@@ -882,6 +882,7 @@ def next_gen_EA(
                 label_stable=rin.label_stable,
                 vmax=rin.vmax,
                 bottom_margin=rin.bottom_margin,
+                fig_format=rin.fig_format,
                 emax_ea=rin.emax_ea,
                 emin_ea=rin.emin_ea,
             )

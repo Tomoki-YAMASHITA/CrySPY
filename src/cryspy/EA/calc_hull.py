@@ -21,6 +21,7 @@ def calc_convex_hull(
         label_stable,
         vmax,
         bottom_margin,
+        fig_format,
         emax_ea=None,
         emin_ea=None,
         mpl_draw=True,
@@ -36,6 +37,7 @@ def calc_convex_hull(
         label_stable (bool): whether to show stable compositions
         vmax (float): max value of colorbar for hull distance
         bottom_margin (float): bottom margin of y-axis
+        fig_format (str): format of figure, 'svg', 'png', or 'pdf'.
         emax_ea (float): maximum energy for cutoff
         emin_ea (float): minimum energy for cutoff
 
@@ -79,10 +81,10 @@ def calc_convex_hull(
     if mpl_draw:
         if len(atype) == 2:
             fig, _ = draw_convex_hull_binary(pd, hdist, cgen_ids, show_max, label_stable, vmax, bottom_margin)
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.svg', bbox_inches='tight')
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}', bbox_inches='tight')
         elif len(atype) == 3:
             fig, _ = draw_convex_hull_ternary(pd, hdist, cgen_ids, show_max, label_stable, vmax)
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.svg', bbox_inches='tight')
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}', bbox_inches='tight')
 
     # ---------- return
     return pd, hdist
@@ -122,8 +124,8 @@ def draw_convex_hull_binary(
 
     # ---------- label for only binary system
     # default fontweight is 'bold' in PDPlotter, so set 'normal'
-    ax.set_xlabel('Composition', fontsize=24, fontweight='normal')
-    ax.set_ylabel('Formation energy (eV/atom)', fontsize=24, fontweight='normal')
+    ax.set_xlabel('Composition', fontsize=20, fontweight='normal')
+    ax.set_ylabel('Formation energy (eV/atom)', fontsize=20, fontweight='normal')
 
     # ---------- texts
     for text in ax.texts:

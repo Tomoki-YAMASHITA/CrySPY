@@ -18,13 +18,13 @@ def diff_in(rin, pin):
     # ---------- immutables
     if rin.algo not in ['EA', 'EA-vc']:
         immutables = (
-            'algo', 'calc_code', 'atype', 'natot', 'nat', 'nmol'
+            'algo', 'calc_code', 'atype', 'natot', 'nat', 'nmol',
             'energy_step_flag', 'struc_step_flag', 'force_step_flag', 'stress_step_flag',
             'dscrpt', 'fp_rmin', 'fp_rmax', 'fp_npoints', 'fp_sigma',
         )
     else:    # EA, EA-vc
         immutables = (
-            'algo', 'calc_code', 'atype',
+            'algo', 'calc_code', 'atype', 'end_point',
             'energy_step_flag', 'struc_step_flag', 'force_step_flag', 'stress_step_flag',
         )
 

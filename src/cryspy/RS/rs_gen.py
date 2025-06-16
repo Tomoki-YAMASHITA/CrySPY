@@ -14,8 +14,6 @@ logger = getLogger('cryspy')
 
 def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size):
     # ---------- log: num of MPI processes
-    if mpi_rank == 0:
-        logger.info('# ---------- Initial structure generation')
     if mpi_size > 1 and mpi_rank == 0:
         logger.info(f'Number of MPI processes: {mpi_size}')
     # ---------- mindist

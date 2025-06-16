@@ -241,14 +241,15 @@ def child_gen(
 
     # ---------- random generation
     if rin.n_rand > 0:
+        logger.info('# ------ Random structure generation')
         tmp_struc_data, tmp_mol_id = gen_random(
-            rin,
-            rin.n_rand,
-            id_start,
-            comm=None,
-            mpi_rank=0,
-            mpi_size=1,
-        )
+                                        rin=rin,
+                                        nstruc=rin.n_rand,
+                                        id_offset=id_start,
+                                        comm=None,
+                                        mpi_rank=0,
+                                        mpi_size=1,
+                                    )
         # ------ update
         init_struc_data.update(tmp_struc_data)
         # if rin.struc_mode in ['mol', 'mol_bs']:

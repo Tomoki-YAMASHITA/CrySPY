@@ -62,8 +62,8 @@ def initialize(comm, mpi_rank, mpi_size):
         if mpi_size > 1:
             comm.barrier()
         if mpi_rank == 0:
-            # ------ time
             time_start = datetime.today()
+            logger.info('# ---------- Initial structure generation')
         # ########## MPI start
         # ------ structure generation
         # only init_struc_data in rank0 is important
@@ -71,8 +71,14 @@ def initialize(comm, mpi_rank, mpi_size):
             nstruc = rin.n_pop
         else:
             nstruc = rin.tot_struc
-        init_struc_data, struc_mol_id = gen_random(rin, nstruc, 0,
-                                                       comm, mpi_rank, mpi_size)
+        init_struc_data, struc_mol_id = gen_random(
+                                            rin=rin,
+                                            nstruc=nstruc,
+                                            id_offset=0,
+                                            comm=comm,
+                                            mpi_rank=mpi_rank,
+                                            mpi_size=mpi_size,
+                                        )
         # ########## MPI end
         if mpi_rank == 0:
             # ------ init_POSCARS

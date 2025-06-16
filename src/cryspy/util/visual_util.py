@@ -29,13 +29,13 @@ def set_params():
         # ---------- legend
         'legend.fontsize': 20,
         # ---------- other fonts
+        'font.size': 20,
         'font.family': 'sans-serif',
         'font.sans-serif': ['Helvetica Neue', 'Arial', 'Liberation Sans', 'DejaVu Sans', 'sans'],
-        #'mathtext.fontset': 'cm',
-        'mathtext.fontset': 'stix',
-        #'font.size': 20,
-        #'svg.fonttype': 'path',  # Embed characters as paths
-        'svg.fonttype': 'none',  # Assume fonts are installed on the machine
+        'mathtext.fontset': 'cm',
+        #'mathtext.fontset': 'stix',
+        'svg.fonttype': 'path',  # Embed characters as paths
+        #'svg.fonttype': 'none',  # Assume fonts are installed on the machine
         'pdf.fonttype': 42,  # embed fonts in PDF using type42 (True type)
     }
     plt.rcParams.update(rcParams_dict)

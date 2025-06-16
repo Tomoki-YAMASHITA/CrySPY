@@ -112,9 +112,10 @@ class ReadInput:
     target: str = field(default=None)
     end_point: tuple = field(default=None)
     show_max: float = field(default=None)
-    lable_stable: bool = field(default=None)
+    label_stable: bool = field(default=None)
     vmax: float = field(default=None)
     bottom_margin: float = field(default=None)
+    fig_format: str = field(default=None)
     n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
     rot_max_angle: float = field(default=None)     # not implemented yet, for EA mol
@@ -819,6 +820,13 @@ class ReadInput:
                 self.bottom_margin = self.config.getfloat('EA', 'bottom_margin')
             except (configparser.NoOptionError, configparser.NoSectionError):
                 self.bottom_margin = 0.02
+            # ------ fig_format
+            try:
+                self.fig_format = self.config.get('EA', 'fig_format')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.fig_format = 'svg'
+            if self.fig_format not in ['svg', 'png', 'pdf']:
+                raise ValueError('fig_format must be svg, png, or pdf')
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ n_rotation
