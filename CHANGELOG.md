@@ -1,4 +1,29 @@
 # CHANGELOG
+## [1.4.0] - 2025-6-17
+### Important change
+### New algorithm: EA-vc
+- Currently, only the ASE interface is supported. Support for VASP and others is planned.
+
+### Interactive mode
+- RS, EA, and EA-vc can be run from the Jupyter environment.
+- Only the ASE interface is supported.
+
+### EA
+- `tot_struc` is no longer used in EA. The number of structures in the first generation is now determined by `n_pop`.
+
+### Interatomic distance check after structrue optimization
+- Added `check_mindist_opt` to the [option] section in `cryspy.in`.
+- Default: `check_mindist_opt = True`.
+- After structure relaxation, a check is performed to ensure that the minimum interatomic distance constraint is satisfied.
+
+### Common
+- The `natot` parameter in `cryspy.in` has been removed.
+- Ctrl_ext has been removed.
+
+## Fixed
+- Fixed a bug related to using `TS` as the `score` in BO.
+- Several other minor fixes.
+
 ## [1.3.0] - 2024-5-31
 ### Important change
 #### Common
