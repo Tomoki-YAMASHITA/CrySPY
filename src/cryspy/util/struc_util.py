@@ -190,6 +190,11 @@ def sort_by_atype(struc, atype):
 
 def check_distance(struc, atype, mindist, check_all=False):
     '''
+    # ---------- description
+    check distance between atoms in struc
+    Even if the structure falls back to a lower-dimensional system
+    (e.g., from a ternary system with atype = ['Li', 'Co', 'O'] to a binary Li-O system),
+    the code can still handle it by checking the atomic species present in the structure.
     # ---------- args
     struc: structure data in pymatgen format
     atype (list): e.g. ['Li', 'Co, 'O']

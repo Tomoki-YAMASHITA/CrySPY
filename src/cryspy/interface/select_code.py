@@ -7,6 +7,8 @@ from logging import getLogger
 # from .soiap import calc_files_soiap, ctrl_job_soiap, collect_soiap
 # from .LAMMPS import calc_files_lammps, ctrl_job_lammps, collect_lammps
 # from .ASE import calc_files_ase, ctrl_job_ase, collect_ase
+# from ..util.struc_util import check_distance, set_mindist
+# import numpy as np
 
 
 logger = getLogger('cryspy')
@@ -142,6 +144,23 @@ def collect(rin, cid, work_path, nat):
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
         raise SystemExit(1)
+
+    # ---------- check mindist opt
+    if rin.check_mindist_opt:
+        from ..util.struc_util import check_distance, set_mindist
+        import numpy as np
+        # ------ set mindist
+        logger.info('# -- check mindist for optimized structure')
+        mindist = set_mindist(rin.atype, rin.mindist, rin.mindist_factor, rin.struc_mode)
+        success, mindist_ij, dist = check_distance(opt_struc, rin.atype, mindist)
+        if not success:
+            type0 = rin.atype[mindist_ij[0]]
+            type1 = rin.atype[mindist_ij[1]]
+            logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
+            opt_struc = None
+            energy = np.nan
+            magmom = np.nan
+            check_opt = 'mindist'
 
     # ---------- return
     return opt_struc, energy, magmom, check_opt

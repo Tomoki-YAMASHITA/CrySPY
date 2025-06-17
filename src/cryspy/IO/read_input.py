@@ -55,6 +55,7 @@ class ReadInput:
     maxcnt: int = field(default=None)
 
     # ---------- option section
+    check_mindist_opt: bool = field(default=None)
     stop_chkpt: int = field(default=None)
     load_struc_flag: bool = field(default=None)
     stop_next_struc: bool = field(default=None)
@@ -466,6 +467,11 @@ class ReadInput:
         self.spgnum = tuple(tmpspg)
 
     def _read_option(self):
+        # ---------- check_mindist_opt
+        try:
+            self.check_mindist_opt = self.config.getboolean('option', 'check_mindist_opt')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.check_mindist_opt = True
         # ---------- stop_chkpt
         try:
             self.stop_chkpt = self.config.getint('option', 'stop_chkpt')

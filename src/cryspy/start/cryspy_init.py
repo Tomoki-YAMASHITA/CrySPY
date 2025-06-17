@@ -3,11 +3,11 @@ Initialize CrySPY
 '''
 
 from datetime import datetime
+from importlib.metadata import version
 from logging import getLogger
 import os
 
 import pandas as pd
-import pkg_resources
 
 from ..IO import pkl_data, io_stat, write_input
 from ..IO.read_input import ReadInput
@@ -32,11 +32,10 @@ def initialize(comm, mpi_rank, mpi_size):
     # ---------- check versions
     if mpi_rank == 0:
         logger.info('# ---------- Library version info')
-        logger.info(f'pandas version: {pd.__version__}')
-        v_pymat = pkg_resources.get_distribution('pymatgen').version
-        v_pyxtal = pkg_resources.get_distribution('pyxtal').version
-        logger.info(f'pymatgen version: {v_pymat}')
-        logger.info(f'pyxtal version: {v_pyxtal}')
+        logger.info(f'ase version: {version("ase")}')
+        logger.info(f'pandas version: {version("pandas")}')
+        logger.info(f'pymatgen version: {version("pymatgen")}')
+        logger.info(f'pyxtal version: {version("pyxtal")}')
     # ---------- read input
     if mpi_rank == 0:
         logger.info('# ---------- Read input file, cryspy.in')

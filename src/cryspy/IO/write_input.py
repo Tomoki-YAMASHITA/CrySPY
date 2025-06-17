@@ -10,7 +10,7 @@ def out_input(rin):
         if key == 'struc_mode':
             logger.info('')
             logger.info('[structure]')
-        if key == 'stop_chkpt':
+        if key == 'check_mindist_opt':
             logger.info('')
             logger.info('[option]')
         if rin.algo == 'BO' and key == 'nselect_bo':
