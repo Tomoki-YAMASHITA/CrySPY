@@ -1,9 +1,7 @@
 from ..IO import pkl_data
-from ..EA.calc_hull import draw_convex_hull_binary, draw_convex_hull_ternary
-from ..util.visual_util import set_params
+from ..util.visual_util import set_params, draw_convex_hull_binary, draw_convex_hull_ternary
 
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 from pymatgen.analysis.phase_diagram import PDPlotter
 import numpy as np
 
