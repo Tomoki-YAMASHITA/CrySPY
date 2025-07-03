@@ -12,7 +12,7 @@ maintainers = [
 ]
 description = "CrySPY is a crystal structure prediction tool written in Python."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {file = "LICENSE"}
 keywords = ["CSP"]
 classifiers = [
@@ -30,6 +30,7 @@ changelog = "https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/CHANGELOG.md
 
 [project.scripts]
 "cryspy" = "cryspy.scripts.cryspy:main"
+"cryspy-Eplot" = "cryspy.scripts.cryspy_Eplot:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

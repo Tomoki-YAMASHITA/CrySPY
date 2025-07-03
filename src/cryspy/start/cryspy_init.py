@@ -25,7 +25,7 @@ from ..util.struc_util import out_poscar
 logger = getLogger('cryspy')
 
 
-def initialize(comm, mpi_rank, mpi_size):
+def initialize(comm=None, mpi_rank=0, mpi_size=1):
     # ---------- start
     if mpi_rank == 0:
         logger.info('\n\n\nStart CrySPY ' + get_version() + '\n\n')

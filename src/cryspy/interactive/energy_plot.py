@@ -110,7 +110,7 @@ def plot_conv_hull_binary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2, 
 
     # ---------- current generation
     if cgen is None:
-        cgen = rslt_data['Gen'].max()
+        cgen = max(pd_data.keys())
     c_rslt = rslt_data[rslt_data['Gen'] == cgen]
     cgen_ids = c_rslt.index.values    # current IDs [array]
     pd = pd_data[cgen]
@@ -131,7 +131,7 @@ def plot_conv_hull_ternary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2)
 
     # ---------- current generation
     if cgen is None:
-        cgen = rslt_data['Gen'].max()
+        cgen = max(pd_data.keys())
     c_rslt = rslt_data[rslt_data['Gen'] == cgen]
     cgen_ids = c_rslt.index.values    # current IDs [array]
     pd = pd_data[cgen]

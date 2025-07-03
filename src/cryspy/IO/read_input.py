@@ -112,6 +112,7 @@ class ReadInput:
     n_subs: int = field(default=None)
     target: str = field(default=None)
     end_point: tuple = field(default=None)
+    cgen: int = field(default=None)
     show_max: float = field(default=None)
     label_stable: bool = field(default=None)
     vmax: float = field(default=None)
@@ -806,6 +807,11 @@ class ReadInput:
             self.end_point = tuple([float(x) for x in self.end_point.split()])
             if not len(self.end_point) == len(self.atype):
                 raise ValueError('len(end_point) == len(atype), check end_point')
+            # ------ cgen
+            try:
+                self.cgen = self.config.getint('EA', 'cgen')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.cgen = None
             # ------ show_max
             try:
                 self.show_max = self.config.getfloat('EA', 'show_max')

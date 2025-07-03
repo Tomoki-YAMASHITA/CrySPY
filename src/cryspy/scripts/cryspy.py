@@ -76,14 +76,14 @@ def main():
 
     # ---------- initialize
     if not os.path.isfile('cryspy.stat'):
-        cryspy_init.initialize(comm, mpi_rank, mpi_size)
+        cryspy_init.initialize(comm=comm, mpi_rank=mpi_rank, mpi_size=mpi_size)
         if mpi_rank == 0:
             os.remove('lock_cryspy')
         raise SystemExit()
     # ---------- restart
     else:
         # only stat and init_struc_data in rank0 are important
-        rin, init_struc_data = cryspy_restart.restart(comm, mpi_rank, mpi_size)
+        rin, init_struc_data = cryspy_restart.restart(comm=comm, mpi_rank=mpi_rank, mpi_size=mpi_size)
     # ########## MPI end
 
     if mpi_rank == 0:

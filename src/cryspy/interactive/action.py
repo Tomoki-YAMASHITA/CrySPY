@@ -20,10 +20,6 @@ logger = getLogger('cryspy')
 
 
 def initialize():
-    # ---------- ignore MPI
-    comm = None
-    mpi_rank = 0
-    mpi_size = 1
     # ---------- lock file
     if os.path.isfile('lock_cryspy'):
         logger.error('lock_cryspy file exists')
@@ -32,7 +28,7 @@ def initialize():
         pass    # create vacant file
     # ---------- initialize
     if not os.path.isfile('cryspy.stat'):
-        cryspy_init.initialize(comm, mpi_rank, mpi_size)
+        cryspy_init.initialize()
     else:
         logger.error('cryspy.stat file exists. Clean files to start from the beginning.')
     os.remove('lock_cryspy')

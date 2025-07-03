@@ -40,13 +40,9 @@ def restart_interact(
     Raises:
         ValueError: If the calculation code is not 'ASE' or the algorithm is not supported in interactive mode.
     """
-    # ---------- ignore MPI
-    comm = None
-    mpi_rank = 0
-    mpi_size = 1
 
     # ---------- restart
-    rin, init_struc_data = cryspy_restart.restart(comm, mpi_rank, mpi_size)
+    rin, init_struc_data = cryspy_restart.restart()
     if rin.calc_code != 'ASE':
         logger.error('Use ASE for calc_code in interactive mode')
         raise ValueError('Use ASE for calc_code in interactive mode')
