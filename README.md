@@ -9,9 +9,14 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.4.0 (2025 June 17)
+version 1.4.1 (2025 July 7)
 
 ## News
+- [2025 July 7] CrySPY 1.4.1 released.
+    + Support add_max, elim_max, and subs_max in EA-vc
+    + Support charge neutral condition in EA-vc
+    + New subcommand: cryspy-Eplot
+    + See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
 - [2025 June 17] CrySPY 1.4.0 released.
     + Support variable-composition evolutionary algorithm
     + Support interactive mode with Jupyter

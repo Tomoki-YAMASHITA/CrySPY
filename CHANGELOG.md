@@ -1,4 +1,17 @@
 # CHANGELOG
+## [1.4.1] - 2025-7-7
+### Important change
+####  EA-vc
+- The number of atoms operated on in addition, elimination, and substitution can now be changed. The number is randomly selected up to 3 by default (in 1.4.0, it was always 1).
+
+### Added
+#### Charge neutral condition
+- It is now possible to impose a charge neutrality condition during structure generation in EA-vc.
+
+#### Subcommand
+- cryspy-Eplot
+
+
 ## [1.4.0] - 2025-6-17
 ### Important change
 ### New algorithm: EA-vc
@@ -23,6 +36,7 @@
 ## Fixed
 - Fixed a bug related to using `TS` as the `score` in BO.
 - Several other minor fixes.
+
 
 ## [1.3.0] - 2024-5-31
 ### Important change
