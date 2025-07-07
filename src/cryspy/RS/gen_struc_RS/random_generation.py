@@ -12,7 +12,7 @@ import subprocess
 import numpy as np
 from pymatgen.core import Structure
 
-from ...util.struc_util import check_distance, remove_zero, get_cn_comb
+from ...util.struc_util import check_distance, remove_zero
 
 
 logger = getLogger('cryspy')
@@ -35,7 +35,7 @@ def gen_wo_spg(
         vc=False,
         ll_nat=None,
         ul_nat=None,
-        charge=None,
+        cn_comb=None,
     ):
     '''
     Generate random structures without space group information
@@ -59,7 +59,7 @@ def gen_wo_spg(
     vc (bool): variable composition. it needs ll_nat and ul_nat
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
-    charge (tuple): charge of atoms (e.g. (1, -1)). Set if you want to check charge neutrality
+    cn_comb (np.array): charge neutral combinations of atoms
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen structure data}
@@ -71,21 +71,15 @@ def gen_wo_spg(
         tmp_nat = nat
         tmp_atype = atype
         tmp_mindist = mindist
-    if vc and charge is not None:
-        cn_comb = get_cn_comb(ll_nat, ul_nat, charge)
-        if not cn_comb:
-            logger.error('No charge neutral combinations')
-            raise SystemExit(1)
-        logger.info(f'Consider charge neutrality: {charge}')
 
     # ---------- generate structures
     while len(init_struc_data) < nstruc:
         # ------ vc
         if vc:
-            if charge is None:
+            if cn_comb is None:
                 nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
             else:
-                nat = random.choice(cn_comb)
+                nat = tuple(cn_comb[np.random.choice(len(cn_comb))])
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
@@ -149,7 +143,7 @@ def gen_with_find_wy(
         vc=False,
         ll_nat=None,
         ul_nat=None,
-        charge=None,
+        cn_comb=None,
     ):
     '''
     Generate random structures with space gruop information
@@ -176,7 +170,7 @@ def gen_with_find_wy(
     vc (bool): variable composition. it needs ll_nat and ul_nat
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
-    charge (tuple): charge of atoms (e.g. (1, -1)). Set if you want to check charge neutrality
+    cn_comb (np.array): charge neutral combinations of atoms
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structre}
@@ -188,12 +182,6 @@ def gen_with_find_wy(
         tmp_nat = nat
         tmp_atype = atype
         tmp_mindist = mindist
-    if vc and charge is not None:
-        cn_comb = get_cn_comb(ll_nat, ul_nat, charge)
-        if not cn_comb:
-            logger.error('No charge neutral combinations')
-            raise SystemExit(1)
-        logger.info(f'Consider charge neutrality: {charge}')
 
     # ---------- cd tmp_gen_struc
     os.makedirs(f'tmp_gen_struc/rank_{mpi_rank}', exist_ok=True)
@@ -203,10 +191,10 @@ def gen_with_find_wy(
     while len(init_struc_data) < nstruc:
         # ------ vc
         if vc:
-            if charge is None:
+            if cn_comb is None:
                 nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
             else:
-                nat = random.choice(cn_comb)
+                nat = tuple(cn_comb[np.random.choice(len(cn_comb))])
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from nat and corresponding index in atype, mindist
@@ -321,6 +309,10 @@ def _gen_lattice(spgnum, minlen, maxlen, dangle):
             csys = 'Cubic'
         else:
             logger.error('spg is wrong')
+            try:
+                os.remove('lock_cryspy')
+            except FileNotFoundError:
+                pass
             raise SystemExit(1)
     # ---------- generate lattice constants a, b, c, alpha, beta, gamma
     if csys == 'Triclinic':
@@ -561,6 +553,10 @@ def _gen_eq_atoms(wydata2):
                 pos.append(2.0 * rval[0])
             else:
                 logger.error('unknown ch in conversion in gen_wycoord')
+                try:
+                    os.remove('lock_cryspy')
+                except FileNotFoundError:
+                    pass
                 raise SystemExit(1)
         pos = np.array(pos)
         eq_positions.append(pos + each['add'])

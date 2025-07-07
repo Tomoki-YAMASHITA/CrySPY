@@ -1,4 +1,6 @@
+from itertools import product
 from logging import getLogger
+import random
 
 import numpy as np
 
@@ -14,6 +16,7 @@ def gen_substitution(
         struc_data,
         sp,
         n_subs,
+        subs_max,
         nat_data,
         ll_nat,
         ul_nat,
@@ -21,6 +24,7 @@ def gen_substitution(
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
+        charge=None,
     ):
     '''
 
@@ -31,6 +35,7 @@ def gen_substitution(
     struc_data (dict): {id: structure data}
     sp (instance): instance of SelectParents class
     n_subs (int): number of structures to generate by substitution
+    subs_max (int): maximum number of atoms to substitute
     nat_data (dict): {id: nat}
     ll_nat (tuple): lower limit of nat, e.g. (1, 1)
     ul_nat (tuple): upper limit of nat, e.g. (8, 8)
@@ -38,6 +43,7 @@ def gen_substitution(
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in substitution
     target (str): only 'random' for now
+    charge (int): charge of each atom type
 
     # ---------- return
     children (dict): {id: structure data}
@@ -66,34 +72,16 @@ def gen_substitution(
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
-        # ------ check nat limit
-        atype_avail_elim = []
-        atype_avail_add = []
-        for i, at in enumerate(atype):
-            if nat_data[pid_A][i] > ll_nat[i]:
-                atype_avail_elim.append(at)
-            if nat_data[pid_A][i] < ul_nat[i]:
-                atype_avail_add.append(at)
-        if len(atype_avail_elim) == 1:
-            # if atype_avail_elim is ['Na'], 'Na' should be removed from atype_avail_add
-            at = atype_avail_elim[0]
-            if at in atype_avail_add:
-                atype_avail_add.remove(at)
-        if len(atype_avail_add) == 1:
-            # if atype_avail_add is ['Na'], 'Na' should be removed from atype_avail_elim
-            at = atype_avail_add[0]
-            if at in atype_avail_elim:
-                atype_avail_elim.remove(at)
-        if len(atype_avail_add) == 0:
-            logger.warning('Substitution: reached nat limit (ul_nat).')
-            logger.warning('Change parent')
+        # ------ get subs comb
+        subs_comb = _get_subs_comb(atype, ll_nat, ul_nat, subs_max, nat_data[pid_A], charge)
+        if len(subs_comb) == 0:
+            logger.warning('Substitution: no combinations found. Change parent')
             continue
-        if len(atype_avail_elim) == 0:
-            logger.warning('Substitution: reached nat limit (ll_nat).')
-            logger.warning('Change parent')
-            continue
-        child = gen_child(atype, mindist, parent_A, atype_avail_add, atype_avail_elim,
-                          maxcnt_ea, target)
+        # ------ subs_element_list, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
+        if target == 'random':
+            subs_element_list = random.choice(subs_comb)
+        # ------ generate child
+        child = gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea, target)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -115,16 +103,55 @@ def gen_substitution(
     return children, parents, operation
 
 
-def gen_child(atype, mindist, parent_A, atype_avail_add, atype_avail_elim,
-              maxcnt_ea=50, target='random'):
+def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, charge):
+    # ---------- initialize
+    subs_comb = []
+
+    # ---------- maximum number of subs for each element pair (no constraints)
+    max_subs = {}
+    for i, from_elem in enumerate(atype):
+        for j, to_elem in enumerate(atype):
+            if i != j:
+                max_subs[(from_elem, to_elem)] = min(parent_nat[i], subs_max)
+
+    # ---------- all combinations of substitution counts for each pair from 0 to max_subs
+    pairs = list(max_subs.keys())
+    max_counts = [max_subs[pair] for pair in pairs]
+    for counts in product(*[range(max_count + 1) for max_count in max_counts]):
+        total_subs = sum(counts)
+        if 0 < total_subs <= subs_max:
+            # ------ new_nat after substitution
+            new_nat = list(parent_nat)
+            for (from_elem, to_elem), count in zip(pairs, counts):
+                from_idx = atype.index(from_elem)
+                to_idx = atype.index(to_elem)
+                new_nat[from_idx] -= count
+                new_nat[to_idx] += count
+            # ------ check if new_nat is within limits
+            if all(ll <= n <= ul for n, ll, ul in zip(new_nat, ll_nat, ul_nat)):
+                charge_ok = True
+                if charge is not None:    # check charge neutrality
+                    total_charge = sum(n * c for n, c in zip(new_nat, charge))
+                    charge_ok = (total_charge == 0)
+                if charge_ok:
+                    subs_list = []
+                    for pair, count in zip(pairs, counts):
+                        subs_list.extend([pair] * count)
+                    if subs_list:
+                        subs_comb.append(subs_list)
+
+    # ---------- return
+    return subs_comb
+
+
+def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target='random'):
     '''
         tuple may be replaced by list
 
     atype (tuple): e.g. ('Na', 'Cl')
     mindist (tuple): minimum interatomic distance, e.g. ((1.5, 1.5), (1.5, 1.5))
     parent_A (Structure): pymatgen Structure object
-    atype_avail_add (list): available atom type for addition
-    atype_avail_elim (list): available atom type for elimination
+    subs_element_list (list): list of tuples, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
     maxcnt_ea (int): maximum number of trial in crossover
     target (str): only 'random' for now
 
@@ -139,30 +166,22 @@ def gen_child(atype, mindist, parent_A, atype_avail_add, atype_avail_elim,
     # ---------- generate structure by substitution
     while True:
         child = parent_A.copy()    # keep original structure
-        if target == 'random':
-            # ------ random choice for atom type
-            at = np.random.choice(atype_avail_elim)
-            if at in atype_avail_add:
-                atype_avail_add.remove(at)
-            if len(atype_avail_add) == 0:
-                logger.warning('Substitution: no atype_avail_add, retry.')
-                cnt += 1
-                if cnt >= maxcnt_ea:
-                    logger.warning('Substitution: cnt >= maxcnt_ea.')
-                    logger.warning('Change parent')
-                    return None    # change parent
-                continue
-            else:
-                # ------ elimination
-                aindx = [i for i, site in
-                            enumerate(child) if site.species_string == at]
-                elim_indx = np.random.choice(aindx, 1)  # ", 1" to get array
-                coords = child[elim_indx[0]].frac_coords    # coords of eliminated atom
-                child.remove_sites(elim_indx)
-                # ------ addition
-                at = np.random.choice(atype_avail_add)
-                child.append(species=at, coords=coords)
-        # ---------- check mindist
+        # ------ available indices for each atom type
+        species_list = [str(site.specie) for site in child]
+        available_indices = {elem: [i for i, sp in enumerate(species_list) if sp == elem] 
+                            for elem in atype}
+        # ------ select indices for substitution without duplicates
+        subs_indices = []
+        used_indices = set()
+        for from_elem, to_elem in subs_element_list:
+            available = [idx for idx in available_indices[from_elem] if idx not in used_indices]
+            selected_idx = random.choice(available)
+            subs_indices.append(selected_idx)
+            used_indices.add(selected_idx)
+        # ------ substitution
+        for idx, (from_elem, to_elem) in zip(subs_indices, subs_element_list):
+            child.replace(idx, to_elem)
+        # ------ check mindist
         success, mindist_ij, dist = check_distance(child, atype, mindist)
         if success:
             child = sort_by_atype(child, atype)
@@ -173,6 +192,5 @@ def gen_child(atype, mindist, parent_A, atype_avail_add, atype_avail_elim,
             logger.warning(f'mindist in addition: {type0} - {type1}, {dist}. retry.')
             cnt += 1
             if cnt >= maxcnt_ea:
-                logger.warning('Substitution: cnt >= maxcnt_ea.')
-                logger.warning('Change parent')
+                logger.warning('Substitution: cnt >= maxcnt_ea. Change parent.')
                 return None    # change parent

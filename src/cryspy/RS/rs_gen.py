@@ -1,6 +1,7 @@
 from logging import getLogger
 import os
 
+from ..IO.pkl_data import load_cn_comb_data
 from ..util.utility import check_fwpath
 from ..util.struc_util import set_mindist, get_mol_data
 
@@ -43,6 +44,10 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size):
 
     # ---------- EA-vc
     vc = True if rin.algo == 'EA-vc' else False
+    if vc and rin.charge is not None:
+        _, _, _, cn_comb = load_cn_comb_data()
+    else:
+        cn_comb = None
 
     # ---------- pyxtal
     if not (rin.spgnum == 0 or rin.use_find_wy):
@@ -63,7 +68,7 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size):
                 vc=vc,
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
-                charge=rin.charge,
+                cn_comb=cn_comb,
             )
             struc_mol_id = {}     # not used, just for return
         # ------ molecular crystal
@@ -125,7 +130,7 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size):
                 vc=vc,
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
-                charge=rin.charge,
+                cn_comb=cn_comb,
             )
             struc_mol_id = {}     # not used, just for return
         else:
@@ -155,7 +160,7 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size):
                 vc=vc,
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
-                charge=rin.charge,
+                cn_comb=cn_comb,
             )
             struc_mol_id = {}     # not used, just for return
 

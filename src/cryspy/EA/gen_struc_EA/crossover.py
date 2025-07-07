@@ -27,6 +27,7 @@ def gen_crossover(
         vc=False,
         ll_nat=None,
         ul_nat=None,
+        cn_comb=None,
         struc_mol_id=None,
         molecular=False,
     ):
@@ -49,6 +50,7 @@ def gen_crossover(
     vc (bool): set True if algo == 'EA-vc'
     ll_nat (tuple): lower limit of nat for EA-vc, e.g. (0, 0)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
+    cn_comb (numpy.ndarray): charge neutral combinations
 
     # ---------- return
     children (dict): {id: structure data}
@@ -96,6 +98,7 @@ def gen_crossover(
                 vc,
                 ll_nat,
                 ul_nat,
+                cn_comb,
             )
         # ------ success
         if child is not None:
@@ -132,6 +135,7 @@ def gen_child(
         vc=False,
         ll_nat=None,
         ul_nat=None,
+        cn_comb=None,
     ):
     '''
     # ---------- args
@@ -149,6 +153,7 @@ def gen_child(
     vc (bool): set True if algo == 'EA-vc'
     ll_nat (tuple): lower limit of nat for EA-vc, e.g. (1, 1)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
+    cn_comb (numpy.ndarray): charge neutral combinations
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
@@ -177,7 +182,14 @@ def gen_child(
         # ------ child structure
         child = Structure(lattice, species, coords)
         # ------ check nat_diff
-        nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)
+        # -- for charge neutral combinations
+        if vc and cn_comb is not None:
+            target_nat = _get_close_cn_comb(child, atype, cn_comb)
+            use_charge = True
+        else:
+            target_nat = nat
+            use_charge = False
+        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)
         if any([abs(n) > nat_diff_tole for n in nat_diff]):
             logger.debug(f'nat_diff = {nat_diff}')
             if count > maxcnt_ea:    # fail
@@ -201,12 +213,12 @@ def gen_child(
                 continue    # fail --> slice again
         # ------ recheck nat_diff
         # ------ excess of atoms
-        nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)    # recheck
+        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)    # recheck
         if any([n > 0 for n in nat_diff]):
             child = _remove_border_line(child, atype, axis,
                                         slice_point, nat_diff)
         # ------ lack of atoms
-        nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)    # recheck
+        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)    # recheck
         if any([n < 0 for n in nat_diff]):
             child = _add_border_line(child, atype, mindist, axis, slice_point,
                                         nat_diff, maxcnt_ea)
@@ -220,7 +232,7 @@ def gen_child(
             continue
 
     # ---------- final check for nat
-    nat_diff = _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat)
+    nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)
     if not all([n == 0 for n in nat_diff]):
         return None    # failure
 
@@ -293,12 +305,12 @@ def _one_point_crossover(parent_A, parent_B):
     return axis, slice_point, species, coords
 
 
-def _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat):
+def _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge):
     '''
     if not vc:
         original nat - child nat
         e.g.
-            nat = [4, 4]        # original
+            target_nat = [4, 4]        # original
             tmp_nat = [3, 5]    # child
             nat_diff = [-1, 1]
     if vc:
@@ -307,10 +319,17 @@ def _get_nat_diff(atype, nat, child, vc, ll_nat, ul_nat):
             ul_nat = [8, 8, 8]
             tmp_nat = [2, 6, 12]    # child
             nat_diff = [-2, 0, 4]
+    if vc and cn_comb is not None:
+        target nat - child nat
+        e.g.
+            target_nat = [4, 4]    # closest nat in charge neutral combinations
+            tmp_nat = [3, 5]    # child
+            nat_diff = [-1, 1]
+        e.g.
     '''
     tmp_nat = get_nat(child, atype)
-    if not vc:
-        nat_diff = [i - j for i, j in zip(tmp_nat, nat)]
+    if not vc or use_charge:
+        nat_diff = [i - j for i, j in zip(tmp_nat, target_nat)]
     else:
         nat_diff = []
         for i, n in enumerate(tmp_nat):
@@ -441,3 +460,20 @@ def _mean_choice(child, axis, slice_point):
     else:
         mean = np.random.choice([0.0, slice_point])
     return mean
+
+
+def _get_close_cn_comb(child, atype, cn_comb):
+    # ---------- distance between child and cn_comb
+    tmp_nat = get_nat(child, atype)
+    distances = np.sum(np.abs(cn_comb - tmp_nat), axis=1)
+
+    # ---------- find the closest combination
+    min_distance = np.min(distances)
+    min_indices = np.where(distances == min_distance)[0]
+    
+    # ---------- randomly select one of the closest combinations
+    closest_idx = np.random.choice(min_indices)
+    cn_target_nat = cn_comb[closest_idx]
+
+    # ---------- return
+    return cn_target_nat

@@ -2,7 +2,7 @@
 Utility for structures
 '''
 
-from itertools import combinations_with_replacement, product
+from itertools import combinations_with_replacement
 from logging import getLogger
 import os
 
@@ -11,6 +11,9 @@ from pymatgen.core import Structure, Molecule
 from pymatgen.io.cif import CifWriter
 from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
+
+# ---------- import later
+#from ..IO.pkl_data import load_cn_comb_data, save_cn_comb_data
 
 
 logger = getLogger('cryspy')
@@ -31,6 +34,10 @@ def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
             tolmat = Tol_matrix(prototype='molecular', factor=factor)
         else:
             logger.error('struc_mode is wrong')
+            try:
+                os.remove('lock_cryspy')
+            except FileNotFoundError:
+                pass
             raise SystemExit(1)
         # ------ set mindist
         mindist = []
@@ -65,6 +72,10 @@ def get_atype_dummy(n_mol_file):
     noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
     if n_mol_file > len(noble_gas):
         logger.error('len(mol_file) > len(noble_gas)')
+        try:
+            os.remove('lock_cryspy')
+        except FileNotFoundError:
+            pass
         raise SystemExit(1)
     atype = noble_gas[:n_mol_file]
     return atype
@@ -93,6 +104,10 @@ def get_mol_data(mol_file):
             mol = pyxtal_mol_data[mf]
         else:
             logger.error('no molecular files')
+            try:
+                os.remove('lock_cryspy')
+            except FileNotFoundError:
+                pass
             raise SystemExit(1)
         mol_data.append(mol)
     return mol_data
@@ -138,6 +153,10 @@ def out_cif(struc, cid, tmp_path, fpath, symprec=0.01):
     else:
         logger.error('ciflines[11] is not _chemical_formula_sum,'
                          ' have to fix bag')
+        try:
+            os.remove('lock_cryspy')
+        except FileNotFoundError:
+            pass
         raise SystemExit(1)
 
     # ---------- cif --> opt_cifs
@@ -356,6 +375,10 @@ def rot_mat(angles, seq='zyx', degree=False):
     '''
     if not len(seq) == len(angles):
         logger.error('not len(seq) == len(angles)')
+        try:
+            os.remove('lock_cryspy')
+        except FileNotFoundError:
+            pass
         raise SystemExit(1)
 
     if degree:
@@ -511,31 +534,21 @@ def remove_zero(atype_in, nat_in, mindist_in):
 
 
 #
-# ---------- charge neutrarity
+# ---------- charge neutrality
 #
 
-
-def check_charge_neutrality(nat, charge):
-    '''
-    e.g. Na4Cl4
-    nat = (4, 4)
-    charge = (1, -1)
-    4*(+1) + 4*(-1) = 0
-    '''
-    return sum(n * c for n, c in zip(nat, charge)) == 0
-
-
-def get_cn_comb(ll_nat, ul_nat, charge):
-    '''
-    Find charge neutral combinations of atoms
+def calc_cn_comb(ll_nat, ul_nat, charge, use_pkl=True):
+    """
+    Calculate charge-neutral combinations of atoms
 
     # ---------- args
     ll_nat (tuple): lower limit of the number of atoms
     ul_nat (tuple): upper limit of the number of atoms
-    charge (tuple): charge of atoms
+    charge (tuple): charge of each atom type
+    use_pkl (bool): if True, load/save data from/to pkl file
 
     # ---------- retrun
-    cn_comb (tuple): charge neutral combinations of atoms
+    cn_comb (np.ndarray): array of charge-neutral combinations
 
     # ---------- example
     e.g. Na-Cl
@@ -543,39 +556,43 @@ def get_cn_comb(ll_nat, ul_nat, charge):
     ul_nat = (4, 4)
     charge = (1, -1)
 
-    ((1, 1), (2, 2), (3, 3), (4, 4)) <-- cn_comb
-    '''
-    ranges = [range(ll, ul + 1) for ll, ul in zip(ll_nat, ul_nat)]
-    cn_comb = []
-    for combination in product(*ranges):
-        if sum(combination) == 0:
-            continue
-        if check_charge_neutrality(combination, charge):
-            cn_comb.append(combination)
-    return tuple(cn_comb)
+    array([[1, 1],
+           [2, 2],
+           [3, 3],
+           [4, 4]])  <-- cn_comb
+    """
+    # ---------- try loading pkl data if it exists
+    if use_pkl:
+        from ..IO.pkl_data import load_cn_comb_data, save_cn_comb_data
+        try:
+            old_ll, old_ul, old_charge, old_cn_comb = load_cn_comb_data()
+            if (ll_nat == old_ll) and (ul_nat == old_ul) and (charge == old_charge):
+                logger.info('Using old charge neutral combinations data')
+                return old_cn_comb
+        except Exception:
+            pass
 
+    # ---------- generate all possible combinations
+    ranges = [np.arange(ll, ul + 1) for ll, ul in zip(ll_nat, ul_nat)]
+    mesh = np.meshgrid(*ranges, indexing='ij')
+    cn_comb = np.stack(mesh, axis=-1).reshape(-1, len(charge))
 
-def get_cn_comb_within_n(charge, cn_nmax):
-    '''
-    Find charge neutral combinations of atoms within n atoms
+    # ---------- remove combinations with zero total atoms
+    total_atoms = cn_comb.sum(axis=1)
+    nonzero_mask = total_atoms != 0
 
-    # ---------- args
-    charge (tuple): charge of atoms
-    cn_nmax (int): maximum number of atoms
+    # ---------- check charge neutrality, e.g. 2*(+1) + 2*(-1) = 0
+    neutral_mask = np.dot(cn_comb, charge) == 0
 
-    # ---------- retrun
-    combinations (tuple): charge neutral combinations of atoms within n atoms
+    # ---------- combine both conditions
+    final_mask = nonzero_mask & neutral_mask
+    cn_comb = cn_comb[final_mask]
 
-    # ---------- example
-    charge = (2, 4, -2)
-    cn_nmax = 3
+    # ---------- save
+    if use_pkl:
+        cn_comb_data = (ll_nat, ul_nat, charge, cn_comb)
+        save_cn_comb_data(cn_comb_data)
+        logger.info(f'Charge neutral combinations saved: {len(cn_comb)}')
 
-    ((1, 0, 1), (0, 1, 2))  <-- cn_comb
-    '''
-    cn_comb = []
-    for r in range(2, cn_nmax + 1):
-        for comb in combinations_with_replacement(range(len(charge)), r):
-            if sum(charge[i] for i in comb) == 0:
-                count = tuple([comb.count(i) for i in range(len(charge))])
-                cn_comb.append(count)
-    return tuple(cn_comb)
+    # ---------- return charge neutral combinations
+    return cn_comb

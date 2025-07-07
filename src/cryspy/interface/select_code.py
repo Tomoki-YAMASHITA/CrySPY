@@ -1,4 +1,5 @@
 from logging import getLogger
+import os
 
 # ---------- import later
 # from .VASP import calc_files_vasp, ctrl_job_vasp, collect_vasp
@@ -35,6 +36,7 @@ def check_calc_files(rin):
         calc_files_ase.check_input_ase(rin)
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
 
@@ -72,6 +74,7 @@ def next_stage(rin, stage, work_path, nat, kpt_data=None, cid=None):
         return skip_flag
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
 
@@ -105,6 +108,7 @@ def next_struc(rin, structure, cid, work_path, nat, kpt_data=None):
         ctrl_job_ase.next_struc_ase(rin, structure, cid, work_path)
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
 
@@ -143,6 +147,7 @@ def collect(rin, cid, work_path, nat):
             collect_ase.collect_ase(cid, work_path, nat)
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- check mindist opt
@@ -188,6 +193,7 @@ def get_energy_step(rin, energy_step_data, cid, work_path, nat):
         return energy_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
 
@@ -212,6 +218,7 @@ def get_struc_step(rin, struc_step_data, cid, work_path, nat):
         return struc_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
 
@@ -237,6 +244,7 @@ def get_force_step(rin, force_step_data, cid, work_path, nat):
         return force_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
 
@@ -260,4 +268,5 @@ def get_stress_step(rin, stress_step_data, cid, work_path):
         return stress_step_data
     else:
         logger.error(f'{rin.calc_code}: not implemented yet')
+        os.remove('lock_cryspy')
         raise SystemExit(1)

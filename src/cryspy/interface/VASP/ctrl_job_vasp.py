@@ -22,6 +22,7 @@ def next_stage_vasp(rin, stage, work_path, kpt_data, cid):
     for file in vasp_files:
         if not os.path.isfile(work_path + file):
             logger.error('Not found ' + work_path + file)
+            os.remove('lock_cryspy')
             raise SystemExit(1)
         os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
@@ -70,6 +71,7 @@ def next_struc_vasp(rin, structure, cid, work_path, kpt_data):
         ff = f+'_1' if f == 'INCAR' else f
         if not os.path.isfile('./calc_in/' + ff):
             logger.error('Could not find ./calc_in/' + ff)
+            os.remove('lock_cryspy')
             raise SystemExit(1)
         # ------ e.g. cp ./calc_in/INCAR_1 work/1/INCAR
         shutil.copyfile('./calc_in/'+ff, work_path+f)
@@ -78,6 +80,7 @@ def next_struc_vasp(rin, structure, cid, work_path, kpt_data):
     structure.to(fmt='poscar', filename=work_path+'POSCAR')
     if not os.path.isfile(work_path+'POSCAR'):
         logger.error(f'Could not find {work_path}POSCAR')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- Change the title of POSCAR

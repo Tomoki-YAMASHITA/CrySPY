@@ -10,7 +10,7 @@ from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
 from ..util.utility import get_version, backup_cryspy
-from ..util.struc_util import out_poscar
+from ..util.struc_util import out_poscar, calc_cn_comb
 
 # ---------- import later
 #from ..RS import rs_restart
@@ -37,6 +37,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
     except Exception as e:
         if mpi_rank == 0:
             logger.error(e)
+            os.remove('lock_cryspy')
         raise SystemExit(1)
     if mpi_rank == 0:
         try:
@@ -45,10 +46,11 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             diff_input.diff_in(rin, pin)           # compare current and previous input
             pkl_data.save_input(rin)       # save input data to input_data.pkl
         except Exception as e:
-            if mpi_size > 1:
-                comm.Abort(1)
             logger.error(e)
-            raise SystemExit(1)
+            os.remove('lock_cryspy')
+            if mpi_size > 1:
+                comm.Abort(1)      # stop for MPI
+            raise SystemExit(1)    # stop for sereial
 
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
@@ -73,7 +75,9 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             #        init_struc_data is saved in _append_struc
             init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size)
         elif rin.tot_struc < len(init_struc_data):
-            logger.error('tot_struc < len(init_struc_data)')
+            if mpi_rank == 0:
+                logger.error('tot_struc < len(init_struc_data)')
+                os.remove('lock_cryspy')
             raise SystemExit(1)
 
     # ---------- append structures by EA (option)
@@ -113,6 +117,17 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             # ------ remove lock_cryspy
             os.remove('lock_cryspy')
         raise SystemExit()
+
+    # ---------- vc: calc charge-neutral combinations
+    if mpi_rank == 0:
+        if rin.algo == 'EA-vc' and rin.charge is not None:
+            cn_comb = calc_cn_comb(rin.ll_nat, rin.ul_nat, rin.charge)
+            if len(cn_comb) == 0:
+                logger.error('No charge neutral combinations found.')
+                os.remove('lock_cryspy')
+                if mpi_size > 1:
+                    comm.Abort(1)      # stop for MPI
+                raise SystemExit(1)    # stop for sereial
 
     # ---------- return
     return rin, init_struc_data

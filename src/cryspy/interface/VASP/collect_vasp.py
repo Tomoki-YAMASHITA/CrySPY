@@ -102,6 +102,7 @@ def get_energy_step_vasp(energy_step_data, cid, work_path, nat):
                 energy_step.append(fr_eng.text)
             else:
                 logger.error('bug in get_energy_step_vasp')
+                os.remove('lock_cryspy')
                 raise SystemExit(1)
         # ------ list, str --> array
         energy_step = np.array(energy_step, dtype='float')/float(natot)

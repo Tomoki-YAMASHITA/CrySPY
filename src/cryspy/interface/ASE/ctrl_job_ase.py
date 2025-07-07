@@ -14,6 +14,7 @@ def next_stage_ase(rin, stage, work_path):
     for file in ase_files:
         if not os.path.isfile(work_path + file):
             logger.error('Not found ' + work_path + file)
+            os.remove('lock_cryspy')
             raise SystemExit(1)
         os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
@@ -35,6 +36,7 @@ def next_struc_ase(rin, structure, cid, work_path):
         ff = f+'_1' if f == rin.ase_python else f
         if not os.path.isfile('./calc_in/' + ff):
             logger.error('Could not find ./calc_in/' + ff)
+            os.remove('lock_cryspy')
             raise SystemExit(1)
         # ------ e.g. cp ./calc_in/INCAR_1 work/1/INCAR
         shutil.copyfile('./calc_in/'+ff, work_path+f)

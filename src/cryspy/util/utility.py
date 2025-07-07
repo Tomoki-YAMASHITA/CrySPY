@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.4.1b1'
+    return '1.4.1b2'
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -71,11 +71,13 @@ def check_fwpath(fwpath):
         fwpath = sr.stdout.strip()    # to delete \n
         if fwpath == '':
             logger.error('There is no find_wy program in your path')
+            os.remove('lock_cryspy')
             raise SystemExit(1)
     else:
         # ---------- check fwpath written in cryspy.in
         if not os.path.isfile(fwpath):
             logger.error(f'There is no find_wy program in {fwpath}')
+            os.remove('lock_cryspy')
             raise SystemExit(1)
     return fwpath
 

@@ -13,7 +13,7 @@ from ..IO import pkl_data, io_stat, write_input
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
 from ..util.utility import get_version
-from ..util.struc_util import out_poscar
+from ..util.struc_util import out_poscar, calc_cn_comb
 
 # ---------- import later
 #from ..RS import rs_init
@@ -47,6 +47,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
     except Exception as e:
         if mpi_rank == 0:
             logger.error(e)
+            os.remove('lock_cryspy')
         raise SystemExit(1)
     # ########## MPI end
     if mpi_rank == 0:
@@ -55,6 +56,15 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         # ---------- write and save input file
         write_input.out_input(rin)    # log
         pkl_data.save_input(rin)      # input_data.pkl
+        # ---------- vc: calc charge-neutral combinations
+        if rin.algo == 'EA-vc' and rin.charge is not None:
+            cn_comb = calc_cn_comb(rin.ll_nat, rin.ul_nat, rin.charge)
+            if len(cn_comb) == 0:
+                logger.error('No charge neutral combinations found.')
+                os.remove('lock_cryspy')
+                if mpi_size > 1:
+                    comm.Abort(1)      # stop for MPI
+                raise SystemExit(1)    # stop for sereial
 
     # ---------- generate initial structures
     if not rin.load_struc_flag:
@@ -101,6 +111,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                 if not rin.tot_struc == len(init_struc_data):
                     logger.error(f'rin.tot_struc = {rin.tot_struc},'
                                     f' len(init_struc_data) = {len(init_struc_data)}')
+                    os.remove('lock_cryspy')
                     raise SystemExit(1)
             # -- init_POSCARS
             out_poscar(init_struc_data, './data/init_POSCARS', mode='w')

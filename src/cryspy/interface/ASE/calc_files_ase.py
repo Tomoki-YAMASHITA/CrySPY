@@ -17,8 +17,10 @@ def check_input_ase(rin):
             for ff in finfiles:
                 if not os.path.isfile('./calc_in/'+ff):
                     logger.error('Could not find ./calc_in/'+ff)
+                    os.remove('lock_cryspy')
                     raise SystemExit(1)
         else:
             if not os.path.isfile('./calc_in/'+f):
                 logger.error('Could not find ./calc_in/'+f)
+                os.remove('lock_cryspy')
                 raise SystemExit(1)

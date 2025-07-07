@@ -5,7 +5,7 @@ import pandas as pd
 
 from ..IO.out_results import out_ea_info, out_nat_data
 from ..IO import io_stat, pkl_data
-from ..util.struc_util import get_nat
+from ..util.struc_util import get_nat, calc_cn_comb
 
 
 logger = getLogger('cryspy')

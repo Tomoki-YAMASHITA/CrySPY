@@ -1,9 +1,11 @@
+from itertools import product
 from logging import getLogger
+import random
 
 import numpy as np
 
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
-from ...util.struc_util import get_cn_comb_within_n
+
 
 logger = getLogger('cryspy')
 
@@ -14,29 +16,30 @@ def gen_addition(
         struc_data,
         sp,
         n_add,
+        add_max,
         nat_data,
         ul_nat,
         id_start=None,
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
-        charge=None,
-        cn_nmax=3,
+        cn_comb_delta=None,
     ):
     '''
-
-        tuple may be replaced by list
-
+    # ---------- args
     atype (tuple): e.g. ('Na', 'Cl')
     mindist (tuple): minimum interatomic distance, e.g. ((1.5, 1.5), (1.5, 1.5))
     struc_data (dict): {id: structure data}
     sp (instance): instance of SelectParents class
     n_add (int): number of structures to generate by addition
+    add_max (int): maximum number of atoms to add
     nat_data (dict): {id: nat}
     ul_nat (tuple): upper limit of nat, e.g. (8, 8)
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in addition
+    target (str): target for addition, only 'random' for now
+    cn_comb_delta (int): charge neutral combinations with a total number of atoms <= cn_nmax
 
     # ---------- return
     children (dict): {id: structure data}
@@ -65,29 +68,22 @@ def gen_addition(
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
-        # ------ check nat limit
-        atype_avail = []
-        for i, at in enumerate(atype):
-            if nat_data[pid_A][i] < ul_nat[i]:
-                atype_avail.append(at)
-        if len(atype_avail) == 0:
-            logger.warning('Addition: reached nat limit (ul_nat). cannot add atoms')
-            logger.warning('Change parent')
+        # ------ delta nat conbinations
+        dnat_comb =_get_dnat_comb(ul_nat, add_max, nat_data[pid_A], cn_comb_delta)
+        if len(dnat_comb) == 0:
+            logger.warning('Addition: no combinations found. Change parent')
             continue
-        # ------ charge neutrality
-        if charge is not None:
-            cn_comb = get_cn_comb_within_n(charge, cn_nmax)
-        else:
-            cn_comb = None
+        # ------ add_element_list, e.g. ['Li', 'Li', 'O']
+        if target == 'random':
+            dnat = random.choice(dnat_comb)
+            add_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
         child = gen_child(
             atype,
             mindist,
             parent_A,
-            atype_avail,
+            add_element_list,
             maxcnt_ea,
-            target,
-            cn_comb,
         )
         # ------ success
         if child is not None:
@@ -110,14 +106,29 @@ def gen_addition(
     return children, parents, operation
 
 
+def _get_dnat_comb(ul_nat, add_max, parent_nat, cn_comb_delta):
+    dnat_comb = []
+    if cn_comb_delta is None:
+        max_add_per_element = [min(ul - current, add_max) for ul, current in zip(ul_nat, parent_nat)]
+        for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
+            if 0 < sum(dnat) <= add_max:
+                dnat_comb.append(dnat)
+    else:    # charge neutrality
+        for dnat in cn_comb_delta:
+            new_nat = np.array(parent_nat) + dnat
+            if np.all(new_nat <= ul_nat):
+                dnat_comb.append(tuple(dnat))
+
+    # ---------- return
+    return dnat_comb
+
+
 def gen_child(
         atype,
         mindist,
         parent_A,
-        atype_avail,
+        add_element_list,
         maxcnt_ea=50,
-        target='random',
-        cn_comb=None,
     ):
     '''
         tuple may be replaced by list
@@ -125,10 +136,9 @@ def gen_child(
     atype (tuple): e.g. ('Na', 'Cl')
     mindist (tuple): minimum interatomic distance, e.g. ((1.5, 1.5), (1.5, 1.5))
     parent_A (Structure): pymatgen Structure object
-    atype_avail (list): available atom type for addition
+    add_element_list (list): list of atom types to add, e.g. ['Li', 'Li', 'O']
     maxcnt_ea (int): maximum number of trial in crossover
     target (str): only 'random' for now
-    cn_comb (tuple): charge neutral combinations of atoms within n atoms
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
@@ -136,47 +146,48 @@ def gen_child(
     '''
 
     # ---------- initialize
-    cnt = 0
     vol10per = False
     vol20per = False
+    child = parent_A.copy()    # keep original structure
 
     # ---------- generate child
-    while True:
-        child = parent_A.copy()    # keep original structure
-        if vol10per and not vol20per:
-            child.scale_lattice(parent_A.volume * 1.1)
-        elif vol20per:
-            child.scale_lattice(parent_A.volume * 1.2)
-        if target == 'random':
-            # ------ random choice for atom type
-            at = np.random.choice(atype_avail)
-            # ------ add atom
+    for at in add_element_list:
+        cnt = 0
+        while True:
             coords = np.random.rand(3)
             child.append(species=at, coords=coords)
-        # ------ check distance
-        success, mindist_ij, dist = check_distance(child, atype, mindist)
-        if success:
-            child = sort_by_atype(child, atype)
-            return child
-        else:
-            type0 = atype[mindist_ij[0]]
-            type1 = atype[mindist_ij[1]]
-            logger.warning(f'mindist in addition: {type0} - {type1}, {dist}. retry.')
-            cnt += 1
-            if cnt >= maxcnt_ea:
-                # ------ volume change
-                if not vol10per:
-                    vol10per = True
-                    cnt = 0    # reset cnt
-                    logger.warning('Addition: increase volume by 10%')
-                    continue
-                elif vol10per and not vol20per:
-                    vol20per = True
-                    cnt = 0
-                    logger.warning('Addition: increase volume by 20%')
-                    continue
-                # ------ fail
-                logger.warning('Addition: could not satisfy min_dist' +
-                        f' in {maxcnt_ea} times')
-                logger.warning('Change parent')
-                return None    # change parent
+            # ------ check distance
+            success, mindist_ij, dist = check_distance(child, atype, mindist)
+            if success:
+                break
+                # child = sort_by_atype(child, atype)
+                # return child
+            else:
+                type0 = atype[mindist_ij[0]]
+                type1 = atype[mindist_ij[1]]
+                logger.warning(f'mindist in addition: {type0} - {type1}, {dist}. retry.')
+                cnt += 1
+                child.pop()    # remove last atom
+                if cnt >= maxcnt_ea:
+                    # ------ volume change
+                    if not vol10per:
+                        vol10per = True
+                        cnt = 0
+                        child.scale_lattice(parent_A.volume * 1.1)
+                        logger.warning('Addition: increase volume by 10%')
+                        continue
+                    elif vol10per and not vol20per:
+                        vol20per = True
+                        cnt = 0
+                        child.scale_lattice(parent_A.volume * 1.2)
+                        logger.warning('Addition: increase volume by 20%')
+                        continue
+                    # ------ fail
+                    logger.warning('Addition: could not satisfy min_dist' +
+                            f' in {maxcnt_ea} times')
+                    logger.warning('Change parent')
+                    return None    # change parent
+
+    # ---------- complete
+    child = sort_by_atype(child, atype)
+    return child

@@ -108,8 +108,11 @@ class ReadInput:
     emin_ea: float = field(default=None)
     emax_ea: float = field(default=None)
     n_add: int = field(default=None)
+    add_max: int = field(default=None)
     n_elim: int = field(default=None)
+    elim_max: int = field(default=None)
     n_subs: int = field(default=None)
+    subs_max: int = field(default=None)
     target: str = field(default=None)
     end_point: tuple = field(default=None)
     cgen: int = field(default=None)
@@ -779,10 +782,24 @@ class ReadInput:
             self.n_add = self.config.getint('EA', 'n_add')
             if self.n_add < 0:
                 raise ValueError('n_add must be non-negative int')
+            # ------ add_max
+            try:
+                self.add_max = self.config.getint('EA', 'add_max')
+                if self.add_max <= 0:
+                    raise ValueError('add_max must be non-negative int')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.add_max = 3
             # ------ n_elim
             self.n_elim = self.config.getint('EA', 'n_elim')
             if self.n_elim < 0:
                 raise ValueError('n_elim must be non-negative int')
+            # ------ elim_max
+            try:
+                self.elim_max = self.config.getint('EA', 'elim_max')
+                if self.elim_max <= 0:
+                    raise ValueError('elim_max must be non-negative int')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.elim_max = 3
             # ------ n_subs
             self.n_subs = self.config.getint('EA', 'n_subs')
             if self.n_subs < 0:
@@ -792,6 +809,13 @@ class ReadInput:
                 non_zero_count = len([x for x in diff_nat if x != 0])
                 if non_zero_count < 2:
                     raise ValueError('n_subs: at least two atomic types are variable.')
+            # ------ subs_max
+            try:
+                self.subs_max = self.config.getint('EA', 'subs_max')
+                if self.subs_max <= 0:
+                    raise ValueError('subs_max must be non-negative int')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.subs_max = 3
             # ------ target
             self.target = self.config.get('EA', 'target')
             #if self.target not in ['random','depop','overpop']:

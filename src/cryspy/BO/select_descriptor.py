@@ -1,4 +1,5 @@
 from logging import getLogger
+import os
 
 from ..calc_dscrpt.FP.calc_FP import calc_fp
 
@@ -16,4 +17,5 @@ def select_descriptor(rin, struc_data):
         return descriptors
     else:
         logger.error('Now FP only')
+        os.remove('lock_cryspy')
         raise SystemExit(1)

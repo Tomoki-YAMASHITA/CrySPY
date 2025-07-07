@@ -338,3 +338,13 @@ def load_pd_data():
 def save_pd_data(pd_data):
     with open('./data/pkl_data/pd_data.pkl', 'wb') as f:
         pickle.dump(pd_data, f)
+
+
+def load_cn_comb_data():
+    with open('./data/pkl_data/cn_comb_data.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
+def save_cn_comb_data(cn_comb_data):
+    with open('./data/pkl_data/cn_comb_data.pkl', 'wb') as f:
+        pickle.dump(cn_comb_data, f)

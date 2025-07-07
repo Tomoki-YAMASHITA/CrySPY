@@ -1,7 +1,7 @@
 '''
 Random structure generation using PyXtal (https://github.com/qzhu2017/PyXtal)
 '''
-import collections
+#import collections
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 from logging import getLogger
@@ -16,7 +16,7 @@ from pyxtal import pyxtal
 from pyxtal.tolerance import Tol_matrix
 
 from ...util.struc_util import check_distance, sort_by_atype
-from ...util.struc_util import get_nat, remove_zero, get_cn_comb
+from ...util.struc_util import get_nat, remove_zero
 from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
 
 
@@ -37,7 +37,7 @@ def gen_struc(
         vc=False,
         ll_nat=None,
         ul_nat=None,
-        charge=None,
+        cn_comb=None,
     ):
     '''
     Generate random structures for given space groups
@@ -61,7 +61,7 @@ def gen_struc(
     vc (bool): variable composition. it needs ll_nat and ul_nat
     ll_nat (tuple): lower limit of number of atoms (e.g. (0, 0))
     ul_nat (tuple): upper limit of number of atoms (e.g. (8, 8))
-    charge (tuple): charge of atoms (e.g. (1, -1)). Set if you want to check charge neutrality
+    cn_comb (np.array): charge neutral combinations of atoms
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
@@ -73,12 +73,6 @@ def gen_struc(
         tmp_nat = nat
         tmp_atype = atype
         tolmat = _set_tol_mat(tmp_atype, mindist)
-    if vc and charge is not None:
-        cn_comb = get_cn_comb(ll_nat, ul_nat, charge)
-        if not cn_comb:
-            logger.error('No charge neutral combinations')
-            raise SystemExit(1)
-        logger.info(f'Consider charge neutrality: {charge}')
 
     # ---------- loop for structure generation
     while len(init_struc_data) < nstruc:
@@ -90,10 +84,10 @@ def gen_struc(
         # ------ generate structure
         tmp_crystal = pyxtal()
         if vc:    # variable composition
-            if charge is None:
+            if cn_comb is None:
                 nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
             else:
-                nat = random.choice(cn_comb)
+                nat = tuple(cn_comb[np.random.choice(len(cn_comb))])
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist

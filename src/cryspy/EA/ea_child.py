@@ -1,5 +1,7 @@
 from logging import getLogger
 
+import os
+
 from .gen_struc_EA.select_parents import SelectParents
 from .gen_struc_EA.crossover import gen_crossover
 from .gen_struc_EA.permutation import gen_permutation
@@ -57,6 +59,18 @@ def child_gen(
     pre_nstruc = len(init_struc_data)
     id_start = pre_nstruc
     vc = True if rin.algo == 'EA-vc' else False
+    # ------ vc: charge neutral
+    if vc and rin.charge is not None:
+        _, _, _, cn_comb = pkl_data.load_cn_comb_data()
+        mask = cn_comb.sum(axis=1) <= rin.cn_nmax
+        cn_comb_delta = cn_comb[mask].copy()    # delta combinations for addition, elimination
+        if len(cn_comb_delta) == 0:
+            logger.error('No charge neutral combinations found for cn_comb_delta.')
+            os.remove('lock_cryspy')
+            raise SystemExit(1)    # stop for serial
+    else:
+        cn_comb = None
+        cn_comb_delta = None
 
     # ---------- Crossover
     if rin.n_crsov > 0:
@@ -76,6 +90,7 @@ def child_gen(
                 vc,
                 rin.ll_nat,
                 rin.ul_nat,
+                cn_comb,
                 struc_mol_id=None,
                 molecular=False,
             )
@@ -154,15 +169,18 @@ def child_gen(
                     struc_data,
                     sp,
                     rin.n_add,
+                    rin.add_max,
                     nat_data,
                     rin.ul_nat,
                     id_start,
                     rin.symprec,
                     rin.maxcnt_ea,
                     rin.target,
+                    cn_comb_delta,
                 )
             else:
                 logger.error('Addition is not implemented for mol or mol_bs')
+                os.remove('lock_cryspy')
                 raise SystemExit(1)
             # ------ update
             children.update(ad_children)
@@ -178,14 +196,17 @@ def child_gen(
                     struc_data,
                     sp,
                     rin.n_elim,
+                    rin.elim_max,
                     nat_data,
                     rin.ll_nat,
                     id_start,
                     rin.symprec,
                     rin.target,
+                    cn_comb_delta
                 )
             else:
                 logger.error('Elimination is not implemented for mol or mol_bs')
+                os.remove('lock_cryspy')
                 raise SystemExit(1)
             # ------ update
             children.update(el_children)
@@ -202,6 +223,7 @@ def child_gen(
                     struc_data,
                     sp,
                     rin.n_subs,
+                    rin.subs_max,
                     nat_data,
                     rin.ll_nat,
                     rin.ul_nat,
@@ -209,9 +231,11 @@ def child_gen(
                     rin.symprec,
                     rin.maxcnt_ea,
                     rin.target,
+                    rin.charge,
                 )
             else:
                 logger.error('Substitution is not implemented for mol or mol_bs')
+                os.remove('lock_cryspy')
                 raise SystemExit(1)
             # ------ update
             children.update(sb_children)

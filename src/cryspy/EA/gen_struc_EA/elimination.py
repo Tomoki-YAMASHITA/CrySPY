@@ -1,4 +1,6 @@
+from itertools import product
 from logging import getLogger
+import random
 
 import numpy as np
 
@@ -13,11 +15,13 @@ def gen_elimination(
         struc_data,
         sp,
         n_elim,
+        elim_max,
         nat_data,
         ll_nat,
         id_start=None,
         symprec=0.01,
         target='random',
+        cn_comb_delta=None,
     ):
     '''
 
@@ -27,11 +31,13 @@ def gen_elimination(
     struc_data (dict): {id: structure data}
     sp (instance): instance of SelectParents class
     n_elim (int): number of structures to generate by elimination
+    elim_max (int): maximum number of atoms to eliminate
     nat_data (dict): {id: nat}
     ll_nat (tuple): lower limit of nat, e.g. (1, 1)
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     target (str): only 'random' for now
+    cn_comb_delta (int): charge neutral combinations with a total number of atoms <= cn_nmax
 
     # ---------- return
     children (dict): {id: structure data}
@@ -60,19 +66,17 @@ def gen_elimination(
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
-        # ------ check nat limit
-        if parent_A.num_sites == 1:
-            logger.warning('Elimination: parent has only one atom. Change parent')
+        # ------ delta nat conbinations
+        dnat_comb = _get_dnat_comb(ll_nat, elim_max, nat_data[pid_A], cn_comb_delta)
+        if len(dnat_comb) == 0:
+            logger.warning('Elimination: no combinations found. Change parent')
             continue
-        atype_avail = []
-        for i, at in enumerate(atype):
-            if nat_data[pid_A][i] > ll_nat[i]:
-                atype_avail.append(at)
-        if len(atype_avail) == 0:
-            logger.warning('Elimination: reached nat limit (ll_nat). cannot eliminate atoms')
-            logger.warning('Change parent')
-            continue
-        child = gen_child(parent_A, atype_avail, target)
+        # ------ elim_element_list, e.g. ['Li', 'Li', 'O']
+        if target == 'random':
+            dnat = random.choice(dnat_comb)
+            elim_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
+        # ------ generate child
+        child = gen_child(parent_A, elim_element_list)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -94,10 +98,28 @@ def gen_elimination(
     return children, parents, operation
 
 
-def gen_child(parent_A, atype_avail, target='random'):
+def _get_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb_delta):
+    dnat_comb = []
+    if cn_comb_delta is None:
+        max_del_per_element = [min(current, elim_max) for current in parent_nat]
+        for dnat in product(*[range(max_del + 1) for max_del in max_del_per_element]):
+            new_nat = np.array(parent_nat) - np.array(dnat)
+            if 0 < sum(dnat) <= elim_max and np.sum(new_nat) > 0:
+                dnat_comb.append(dnat)
+    else:    # charge neutrality
+        for dnat in cn_comb_delta:
+            new_nat = np.array(parent_nat) - dnat
+            if np.all(new_nat >= ll_nat) and np.sum(new_nat) > 0:
+                dnat_comb.append(tuple(dnat))
+
+    # ---------- return
+    return dnat_comb
+
+
+def gen_child(parent_A, elim_element_list):
     '''
     parent_A (Structure): pymatgen Structure object
-    atype_avail (list): available atom type for elimination
+    elim_element_list (list): list of atom types to eliminate, e.g. ['Li', 'Li', 'O']
     target (str): only 'random' for now
 
     # ---------- return
@@ -108,14 +130,18 @@ def gen_child(parent_A, atype_avail, target='random'):
     child = parent_A.copy()    # keep original structure
 
     # ---------- elimination
-    if target == 'random':
-        # ------ random choice for atom type
-        at = np.random.choice(atype_avail)
-        # ------ random choice for atom index
-        aindx = [i for i, site in enumerate(child) if site.species_string == at]
-        elim_indx = np.random.choice(aindx, 1)  # ", 1" to get array
-        # ------ remove atom
-        child.remove_sites(elim_indx)
+    # ------ get indices of atoms to eliminate
+    elim_indices = []
+    used = set()
+    for elem in elim_element_list:
+        # まだ使われていないインデックスだけを候補に
+        candidates = [i for i, site in enumerate(child) if site.species_string == elem and i not in used]
+        idx = random.choice(candidates)
+        elim_indices.append(idx)
+        used.add(idx)
+
+    # ------ remove atom
+    child.remove_sites(elim_indices)
 
     # ---------- return
     #            no need to check distance in elimination

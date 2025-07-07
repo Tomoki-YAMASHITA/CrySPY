@@ -112,6 +112,7 @@ class Ctrl_job:
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if not cid == int(istat.split()[0]):
                     logger.error(f'ID is wrong in work/{cid}')
+                    os.remove('lock_cryspy')
                     raise SystemExit(1)
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if jstat[0:3] == 'sub':
@@ -131,6 +132,7 @@ class Ctrl_job:
         for tid in self.rin.recalc:
             if tid not in self.opt_struc_data:
                 logger.error(f'ID {tid} has not yet been calculated')
+                os.remove('lock_cryspy')
                 raise SystemExit(1)
         # ---------- append IDs to the head of id_queueing
         self.id_queueing = list(self.rin.recalc) + self.id_queueing
@@ -182,6 +184,7 @@ class Ctrl_job:
         # ---------- error
         else:
             logger.error('Wrong stage in '+self.work_path+'stat_job')
+            os.remove('lock_cryspy')
             raise SystemExit(1)
 
     def ctrl_next_stage(self):
@@ -274,6 +277,7 @@ class Ctrl_job:
             self.ctrl_collect_ea(nat)
         else:
             logger.error('Error, algo')
+            os.remove('lock_cryspy')
             raise SystemExit(1)
         # ---------- move to fin
         if self.rin.algo == 'LAQA':
@@ -472,6 +476,7 @@ class Ctrl_job:
         # ---------- algo is wrong
         else:
             logger.error('Error, algo in ctrl_next_struc')
+            os.remove('lock_cryspy')
             raise SystemExit(1)
         # ---------- nat for EA-vc
         if self.rin.algo == 'EA-vc':
@@ -703,6 +708,7 @@ class Ctrl_job:
 def prepare_jobfile(rin, cid, work_path):
     if not os.path.isfile('./calc_in/' + rin.jobfile):
         logger.error('Could not find ./calc_in' + rin.jobfile)
+        os.remove('lock_cryspy')
         raise SystemExit(1)
     with open('./calc_in/' + rin.jobfile, 'r') as f:
         lines = f.readlines()
@@ -828,6 +834,7 @@ def update_status(cid, id_queueing, id_running, operation):
         io_stat.clean_id(stat, cid)
     else:
         logger.error('operation is wrong')
+        os.remove('lock_cryspy')
         raise SystemExit(1)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
