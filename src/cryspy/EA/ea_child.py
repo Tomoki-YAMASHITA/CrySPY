@@ -62,15 +62,16 @@ def child_gen(
     # ------ vc: charge neutral
     if vc and rin.charge is not None:
         _, _, _, cn_comb = pkl_data.load_cn_comb_data()
-        mask = cn_comb.sum(axis=1) <= rin.cn_nmax
-        cn_comb_delta = cn_comb[mask].copy()    # delta combinations for addition, elimination
-        if len(cn_comb_delta) == 0:
-            logger.error('No charge neutral combinations found for cn_comb_delta.')
+        # -- check for add_max and elim_max
+        check_max = min(rin.add_max, rin.elim_max)
+        mask = cn_comb.sum(axis=1) <= check_max
+        if len(cn_comb[mask]) == 0:    # delta combinations
+            logger.error('No charge neutral combinations found for addition and elimination.')
+            logger.error('Please check the parameters rin.add_max and rin.elim_max.')
             os.remove('lock_cryspy')
-            raise SystemExit(1)    # stop for serial
+            raise SystemExit(1)
     else:
         cn_comb = None
-        cn_comb_delta = None
 
     # ---------- Crossover
     if rin.n_crsov > 0:
@@ -176,7 +177,7 @@ def child_gen(
                     rin.symprec,
                     rin.maxcnt_ea,
                     rin.target,
-                    cn_comb_delta,
+                    cn_comb,
                 )
             else:
                 logger.error('Addition is not implemented for mol or mol_bs')
@@ -202,7 +203,7 @@ def child_gen(
                     id_start,
                     rin.symprec,
                     rin.target,
-                    cn_comb_delta
+                    cn_comb,
                 )
             else:
                 logger.error('Elimination is not implemented for mol or mol_bs')

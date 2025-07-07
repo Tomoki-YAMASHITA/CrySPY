@@ -23,7 +23,7 @@ def gen_addition(
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
-        cn_comb_delta=None,
+        cn_comb=None,
     ):
     '''
     # ---------- args
@@ -39,7 +39,7 @@ def gen_addition(
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in addition
     target (str): target for addition, only 'random' for now
-    cn_comb_delta (int): charge neutral combinations with a total number of atoms <= cn_nmax
+    cn_comb (np.ndarray): charge neutral combinations
 
     # ---------- return
     children (dict): {id: structure data}
@@ -69,7 +69,7 @@ def gen_addition(
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
         # ------ delta nat conbinations
-        dnat_comb =_get_dnat_comb(ul_nat, add_max, nat_data[pid_A], cn_comb_delta)
+        dnat_comb =_get_dnat_comb(ul_nat, add_max, nat_data[pid_A], cn_comb)
         if len(dnat_comb) == 0:
             logger.warning('Addition: no combinations found. Change parent')
             continue
@@ -106,14 +106,16 @@ def gen_addition(
     return children, parents, operation
 
 
-def _get_dnat_comb(ul_nat, add_max, parent_nat, cn_comb_delta):
+def _get_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
     dnat_comb = []
-    if cn_comb_delta is None:
+    if cn_comb is None:
         max_add_per_element = [min(ul - current, add_max) for ul, current in zip(ul_nat, parent_nat)]
         for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
             if 0 < sum(dnat) <= add_max:
                 dnat_comb.append(dnat)
     else:    # charge neutrality
+        mask = cn_comb.sum(axis=1) <= add_max
+        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
         for dnat in cn_comb_delta:
             new_nat = np.array(parent_nat) + dnat
             if np.all(new_nat <= ul_nat):

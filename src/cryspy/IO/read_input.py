@@ -38,7 +38,6 @@ class ReadInput:
     ll_nat: tuple = field(default=None)
     ul_nat: tuple = field(default=None)
     charge: tuple = field(default=None)
-    cn_nmax: int = field(default=None)
     # ------ mol or mol_bs
     mol_file: tuple = field(default=None)
     nmol: tuple = field(default=None)
@@ -351,16 +350,6 @@ class ReadInput:
                     pass
                 else:
                     raise ValueError('charge must have both positive and negative integers')
-            # ------ cn_nmax
-            try:
-                self.cn_nmax = self.config.getint('structure', 'cn_nmax')
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                self.cn_nmax = None
-            if self.cn_nmax is not None:
-                if self.cn_nmax < 2:
-                    raise ValueError('cn_nmax must be more than 1')
-            if self.charge is not None and self.cn_nmax is None:
-                self.cn_nmax = 3
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ mol_file
