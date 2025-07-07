@@ -138,34 +138,19 @@ def out_poscar(struc_data: dict, fpath: str, mode='a'):
                 f.write(line)
 
 
-def out_cif(struc, cid, tmp_path, fpath, symprec=0.01):
-    # ---------- opt_CIFS
-    cif = CifWriter(struc, symprec=symprec)
-    cif.write_file(tmp_path+'tmp.cif')
-
-    # ---------- correct title for VESTA
-    #                (need to delete '_chemical_formula_sum'. i don't know why)
-    with open(tmp_path+'tmp.cif', 'r') as fcif:
-        ciflines = fcif.readlines()
-    ciflines[1] = f'data_ID_{cid}\n'
-    if ciflines[11][:21] == '_chemical_formula_sum':
-        ciflines.pop(11)
-    else:
-        logger.error('ciflines[11] is not _chemical_formula_sum,'
-                         ' have to fix bag')
-        try:
-            os.remove('lock_cryspy')
-        except FileNotFoundError:
-            pass
-        raise SystemExit(1)
-
+def out_cif(struc, cid, fpath, symprec=0.01):
+    # ---------- str
+    str_struc = struc.to(fmt='cif', symprec=symprec)
+    # ---------- replace for title in VESTA
+    lines = str_struc.split('\n')
+    for i, line in enumerate(lines):
+        if line.startswith('_chemical_formula_sum'):
+            lines[i] = f"_chemical_formula_sum   'ID_{cid}'"
+            break
+    str_struc = '\n'.join(lines)
     # ---------- cif --> opt_cifs
     with open(fpath, 'a') as foptcif:
-        for line in ciflines:
-            foptcif.write(line)
-
-    # ---------- clean tmp.cif
-    os.remove(tmp_path+'tmp.cif')
+        foptcif.write(str_struc)
 
 
 def frac_coord_zero_one(struc_in):

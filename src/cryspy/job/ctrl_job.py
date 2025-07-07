@@ -777,7 +777,7 @@ def regist_opt(
         # ------ out opt_struc
         out_poscar({cid:opt_struc}, './data/opt_POSCARS')
         try:
-            out_cif(opt_struc, cid, work_path,
+            out_cif(opt_struc, cid,
                     './data/opt_CIFS.cif', rin.symprec)
         except TypeError:
             logger.warning('failed to write opt_CIF')
