@@ -23,8 +23,17 @@ def next_stage_lammps(rin, stage, work_path, nat):
         os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finfile = './calc_in/' + rin.lammps_infile + f'_{stage + 1}'
-    shutil.copyfile(finfile, work_path+rin.lammps_infile)
+    stage_next = stage + 1
+    fname_candidates = [
+        f'{stage_next}_{rin.lammps_infile}',
+        f'{rin.lammps_infile}_{stage_next}',
+        f'{rin.lammps_infile}'
+    ]
+    for fname in fname_candidates:
+        fname_path = './calc_in/' + fname
+        if os.path.isfile(fname_path):
+            shutil.copyfile(fname_path, work_path + rin.lammps_infile)
+            break
 
     # ---------- generate the structure data file
     try:
@@ -54,12 +63,21 @@ def next_struc_lammps(rin, structure, cid, work_path, nat):
     else:
         calc_inputs = [rin.lammps_infile] + rin.lammps_potential
     for f in calc_inputs:
-        ff = f+'_1' if f == rin.lammps_infile else f
-        if not os.path.isfile('./calc_in/'+ff):
-            logger.error('Could not find ./calc_in/'+ff)
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        shutil.copyfile('./calc_in/'+ff, work_path+f)
+        if f == rin.lammps_infile:
+            fname_candidates = [
+                f'1_{rin.lammps_infile}',
+                f'{rin.lammps_infile}_1',
+                f'{rin.lammps_infile}'
+            ]
+            for fname in fname_candidates:
+                fname_path = './calc_in/' + fname
+                if os.path.isfile(fname_path):
+                    ff = fname
+                    break
+        else:
+            ff = f
+        # ------ copy files to work_path
+        shutil.copyfile('./calc_in/' + ff, work_path + f)
 
     # ---------- generate the structure data file
     lammps_structure.write(rin,

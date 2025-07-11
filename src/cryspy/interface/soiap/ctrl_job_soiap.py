@@ -26,8 +26,17 @@ def next_stage_soiap(rin, stage, work_path, nat):
         os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finfile = './calc_in/' + rin.soiap_infile + f'_{stage + 1}'
-    shutil.copyfile(finfile, work_path+rin.soiap_infile)
+    stage_next = stage + 1
+    fname_candidates = [
+        f'{stage_next}_{rin.soiap_infile}',
+        f'{rin.soiap_infile}_{stage_next}',
+        f'{rin.soiap_infile}'
+    ]
+    for fname in fname_candidates:
+        fname_path = './calc_in/' + fname
+        if os.path.isfile(fname_path):
+            shutil.copyfile(fname_path, work_path + rin.soiap_infile)
+            break
 
     # ---------- generate the CIF file
     natot = sum(nat)
@@ -56,12 +65,21 @@ def next_struc_soiap(rin, structure, cid, work_path):
     # ---------- copy files
     calc_inputs = [rin.soiap_infile]
     for f in calc_inputs:
-        ff = f+'_1' if f == rin.soiap_infile else f
-        if not os.path.isfile('./calc_in/'+ff):
-            logger.error('Could not find ./calc_in/'+ff)
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        shutil.copyfile('./calc_in/'+ff, work_path+f)
+        if f == rin.soiap_infile:
+            fname_candidates = [
+                f'1_{rin.soiap_infile}',
+                f'{rin.soiap_infile}_1',
+                f'{rin.soiap_infile}'
+            ]
+            for fname in fname_candidates:
+                fname_path = './calc_in/' + fname
+                if os.path.isfile(fname_path):
+                    ff = fname
+                    break
+        else:
+            ff = f
+        # ------ copy files to work_path
+        shutil.copyfile(f'./calc_in/{ff}', work_path + f)
 
     # ---------- generate the CIF file
     soiap_structure.write(structure,

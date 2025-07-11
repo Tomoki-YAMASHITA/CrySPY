@@ -148,7 +148,6 @@ def restart_interact(
         opt_struc_data, rslt_data = regist_opt(
             rin,
             cid,
-            work_path,
             init_struc_data,
             opt_struc_data,
             rslt_data,

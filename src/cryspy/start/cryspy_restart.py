@@ -30,7 +30,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
         comm.barrier()
     # ---------- read input and check the change
     if mpi_rank == 0:
-        logger.info('read input, cryspy.in')
+        logger.info('# ---------- Read input file, cryspy.in')
     try:
         # all processes read input data
         rin = ReadInput()    # read input data, cryspy,in

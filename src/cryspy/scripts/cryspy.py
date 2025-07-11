@@ -87,15 +87,15 @@ def main():
     # ########## MPI end
 
     if mpi_rank == 0:
+        # ---------- check calc files in ./calc_in
+        from cryspy.interface import select_code
+        select_code.check_calc_files(rin)
+
         # ---------- check point 1
         if rin.stop_chkpt == 1:
             logger.info('Stop at check point 1')
             os.remove('lock_cryspy')
             raise SystemExit()
-
-        # ---------- check calc files in ./calc_in
-        from cryspy.interface import select_code
-        select_code.check_calc_files(rin)
 
         # ---------- mkdir work/fin
         os.makedirs('work/fin', exist_ok=True)

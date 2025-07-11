@@ -52,8 +52,17 @@ def next_stage_OMX(rin, stage, work_path, nat, kpt_data, cid):
         return skip_flag, kpt_data
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finput = './calc_in/'+rin.OMX_infile+f'_{stage + 1}'
-    shutil.copyfile(finput, work_path+rin.OMX_infile)
+    stage_next = stage + 1
+    fname_candidates = [
+        f'{stage_next}_{rin.OMX_infile}',
+        f'{rin.OMX_infile}_{stage_next}',
+        f'{rin.OMX_infile}'
+    ]
+    for fname in fname_candidates:
+        fname_path = './calc_in/' + fname
+        if os.path.isfile(fname_path):
+            shutil.copyfile(fname_path, work_path + rin.OMX_infile)
+            break
 
     # ---------- "Atoms.Number" (<-- natot) in OMX_infile for EA-vc
     if rin.algo == 'EA-vc':
@@ -87,12 +96,21 @@ def next_struc_OMX(rin, structure, cid, work_path, nat, kpt_data):
     # ---------- copy files
     calc_inputs = [rin.OMX_infile]
     for f in calc_inputs:
-        ff = f+'_1' if f == rin.OMX_infile else f
-        if not os.path.isfile('./calc_in/' + ff):
-            logger.error('Could not find ./calc_in/' + ff)
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        shutil.copyfile('./calc_in/'+ff, work_path+f)
+        if f == rin.OMX_infile:
+            fname_candidates = [
+                f'1_{rin.OMX_infile}',
+                f'{rin.OMX_infile}_1',
+                f'{rin.OMX_infile}'
+            ]
+            for fname in fname_candidates:
+                fname_path = './calc_in/' + fname
+                if os.path.isfile(fname_path):
+                    ff = fname
+                    break
+        else:
+            ff = f
+        # ------ copy files to work_path
+        shutil.copyfile(f'./calc_in/{ff}', work_path + f)
 
     # ---------- "Atoms.Number" (<-- natot) in OMX_infile for EA-vc
     if rin.algo == 'EA-vc':

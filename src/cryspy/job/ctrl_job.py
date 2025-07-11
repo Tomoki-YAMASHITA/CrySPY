@@ -222,7 +222,7 @@ class Ctrl_job:
             self.ctrl_skip()
             return
         # ---------- prepare jobfile
-        prepare_jobfile(self.rin, self.cid, self.work_path)
+        prepare_jobfile(self.rin.jobfile, self.cid, self.work_path)
         # ---------- submit
         self.submit_next_stage()
 
@@ -307,7 +307,6 @@ class Ctrl_job:
         self.opt_struc_data, self.rslt_data = regist_opt(
             self.rin,
             self.cid,
-            self.work_path,
             self.init_struc_data,
             self.opt_struc_data,
             self.rslt_data,
@@ -330,7 +329,6 @@ class Ctrl_job:
         self.opt_struc_data, self.rslt_data = regist_opt(
             self.rin,
             self.cid,
-            self.work_path,
             self.init_struc_data,
             self.opt_struc_data,
             self.rslt_data,
@@ -417,7 +415,6 @@ class Ctrl_job:
             self.opt_struc_data, self.rslt_data = regist_opt(
                 self.rin,
                 self.cid,
-                self.work_path,
                 self.init_struc_data,
                 self.opt_struc_data,
                 self.rslt_data,
@@ -449,7 +446,6 @@ class Ctrl_job:
         self.opt_struc_data, self.rslt_data = regist_opt(
             self.rin,
             self.cid,
-            self.work_path,
             self.init_struc_data,
             self.opt_struc_data,
             self.rslt_data,
@@ -509,7 +505,7 @@ class Ctrl_job:
                     nat,
                 )
             # -- prepare jobfile
-            prepare_jobfile(self.rin, self.cid, self.work_path)
+            prepare_jobfile(self.rin.jobfile, self.cid, self.work_path)
             # -- submit
             submit_next_struc(self.rin, self.cid, self.work_path)
             logger.info(f'ID {self.cid:>6}: submit job, Stage 1')
@@ -705,18 +701,25 @@ class Ctrl_job:
 #
 
 
-def prepare_jobfile(rin, cid, work_path):
-    if not os.path.isfile('./calc_in/' + rin.jobfile):
-        logger.error('Could not find ./calc_in' + rin.jobfile)
+def prepare_jobfile(jobfile, cid, work_path):
+    # ---------- check
+    if not os.path.isfile('./calc_in/' + jobfile):
+        logger.error('Could not find ./calc_in' + jobfile)
         os.remove('lock_cryspy')
         raise SystemExit(1)
-    with open('./calc_in/' + rin.jobfile, 'r') as f:
+
+    # ---------- replace CrySPY_ID in jobfile
+    with open('./calc_in/' + jobfile, 'r') as f:
         lines = f.readlines()
     lines2 = []
     for line in lines:
         lines2.append(line.replace('CrySPY_ID', str(cid)))
-    with open(work_path + rin.jobfile, 'w') as f:
+
+    # ---------- write jobfile
+    with open(work_path + jobfile, 'w') as f:
         f.writelines(lines2)
+        f.write('\n\n# ---------- CrySPY\n')
+        f.write("sed -i -e '3s/^sub.*/done/' stat_job\n")
 
 
 def submit_next_struc(rin, cid, work_path, wait=False):
@@ -741,7 +744,6 @@ def submit_next_struc(rin, cid, work_path, wait=False):
 def regist_opt(
         rin,
         cid,
-        work_path,
         init_struc_data,
         opt_struc_data,
         rslt_data,

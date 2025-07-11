@@ -131,7 +131,10 @@ class ReadInput:
     force_gamma: bool = field(default=None)
 
     # ---------- VASP section
-    # no inputs other than common
+    vasp_MAGMOM: tuple = field(default=None)
+    vasp_LDAUL: tuple = field(default=None)
+    vasp_LDAUU: tuple = field(default=None)
+    vasp_LDAUJ: tuple = field(default=None)
 
     # ---------- QE section
     qe_infile: str = field(default=None)
@@ -904,6 +907,32 @@ class ReadInput:
             self.force_gamma = self.config.getboolean('VASP', 'force_gamma')
         except configparser.NoOptionError:
             self.force_gamma = False
+        # ---------- for vc
+        if self.algo in ['EA-vc']:
+            # ------ vasp_MAGMOM
+            try:
+                self.vasp_MAGMOM = self.config.get('VASP', 'vasp_MAGMOM')
+                self.vasp_MAGMOM = tuple([a for a in self.vasp_MAGMOM.split()])    # str --> list --> tuple
+            except configparser.NoOptionError:
+                self.vasp_MAGMOM = None
+            # ------ vasp_LDAUL
+            try:
+                self.vasp_LDAUL = self.config.get('VASP', 'vasp_LDAUL')
+                self.vasp_LDAUL = tuple([a for a in self.vasp_LDAUL.split()])    # str --> list --> tuple
+            except configparser.NoOptionError:
+                self.vasp_LDAUL = None
+            # ------ vasp_LDAUL
+            try:
+                self.vasp_LDAUU = self.config.get('VASP', 'vasp_LDAUU')
+                self.vasp_LDAUU = tuple([a for a in self.vasp_LDAUU.split()])    # str --> list --> tuple
+            except configparser.NoOptionError:
+                self.vasp_LDAUU = None
+            # ------ vasp_LDAUJ
+            try:
+                self.vasp_LDAUJ = self.config.get('VASP', 'vasp_LDAUJ')
+                self.vasp_LDAUJ = tuple([a for a in self.vasp_LDAUJ.split()])    # str --> list --> tuple
+            except configparser.NoOptionError:
+                self.vasp_LDAUJ = None
 
     def _read_qe(self):
         # ---------- kpt_flag

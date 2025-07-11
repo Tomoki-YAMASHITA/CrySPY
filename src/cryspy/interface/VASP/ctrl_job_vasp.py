@@ -12,7 +12,7 @@ from ...IO import pkl_data
 logger = getLogger('cryspy')
 
 
-def next_stage_vasp(rin, stage, work_path, kpt_data, cid):
+def next_stage_vasp(rin, stage, work_path, nat, kpt_data, cid):
     # ---------- skip_flag
     skip_flag = False
 
@@ -27,8 +27,7 @@ def next_stage_vasp(rin, stage, work_path, kpt_data, cid):
         os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 
     # ---------- cp CONTCAR POSCAR
-    shutil.copyfile(work_path + f'stage{stage}_CONTCAR',
-                    work_path + 'POSCAR')
+    shutil.copyfile(work_path + f'stage{stage}_CONTCAR', work_path + 'POSCAR')
 
     # ---------- remove STOPCAR
     if os.path.isfile(work_path+'STOPCAR'):
@@ -56,25 +55,26 @@ def next_stage_vasp(rin, stage, work_path, kpt_data, cid):
     pkl_data.save_kpt(kpt_data)
     out_kpts(kpt_data)
 
-    # ---------- cp INCAR_? from ./calc_in for the next stage: (stage + 1)
-    fincar = f'./calc_in/INCAR_{stage + 1}'
-    shutil.copyfile(fincar, work_path+'INCAR')
+    # ---------- copy the input file from ./calc_in for the next stage
+    _prep_INCAR(rin, stage + 1, work_path, nat)
 
     # ---------- return
     return skip_flag, kpt_data
 
 
-def next_struc_vasp(rin, structure, cid, work_path, kpt_data):
-    # ---------- copy files
-    calc_inputs = ['POTCAR', 'INCAR']
-    for f in calc_inputs:
-        ff = f+'_1' if f == 'INCAR' else f
-        if not os.path.isfile('./calc_in/' + ff):
-            logger.error('Could not find ./calc_in/' + ff)
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        # ------ e.g. cp ./calc_in/INCAR_1 work/1/INCAR
-        shutil.copyfile('./calc_in/'+ff, work_path+f)
+def next_struc_vasp(rin, structure, cid, work_path, nat, kpt_data):
+    # ---------- copy INCAR
+    _prep_INCAR(rin, 1, work_path, nat)
+
+    # ---------- POTCAR
+    if rin.algo not in ['EA-vc']:
+        shutil.copyfile('./calc_in/POTCAR', work_path + 'POTCAR')
+    else:
+        potcar_files = [f'./calc_in/POTCAR_{elem}' for elem, n in zip(rin.atype, nat) if n != 0]
+        with open(work_path + 'POTCAR', 'wb') as outfile:
+            for fname in potcar_files:
+                with open(fname, 'rb') as infile:
+                    outfile.write(infile.read())
 
     # ---------- generate POSCAR
     structure.to(fmt='poscar', filename=work_path+'POSCAR')
@@ -105,3 +105,37 @@ def next_struc_vasp(rin, structure, cid, work_path, kpt_data):
 
     # ---------- return
     return kpt_data
+
+
+def _prep_INCAR(rin, stage, work_path, nat):
+    # ---------- copy INCAR file
+    fname_candidates = [
+        f'{stage}_{'INCAR'}',
+        f'{'INCAR'}_{stage}',
+        f'{'INCAR'}'
+    ]
+    for fname in fname_candidates:
+        fname_path = './calc_in/' + fname
+        if os.path.isfile(fname_path):
+            shutil.copyfile(fname_path, work_path + 'INCAR')
+            break
+
+    # ---------- for vc
+    if rin.algo in ['EA-vc']:
+        vasp_vc_dict = {
+            'MAGMOM': rin.vasp_MAGMOM,
+            'LDAUL': rin.vasp_LDAUL,
+            'LDAUU': rin.vasp_LDAUU,
+            'LDAUJ': rin.vasp_LDAUJ,
+        }
+        # ------ exclude values corresponding to zero elements in nat
+        for key, val in vasp_vc_dict.items():
+            if val is not None:
+                if key == 'MAGMOM':
+                    magmom_parts = [f"{n}*{v}" for v, n in zip(val, nat) if n != 0]
+                    line = f"{key} = {' '.join(magmom_parts)}\n"
+                else:
+                    filtered = [v for v, n in zip(val, nat) if n != 0]
+                    line = f"{key} = {' '.join(filtered)}\n"
+                with open(work_path + 'INCAR', 'a') as f:
+                    f.write(line)

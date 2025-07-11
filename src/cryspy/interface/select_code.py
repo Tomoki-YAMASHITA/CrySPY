@@ -44,7 +44,7 @@ def next_stage(rin, stage, work_path, nat, kpt_data=None, cid=None):
     if rin.calc_code == 'VASP':
         from .VASP import ctrl_job_vasp
         skip_flag, kpt_data = ctrl_job_vasp.next_stage_vasp(rin, stage, work_path,
-                                                            kpt_data, cid)
+                                                            nat, kpt_data, cid)
         return skip_flag, kpt_data
     elif rin.calc_code == 'QE':
         from .QE import ctrl_job_qe
@@ -83,7 +83,7 @@ def next_struc(rin, structure, cid, work_path, nat, kpt_data=None):
     if rin.calc_code == 'VASP':
         from .VASP import ctrl_job_vasp
         kpt_data = ctrl_job_vasp.next_struc_vasp(rin, structure, cid,
-                                                 work_path, kpt_data)
+                                                 work_path, nat, kpt_data)
         return kpt_data
     elif rin.calc_code == 'QE':
         from .QE import ctrl_job_qe
@@ -151,7 +151,7 @@ def collect(rin, cid, work_path, nat):
         raise SystemExit(1)
 
     # ---------- check mindist opt
-    if rin.check_mindist_opt:
+    if opt_struc is not None and rin.check_mindist_opt:
         from ..util.struc_util import check_distance, set_mindist
         import numpy as np
         # ------ set mindist

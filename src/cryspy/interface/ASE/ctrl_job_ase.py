@@ -22,8 +22,17 @@ def next_stage_ase(rin, stage, work_path):
     shutil.copyfile(work_path + f'stage{stage}_CONTCAR', work_path + 'POSCAR')
 
     # ---------- copy the input file from ./calc_in for the next stage
-    finfile = './calc_in/' +rin.ase_python + f'_{stage+1}'
-    shutil.copyfile(finfile, work_path+rin.ase_python)
+    stage_next = stage + 1
+    fname_candidates = [
+        f'{stage_next}_{rin.ase_python}',
+        f'{rin.ase_python}_{stage_next}',
+        f'{rin.ase_python}'
+    ]
+    for fname in fname_candidates:
+        fname_path = './calc_in/' + fname
+        if os.path.isfile(fname_path):
+            shutil.copyfile(fname_path, work_path + rin.ase_python)
+            break
 
     # ---------- return
     return skip_flag
@@ -33,13 +42,21 @@ def next_struc_ase(rin, structure, cid, work_path):
     # ---------- copy files
     calc_inputs = [rin.ase_python]
     for f in calc_inputs:
-        ff = f+'_1' if f == rin.ase_python else f
-        if not os.path.isfile('./calc_in/' + ff):
-            logger.error('Could not find ./calc_in/' + ff)
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        # ------ e.g. cp ./calc_in/INCAR_1 work/1/INCAR
-        shutil.copyfile('./calc_in/'+ff, work_path+f)
+        if f == rin.ase_python:
+            fname_candidates = [
+                f'1_{rin.ase_python}',
+                f'{rin.ase_python}_1',
+                f'{rin.ase_python}'
+            ]
+            for fname in fname_candidates:
+                fname_path = './calc_in/' + fname
+                if os.path.isfile(fname_path):
+                    ff = fname
+                    break
+        else:
+            ff = f
+        # ------ copy files to work_path
+        shutil.copyfile(f'./calc_in/{ff}', work_path + f)
 
     # ---------- generate POSCAR
     structure.to(fmt='poscar', filename=work_path+'POSCAR')
