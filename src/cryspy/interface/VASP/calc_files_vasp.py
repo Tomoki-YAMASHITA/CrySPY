@@ -16,9 +16,9 @@ def check_input_vasp(rin):
         if f == 'INCAR':
             for i in range(1, rin.nstage+1):
                 fname_candidates = [
-                    f'{i}_{'INCAR'}',
-                    f'{'INCAR'}_{i}',
-                    f'{'INCAR'}'
+                    f'{i}_INCAR',
+                    f'INCAR_{i}',
+                    'INCAR',
                 ]
                 found = False
                 for fname in fname_candidates:

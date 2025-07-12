@@ -110,9 +110,9 @@ def next_struc_vasp(rin, structure, cid, work_path, nat, kpt_data):
 def _prep_INCAR(rin, stage, work_path, nat):
     # ---------- copy INCAR file
     fname_candidates = [
-        f'{stage}_{'INCAR'}',
-        f'{'INCAR'}_{stage}',
-        f'{'INCAR'}'
+        f'{stage}_INCAR',
+        f'INCAR_{stage}',
+        f'INCAR',
     ]
     for fname in fname_candidates:
         fname_path = './calc_in/' + fname
