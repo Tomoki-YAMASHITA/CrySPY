@@ -4,10 +4,10 @@ Collect results in VASP
 
 from logging import getLogger
 import os
-import xml.etree.ElementTree as ET
 
 import numpy as np
 from pymatgen.core import Structure
+from pymatgen.io.vasp import Vasprun, Outcar
 
 from ...util import constants
 from ...IO import pkl_data
@@ -15,63 +15,63 @@ from ...IO import pkl_data
 
 logger = getLogger('cryspy')
 
+
 def collect_vasp(cid, work_path, nat):
-    # ---------- check optimization
-    check_opt = check_opt_vasp(work_path+'OUTCAR')
-    # ---------- obtain energy and magmom
-    energy, magmom = get_energy_magmom_vasp(work_path, nat)
-    if np.isnan(energy):
-        logger.warning(f'    Structure ID {cid},'
-              ' could not obtain energy from OSZICAR')
-    # ---------- collect CONTCAR
-    try:
-        opt_struc = Structure.from_file(work_path+'CONTCAR')
-    except Exception:
-        opt_struc = None
-    # ---------- check
-    if np.isnan(energy):
-        opt_struc = None
-    if opt_struc is None:
-        energy = np.nan
-        magmom = np.nan
-    # ---------- remove STOPCAR
-    if os.path.isfile(work_path+'STOPCAR'):
-        os.remove(work_path+'STOPCAR')
-    # ---------- return
-    return opt_struc, energy, magmom, check_opt
-
-
-def check_opt_vasp(file_path):
-    try:
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-        check_opt = 'not_yet'
-        for line in lines:
-            if 'reached required accuracy' in line:
-                check_opt = 'done'
-    except Exception:
-        check_opt = 'no_file'
-    return check_opt
-
-
-def get_energy_magmom_vasp(work_path, nat):
-    # ---------- natot
-    natot = sum(nat)
-    # ---------- obtain energy and magmom
+    # ---------- init
+    opt_struc = None
     energy = np.nan
     magmom = np.nan
+    check_opt = 'no_file'
+
+    # ---------- read vasprun.xml
     try:
-        with open(work_path+'OSZICAR', 'r') as foszi:
-            oszi = foszi.readlines()
-        if 'F=' in oszi[-1]:
-            energy = float(oszi[-1].split()[2])    # free energy (eV/cell)
-            energy = energy/float(natot)       # eV/atom
-            if 'mag=' in oszi[-1]:
-                magmom = float(oszi[-1].split()[-1])    # total magnetic moment
+        vasprun = Vasprun(
+            work_path + 'vasprun.xml',
+            parse_dos=False,
+            parse_eigen=False,
+            parse_potcar_file=False,
+        )
+    except Exception as e:
+        logger.error(f'    Structure ID {cid}, failed to parse vasprun.xml: {e}')
+        return opt_struc, energy, magmom, check_opt
+
+    # ---------- check optimization
+    if vasprun.converged:
+        check_opt = 'done'
+    else:
+        check_opt = 'not_yet'
+
+    # ---------- energy
+    energy = vasprun.final_energy    # if failed, float('inf')
+    if energy == float('inf'):
+        logger.warning(f'    Structure ID {cid},'
+              ' could not obtain energy from vasprun.xml')
+        energy = np.nan
+        return opt_struc, energy, magmom, check_opt
+    energy = energy / sum(nat)    # eV/atom
+
+    # ---------- magmom
+    outcar = Outcar(work_path + 'OUTCAR')
+    magmom = outcar.total_mag
+    if magmom is None:
+        magmom = np.nan
+
+    # ---------- collect CONTCAR
+    try:
+        opt_struc = Structure.from_file(work_path + 'CONTCAR')
     except Exception:
-        pass
+        logger.error(f'    Structure ID {cid}, failed to parse CONTCAR')
+        opt_struc = None
+        energy = np.nan
+        magmom = np.nan
+        check_opt = 'no_file'
+
+    # ---------- remove STOPCAR
+    if os.path.isfile(work_path + 'STOPCAR'):
+        os.remove(work_path + 'STOPCAR')
+
     # ---------- return
-    return energy, magmom
+    return opt_struc, energy, magmom, check_opt
 
 
 def get_energy_step_vasp(energy_step_data, cid, work_path, nat):
@@ -82,30 +82,16 @@ def get_energy_step_vasp(energy_step_data, cid, work_path, nat):
     energy_step_data[ID][0] <-- stage 1
     energy_step_data[ID][1] <-- stage 2
     '''
-    # ---------- natot
-    natot = sum(nat)
-    # ---------- get energy step from vasprun
+    # ---------- read vasprun.xml
     try:
-        # ------ read file
-        tree = ET.parse(work_path+'vasprun.xml')
-        root = tree.getroot()
-        # ------ children nodes: calculation
-        cals = root.findall('calculation')
-        # ------ init.
-        energy_step = []
-        # ------ loop for relaxation step
-        for cal in cals:
-            eng = cal.find('energy')    # first 'energy' child node
-            fr_eng = eng.find('i')    # first 'i' tag is free energy
-
-            if fr_eng.attrib['name'] == 'e_fr_energy':
-                energy_step.append(fr_eng.text)
-            else:
-                logger.error('bug in get_energy_step_vasp')
-                os.remove('lock_cryspy')
-                raise SystemExit(1)
-        # ------ list, str --> array
-        energy_step = np.array(energy_step, dtype='float')/float(natot)
+        vasprun = Vasprun(
+            work_path + 'vasprun.xml',
+            parse_dos=False,
+            parse_eigen=False,
+            parse_potcar_file=False,
+        )
+        energy_step = [step['e_0_energy'] for step in vasprun.ionic_steps]
+        energy_step = np.array(energy_step)/sum(nat)
     except Exception as e:
         energy_step = None
         logger.warning(f'{e}:    ID {cid}: failed to parse in energy_step')
@@ -133,36 +119,15 @@ def get_struc_step_vasp(struc_step_data, cid, work_path):
     struc_step_data[ID][0] <-- stage 1
     struc_step_data[ID][1] <-- stage 2
     '''
-    # ---------- get struc step from vasprun
+    # ---------- read vasprun.xml
     try:
-        # ------ read file
-        tree = ET.parse(work_path+'vasprun.xml')
-        root = tree.getroot()
-        # ------ get atom list
-        atoms = root.findall("atominfo/array[@name='atoms']/set/rc")
-        atomlist = []
-        for atom in atoms:
-            atomlist.append(atom.find('c').text)
-        # ------ children nodes: calculation
-        cals = root.findall('calculation')
-        # ------ init.
-        struc_step = []
-        # ------ loop for relaxation step
-        for cal in cals:
-            # -- lattice
-            basis = cal.findall("structure/crystal/varray[@name='basis']/v")
-            lattice = []
-            for a in basis:
-                lattice.append([float(x) for x in a.text.split()])
-            # -- positions
-            positions = cal.findall("structure/varray/[@name='positions']/v")
-            incoord = []
-            for a in positions:
-                incoord.append([float(x) for x in a.text.split()])
-            # -- structure in pymatgen format
-            struc = Structure(lattice, atomlist, incoord)
-            # -- append
-            struc_step.append(struc)
+        vasprun = Vasprun(
+            work_path + 'vasprun.xml',
+            parse_dos=False,
+            parse_eigen=False,
+            parse_potcar_file=False,
+        )
+        struc_step = vasprun.structures
     except Exception as e:
         struc_step = None
         logger.warning(f'{e}:    ID {cid}: failed to parse in struc_step')
@@ -190,31 +155,15 @@ def get_force_step_vasp(force_step_data, cid, work_path):
     force_step_data[ID][0] <-- stage 1
     force_step_data[ID][1] <-- stage 2
     '''
-    # ---------- get force step from vasprun
+    # ---------- read vasprun.xml
     try:
-        # ------ read file
-        tree = ET.parse(work_path+'vasprun.xml')
-        root = tree.getroot()
-        # ------ children nodes: calculation
-        cals = root.findall('calculation')
-        # ------ init.
-        force_step = []
-        # ------ loop for ralaxation step
-        for cal in cals:
-            varrays = cal.findall('varray')
-            # -- init
-            force = []
-            # -- varrays[0]: force, varrays[1]: stress
-            for varray in varrays:
-                vs = varray.findall('v')
-                # loop for v
-                for v in vs:
-                    if varray.attrib['name'] == 'forces':
-                        force.append(v.text.split())
-            # -- list, str --> array
-            force = np.array(force, dtype='float')
-            # -- appned force_step
-            force_step.append(force)
+        vasprun = Vasprun(
+            work_path + 'vasprun.xml',
+            parse_dos=False,
+            parse_eigen=False,
+            parse_potcar_file=False,
+        )
+        force_step = [step['forces'] for step in vasprun.ionic_steps]
     except Exception as e:
         force_step = None
         logger.warning(f'{e}:    ID {cid}: failed to parse in force_step')
@@ -242,33 +191,16 @@ def get_stress_step_vasp(stress_step_data, cid, work_path):
     stress_step_data[ID][0] <-- stage 1
     stress_step_data[ID][1] <-- stage 2
     '''
-    # ---------- get stress step from vasprun
+    # ---------- read vasprun.xml
     try:
-        # ------ read file
-        tree = ET.parse(work_path+'vasprun.xml')
-        root = tree.getroot()
-        # ------ children nodes: calculation
-        cals = root.findall('calculation')
-        # ------ init.
-        stress_step = []
-        # ------ loop for ralaxation step
-        for cal in cals:
-            varrays = cal.findall('varray')
-            # -- init
-            stress = []
-            # -- varrays[0]: force, varrays[1]: stress
-            for varray in varrays:
-                vs = varray.findall('v')
-                # loop for v
-                for v in vs:
-                    if varray.attrib['name'] == 'stress':
-                        stress.append(v.text.split())
-            # -- list, str --> array
-            stress = np.array(stress, dtype='float')
-            # -- kbar --> eV/ang**3
-            stress = stress * constants.KBAR2eV_ANG3
-            # -- appned stress_step
-            stress_step.append(stress)
+        vasprun = Vasprun(
+            work_path + 'vasprun.xml',
+            parse_dos=False,
+            parse_eigen=False,
+            parse_potcar_file=False,
+        )
+        # kbar --> eV/ang**3
+        stress_step = [step['stress'] * constants.KBAR2eV_ANG3 for step in vasprun.ionic_steps]
     except Exception as e:
         stress_step = None
         logger.warning(f'{e}:    ID {cid}: failed to parse in stress_step')
