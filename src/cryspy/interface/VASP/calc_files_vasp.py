@@ -31,9 +31,9 @@ def check_input_vasp(rin):
                     raise SystemExit(1)
         # ------ POTCAR and vc
         elif f == 'POTCAR' and rin.algo in ['EA-vc']:
-            missing = [elem for elem in rin.atype if not os.path.isfile(f'./calc_in/POTCAR_{elem}')]
+            missing = [f'POTCAR_{elem}' for elem in rin.atype if not os.path.isfile(f'./calc_in/POTCAR_{elem}')]
             if missing:
-                logger.error(f'Could not find ./calc_in/POTCAR_{{{', '.join(missing)}}}')
+                logger.error(f"Could not find: {', '.join(missing)}")
                 os.remove('lock_cryspy')
                 raise SystemExit(1)
         # ------ others

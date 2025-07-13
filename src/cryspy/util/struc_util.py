@@ -20,7 +20,7 @@ logger = getLogger('cryspy')
 
 
 def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
-                dummy=False, mol_file=None, mpi_rank=0):
+                dummy=False, mol_file=None, mpi_rank=0, no_print=False):
     # ---------- dummy atom in mol_bs
     if dummy:
         atype = get_atype_dummy(len(mol_file))
@@ -55,14 +55,16 @@ def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
         for i, itype in enumerate(atype):
             for j, jtype in enumerate(atype):
                 if i <= j:
-                    if dummy:
-                        logger.info(f'{mol_file[i]} - {mol_file[j]}: {mindist[i][j]}')
-                    else:
-                        logger.info(f'{itype} - {jtype}: {mindist[i][j]}')
+                    if not no_print:
+                        if dummy:
+                            logger.info(f'{mol_file[i]} - {mol_file[j]}: {mindist[i][j]}')
+                        else:
+                            logger.info(f'{itype} - {jtype}: {mindist[i][j]}')
         if struc_mode == 'mol':
-            logger.info('When struc_mode is mol (only random structure, not EA part),\n'
-            '- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)\n'
-            '- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
+            if not no_print:
+                logger.info('When struc_mode is mol (only random structure, not EA part),\n'
+                '- tolerance between monoatomic molecules is multiplied by 0.8 inside pyxtal (not printed above)\n'
+                '- H-N, H-O, or H-F tolerance is multiplied by 0.9 inside pyxtal (not printed above)')
 
     # ---------- return
     return mindist

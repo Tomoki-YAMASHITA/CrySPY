@@ -136,6 +136,6 @@ def _prep_INCAR(rin, stage, work_path, nat):
                     line = f"{key} = {' '.join(magmom_parts)}\n"
                 else:
                     filtered = [v for v, n in zip(val, nat) if n != 0]
-                    line = f"{key} = {' '.join(filtered)}\n"
+                    line = f"{key} = {' '.join(str(v) for v in filtered)}\n"
                 with open(work_path + 'INCAR', 'a') as f:
                     f.write(line)

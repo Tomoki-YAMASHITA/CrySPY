@@ -155,8 +155,8 @@ def collect(rin, cid, work_path, nat):
         from ..util.struc_util import check_distance, set_mindist
         import numpy as np
         # ------ set mindist
-        logger.info('# -- check mindist for optimized structure')
-        mindist = set_mindist(rin.atype, rin.mindist, rin.mindist_factor, rin.struc_mode)
+        logger.info('# ------ check mindist for optimized structure')
+        mindist = set_mindist(rin.atype, rin.mindist, rin.mindist_factor, rin.struc_mode, no_print=True)
         success, mindist_ij, dist = check_distance(opt_struc, rin.atype, mindist)
         if not success:
             type0 = rin.atype[mindist_ij[0]]
