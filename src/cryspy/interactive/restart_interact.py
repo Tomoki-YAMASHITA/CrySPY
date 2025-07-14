@@ -132,7 +132,7 @@ def restart_interact(
             energy = np.nan
             check_opt = 'no_file'
 
-        # ----------  magmom and check_opt
+        # ----------  magmom
         magmom = np.nan    # not implemented
 
         # ---------- calculate Ef for EA-vc

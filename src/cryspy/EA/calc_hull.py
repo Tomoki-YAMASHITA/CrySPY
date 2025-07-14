@@ -49,7 +49,7 @@ def calc_convex_hull(
     cgen_ids = c_rslt.index.values    # current IDs [array]
 
     # ---------- rslt --> entries
-    e_all = rslt_data['E_eV_atom'].to_dict()
+    e_all = rslt_data[rslt_data['Gen'] <= gen]['E_eV_atom'].to_dict()    # energy data under gen
     entries = {}
     for cid, e in e_all.items():
         # ------ np.nan
