@@ -31,6 +31,7 @@ def main():
         debugfile='debug_cryspy',
     )
     logger = getLogger('cryspy')
+    logger.info(f'# ---------- cryspy-calc-convex-hull command for generation {gen}')
 
     # ---------- lock
     if os.path.isfile('lock_cryspy'):
@@ -46,6 +47,7 @@ def main():
     else:
         logger.error('cryspy.stat file does not exist.')
         os.remove('lock_cryspy')
+        raise SystemExit(1)
 
     # ---------- algo check
     if rin.algo not in ['EA-vc']:
@@ -54,14 +56,14 @@ def main():
         raise SystemExit(1)
 
     # ---------- load data
-    logger.info('# ---------- Load data')
+    logger.info('# ------ Load data')
     rslt_data = pkl_data.load_rslt()
     nat_data = pkl_data.load_nat_data()
     pd_data = pkl_data.load_pd_data()
     hdist_data = pkl_data.load_hdist_data()
 
     # ---------- calc convex hull
-    logger.info('# ---------- Calculate convex hull')
+    logger.info('# ------ Calculate convex hull')
     pd, hdist = calc_convex_hull(
         atype=rin.atype,
         gen=gen,
@@ -76,7 +78,7 @@ def main():
         emax_ea=rin.emax_ea,
         emin_ea=rin.emin_ea,
     )
-    logger.info('# ---------- Save data')
+    logger.info('# ------ Save data')
     out_hdist(gen, hdist, nat_data)
     hdist_data[gen] = hdist
     pd_data[gen] = pd
