@@ -1,4 +1,22 @@
 # CHANGELOG
+## [1.4.2] - 2025-7-17
+### Important change
+####  EA-vc
+- Supports VASP and QE.
+
+### Added
+- check_opt in ASE
+- cryspy-skip subcommand
+- cryspy-calc-convex-hull subcommand
+
+### Changed
+- Job file auto-rewriting
+- Priority order of structure optimization input file names
+
+### Fixed
+- Fixed a bug in mindist check after structure optimization (when structure data could not be obtained correctly)
+
+
 ## [1.4.1] - 2025-7-7
 ### Important change
 ####  EA-vc

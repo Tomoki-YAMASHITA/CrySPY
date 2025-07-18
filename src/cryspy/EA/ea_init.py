@@ -86,8 +86,8 @@ def initialize(rin, init_struc_data, rslt_data):
                                   columns=ea_origin.columns)
         ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------ elite
-    elite_struc = None
-    elite_fitness = None
+    elite_struc = {}
+    elite_fitness = {}
     # ------ rslt_data
     rslt_data['Gen'] = pd.Series(dtype=int)
     rslt_data = rslt_data[[

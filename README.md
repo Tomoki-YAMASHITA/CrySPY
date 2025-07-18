@@ -9,9 +9,16 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.4.1 (2025 July 7)
+version 1.4.2 (2025 July 18)
 
 ## News
+- [2025 July 18] CrySPY 1.4.2 released.
+    + Supports VASP and QE for EA-vc
+    + Priority order of structure optimization input file names
+    + Job file auto-rewriting
+    + cryspy-skip subcommand
+    + cryspy-calc-convex-hull subcommand
+    + See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
 - [2025 July 7] CrySPY 1.4.1 released.
     + Support add_max, elim_max, and subs_max in EA-vc
     + Support charge neutral condition in EA-vc
