@@ -104,7 +104,7 @@ def _get_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb):
         max_del_per_element = [min(current, elim_max) for current in parent_nat]
         for dnat in product(*[range(max_del + 1) for max_del in max_del_per_element]):
             new_nat = np.array(parent_nat) - np.array(dnat)
-            if 0 < sum(dnat) <= elim_max and np.sum(new_nat) > 0:
+            if 0 < sum(dnat) <= elim_max and np.sum(new_nat) > 0 and np.all(new_nat >= ll_nat):
                 dnat_comb.append(dnat)
     else:    # charge neutrality
         mask = cn_comb.sum(axis=1) <= elim_max

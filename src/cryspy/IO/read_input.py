@@ -339,7 +339,7 @@ class ReadInput:
                 raise ValueError('not len(atype) == len(ll_nat) == len(ul_nat), check ll_nat and ul_nat')
             for i in range(len(self.ll_nat)):
                 if not 0 <= self.ll_nat[i] <= self.ul_nat[i]:
-                    raise ValueError(f'not 1 <= ll_nat[{i}] <= ul_nat[{i}], check ll_nat and ul_nat')
+                    raise ValueError(f'not 0 <= ll_nat[{i}] <= ul_nat[{i}], check ll_nat and ul_nat')
             # ------ charge
             try:
                 self.charge = self.config.get('structure', 'charge')

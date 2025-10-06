@@ -2,8 +2,6 @@ from itertools import product
 from logging import getLogger
 import random
 
-import numpy as np
-
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
 
 
@@ -122,11 +120,18 @@ def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, charge):
         if 0 < total_subs <= subs_max:
             # ------ new_nat after substitution
             new_nat = list(parent_nat)
+            remain_nat = list(parent_nat)    # to track remaining atoms
             for (from_elem, to_elem), count in zip(pairs, counts):
                 from_idx = atype.index(from_elem)
                 to_idx = atype.index(to_elem)
                 new_nat[from_idx] -= count
+                remain_nat[from_idx] -= count
+                if remain_nat[from_idx] < 0:
+                    break
                 new_nat[to_idx] += count
+            # ------ skip if any element goes negative
+            if any(n < 0 for n in remain_nat):
+                continue
             # ------ check if new_nat is within limits
             if all(ll <= n <= ul for n, ll, ul in zip(new_nat, ll_nat, ul_nat)):
                 charge_ok = True
