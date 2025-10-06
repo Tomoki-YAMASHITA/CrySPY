@@ -9,9 +9,11 @@ Document: https://tomoki-yamashita.github.io/CrySPY_doc
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## Latest version
-version 1.4.2 (2025 July 18)
+version 1.4.3 (2025 October 6)
 
 ## News
+- [2025 Octorber 6] CrySPY 1.4.3 released.
+    + Bug fix in EA-vc
 - [2025 July 18] CrySPY 1.4.2 released.
     + Supports VASP and QE for EA-vc
     + Priority order of structure optimization input file names

@@ -1,4 +1,10 @@
 # CHANGELOG
+## [1.4.3] - 2025-10-06
+### Fixed
+- Elimintion in EA-vc: fixed a bug that let the atom count go below the minimum.
+- Substitution in EA-vc: fixed a bug where the atom count went negative mid-run.
+
+
 ## [1.4.2] - 2025-7-17
 ### Important change
 ####  EA-vc
