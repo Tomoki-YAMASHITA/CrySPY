@@ -232,7 +232,7 @@ def child_gen(
                     rin.symprec,
                     rin.maxcnt_ea,
                     rin.target,
-                    rin.charge,
+                    cn_comb,
                 )
             else:
                 logger.error('Substitution is not implemented for mol or mol_bs')

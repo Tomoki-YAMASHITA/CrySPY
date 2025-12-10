@@ -71,6 +71,7 @@ def gen_crossover(
     else:
         if id_start < (max(struc_data.keys()) + 1):
             logger.error('id_start is already included in structure ID of the data')
+            raise SystemExit(1)
         else:
             cid = id_start
 
@@ -83,6 +84,7 @@ def gen_crossover(
         # ------ generate child
         if molecular:
             logger.error('molecular crossover is not implemented yet.')
+            raise SystemExit(1)
             #child, mol_id = co.gen_child_mol(rin, struc_data[pid_A], struc_data[pid_B],
             #                                    struc_mol_id[pid_A], struc_mol_id[pid_B])
         else:
@@ -102,6 +104,11 @@ def gen_crossover(
             )
         # ------ success
         if child is not None:
+            # -- Niggli reduction
+            try:
+                child = child.get_reduced_structure(reduction_algo="niggli")
+            except Exception as e:
+                logger.warning(f'Niggli reduction failed: {e}')
             children[cid] = child
             # if molecular:
             #     children_mol_id[cid] = mol_id

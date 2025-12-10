@@ -2,13 +2,11 @@
 Utility for structures
 '''
 
-from itertools import combinations_with_replacement
 from logging import getLogger
 import os
 
 import numpy as np
 from pymatgen.core import Structure, Molecule
-from pymatgen.io.cif import CifWriter
 from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
 
@@ -543,10 +541,21 @@ def calc_cn_comb(ll_nat, ul_nat, charge, use_pkl=True):
     ul_nat = (4, 4)
     charge = (1, -1)
 
-    array([[1, 1],
-           [2, 2],
-           [3, 3],
-           [4, 4]])  <-- cn_comb
+    cn_comb = array([[1, 1],
+                     [2, 2],
+                     [3, 3],
+                     [4, 4]])
+
+    # ---------- multi-valence example
+    e.g. Fe-O
+    ll_nat = (4, 4)
+    ul_nat = (10, 10)
+    charge = ((2, 3), -2)   # (Fe2+, Fe3+), O2-
+
+    Expanded representation:
+    ll_ext = (0, 0, 4)      # multivalent: no ll per valence; ll applies to total only
+    ul_ext = (10, 10, 10)
+    charge_ext = (2, 3, -2)
     """
     # ---------- try loading pkl data if it exists
     if use_pkl:
@@ -559,21 +568,59 @@ def calc_cn_comb(ll_nat, ul_nat, charge, use_pkl=True):
         except Exception:
             pass
 
-    # ---------- generate all possible combinations
-    ranges = [np.arange(ll, ul + 1) for ll, ul in zip(ll_nat, ul_nat)]
-    mesh = np.meshgrid(*ranges, indexing='ij')
-    cn_comb = np.stack(mesh, axis=-1).reshape(-1, len(charge))
+    # ---------- convert bounds to np.array
+    ll = np.array(ll_nat, dtype=int)
+    ul = np.array(ul_nat, dtype=int)
+    k_orig = len(charge)
 
-    # ---------- remove combinations with zero total atoms
-    total_atoms = cn_comb.sum(axis=1)
-    nonzero_mask = total_atoms != 0
+    # ---------- case 1: all charges are single-valence (int)
+    if all(isinstance(c, int) for c in charge):
+        charges = np.array(charge, dtype=int)
+        cn_comb = _calc_cn_comb_single(ll, ul, charges)
 
-    # ---------- check charge neutrality, e.g. 2*(+1) + 2*(-1) = 0
-    neutral_mask = np.dot(cn_comb, charge) == 0
+    # ---------- case 2: some species have multiple valences
+    # expand each valence to a "pseudo-species"
+    else:
+        valence_list = []        # charges in extended space
+        orig_index = []    # mapping: extended index -> original species index
+        ll_ext_list = []     # lower bounds in extended space
+        for i, c in enumerate(charge):
+            if isinstance(c, int):
+                # single-valence species: lower bound can be kept
+                valence_list.append(c)
+                orig_index.append(i)
+                ll_ext_list.append(ll[i])
+            else:
+                # multivalent: each valence may be absent
+                for v in c:
+                    valence_list.append(v)
+                    orig_index.append(i)
+                    ll_ext_list.append(0)   # no ll per valence; ll applies to total only
+        # ------ convert to np.array
+        charges_ext = np.array(valence_list, dtype=int)
+        ll_ext = np.array(ll_ext_list, dtype=int)
+        ul_ext = np.array([ul[i] for i in orig_index], dtype=int)
 
-    # ---------- combine both conditions
-    final_mask = nonzero_mask & neutral_mask
-    cn_comb = cn_comb[final_mask]
+        # ---------- charge-neutral combinations in the extended space
+        cn_ext = _calc_cn_comb_single(ll_ext, ul_ext, charges_ext)
+        if cn_ext.size == 0:
+            return np.empty((0, k_orig), dtype=int)
+
+        # ---------- aggregate back to original species
+        totals = np.zeros((cn_ext.shape[0], k_orig), dtype=int)    # initialized
+        for j, p in enumerate(orig_index):
+            totals[:, p] += cn_ext[:, j]
+
+        # ---------- apply original bounds ll_nat, ul_nat
+        mask_ll = np.all(totals >= ll, axis=1)
+        mask_ul = np.all(totals <= ul, axis=1)
+        final_mask = mask_ll & mask_ul
+        if not np.any(final_mask):
+            return np.empty((0, k_orig), dtype=int)
+        totals_valid = totals[final_mask]
+
+        # ---------- remove duplicate compositions
+        cn_comb = np.unique(totals_valid, axis=0)
 
     # ---------- save
     if use_pkl:
@@ -582,4 +629,69 @@ def calc_cn_comb(ll_nat, ul_nat, charge, use_pkl=True):
         logger.info(f'Charge neutral combinations saved: {len(cn_comb)}')
 
     # ---------- return charge neutral combinations
+    return cn_comb
+
+
+def _calc_cn_comb_single(ll, ul, charges):
+    """
+    Core routine for charge-neutral combinations with single valence per species.
+
+    Parameters
+    ----------
+    ll : np.ndarray, shape (k,)
+        Lower limits of the number of atoms for each species (int).
+    ul : np.ndarray, shape (k,)
+        Upper limits of the number of atoms for each species (int).
+    charges : np.ndarray, shape (k,)
+        Charges of each species (single valence only, all ints).
+
+    Returns
+    -------
+    cn_comb : np.ndarray, shape (N, k)
+        Array of charge-neutral combinations.
+        Each row is (n_1, ..., n_k).
+    """
+
+    # ---------- size
+    k = len(charges)
+
+    # ---------- choose one "dependent" species whose charge != 0
+    #            Select the dependent species: charge with largest absolute value
+    nonzero_q_idx = np.where(charges != 0)[0]
+    dep_idx = nonzero_q_idx[np.argmax(np.abs(charges[nonzero_q_idx]))]    # dependent index
+    indep_idx = [i for i in range(k) if i != dep_idx]
+    q_dep = charges[dep_idx]
+    q_indep = charges[indep_idx]
+
+    # ---------- generate combinations for independent variables only
+    ranges = [np.arange(ll[i], ul[i] + 1) for i in indep_idx]
+    mesh = np.meshgrid(*ranges, indexing='ij')
+    comb_indep = np.stack(mesh, axis=-1).reshape(-1, len(indep_idx))  # (M, k-1)
+
+    # ---------- compute dependent variable from charge neutrality
+    # q_dep * n_dep + sum(q_indep * n_indep) = 0
+    # → n_dep = - sum(q_indep * n_indep) / q_dep
+    sum_indep = comb_indep @ q_indep  # (M,)
+    divisible_mask = (-sum_indep % q_dep == 0)    # divisible by q_dep
+    n_dep = -sum_indep // q_dep
+
+    # ---------- mask
+    in_range_mask = (n_dep >= ll[dep_idx]) & (n_dep <= ul[dep_idx])    # ll <= n_dep <= ul
+    total_atoms = comb_indep.sum(axis=1) + n_dep    # \sum n_indep + n_dep
+    nonzero_mask = (total_atoms != 0)    # total atoms != 0
+    final_mask = divisible_mask & in_range_mask & nonzero_mask
+
+    # ---------- construct final combinations
+    if not np.any(final_mask):
+        cn_comb = np.empty((0, k), dtype=int)    # no valid combinations --> empty array
+    else:
+        valid_indep = comb_indep[final_mask]
+        valid_dep = n_dep[final_mask]
+        # ------ reconstruct full combinations
+        cn_comb = np.zeros((len(valid_dep), k), dtype=int)    # vacant array
+        cn_comb[:, dep_idx] = valid_dep
+        for j, i in enumerate(indep_idx):
+            cn_comb[:, i] = valid_indep[:, j]
+
+    # ---------- return
     return cn_comb

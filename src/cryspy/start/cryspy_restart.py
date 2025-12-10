@@ -121,6 +121,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
     # ---------- vc: calc charge-neutral combinations
     if mpi_rank == 0:
         if rin.algo == 'EA-vc' and rin.charge is not None:
+            logger.info('# ---------- Calculate charge-neutral combinations')
             cn_comb = calc_cn_comb(rin.ll_nat, rin.ul_nat, rin.charge)
             if len(cn_comb) == 0:
                 logger.error('No charge neutral combinations found.')

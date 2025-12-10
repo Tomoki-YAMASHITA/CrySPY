@@ -22,7 +22,7 @@ def gen_substitution(
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
-        charge=None,
+        cn_comb=None,
     ):
     '''
 
@@ -41,7 +41,7 @@ def gen_substitution(
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in substitution
     target (str): only 'random' for now
-    charge (int): charge of each atom type
+    cn_comb (np.ndarray): charge neutral combinations
 
     # ---------- return
     children (dict): {id: structure data}
@@ -65,13 +65,18 @@ def gen_substitution(
         else:
             cid = id_start
 
+    # ---------- charge neutrality
+    cn_set = None
+    if cn_comb is not None:
+        cn_set = {tuple(row) for row in cn_comb}
+
     # ---------- generate structures by substitution
     while struc_cnt < n_subs:
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
         # ------ get subs comb
-        subs_comb = _get_subs_comb(atype, ll_nat, ul_nat, subs_max, nat_data[pid_A], charge)
+        subs_comb = _get_subs_comb(atype, ll_nat, ul_nat, subs_max, nat_data[pid_A], cn_set)
         if len(subs_comb) == 0:
             logger.warning('Substitution: no combinations found. Change parent')
             continue
@@ -101,7 +106,7 @@ def gen_substitution(
     return children, parents, operation
 
 
-def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, charge):
+def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
     # ---------- initialize
     subs_comb = []
 
@@ -115,15 +120,16 @@ def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, charge):
     # ---------- all combinations of substitution counts for each pair from 0 to max_subs
     pairs = list(max_subs.keys())
     max_counts = [max_subs[pair] for pair in pairs]
+    # precompute element index and index pairs for speed
+    idx = {elem: i for i, elem in enumerate(atype)}
+    index_pairs = [(idx[from_elem], idx[to_elem]) for (from_elem, to_elem) in pairs]
     for counts in product(*[range(max_count + 1) for max_count in max_counts]):
         total_subs = sum(counts)
         if 0 < total_subs <= subs_max:
             # ------ new_nat after substitution
             new_nat = list(parent_nat)
             remain_nat = list(parent_nat)    # to track remaining atoms
-            for (from_elem, to_elem), count in zip(pairs, counts):
-                from_idx = atype.index(from_elem)
-                to_idx = atype.index(to_elem)
+            for (from_idx, to_idx), count in zip(index_pairs, counts):
                 new_nat[from_idx] -= count
                 remain_nat[from_idx] -= count
                 if remain_nat[from_idx] < 0:
@@ -134,16 +140,15 @@ def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, charge):
                 continue
             # ------ check if new_nat is within limits
             if all(ll <= n <= ul for n, ll, ul in zip(new_nat, ll_nat, ul_nat)):
-                charge_ok = True
-                if charge is not None:    # check charge neutrality
-                    total_charge = sum(n * c for n, c in zip(new_nat, charge))
-                    charge_ok = (total_charge == 0)
-                if charge_ok:
-                    subs_list = []
-                    for pair, count in zip(pairs, counts):
-                        subs_list.extend([pair] * count)
-                    if subs_list:
-                        subs_comb.append(subs_list)
+                # ------ charge-neutral check using precomputed cn_comb
+                if cn_set is not None and tuple(new_nat) not in cn_set:
+                    continue  # not charge-neutral --> skip this pattern
+                # ------ OK: store this substitution pattern
+                subs_list = []
+                for pair, count in zip(pairs, counts):
+                    subs_list.extend([pair] * count)
+                if subs_list:
+                    subs_comb.append(subs_list)
 
     # ---------- return
     return subs_comb

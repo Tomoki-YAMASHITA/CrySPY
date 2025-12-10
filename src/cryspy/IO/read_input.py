@@ -2,6 +2,7 @@ import configparser
 from dataclasses import dataclass, field
 from logging import getLogger
 import os
+import re
 
 
 logger = getLogger('cryspy')
@@ -346,13 +347,34 @@ class ReadInput:
             except (configparser.NoOptionError, configparser.NoSectionError):
                 self.charge = None
             if self.charge is not None:
-                self.charge = tuple([int(x) for x in self.charge.split()])    # str --> tuple
-                if not len(self.charge) == len(self.atype):
+                self.charge = self._parse_charge(self.charge)    # str --> tuple
+                if len(self.charge) != len(self.atype):
                     raise ValueError('not len(charge) == len(atype), check charge')
-                if any(x > 0 for x in self.charge) and any(x < 0 for x in self.charge):
-                    pass
-                else:
-                    raise ValueError('charge must have both positive and negative integers')
+                # check that there is at least one positive and one negative value
+                # zeros are allowed and simply ignored for this check
+                has_pos = False
+                has_neg = False
+                for c in self.charge:
+                    if isinstance(c, int):
+                        # monovalent
+                        if c > 0:
+                            has_pos = True
+                        elif c < 0:
+                            has_neg = True
+                    else:
+                        # multivalent
+                        for v in c:
+                            if v > 0:
+                                has_pos = True
+                            elif v < 0:
+                                has_neg = True
+                    if has_pos and has_neg:
+                        break
+                if not (has_pos and has_neg):
+                    raise ValueError(
+                        'charge must contain at least one positive and one negative value '
+                        '(zero is allowed).'
+                    )
         # ---------- mol or mol_bs
         if self.struc_mode in ['mol', 'mol_bs']:
             # ------ mol_file
@@ -461,6 +483,34 @@ class ReadInput:
                 if not int(c) in tmpspg:
                     tmpspg += [int(c)]
         self.spgnum = tuple(tmpspg)
+
+    def _parse_charge(self, s: str):
+        """
+        Parse charge string:
+            "1 2 -1"        -> (1, 2, -1)
+            "(2 3) -2"      -> ((2,3), -2)
+            "[2, 3] -2"     -> ((2,3), -2)
+            "(2) 5"         -> ERROR
+        """
+        toks = re.findall(r'\([^\)]*\)|\[[^\]]*\]|\S+', s)
+        out = []
+        for tok in toks:
+            tok = tok.strip()
+            # tuple case
+            if tok.startswith("(") or tok.startswith("["):
+                inner = tok[1:-1]
+                vals = re.split(r'[,\s]+', inner)
+                vals = [v for v in vals if v]   # remove empty
+                if len(vals) < 2:
+                    raise ValueError(
+                        f"Invalid multivalence format '{tok}': "
+                        "use parentheses only for 2 or more values"
+                    )
+                out.append(tuple(int(v) for v in vals))
+            else:
+                # integer case
+                out.append(int(tok))
+        return tuple(out)
 
     def _read_option(self):
         # ---------- check_mindist_opt
