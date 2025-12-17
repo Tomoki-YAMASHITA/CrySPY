@@ -6,7 +6,6 @@ import json
 from logging import getLogger
 import math
 import os
-import random
 import subprocess
 
 import numpy as np
@@ -36,6 +35,7 @@ def gen_wo_spg(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        rng=None,
     ):
     '''
     Generate random structures without space group information
@@ -60,10 +60,15 @@ def gen_wo_spg(
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
     cn_comb (np.array): charge neutral combinations of atoms
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen structure data}
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     init_struc_data = {}
@@ -77,9 +82,9 @@ def gen_wo_spg(
         # ------ vc
         if vc:
             if cn_comb is None:
-                nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+                nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
             else:
-                nat = tuple(cn_comb[np.random.choice(len(cn_comb))])
+                nat = tuple(cn_comb[rng.integers(len(cn_comb))])
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
@@ -91,15 +96,15 @@ def gen_wo_spg(
         # either tmp_atype or atype is OK in _get_atomlist()
         atomlist = _get_atomlist(tmp_atype, tmp_nat)
         # ------ get spg, a, b, c, alpha, beta, gamma
-        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle)
+        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle, rng)
         # ------ get a1, a2, a3
         a1, a2, a3 = _calc_latvec(a, b, c, alpha, beta, gamma)
         # ------ get structure
-        tmp_struc = _gen_struc_wo_spg(tmp_atype, tmp_nat, atomlist, a1, a2, a3, tmp_mindist, maxcnt)
+        tmp_struc = _gen_struc_wo_spg(tmp_atype, tmp_nat, atomlist, a1, a2, a3, tmp_mindist, maxcnt, rng)
         if tmp_struc is not None:    # success of generation
             # ------ scale volume
             if vol_mu is not None:
-                vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
+                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
                 tmp_struc.scale_lattice(volume=vol)
                 # either tmp_atype or atype is OK in check_distance()
                 success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
@@ -144,6 +149,7 @@ def gen_with_find_wy(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        rng=None,
     ):
     '''
     Generate random structures with space gruop information
@@ -171,10 +177,15 @@ def gen_with_find_wy(
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
     cn_comb (np.array): charge neutral combinations of atoms
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structre}
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     init_struc_data = {}
@@ -192,9 +203,9 @@ def gen_with_find_wy(
         # ------ vc
         if vc:
             if cn_comb is None:
-                nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+                nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
             else:
-                nat = tuple(cn_comb[np.random.choice(len(cn_comb))])
+                nat = tuple(cn_comb[rng.integers(len(cn_comb))])
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from nat and corresponding index in atype, mindist
@@ -204,7 +215,7 @@ def gen_with_find_wy(
                 tmp_atype = atype
                 tmp_mindist = mindist
         # ------ get spg, a, b, c, alpha, beta, gamma
-        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle)
+        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle, rng)
         # ------ get cosa, cosb, and cosc
         cosa, cosb, cosg = _calc_cos(alpha, beta, gamma)
         # ------ write an input file for find_wy
@@ -219,7 +230,7 @@ def gen_with_find_wy(
             if not os.path.isfile('POS_WY_SKEL_ALL.json'):
                 wyflag = False
                 break
-            wyflag, tmp_struc = _gen_struc_with_spg(tmp_atype, tmp_mindist, maxcnt)
+            wyflag, tmp_struc = _gen_struc_with_spg(tmp_atype, tmp_mindist, maxcnt, rng)
             if wyflag is False:    # Failure
                 os.remove('POS_WY_SKEL_ALL.json')
                 cnt += 1
@@ -233,7 +244,7 @@ def gen_with_find_wy(
             continue       # to new fw_input
         # ------ scale volume
         if vol_mu is not None:
-            vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
+            vol = rng.normal(loc=vol_mu, scale=vol_sigma)
             tmp_struc.scale_lattice(volume=vol)
             success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
             if not success:
@@ -273,7 +284,12 @@ def _get_atomlist(atype, numIons):
         atomlist += [atype[i]]*numIons[i]
     return atomlist
 
-def _gen_lattice(spgnum, minlen, maxlen, dangle):
+
+def _gen_lattice(spgnum, minlen, maxlen, dangle, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- for spgnum = 0: no space group
     if spgnum == 0:
         crystal_systems = ['Triclinic',
@@ -284,14 +300,14 @@ def _gen_lattice(spgnum, minlen, maxlen, dangle):
                             'Hexagonal',
                             'Cubic']
         spg = 0
-        csys = random.choice(crystal_systems)
+        csys = rng.choice(crystal_systems)
     # ---------- for spgnum 1--230
     else:
         # ------ spgnum --> spg
         if spgnum == 'all':
-            spg = random.randint(1, 230)
+            spg = rng.integers(1, 231)
         else:
-            spg = random.choice(spgnum)
+            spg = rng.choice(spgnum)
         if 1 <= spg <= 2:
             csys = 'Triclinic'
         elif 3 <= spg <= 15:
@@ -316,57 +332,57 @@ def _gen_lattice(spgnum, minlen, maxlen, dangle):
             raise SystemExit(1)
     # ---------- generate lattice constants a, b, c, alpha, beta, gamma
     if csys == 'Triclinic':
-        t1 = random.uniform(minlen, maxlen)
-        t2 = random.uniform(minlen, maxlen)
-        t3 = random.uniform(minlen, maxlen)
+        t1 = rng.uniform(minlen, maxlen)
+        t2 = rng.uniform(minlen, maxlen)
+        t3 = rng.uniform(minlen, maxlen)
         t = [t1, t2, t3]
         t.sort()
         a, b, c = t
-        r = random.random()
+        r = rng.random()
         if r < 0.5:    # Type I
-            alpha = 90.0 - random.uniform(0, dangle)
-            beta  = 90.0 - random.uniform(0, dangle)
-            gamma = 90.0 - random.uniform(0, dangle)
+            alpha = 90.0 - rng.uniform(0, dangle)
+            beta  = 90.0 - rng.uniform(0, dangle)
+            gamma = 90.0 - rng.uniform(0, dangle)
         else:    # Type II
-            alpha = 90.0 + random.uniform(0, dangle)
-            beta  = 90.0 + random.uniform(0, dangle)
-            gamma = 90.0 + random.uniform(0, dangle)
+            alpha = 90.0 + rng.uniform(0, dangle)
+            beta  = 90.0 + rng.uniform(0, dangle)
+            gamma = 90.0 + rng.uniform(0, dangle)
     elif csys == 'Monoclinic':
-        a = random.uniform(minlen, maxlen)
-        b = random.uniform(minlen, maxlen)
-        c = random.uniform(minlen, maxlen)
+        a = rng.uniform(minlen, maxlen)
+        b = rng.uniform(minlen, maxlen)
+        c = rng.uniform(minlen, maxlen)
         if a > c:
             a, c = c, a
         alpha = gamma = 90.0
-        beta = 90.0 + random.uniform(0, dangle)
+        beta = 90.0 + rng.uniform(0, dangle)
     elif csys == 'Orthorhombic':
-        t1 = random.uniform(minlen, maxlen)
-        t2 = random.uniform(minlen, maxlen)
-        t3 = random.uniform(minlen, maxlen)
+        t1 = rng.uniform(minlen, maxlen)
+        t2 = rng.uniform(minlen, maxlen)
+        t3 = rng.uniform(minlen, maxlen)
         t = [t1, t2, t3]
         t.sort()
         a, b, c = t
         alpha = beta = gamma = 90.0
     elif csys == 'Tetragonal':
-        a = b = random.uniform(minlen, maxlen)
-        c = random.uniform(minlen, maxlen)
+        a = b = rng.uniform(minlen, maxlen)
+        c = rng.uniform(minlen, maxlen)
         alpha = beta = gamma = 90.0
     elif csys == 'Trigonal':
-        a = b = random.uniform(minlen, maxlen)
-        c = random.uniform(minlen, maxlen)
+        a = b = rng.uniform(minlen, maxlen)
+        c = rng.uniform(minlen, maxlen)
         alpha = beta = 90.0
         gamma = 120.0
     elif csys == 'Rhombohedral':
-        a = b = c = random.uniform(minlen, maxlen)
-        alpha = beta = gamma = 90 + random.uniform(-dangle,
+        a = b = c = rng.uniform(minlen, maxlen)
+        alpha = beta = gamma = 90 + rng.uniform(-dangle,
                                                     dangle)
     elif csys == 'Hexagonal':
-        a = b = random.uniform(minlen, maxlen)
-        c = random.uniform(minlen, maxlen)
+        a = b = rng.uniform(minlen, maxlen)
+        c = rng.uniform(minlen, maxlen)
         alpha = beta = 90.0
         gamma = 120.0
     elif csys == 'Cubic':
-        a = b = c = random.uniform(minlen, maxlen)
+        a = b = c = rng.uniform(minlen, maxlen)
         alpha = beta = gamma = 90.0
 
     # ---------- return
@@ -405,18 +421,22 @@ def _calc_cos(alpha, beta, gamma):
     return cosa, cosb, cosg
 
 
-def _gen_struc_wo_spg(atype, numIons, atomlist, a1, a2, a3, mindist, maxcnt=50):
+def _gen_struc_wo_spg(atype, numIons, atomlist, a1, a2, a3, mindist, maxcnt=50, rng=None):
     '''
     Success --> return structure data in pymatgen format
     Failure --> return None
     '''
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- initialize
     cnt = 0
     incoord = []
     natot = sum(numIons)
     # ---------- generate internal coordinates
     while len(incoord) < natot:
-        tmp_coord = np.random.rand(3)
+        tmp_coord = rng.random(3)
         incoord.append(tmp_coord)
         tmp_struc = Structure([a1, a2, a3],
                                 atomlist[:len(incoord)],
@@ -458,11 +478,14 @@ def _fw_input(atype, numIons, spg, a, b, c, cosa, cosb, cosg):
         f.write('randomseed auto\n')
 
 
-def _gen_struc_with_spg(atype, mindist, maxcnt):
+def _gen_struc_with_spg(atype, mindist, maxcnt, rng=None):
     '''
     Success --> return True, structure data
     Failure --> return False, _
     '''
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
     # ---------- load POS_WY_SKEL_ALL.json
     with open('POS_WY_SKEL_ALL.json', 'r') as f:
         wydata = json.load(f)
@@ -479,7 +502,7 @@ def _gen_struc_with_spg(atype, mindist, maxcnt):
         cnt = 0
         while True:
             eq_atomnames[key], eq_positions[key] = _gen_eq_atoms(
-                wydata_eq_atom[key])
+                wydata_eq_atom[key], rng)
             # -- sort in original order
             atomnames = []
             positions = []
@@ -511,6 +534,7 @@ def _gen_struc_with_spg(atype, mindist, maxcnt):
                 break    # break while loop --> next eq atoms
     return True, spgstruc
 
+
 def _get_wydata_eq_atom(wydata):
     i = 0    # count eq_atom, not atom
     n_uniq = {}    # num_uniqvar each eq_atom
@@ -522,10 +546,16 @@ def _get_wydata_eq_atom(wydata):
             i += 1
     return n_uniq, wydata_eq_atom
 
-def _gen_eq_atoms(wydata2):
+
+def _gen_eq_atoms(wydata2, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- generate equivalent atoms
     eq_atomnames = []
     eq_positions = []
-    rval = np.random.random_sample(3)
+    rval = rng.random(3)
     for each in wydata2:
         pos = []
         for ch in each['xyzch']:
@@ -562,6 +592,7 @@ def _gen_eq_atoms(wydata2):
         eq_positions.append(pos + each['add'])
         eq_atomnames.append(each['name'])
     return eq_atomnames, eq_positions
+
 
 def _rm_files(files=['input', 'POS_WY_SKEL_ALL.json']):
     for rfile in files:

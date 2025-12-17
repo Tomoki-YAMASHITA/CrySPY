@@ -23,6 +23,7 @@ def gen_permutation(
         maxcnt_ea=50,
         struc_mol_id=None,
         molecular=False,
+        rng=None
     ):
     '''
 
@@ -76,7 +77,7 @@ def gen_permutation(
             #                                     self.sp.struc_data[pid_A],
             #                                     struc_mol_id[pid_A])
         else:
-            child = gen_child(atype, mindist, parent_A, ntimes, maxcnt_ea)
+            child = gen_child(atype, mindist, parent_A, ntimes, maxcnt_ea, rng)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -100,7 +101,7 @@ def gen_permutation(
     return children, parents, operation
 
 
-def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
+def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50, rng=None):
     '''
 
         tuple may be replaced by list
@@ -110,11 +111,16 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
     parent_A (Structure): pymatgen Structure object
     ntimes (int): number of swaps
     maxcnt_ea (int): maximum number of trial in crossover
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
     (if fail) None
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     #smatcher = StructureMatcher()    # instantiate StructureMatcher
@@ -133,11 +139,11 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50):
                         if site.species_string == a])
             # ------ choose two atom type
             non_empty_indices = [i for i, sublist in enumerate(indx_each_type) if sublist]
-            type_choice = np.random.choice(non_empty_indices, 2, replace=False)
+            type_choice = rng.choice(non_empty_indices, 2, replace=False)
             # ------ choose index
             indx_choice = []
             for tc in type_choice:
-                indx_choice.append(np.random.choice(indx_each_type[tc]))
+                indx_choice.append(rng.choice(indx_each_type[tc]))
             # ------ replace each other
             child.replace(indx_choice[0],
                                 species=atype[type_choice[1]])

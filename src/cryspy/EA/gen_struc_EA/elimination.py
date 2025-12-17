@@ -1,6 +1,5 @@
 from itertools import product
 from logging import getLogger
-import random
 
 import numpy as np
 
@@ -22,6 +21,7 @@ def gen_elimination(
         symprec=0.01,
         target='random',
         cn_comb=None,
+        rng=None,
     ):
     '''
 
@@ -38,12 +38,17 @@ def gen_elimination(
     symprec (float): tolerance for symmetry
     target (str): only 'random' for now
     cn_comb (np.ndarray): charge neutral combinations
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     children (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, )}
     operation (dict): {id: 'strain'}
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     struc_cnt = 0
@@ -73,10 +78,10 @@ def gen_elimination(
             continue
         # ------ elim_element_list, e.g. ['Li', 'Li', 'O']
         if target == 'random':
-            dnat = random.choice(dnat_comb)
+            dnat = dnat_comb[rng.integers(len(dnat_comb))] 
             elim_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
-        child = gen_child(parent_A, elim_element_list)
+        child = gen_child(parent_A, elim_element_list, rng=rng)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -118,15 +123,20 @@ def _get_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb):
     return dnat_comb
 
 
-def gen_child(parent_A, elim_element_list):
+def gen_child(parent_A, elim_element_list, rng=None):
     '''
     parent_A (Structure): pymatgen Structure object
     elim_element_list (list): list of atom types to eliminate, e.g. ['Li', 'Li', 'O']
     target (str): only 'random' for now
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     child (Structure): pymatgen Structure object
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- keep original structure
     child = parent_A.copy()    # keep original structure
@@ -138,7 +148,7 @@ def gen_child(parent_A, elim_element_list):
     for elem in elim_element_list:
         # まだ使われていないインデックスだけを候補に
         candidates = [i for i, site in enumerate(child) if site.species_string == elem and i not in used]
-        idx = random.choice(candidates)
+        idx = rng.choice(candidates)
         elim_indices.append(idx)
         used.add(idx)
 

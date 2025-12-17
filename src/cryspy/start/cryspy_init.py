@@ -7,6 +7,7 @@ from importlib.metadata import version
 from logging import getLogger
 import os
 
+import numpy as np
 import pandas as pd
 
 from ..IO import pkl_data, io_stat, write_input
@@ -50,13 +51,24 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
             os.remove('lock_cryspy')
         raise SystemExit(1)
     # ########## MPI end
+
+    # ---------- mkdir, write and save input
     if mpi_rank == 0:
         # ---------- make data directory
         os.makedirs('data/pkl_data', exist_ok=True)
         # ---------- write and save input file
         write_input.out_input(rin)    # log
         pkl_data.save_input(rin)      # input_data.pkl
-        # ---------- vc: calc charge-neutral combinations
+
+    # ---------- RNG (seed is for serial debug only)
+    rng = None
+    if mpi_size == 1 and rin.seed is not None:
+        logger.info('# ---------- Initialize RNG with seed from input (serial run)')
+        rng = np.random.default_rng(rin.seed)
+        logger.info(f'RNG seed: {rin.seed}')
+
+    # ---------- vc: calc charge-neutral combinations
+    if mpi_rank == 0:
         if rin.algo == 'EA-vc' and rin.charge is not None:
             logger.info('# ---------- Calculate charge-neutral combinations')
             cn_comb = calc_cn_comb(rin.ll_nat, rin.ul_nat, rin.charge)
@@ -88,6 +100,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                                             comm=comm,
                                             mpi_rank=mpi_rank,
                                             mpi_size=mpi_size,
+                                            rng=rng
                                         )
         # ########## MPI end
         if mpi_rank == 0:
@@ -139,7 +152,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
             rs_init.initialize(rin)
         elif rin.algo == 'BO':
             from ..BO import bo_init
-            bo_init.initialize(rin, init_struc_data, rslt_data)
+            bo_init.initialize(rin, init_struc_data, rslt_data, rng=rng)
         elif rin.algo == 'LAQA':
             from ..LAQA import laqa_init
             laqa_init.initialize(rin)

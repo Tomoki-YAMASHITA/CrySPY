@@ -83,7 +83,7 @@ def main():
     # ---------- restart
     else:
         # only stat and init_struc_data in rank0 are important
-        rin, init_struc_data = cryspy_restart.restart(comm=comm, mpi_rank=mpi_rank, mpi_size=mpi_size)
+        rin, init_struc_data, rng = cryspy_restart.restart(comm=comm, mpi_rank=mpi_rank, mpi_size=mpi_size)
     # ########## MPI end
 
     if mpi_rank == 0:
@@ -102,7 +102,7 @@ def main():
 
         # ---------- instantiate Ctrl_job class
         from cryspy.job.ctrl_job import Ctrl_job
-        jobs = Ctrl_job(rin, init_struc_data)
+        jobs = Ctrl_job(rin, init_struc_data, rng)
 
         # ---------- check job status
         jobs.check_job()

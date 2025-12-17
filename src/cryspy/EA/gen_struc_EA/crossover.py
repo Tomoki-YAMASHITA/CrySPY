@@ -30,6 +30,7 @@ def gen_crossover(
         cn_comb=None,
         struc_mol_id=None,
         molecular=False,
+        rng=None,
     ):
     '''
     # ---------- args
@@ -51,6 +52,7 @@ def gen_crossover(
     ll_nat (tuple): lower limit of nat for EA-vc, e.g. (0, 0)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
     cn_comb (numpy.ndarray): charge neutral combinations
+    rng (numpy.random.Generator): random number generator
 
     # ---------- return
     children (dict): {id: structure data}
@@ -85,8 +87,6 @@ def gen_crossover(
         if molecular:
             logger.error('molecular crossover is not implemented yet.')
             raise SystemExit(1)
-            #child, mol_id = co.gen_child_mol(rin, struc_data[pid_A], struc_data[pid_B],
-            #                                    struc_mol_id[pid_A], struc_mol_id[pid_B])
         else:
             child = gen_child(
                 atype,
@@ -101,6 +101,7 @@ def gen_crossover(
                 ll_nat,
                 ul_nat,
                 cn_comb,
+                rng,
             )
         # ------ success
         if child is not None:
@@ -143,6 +144,7 @@ def gen_child(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        rng=None,
     ):
     '''
     # ---------- args
@@ -161,22 +163,27 @@ def gen_child(
     ll_nat (tuple): lower limit of nat for EA-vc, e.g. (1, 1)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
     cn_comb (numpy.ndarray): charge neutral combinations
+    rng (numpy.random.Generator): random number generator
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
     (if fail) None
     '''
 
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- initialize
-    parent_A = origin_shift(parent_A)    # origin_shift returns a new Structure object
-    parent_B = origin_shift(parent_B)
+    parent_A = origin_shift(parent_A, rng)    # origin_shift returns a new Structure object
+    parent_B = origin_shift(parent_B, rng)
     count = 0
 
     # ---------- lattice crossover
     if crs_lat == 'equal':
         w_lat = np.array([1.0, 1.0])
     elif crs_lat == 'random':
-        w_lat = np.random.choice([0.0, 1.0], size=2, replace=False)
+        w_lat = rng.choice([0.0, 1.0], size=2, replace=False)
     else:
         logger.error('crs_lat must be equal or random')
     lattice = _lattice_crossover(parent_A, parent_B, w_lat)
@@ -185,13 +192,13 @@ def gen_child(
     while True:
         count += 1
         # ------ coordinate crossover
-        axis, slice_point, species, coords = _one_point_crossover(parent_A, parent_B)
+        axis, slice_point, species, coords = _one_point_crossover(parent_A, parent_B, rng)
         # ------ child structure
         child = Structure(lattice, species, coords)
         # ------ check nat_diff
         # -- for charge neutral combinations
         if vc and cn_comb is not None:
-            target_nat = _get_close_cn_comb(child, atype, cn_comb)
+            target_nat = _get_close_cn_comb(child, atype, cn_comb, rng)
             use_charge = True
         else:
             target_nat = nat
@@ -268,10 +275,14 @@ def _lattice_crossover(parent_A, parent_B, w_lat):
     return Lattice(lat_array)
 
 
-def _one_point_crossover(parent_A, parent_B):
+def _one_point_crossover(parent_A, parent_B, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- slice point and axis
-    slice_point = np.clip(np.random.normal(loc=0.5, scale=0.1), 0.3, 0.7)
-    axis = np.random.choice([0, 1, 2])
+    slice_point = np.clip(rng.normal(loc=0.5, scale=0.1), 0.3, 0.7)
+    axis = rng.choice([0, 1, 2])
 
     # ---------- crossover
     species_A = []
@@ -301,7 +312,7 @@ def _one_point_crossover(parent_A, parent_B):
         species = species_B
         coords = coords_B
     else:
-        if np.random.choice([0, 1]):
+        if rng.choice([0, 1]):
             species = species_A
             coords = coords_A
         else:
@@ -423,17 +434,22 @@ def _remove_border_line(child, atype, axis, slice_point, nat_diff):
     return child
 
 
-def _add_border_line(child, atype, mindist, axis, slice_point, nat_diff, maxcnt_ea=50):
+def _add_border_line(child, atype, mindist, axis, slice_point, nat_diff, maxcnt_ea=50, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- add atoms
     for i in range(len(atype)):
-        # ---------- counter
+        # ------ counter
         cnt = 0
 
-        # ---------- add atoms
+        # ------ add atoms
         while nat_diff[i] < 0:
             cnt += 1
-            coords = np.random.rand(3)
-            mean = _mean_choice(child, axis, slice_point)
-            coords[axis] = np.random.normal(loc=mean, scale=0.08)
+            coords = rng.random(3)
+            mean = _mean_choice(child, axis, slice_point, rng)
+            coords[axis] = rng.normal(loc=mean, scale=0.08)
             child.append(species=atype[i], coords=coords)
             success, mindist_ij, dist = check_distance(child, atype, mindist)
             if success:
@@ -444,7 +460,7 @@ def _add_border_line(child, atype, mindist, axis, slice_point, nat_diff, maxcnt_
                 type1 = atype[mindist_ij[1]]
                 logger.warning(f'mindist in _add_border_line: {type0} - {type1}, {dist}. retry.')
                 child.pop()    # cancel
-            # ------ fail
+            # -- fail
             if cnt == maxcnt_ea:
                 return None
 
@@ -452,10 +468,14 @@ def _add_border_line(child, atype, mindist, axis, slice_point, nat_diff, maxcnt_
         return child
 
 
-def _mean_choice(child, axis, slice_point):
+def _mean_choice(child, axis, slice_point, rng=None):
     '''
     Which border contains the most atoms?
     '''
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+    # ---------- count
     n_zero = np.sum(np.abs(child.frac_coords[:, axis] - 0.0)
                     < 0.1)
     n_slice = np.sum(np.abs(child.frac_coords[:, axis]
@@ -465,11 +485,15 @@ def _mean_choice(child, axis, slice_point):
     elif n_zero > n_slice:
         mean = slice_point
     else:
-        mean = np.random.choice([0.0, slice_point])
+        mean = rng.choice([0.0, slice_point])
     return mean
 
 
-def _get_close_cn_comb(child, atype, cn_comb):
+def _get_close_cn_comb(child, atype, cn_comb, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- distance between child and cn_comb
     tmp_nat = get_nat(child, atype)
     distances = np.sum(np.abs(cn_comb - tmp_nat), axis=1)
@@ -477,9 +501,9 @@ def _get_close_cn_comb(child, atype, cn_comb):
     # ---------- find the closest combination
     min_distance = np.min(distances)
     min_indices = np.where(distances == min_distance)[0]
-    
+
     # ---------- randomly select one of the closest combinations
-    closest_idx = np.random.choice(min_indices)
+    closest_idx = rng.choice(min_indices)
     cn_target_nat = cn_comb[closest_idx]
 
     # ---------- return

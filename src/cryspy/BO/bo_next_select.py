@@ -92,9 +92,10 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
         descriptors = np.array(descriptors)
         targets = np.array(targets, dtype=float)
         # ------ Bayesian optimization
+        seed_bo = None if rin.seed is None else int(rin.seed)
         actions, cryspy_mean, cryspy_var, cryspy_score = _bayes_opt(
             s_act, descriptors, targets, nselect,
-            rin.score, rin.cdev, rin.num_rand_basis, noprint)
+            rin.score, rin.cdev, rin.num_rand_basis, noprint, seed_bo)
         # t_act, t_mean, t_var, t_score = _bayes_opt2(
         #     s_act, descriptors, targets, nselect,
         #     rin.score, rin.cdev, rin.num_rand_basis, noprint)
@@ -106,7 +107,8 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
         for i in actions:
             id_queueing.append(non_error_id[i])
         # ------ bo_mean, bo_var, bo_score
-        remaining_id = list(set(non_error_id) - set(done_id))
+        done_set = set(done_id)
+        remaining_id = [i for i in non_error_id if i not in done_set]
         bo_mean[n_selection] = dict(zip(remaining_id, cryspy_mean))
         bo_var[n_selection] = dict(zip(remaining_id, cryspy_var))
         bo_score[n_selection] = dict(zip(remaining_id, cryspy_score))
@@ -155,6 +157,7 @@ def _bayes_opt(
     cdev=0.001,
     num_rand_basis=0,
     noprint=False,
+    seed=None,
 ):
     '''
     # ---------- args
@@ -182,6 +185,8 @@ def _bayes_opt(
 
     # ---------- Declaring the policy by
     policy = physbo.search.discrete.policy(test_X=X, initial_data=[s_act, -targets])
+    if seed is not None:
+        policy.set_seed(int(seed))
 
     # ---------- Bayes search
     if noprint:

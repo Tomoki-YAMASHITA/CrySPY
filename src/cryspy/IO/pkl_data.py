@@ -116,6 +116,16 @@ def save_stress_step(stress_step_data):
         pickle.dump(stress_step_data, f)
 
 
+def save_rng_state(rng_state_data):
+    with open('data/pkl_data/rng_state_data.pkl', 'wb') as f:
+        pickle.dump(rng_state_data, f)
+
+
+def load_rng_state():
+    with open('data/pkl_data/rng_state_data.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
 # ---------- BO
 def load_n_selection():
     with open('./data/pkl_data/n_selection.pkl', 'rb') as f:

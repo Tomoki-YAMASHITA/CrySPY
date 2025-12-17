@@ -9,10 +9,11 @@ from tqdm.notebook import tqdm
 from .opt_ase import opt_ase
 from ..start import cryspy_restart
 from ..IO import io_stat, pkl_data
-from ..job.ctrl_job import regist_opt, mv_fin, next_gen_EA
+from ..job.ctrl_job import regist_opt, mv_fin
 
 # ---------- import later
 #from ..EA.calc_ef import calc_ef
+#from ..EA.ea_next_gen import next_gen_EA
 
 
 logger = getLogger('cryspy')
@@ -42,7 +43,7 @@ def restart_interact(
     """
 
     # ---------- restart
-    rin, init_struc_data = cryspy_restart.restart()
+    rin, init_struc_data, rng = cryspy_restart.restart()
     if rin.calc_code != 'ASE':
         logger.error('Use ASE for calc_code in interactive mode')
         raise ValueError('Use ASE for calc_code in interactive mode')
@@ -181,6 +182,7 @@ def restart_interact(
         if rin.algo in ['EA', 'EA-vc']:
             if rin.algo == 'EA':
                 nat_data = None
+            from ..EA.ea_next_gen import next_gen_EA
             next_gen_EA(
                 rin,
                 gen,
@@ -190,4 +192,5 @@ def restart_interact(
                 rslt_data,
                 nat_data,
                 struc_mol_id=None,
+                rng=rng,
             )

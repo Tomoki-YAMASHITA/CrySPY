@@ -1,7 +1,7 @@
 import configparser
 from logging import getLogger
-import random
 
+import numpy as np
 import pandas as pd
 
 from .select_descriptor import select_descriptor
@@ -11,7 +11,11 @@ from ..IO import io_stat, pkl_data
 logger = getLogger('cryspy')
 
 
-def initialize(rin, init_struc_data, rslt_data):
+def initialize(rin, init_struc_data, rslt_data, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- log
     logger.info('# ---------- Selection: 1')
 
@@ -51,7 +55,7 @@ def initialize(rin, init_struc_data, rslt_data):
         id_queueing = list(rin.manual_select_bo[:])    # shallow copy
         if 0 < nselect:
             diff_id = list(set(all_id) - set(id_queueing))
-            id_queueing.extend(random.sample(diff_id, nselect))
+            id_queueing.extend(rng.choice(diff_id, size=nselect, replace=False).tolist())
         # ------ delete the value for manual_select_bo in cryspy.in
         config = configparser.ConfigParser()
         config.read('cryspy.in')
@@ -59,7 +63,7 @@ def initialize(rin, init_struc_data, rslt_data):
         with open('cryspy.in', 'w') as f:
             config.write(f)
     else:
-        id_queueing = random.sample(all_id, rin.nselect_bo)
+        id_queueing = rng.choice(all_id, size=rin.nselect_bo, replace=False).tolist()
 
     # ---------- id_select_hist
     id_select_hist.append(id_queueing[:])    # append shallow copy

@@ -1,6 +1,7 @@
 from itertools import product
 from logging import getLogger
-import random
+
+import numpy as np
 
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
 
@@ -23,6 +24,7 @@ def gen_substitution(
         maxcnt_ea=50,
         target='random',
         cn_comb=None,
+        rng=None
     ):
     '''
 
@@ -42,12 +44,17 @@ def gen_substitution(
     maxcnt_ea (int): maximum number of trial in substitution
     target (str): only 'random' for now
     cn_comb (np.ndarray): charge neutral combinations
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     children (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, )}
     operation (dict): {id: 'strain'}
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     struc_cnt = 0
@@ -82,9 +89,9 @@ def gen_substitution(
             continue
         # ------ subs_element_list, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
         if target == 'random':
-            subs_element_list = random.choice(subs_comb)
+            subs_element_list = subs_comb[int(rng.integers(len(subs_comb)))]
         # ------ generate child
-        child = gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea, target)
+        child = gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea, target, rng=rng)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -154,7 +161,7 @@ def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
     return subs_comb
 
 
-def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target='random'):
+def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target='random', rng=None):
     '''
         tuple may be replaced by list
 
@@ -164,11 +171,16 @@ def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target=
     subs_element_list (list): list of tuples, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
     maxcnt_ea (int): maximum number of trial in crossover
     target (str): only 'random' for now
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
     (if fail) None
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     cnt = 0
@@ -185,7 +197,10 @@ def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target=
         used_indices = set()
         for from_elem, to_elem in subs_element_list:
             available = [idx for idx in available_indices[from_elem] if idx not in used_indices]
-            selected_idx = random.choice(available)
+            if not available:
+                logger.error(f'Substitution invariant violated: no available indices for {from_elem}')
+                raise RuntimeError(f'Substitution: no available indices for {from_elem}')
+            selected_idx = rng.choice(available)
             subs_indices.append(selected_idx)
             used_indices.add(selected_idx)
         # ------ substitution

@@ -8,16 +8,16 @@ import numpy as np
 
 from ..interface import select_code
 from ..IO import change_input, io_stat, pkl_data
-from ..IO.out_results import out_rslt, out_hdist
+from ..IO.out_results import out_rslt
 from ..util.utility import backup_cryspy
 from ..util.struc_util import out_poscar, out_cif
 
 # ---------- import later
 #from ..BO.select_descriptor import select_descriptor
 #from ..BO import bo_next_select
-#from ..EA import ea_next_gen
 #from ..EA.calc_ef import calc_ef
 #from ..EA.calc_hull import calc_convex_hull_2d
+#from ..EA.ea_next_gen import next_gen_EA
 #from ..LAQA.calc_score import calc_laqa_bias
 #from ..LAQA import laqa_next_selection
 #from ..IO.out_results import out_laqa_status, out_laqa_step, out_laqa_score
@@ -29,9 +29,10 @@ logger = getLogger('cryspy')
 
 class Ctrl_job:
 
-    def __init__(self, rin, init_struc_data):
+    def __init__(self, rin, init_struc_data, rng=None):
         self.rin = rin
         self.init_struc_data = init_struc_data
+        self.rng = rng
         self.opt_struc_data = pkl_data.load_opt_struc()
         self.rslt_data = pkl_data.load_rslt()
         self.id_queueing = pkl_data.load_id_queueing()
@@ -631,6 +632,7 @@ class Ctrl_job:
                 nat_data = self.nat_data
             else:
                 nat_data=None
+            from ..EA.ea_next_gen import next_gen_EA
             next_gen_EA(
                 self.rin,
                 self.gen,
@@ -640,6 +642,7 @@ class Ctrl_job:
                 self.rslt_data,
                 nat_data=nat_data,
                 struc_mol_id=None,
+                rng=self.rng,
             )
 
     def next_select_BO(self, noprint=False):
@@ -858,76 +861,3 @@ def mv_fin(cid):
                 shutil.move(f'work/{cid}',
                             f'work/fin/{cid}_{i}')
                 break
-
-
-def next_gen_EA(
-        rin,
-        gen,
-        go_next_sg,
-        init_struc_data,
-        opt_struc_data,
-        rslt_data,
-        nat_data=None,
-        struc_mol_id=None,
-    ):
-
-    # ---------- log
-    logger.info(f'Done generation {gen}')
-
-    # ---------- EA-vc: calc convex hull
-    if rin.algo == 'EA-vc':
-        hdist_data = pkl_data.load_hdist_data()
-        pd_data = pkl_data.load_pd_data()
-        if gen not in hdist_data:
-            logger.info(f'Calculate convex hull for generation {gen}')
-            from ..EA.calc_hull import calc_convex_hull
-            pd, hdist = calc_convex_hull(
-                atype=rin.atype,
-                gen=gen,
-                end_point=rin.end_point,
-                rslt_data=rslt_data,
-                nat_data=nat_data,
-                show_max=rin.show_max,
-                label_stable=rin.label_stable,
-                vmax=rin.vmax,
-                bottom_margin=rin.bottom_margin,
-                fig_format=rin.fig_format,
-                emax_ea=rin.emax_ea,
-                emin_ea=rin.emin_ea,
-            )
-            out_hdist(gen, hdist, nat_data)
-            hdist_data[gen] = hdist
-            pd_data[gen] = pd
-            pkl_data.save_hdist_data(hdist_data)
-            pkl_data.save_pd_data(pd_data)
-
-    # ---------- flag for next selection or generation
-    if not go_next_sg:
-        logger.info('\nEA is ready')
-        os.remove('lock_cryspy')
-        raise SystemExit()
-
-    # ---------- check point 3
-    if rin.stop_chkpt == 3:
-        logger.info('\nStop at check point 3: EA is ready')
-        os.remove('lock_cryspy')
-        raise SystemExit()
-
-    # ---------- maxgen_ea
-    if 0 < rin.maxgen_ea <= gen:
-        logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
-        os.remove('lock_cryspy')
-        raise SystemExit()
-
-    # ---------- EA
-    backup_cryspy()
-    from ..EA import ea_next_gen
-    ea_next_gen.next_gen(
-        rin,
-        gen,
-        init_struc_data,
-        opt_struc_data,
-        rslt_data,
-        nat_data,
-        struc_mol_id,
-    )

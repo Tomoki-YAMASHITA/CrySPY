@@ -14,9 +14,10 @@ class SelectParents:
     self.get_parents(n_parent) <-- self._tournament or self._roulette
     '''
 
-    def __init__(self, ranking):
+    def __init__(self, ranking, rng=None):
         # ---------- self
         self.ranking = ranking
+        self.rng = rng
 
     def set_tournament(self, t_size):
         '''
@@ -37,9 +38,15 @@ class SelectParents:
         # ---------- return
         parent_id (list): ID of selected parents
         '''
+        # ---------- initialize rng
+        if self.rng is None:
+            rng = np.random.default_rng()
+        else:
+            rng = self.rng
+        # ---------- select parents
         parent_id = []
         while len(parent_id) < n_parent:
-            t_indx = np.random.choice(len(self.ranking), self.t_size, replace=False)
+            t_indx = rng.choice(len(self.ranking), self.t_size, replace=False)
             if parent_id:    # not allow the same parent in crossover
                 if parent_id[0] == self.ranking[min(t_indx)]:
                     continue
@@ -80,11 +87,16 @@ class SelectParents:
         # ---------- return
         parent_id (list): ID of selected parents
         '''
+        # ---------- initialize rng
+        if self.rng is None:
+            rng = np.random.default_rng()
+        else:
+            rng = self.rng
         # ---------- select parents
         parent_id = []
         while len(parent_id) < n_parent:
             # indx_array: if all false, array is vacant
-            indx_array = np.where(self.cum_fit < np.random.rand())[0]
+            indx_array = np.where(self.cum_fit < rng.random())[0]
             # select_indx: consider vacant or not
             select_indx = indx_array[-1] + 1 if indx_array.size != 0 else 0
             if parent_id:    # not allow same parent for crossover

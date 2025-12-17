@@ -6,7 +6,6 @@ from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 from logging import getLogger
 from multiprocessing import Process, Queue
-import random
 import sys
 
 import numpy as np
@@ -38,6 +37,7 @@ def gen_struc(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        rng=None,
     ):
     '''
     Generate random structures for given space groups
@@ -62,10 +62,15 @@ def gen_struc(
     ll_nat (tuple): lower limit of number of atoms (e.g. (0, 0))
     ul_nat (tuple): upper limit of number of atoms (e.g. (8, 8))
     cn_comb (np.array): charge neutral combinations of atoms
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     init_struc_data = {}
@@ -78,16 +83,16 @@ def gen_struc(
     while len(init_struc_data) < nstruc:
         # ------ spgnum --> spg
         if spgnum == 'all':
-            spg = random.randint(1, 230)
+            spg = rng.integers(1, 231)
         else:
-            spg = random.choice(spgnum)
+            spg = rng.choice(spgnum)
         # ------ generate structure
         tmp_crystal = pyxtal()
         if vc:    # variable composition
             if cn_comb is None:
-                nat = tuple([random.randint(l, u) for l, u in zip(ll_nat, ul_nat)])
+                nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
             else:
-                nat = tuple(cn_comb[np.random.choice(len(cn_comb))])
+                nat = tuple(cn_comb[rng.integers(len(cn_comb))])
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
@@ -108,6 +113,7 @@ def gen_struc(
                     factor=vol_factor,
                     conventional=False,
                     tm=tolmat,
+                    random_state=rng,
                 )
             s = f.getvalue().rstrip()    # to delete \n
             if s:
@@ -132,7 +138,7 @@ def gen_struc(
             tmp_struc = sort_by_atype(tmp_struc, tmp_atype)
             # -- scale volume
             if vol_mu is not None:
-                vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
+                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
                 tmp_struc.scale_lattice(volume=vol)
             # -- check actual space group
             try:
@@ -165,6 +171,7 @@ def gen_struc_mol(
         vol_mu=None,
         vol_sigma=None,
         timeout_mol=None,
+        rng=None,
     ):
     '''
     Generate random molecular crystal structures for given space groups
@@ -185,11 +192,16 @@ def gen_struc_mol(
     vol_mu (float): mean for volume scaling
     vol_sigma (float): standard deviation for volume scaling
     timeout_mol (None or float): if float, timeout for molecular structure generation
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
     struc_mol_id (dict):    not implemented yet, just return vacant dict for now
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     init_struc_data = {}
@@ -202,15 +214,15 @@ def gen_struc_mol(
     while len(init_struc_data) < nstruc:
         # ------ spgnum --> spg
         if spgnum == 'all':
-            spg = random.randint(1, 230)
+            spg = rng.integers(1, 231)
         else:
-            spg = random.choice(spgnum)
+            spg = rng.choice(spgnum)
         # ------ generate structure
         if timeout_mol is None:
             tmp_crystal = pyxtal(molecular=True)
             try:
                 f = StringIO()    # to get output from pyxtal
-                with redirect_stdout(f):
+                with redirect_stdout(f), redirect_stderr(f):
                     tmp_crystal.from_random(
                         dim=3,
                         group=spg,
@@ -218,7 +230,8 @@ def gen_struc_mol(
                         numIons=nmol,
                         factor=vol_factor,
                         conventional=False,
-                        tm=tolmat
+                        tm=tolmat,
+                        random_state=rng,
                     )
                 s = f.getvalue().rstrip()    # to delete \n
                 if s:
@@ -229,68 +242,44 @@ def gen_struc_mol(
             except Exception as e:
                 logger.warning(f'{e}:     spg = {spg} retry.')
                 continue
-            # if algo in ['EA', 'EA-vc']:
-            #     tmp_struc = tmp_crystal.to_pymatgen(resort=False)
-            #     tmp_lattice = tmp_struc.lattice
-            #     dums = []        # dummy atoms
-            #     dum_pos = []     # internal position of dummy
-            #     in_dists = []
-            #     mol_dists = []
-            #     for i, site in enumerate(tmp_crystal.mol_sites):
-            #         for j, mol in enumerate(mol_data):
-            #             if mol.species == site.mol.species:
-            #                 dum = DummySpecie(f"X{j}{i}")
-            #                 dums.append(dum)
-            #                 dum_pos.append(site.position)
-            #                 # -- calculate atom distance by pyxtal
-            #                 in_dists.append(np.linalg.norm(site.position.dot(tmp_crystal.lattice.get_matrix()) -
-            #                                                 site.get_coords_and_species(absolute=True)[0]
-            #                                                 [0:len(site.mol.species)], axis=1))
-            #     # -- calculate atom distance from self.mol_data
-            #     for j, mol in enumerate(mol_data):
-            #         tmp_dists = []
-            #         for n, m in enumerate(mol):
-            #             tmp_dists.append(mol.get_distance(0, n))
-            #         mol_dists.append(tmp_dists)
-            #     dum_struc = Structure.from_spacegroup(spg, tmp_lattice, dums, dum_pos)
-            #     for ds, dc in zip(dum_struc.species, dum_struc.cart_coords):
-            #         tmp_struc.append(ds, dc, coords_are_cartesian=True)
         else:
+            # -- seed for RNG in child process
+            seed = int(rng.integers(0, 2**32, dtype=np.uint32))
             # -- multiprocess for hangup prevention
             q = Queue()
-            p = Process(target=_mp_mc, args=(tolmat, spg, mol_data, nmol,
-                                            vol_factor, q))
+            p = Process(target=_mp_mc, args=(tolmat, spg, mol_data, nmol, vol_factor, seed, q))
             p.start()
             p.join(timeout=timeout_mol)
             if p.is_alive():
                 p.terminate()
-                p.join()
-            if sys.version_info.minor >= 7:
-                # Process.close() available from python 3.7
-                p.close()
-            if q.empty():
-                logger.warning('timeout for molecular structure generation. retry.')
+            p.join()    # finalize process
+            # -- get result from queue
+            try:
+                tmp = q.get(timeout=1.0)
+                # to avoid blocking forever if the child process exits without putting data
+            except Exception:
+                logger.warning('timeout for molecular structure generation (no queue message). retry.')
                 continue
-            else:
-                # -- get struc data from _mp_mc
-                # if rin.algo in ['EA', 'EA-vc']:
-                #     tmp_q = q.get()
-                #     tmp_struc = tmp_q[0]    # structure data
-                #     dums = tmp_q[1]         # dummy element
-                #     in_dists = tmp_q[2]     # interatomic distance in a molecule
-                #     mol_dists = tmp_q[3]    # distance between molecules
-                # else:
-                #     tmp_struc = q.get()
-                tmp_struc = q.get()
-                tmp_valid = q.get()
-                if tmp_struc == 'error':
-                    # in case of 'error', tmp_valid <-- error message (Exception)
-                    logger.warning(tmp_valid.args[0] + f': spg = {spg} retry.')
-                    continue
+            # -- check error from child process
+            if isinstance(tmp, tuple) and len(tmp) >= 1 and tmp[0] == "error":
+                e = tmp[1]
+                msg = tmp[2] if len(tmp) > 2 else ""
+                if msg:
+                    logger.warning(msg)
+                logger.warning(f'{e}: spg = {spg} retry.')
+                continue
+            # -- unpack result
+            tmp_struc, tmp_valid, msg = tmp
+            if msg:
+                logger.warning(msg)
+            if not tmp_valid:
+                continue
+
+        # ------ check validity
         if tmp_valid:
             # -- scale volume
             if vol_mu is not None:
-                vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
+                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
                 vol = vol * tmp_struc.num_sites / sum(nat)    # for conv. cell
                 tmp_struc = scale_cell_mol(tmp_struc, mol_data, vol)
                 if not tmp_struc:    # case: scale_cell_mol returns False
@@ -308,68 +297,9 @@ def gen_struc_mol(
                 if tmp_nat != nat:    # failure
                     logger.warning(f'different num. of atoms. {tmp_nat}, {nat} retry.')
                     continue
-            # -- grouping atoms for molecule using interatomic distance
-            # if rin.algo in ['EA', 'EA-vc']:
-            #     loopcnt = 0
-            #     while loopcnt < 10:
-            #         loopcnt += 1
-            #         mol_group = []
-            #         group_id = 0
-            #         # check atom distance from dummy atom
-            #         for i, ts in enumerate(tmp_struc.species):
-            #             for dn, dummyatom in enumerate(dums):
-            #                 if ts == dummyatom:
-            #                     mol_indx = int(ts.symbol[1:2])
-            #                     for j, tc_fc in enumerate(tmp_struc.frac_coords):
-            #                         if i == j:
-            #                             continue
-            #                         dist = tmp_struc.get_distance(i, j)
-            #                         for dist_indx, true_dist in enumerate(in_dists[dn]):
-            #                             if round(true_dist, 2) == round(dist, 2):
-            #                                 mol_group.append([tc_fc, group_id, mol_indx, dist_indx])
-            #                                 break
-            #                     group_id += 1
-            #         success_cnt = 0
-            #         # check number of atom per group
-            #         # if failed, shuffle struc data, and continue(max 10times)
-            #         mol_cnt = collections.Counter([x[2] for x in mol_group])
-            #         for mc_key, mc_value in mol_cnt.items():
-            #             if mc_value % len(mol_data[mc_key]) == 0:
-            #                 success_cnt += 1
-            #         if success_cnt == len(mol_data):
-            #             break
-            #         random.shuffle(tmp_struc)
-            #     if loopcnt == 10:
-            #         continue
-            #     tmp_struc.remove_species(dums)
-            # -- sort, necessary in molecular crystal
+            # -- sort
             tmp_struc = sort_by_atype(tmp_struc, atype)
-            # -- record group_id, mol_id, and dist_index
-            # if rin.algo in ['EA', 'EA-vc']:
-            #     tmp_id = []
-            #     tmp_mol_indx = []
-            #     tmp_dist_indx = []
-            #     for atom_fc in tmp_struc.frac_coords:
-            #         for gatom in mol_group:
-            #             if np.array_equal(atom_fc, gatom[0]):
-            #                 tmp_id.append(gatom[1])
-            #                 tmp_mol_indx.append(gatom[2])
-            #                 tmp_dist_indx.append(gatom[3])
-            # -- check minimum distance
-            #    from CrySPY 0.10.4
-            #    Tol_matrix is used for mindist
-            #
-            #if self.mindist is not None:
-            #    success, mindist_ij, dist = check_distance(tmp_struc,
-            #                                               self.atype,
-            #                                               self.mindist)
-            #    if not success:
-            #        print('mindist in gen_struc_mol: {} - {}, {}. retry.'.format(
-            #            self.atype[mindist_ij[0]],
-            #            self.atype[mindist_ij[1]],
-            #            dist), file=sys.stderr)
-            #        continue    # failure
-            # -- check actual space group
+            # -- space group info
             try:
                 spg_sym, spg_num = tmp_struc.get_space_group_info(
                     symprec=symprec)
@@ -379,8 +309,6 @@ def gen_struc_mol(
             # -- register the structure in pymatgen format
             cid = len(init_struc_data) + id_offset
             init_struc_data[cid] = tmp_struc
-            # if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
-            #     struc_mol_id.update({cid: [tmp_mol_indx, tmp_id, mol_dists]})
             logger.info(f'Structure ID {cid:>6} was generated.'
                     f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
 
@@ -405,6 +333,7 @@ def gen_struc_mol_break_sym(
         vol_sigma=None,
         rot_mol='random_wyckoff',
         nrot=20,
+        rng=None,
     ):
     '''
     Generate random molecular crystal structures
@@ -428,11 +357,16 @@ def gen_struc_mol_break_sym(
     vol_sigma (float): standard deviation for volume scaling
     rot_mol (str): rotation option. 'random', 'random_mol', or 'random_wyckoff'
     nrot (int): maximum number of trials to rotate molecules
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
     struc_mol_id (dict):   not implemented yet, just return vacant dict for now
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     init_struc_data = {}
@@ -448,9 +382,9 @@ def gen_struc_mol_break_sym(
     while len(init_struc_data) < nstruc:
         # ------ spgnum --> spg
         if spgnum == 'all':
-            spg = random.randint(1, 230)
+            spg = rng.integers(1, 231)
         else:
-            spg = random.choice(spgnum)
+            spg = rng.choice(spgnum)
         # ------ generate structure
         tmp_crystal = pyxtal()
         try:
@@ -463,7 +397,8 @@ def gen_struc_mol_break_sym(
                     numIons=nmol,
                     factor=vol_factor,
                     conventional=False,
-                    tm=tolmat
+                    tm=tolmat,
+                    random_state=rng,
                 )
             s = f.getvalue().rstrip()    # to delete \n
             if s:
@@ -491,7 +426,7 @@ def gen_struc_mol_break_sym(
             tmp_struc = tmp_struc.get_primitive_structure()
             # -- scale volume
             if vol_mu is not None:
-                vol = random.gauss(mu=vol_mu, sigma=vol_sigma)
+                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
                 tmp_struc.scale_lattice(volume=vol)
             # -- save dummy coords
             dum_species = tmp_struc.species
@@ -514,14 +449,14 @@ def gen_struc_mol_break_sym(
                     if rot_mol is None:
                         rot_mol_coord = mol.cart_coords
                     if rot_mol == 'random':
-                        angle = 2 * np.pi * np.random.rand(3)
+                        angle = 2 * np.pi * rng.random(3)
                         R = rot_mat(angle)
                         rot_mol_coord = np.matmul(mol.cart_coords, R)
                     if rot_mol == 'random_mol':
                         # each mol_data
                         mol_angles = []    # [angles of mol 1, angles of mol 2, ...]
                         for i in range(len(mol_data)):
-                            mol_angles.append(2 * np.pi * np.random.rand(3))
+                            mol_angles.append(2 * np.pi * rng.random(3))
                         angle = mol_angles[mol_index]
                         R = rot_mat(angle)
                         rot_mol_coord = np.matmul(mol.cart_coords, R)
@@ -532,7 +467,7 @@ def gen_struc_mol_break_sym(
                                             #  DummySpecie X10+: array([ , , ]),
                                             #  DummySpecie X20+: array([ , , ]),
                                             #  DummySpecie X30+: array([ , , ])}
-                        angles = 2 * np.pi * np.random.rand(len(dums), 3)
+                        angles = 2 * np.pi * rng.random((len(dums), 3))
                         for (dum, angle) in zip(dums, angles):
                             dum_angles[dum] = angle
                         angle = dum_angles[dum_specie]
@@ -543,11 +478,6 @@ def gen_struc_mol_break_sym(
                     # append mol
                     for i, ms in enumerate(mol.species):
                         tmp_struc.append(ms, coord[i], coords_are_cartesian=True)
-                        # if rin.algo in ['EA', 'EA-vc']:
-                        #     tmp_id.append(tmp_id_cnt)
-                        #     tmp_mol_indx.append(mol_index)
-                    # if rin.algo in ['EA', 'EA-vc']:
-                    #     tmp_id_cnt += 1
                 # -- check nat
                 tmp_nat = get_nat(tmp_struc, atype)
                 if tmp_nat != nat:
@@ -615,60 +545,52 @@ def _set_tol_mat(atype, mindist):
     return tolmat
 
 
-def _mp_mc(tolmat, spg, mol_data, nmol, vol_factor, q):
+def _mp_mc(tolmat, spg, mol_data, nmol, vol_factor, seed, q):
     '''
-    multiprocess part
+    Child process: run pyxtal for molecular crystal generation
     here cannot use rin.xxx and logging
+    
+    Put format:
+        (structure_or_None, valid, msg)   on normal completion
+        ("error", exception, msg)         on exception
+
+    - structure_or_None: pymatgen Structure if valid else None
+    - valid: tmp_crystal.valid (bool)
+    - msg: captured stdout/stderr from pyxtal (str, may be "")
     '''
     try:
-        np.random.seed(random.randint(0, 100000000))
+        # ---------- RNG
+        if seed is None:
+            rng = np.random.default_rng()
+        else:
+            rng = np.random.default_rng(seed)
+
+        # ---------- generate structure
         tmp_crystal = pyxtal(molecular=True)
         f = StringIO()
-        with redirect_stdout(f):
-            with redirect_stderr(f):
-                tmp_crystal.from_random(dim=3, group=spg,
-                                        species=mol_data, numIons=nmol,
-                                        factor=vol_factor, conventional=False, tm=tolmat)
-        s = f.getvalue().rstrip()    # to delete \n
-        if s:
-            logger.warning(s)
-        # if algo in ['EA', 'EA-vc']:
-        #     tmp_struc = tmp_crystal.to_pymatgen(resort=False)
-        #     tmp_lattice = tmp_struc.lattice
-        #     dums = []        # dummy atoms
-        #     dum_pos = []     # internal position of dummy
-        #     in_dists = []
-        #     mol_dists = []
-        #     for i, site in enumerate(tmp_crystal.mol_sites):
-        #         for j, mol in enumerate(mol_data):
-        #             if mol.species == site.mol.species:
-        #                 dum = DummySpecie(f"X{j}{i}")
-        #                 dums.append(dum)
-        #                 dum_pos.append(site.position)
-        #                 # -- calculate atom distance by pyxtal
-        #                 in_dists.append(np.linalg.norm(site.position.dot(tmp_crystal.lattice.get_matrix()) -
-        #                                                 site.get_coords_and_species(absolute=True)[0]
-        #                                                 [0:len(site.mol.species)], axis=1))
-        #     # -- calculate atom distance from self.mol_data
-        #     for j, mol in enumerate(mol_data):
-        #         tmp_dists = []
-        #         for n, m in enumerate(mol):
-        #             tmp_dists.append(mol.get_distance(0, n))
-        #         mol_dists.append(tmp_dists)
-        #     dum_struc = Structure.from_spacegroup(spg, tmp_lattice, dums, dum_pos)
-        #     for ds, dc in zip(dum_struc.species, dum_struc.cart_coords):
-        #         tmp_struc.append(ds, dc, coords_are_cartesian=True)
+        with redirect_stdout(f), redirect_stderr(f):
+            tmp_crystal.from_random(
+                dim=3,
+                group=spg,
+                species=mol_data,
+                numIons=nmol,
+                factor=vol_factor,
+                conventional=False,
+                tm=tolmat,
+                random_state=rng,
+            )
+        msg = f.getvalue().rstrip()    # to delete \n
+
         # ---------- queue
         if tmp_crystal.valid:
-            # if algo in ['EA', 'EA-vc']:
-            #     q.put([tmp_struc, dums, in_dists, mol_dists])
-            # else:
-            #     q.put(tmp_crystal.to_pymatgen(resort=False))
-            q.put(tmp_crystal.to_pymatgen(resort=False))
-            q.put(tmp_crystal.valid)
+            q.put((tmp_crystal.to_pymatgen(resort=False),
+                   tmp_crystal.valid,
+                   msg))
         else:
-            q.put(None)
-            q.put(tmp_crystal.valid)
+            q.put((None, tmp_crystal.valid, msg))
+
     except Exception as e:
-        q.put('error')
-        q.put(e)
+        # f may not exist if an exception occurs before StringIO() is created.
+        # Use locals() to avoid UnboundLocalError.
+        msg = f.getvalue().rstrip() if "f" in locals() else ""
+        q.put(("error", e, msg))

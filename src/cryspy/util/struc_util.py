@@ -167,7 +167,7 @@ def frac_coord_zero_one(struc_in):
     return struc
 
 
-def origin_shift(struc_in):
+def origin_shift(struc_in, rng=None):
     '''
     Randomly shift the origin of struc_in
 
@@ -177,8 +177,12 @@ def origin_shift(struc_in):
     # ---------- return
     origin shifted structure (not change original struc_in)
     '''
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+    # ---------- shift
     struc = struc_in.copy()
-    coords_trans = struc.frac_coords + np.random.rand(3)
+    coords_trans = struc.frac_coords + rng.random(3)
     struc_shift = Structure(struc.lattice, struc.species, coords_trans)
     struc_shift = frac_coord_zero_one(struc_shift)
     return struc_shift
@@ -695,3 +699,102 @@ def _calc_cn_comb_single(ll, ul, charges):
 
     # ---------- return
     return cn_comb
+
+
+#
+# ---------- composition constraints
+#
+def precompute_feasible_N(ll_nat, ul_nat, min_comp, max_comp):
+    """
+    Precompute feasible total atom numbers N under composition constraints.
+
+    Parameters
+    ----------
+    ll_nat : tuple[int]
+        Lower bounds of atom counts for each species.
+    ul_nat : tuple[int]
+        Upper bounds of atom counts for each species.
+    min_comp : tuple[float]
+        Lower bounds of composition fractions x_i (for each species).
+    max_comp : tuple[float]
+        Upper bounds of composition fractions x_i (for each species).
+
+    Returns
+    -------
+    feasible_N : list of (N, lower, upper)
+        Each entry corresponds to one feasible total atom number N.
+        - N      : int, total number of atoms
+        - lower  : np.ndarray, per-species lower bounds n_i for this N
+        - upper  : np.ndarray, per-species upper bounds n_i for this N
+    """
+    # ---------- convert to np.array
+    ll = np.array(ll_nat, dtype=int)
+    ul = np.array(ul_nat, dtype=int)
+    min_comp = np.array(min_comp, dtype=float)
+    max_comp = np.array(max_comp, dtype=float)
+
+    # ---------- lower and upper limits for total atom number N
+    N_l = int(ll.sum())
+    N_u = int(ul.sum())
+
+    # ---------- find feasible N
+    feasible_N = []
+    for N in range(max(1, N_l), N_u + 1):    # N must be at least 1
+        lower = np.maximum(ll, np.ceil(min_comp * N).astype(int))    # L_i(N)
+        upper = np.minimum(ul, np.floor(max_comp * N).astype(int))   # U_i(N)
+        # ------ feasibility check: lower_i <= upper_i for all i
+        if (lower > upper).any():
+            continue
+        # ------ existence condition: sum(lower) <= N <= sum(upper)
+        if lower.sum() <= N <= upper.sum():
+            feasible_N.append((N, lower, upper))
+
+    # ---------- return
+    return feasible_N
+
+
+def sample_nat_from_feasible_N(feasible_N, rng=None):
+    """
+    Parameters
+    ----------
+    feasible_N : list[(N, lower, upper)] or None
+        Output of precompute_feasible_N. If None, it will be computed inside.
+    rng : np.random.Generator or None
+        Random number generator. If None, np.random.default_rng() is used.
+
+    Returns
+    -------
+    nat : np.ndarray, shape (k,)
+        One sampled integer composition (n_1, ..., n_k).
+    N : int
+        Total atom number used for this sample.
+    """
+    # ---------- rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- choose one (N, lower, upper) at random
+    N, lower, upper = feasible_N[rng.integers(len(feasible_N))]
+
+    # ---------- sample n_i within [lower_i, upper_i] with sum_i n_i = N
+    nat = lower.copy()    # initialize with lower bounds
+    remaining = int(N - nat.sum())
+    capacity = (upper - lower).astype(int)
+    k = len(nat)
+    # ------ suffix capacity
+    # suffix_capacity[i] = sum_{j=i}^{k-1} capacity[j]
+    suffix_capacity = np.zeros(k + 1, dtype=int)
+    for i in range(k - 1, -1, -1):
+        suffix_capacity[i] = suffix_capacity[i + 1] + capacity[i]
+    # ------ sample one by one
+    for i in range(k - 1):
+        max_add = min(capacity[i], remaining)
+        min_add = max(0, remaining - suffix_capacity[i + 1])
+        add_i = rng.integers(min_add, max_add + 1)
+        nat[i] += add_i
+        remaining -= add_i
+    # ------ last species takes the rest (guaranteed to fit)
+    nat[-1] += remaining
+
+    # ---------- return
+    return nat, N

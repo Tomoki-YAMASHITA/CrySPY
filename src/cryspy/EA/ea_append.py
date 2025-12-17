@@ -14,7 +14,7 @@ from ..IO import change_input, out_results, pkl_data
 
 logger = getLogger('cryspy')
 
-def append_struc(rin, init_struc_data):
+def append_struc(rin, init_struc_data, rng=None):
     # ---------- append structures by EA
     logger.info('# ---------- Append structures by EA')
 
@@ -36,6 +36,7 @@ def append_struc(rin, init_struc_data):
                         rin.fit_reverse,
                         rin.emax_ea,
                         rin.emin_ea,
+                        rng,
                     )
     logger.info('ranking without duplication:')
     for cid in ranking:
@@ -52,6 +53,7 @@ def append_struc(rin, init_struc_data):
                                                 init_struc_data,
                                                 None,
                                                 None,
+                                                rng,
                                             )
 
     # ---------- id_queueing
@@ -135,7 +137,7 @@ def append_struc(rin, init_struc_data):
     rin.tot_struc = next_tot
     # ------ append_struc_ea: True --> False
     change_input.change_input(config, 'option', 'append_struc_ea', False)
-    logger.info('Changed the value of append_struc_ea in cryspy.in from True to Flase')
+    logger.info('Changed the value of append_struc_ea in cryspy.in from True to False')
     # ------ write and save
     change_input.write_config(config)
     pkl_data.save_input(rin)

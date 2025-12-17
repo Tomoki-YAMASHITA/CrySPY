@@ -1,6 +1,5 @@
 from itertools import product
 from logging import getLogger
-import random
 
 import numpy as np
 
@@ -24,6 +23,7 @@ def gen_addition(
         maxcnt_ea=50,
         target='random',
         cn_comb=None,
+        rng=None,
     ):
     '''
     # ---------- args
@@ -40,12 +40,17 @@ def gen_addition(
     maxcnt_ea (int): maximum number of trial in addition
     target (str): target for addition, only 'random' for now
     cn_comb (np.ndarray): charge neutral combinations
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     children (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, )}
     operation (dict): {id: 'addition'}
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     struc_cnt = 0
@@ -75,7 +80,7 @@ def gen_addition(
             continue
         # ------ add_element_list, e.g. ['Li', 'Li', 'O']
         if target == 'random':
-            dnat = random.choice(dnat_comb)
+            dnat = dnat_comb[rng.integers(len(dnat_comb))] 
             add_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
         child = gen_child(
@@ -84,6 +89,7 @@ def gen_addition(
             parent_A,
             add_element_list,
             maxcnt_ea,
+            rng=rng,
         )
         # ------ success
         if child is not None:
@@ -131,6 +137,7 @@ def gen_child(
         parent_A,
         add_element_list,
         maxcnt_ea=50,
+        rng=None,
     ):
     '''
         tuple may be replaced by list
@@ -141,11 +148,15 @@ def gen_child(
     add_element_list (list): list of atom types to add, e.g. ['Li', 'Li', 'O']
     maxcnt_ea (int): maximum number of trial in crossover
     target (str): only 'random' for now
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
     (if fail) None
     '''
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     vol10per = False
@@ -156,7 +167,7 @@ def gen_child(
     for at in add_element_list:
         cnt = 0
         while True:
-            coords = np.random.rand(3)
+            coords = rng.random(3) 
             child.append(species=at, coords=coords)
             # ------ check distance
             success, mindist_ij, dist = check_distance(child, atype, mindist)

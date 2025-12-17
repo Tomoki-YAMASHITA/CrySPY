@@ -3,20 +3,95 @@ Generational change in evolutionary algorithm
 '''
 
 from logging import getLogger
-import random
+import os
 
 import pandas as pd
 
 from .ea_child import child_gen
 from .survival import survival_fittest
 from ..IO import io_stat, pkl_data
-from ..IO.out_results import out_ea_info, out_ea_origin
+from ..IO.out_results import out_ea_info, out_ea_origin, out_hdist
+from ..util.utility import backup_cryspy
 
 
 logger = getLogger('cryspy')
 
 
-def next_gen(
+def next_gen_EA(
+        rin,
+        gen,
+        go_next_sg,
+        init_struc_data,
+        opt_struc_data,
+        rslt_data,
+        nat_data=None,
+        struc_mol_id=None,
+        rng=None,
+    ):
+
+    # ---------- log
+    logger.info(f'Done generation {gen}')
+
+    # ---------- EA-vc: calc convex hull
+    if rin.algo == 'EA-vc':
+        hdist_data = pkl_data.load_hdist_data()
+        pd_data = pkl_data.load_pd_data()
+        if gen not in hdist_data:
+            logger.info(f'Calculate convex hull for generation {gen}')
+            from ..EA.calc_hull import calc_convex_hull
+            pd, hdist = calc_convex_hull(
+                atype=rin.atype,
+                gen=gen,
+                end_point=rin.end_point,
+                rslt_data=rslt_data,
+                nat_data=nat_data,
+                show_max=rin.show_max,
+                label_stable=rin.label_stable,
+                vmax=rin.vmax,
+                bottom_margin=rin.bottom_margin,
+                fig_format=rin.fig_format,
+                emax_ea=rin.emax_ea,
+                emin_ea=rin.emin_ea,
+            )
+            out_hdist(gen, hdist, nat_data)
+            hdist_data[gen] = hdist
+            pd_data[gen] = pd
+            pkl_data.save_hdist_data(hdist_data)
+            pkl_data.save_pd_data(pd_data)
+
+    # ---------- flag for next selection or generation
+    if not go_next_sg:
+        logger.info('\nEA is ready')
+        os.remove('lock_cryspy')
+        raise SystemExit()
+
+    # ---------- check point 3
+    if rin.stop_chkpt == 3:
+        logger.info('\nStop at check point 3: EA is ready')
+        os.remove('lock_cryspy')
+        raise SystemExit()
+
+    # ---------- maxgen_ea
+    if 0 < rin.maxgen_ea <= gen:
+        logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
+        os.remove('lock_cryspy')
+        raise SystemExit()
+
+    # ---------- EA
+    backup_cryspy()
+    _next_gen(
+        rin,
+        gen,
+        init_struc_data,
+        opt_struc_data,
+        rslt_data,
+        nat_data,
+        struc_mol_id,
+        rng,
+    )
+
+
+def _next_gen(
         rin,
         gen,
         init_struc_data,
@@ -24,6 +99,7 @@ def next_gen(
         rslt_data,
         nat_data=None,
         struc_mol_id=None,
+        rng=None,
     ):
 
     # ---------- log
@@ -77,6 +153,7 @@ def next_gen(
         rin.fit_reverse,
         emax_ea,
         emin_ea,
+        rng,
     )
     logger.info('ranking without duplication (including elite):')
     for cid in ranking:
@@ -94,6 +171,7 @@ def next_gen(
         init_struc_data,
         struc_mol_id,
         nat_data,
+        rng,
     )
 
     # ---------- select elite for next generation
@@ -115,6 +193,7 @@ def next_gen(
             rin.fit_reverse,
             emax_ea,
             emin_ea,
+            rng,
         )
         for cid in ranking:
             logger.info(f'Structure ID {cid:>6} keeps as the elite')

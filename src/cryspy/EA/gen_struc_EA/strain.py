@@ -24,6 +24,7 @@ def gen_strain(
         struc_mol_id=None,
         molecular=False,
         protect_mol_struc=True,
+        rng=None,
     ):
     '''
 
@@ -38,6 +39,7 @@ def gen_strain(
     symprec (float): tolerance for symmetry
     sigma_st (float): standard deviation for strain matrix
     maxcnt_ea (int): maximum number of trial in permutation
+    rng (Random Generator): instance of numpy random Generator
 
     # ---------- return
     children (dict): {id: structure data}
@@ -75,7 +77,7 @@ def gen_strain(
             #else:
             #    child = gen_child(atype, mindist, parent_struc, sigma_st, maxcnt_ea)
         else:
-            child = gen_child(atype, mindist, parent_A, sigma_st, maxcnt_ea)
+            child = gen_child(atype, mindist, parent_A, sigma_st, maxcnt_ea, rng)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -99,7 +101,7 @@ def gen_strain(
     return children, parents, operation
 
 
-def gen_child(atype, mindist, parent_A, sigma_st=0.5, maxcnt_ea=50):
+def gen_child(atype, mindist, parent_A, sigma_st=0.5, maxcnt_ea=50, rng=None):
     '''
 
         tuple may be replaced by list
@@ -109,11 +111,16 @@ def gen_child(atype, mindist, parent_A, sigma_st=0.5, maxcnt_ea=50):
     parent_A (Structure): pymatgen Structure object
     sigma_st (float): standard deviation for strain matrix
     maxcnt_ea (int): maximum number of trial in crossover
+    rng (Random Generator): instance of numpy random Generator
 
     # ---------- return
     (if success) child (Structure): pymatgen Structure object
     (if fail) None
     '''
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
     # ---------- initialize
     child = parent_A.copy()    # keep original structure
     lat_mat = child.lattice.matrix.T    # lattice vector as matrix
@@ -127,9 +134,9 @@ def gen_child(atype, mindist, parent_A, sigma_st=0.5, maxcnt_ea=50):
             for j in range(3):
                 if i <= j:
                     if i == j:
-                        strain_matrix[i][j] = 1.0 + np.random.normal(loc=0.0, scale=sigma_st)
+                        strain_matrix[i][j] = 1.0 + rng.normal(loc=0.0, scale=sigma_st)
                     else:
-                        strain_matrix[i][j] = np.random.normal(loc=0.0, scale=sigma_st)/2.0
+                        strain_matrix[i][j] = rng.normal(loc=0.0, scale=sigma_st)/2.0
                         strain_matrix[j][i] = strain_matrix[i][j]
         # ------ strained lattice
         strained_lattice = np.dot(strain_matrix, lat_mat).T

@@ -1,5 +1,4 @@
 from logging import getLogger
-import random
 
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -8,8 +7,17 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 logger = getLogger('cryspy')
 
 
-def survival_fittest(fitness, struc_data, elite_struc=None, elite_fitness=None,
-                     n_fittest=0, fit_reverse=False, emax_ea=None, emin_ea=None):
+def survival_fittest(
+        fitness,
+        struc_data,
+        elite_struc=None,
+        elite_fitness=None,
+        n_fittest=0,
+        fit_reverse=False,
+        emax_ea=None,
+        emin_ea=None,
+        rng=None,
+    ):
     '''
     # ---------- args
     fitness (dict): {ID: fitness, ...}
@@ -20,11 +28,16 @@ def survival_fittest(fitness, struc_data, elite_struc=None, elite_fitness=None,
     fit_reverse (bool): if False, lower fitness is better
     emax_ea (float): maximum energy for cutoff
     emin_ea (float): minimum energy for cutoff
+    rng (np.random.Generator): random number generator
 
     # ---------- return
     ranking (list): [ID, ...]
     fit_with_elite (dict): {ID: fitness, ...} fitness + elite_fitness
     '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
 
     # ---------- initialize
     struc_with_elite = struc_data.copy()    # shallow copy to leave original data
@@ -59,7 +72,7 @@ def survival_fittest(fitness, struc_data, elite_struc=None, elite_fitness=None,
     # ---------- shuffle within 0.001 from min_val
     min_val = fit_with_elite[sorted_ids[0]]
     tiny_keys = [k for k in sorted_ids if fit_with_elite[k] - min_val < 0.001]
-    random.shuffle(tiny_keys)
+    rng.shuffle(tiny_keys)
     rest_keys = [k for k in sorted_ids if fit_with_elite[k] - min_val >= 0.001]
     sorted_ids = tiny_keys + rest_keys
     if len(tiny_keys) > ncheck:

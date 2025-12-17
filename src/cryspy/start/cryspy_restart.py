@@ -6,6 +6,8 @@ from datetime import datetime
 from logging import getLogger
 import os
 
+import numpy as np
+
 from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
@@ -22,13 +24,14 @@ from ..util.struc_util import out_poscar, calc_cn_comb
 logger = getLogger('cryspy')
 
 def restart(comm=None, mpi_rank=0, mpi_size=1):
+    # ---------- start
     if mpi_rank == 0:
         logger.info('\n\n\nRestart CrySPY ' + get_version() + '\n\n')
 
+    # ---------- read input and check the change
     # ########## MPI start
     if mpi_size > 1:
         comm.barrier()
-    # ---------- read input and check the change
     if mpi_rank == 0:
         logger.info('# ---------- Read input file, cryspy.in')
     try:
@@ -52,6 +55,13 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 comm.Abort(1)      # stop for MPI
             raise SystemExit(1)    # stop for sereial
 
+    # ---------- RNG (seed is for serial debug only)
+    rng = None
+    if mpi_size == 1 and rin.seed is not None:
+        logger.info('# ---------- Initialize RNG with seed from input (serial run)')
+        rng = np.random.default_rng(rin.seed)
+        logger.info(f'RNG seed: {rin.seed}')
+
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
     # _append_struc is not allowed in EA and EA-vc either
@@ -73,7 +83,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             if mpi_rank == 0:
                 prev_nstruc = len(init_struc_data)
             #        init_struc_data is saved in _append_struc
-            init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size)
+            init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng)
         elif rin.tot_struc < len(init_struc_data):
             if mpi_rank == 0:
                 logger.error('tot_struc < len(init_struc_data)')
@@ -97,7 +107,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 from ..EA import ea_append
                 prev_nstruc = len(init_struc_data)
                 # init_struc_data is saved in ea_append.append_struc()
-                init_struc_data = ea_append.append_struc(rin, init_struc_data)
+                init_struc_data = ea_append.append_struc(rin, init_struc_data, rng)
 
     # ---------- post append
     if append_flag:
@@ -131,10 +141,10 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 raise SystemExit(1)    # stop for sereial
 
     # ---------- return
-    return rin, init_struc_data
+    return rin, init_struc_data, rng
 
 
-def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size):
+def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
     # ---------- log
     if mpi_rank == 0:
         logger.info('# ---------- Append structures')
@@ -149,7 +159,7 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size):
     # only init_struc_data in rank0 is important
     nstruc = rin.tot_struc - len(init_struc_data)
     tmp_struc_data, tmp_struc_mol_id = gen_random(rin, nstruc, len(init_struc_data),
-                                        comm, mpi_rank, mpi_size)
+                                        comm, mpi_rank, mpi_size, rng)
 
     if mpi_rank == 0:
         out_poscar(tmp_struc_data, './data/init_POSCARS')

@@ -28,10 +28,11 @@ def child_gen(
         init_struc_data,
         struc_mol_id=None,
         nat_data=None,
+        rng=None,
     ):
 
     # ---------- instantiate SelectParents class
-    sp = SelectParents(ranking)    # after set_xxx, we can use sp.get_parents(n_parent)
+    sp = SelectParents(ranking, rng)    # after set_xxx, we can use sp.get_parents(n_parent)
     if rin.slct_func == 'TNM':
         sp.set_tournament(rin.t_size)
     else:
@@ -94,6 +95,7 @@ def child_gen(
                 cn_comb,
                 struc_mol_id=None,
                 molecular=False,
+                rng=rng,
             )
         else:
             logger.error('Crossover is not implemented for mol or mol_bs')
@@ -120,6 +122,7 @@ def child_gen(
                 rin.maxcnt_ea,
                 struc_mol_id=None,
                 molecular=False,
+                rng=rng,
             )
         else:
             logger.error('Permutation is not implemented for mol or mol_bs')
@@ -147,6 +150,7 @@ def child_gen(
                 struc_mol_id=None,
                 molecular=False,
                 protect_mol_struc=True,
+                rng=rng,
             )
         else:
             logger.error('Strain is not implemented for mol or mol_bs')
@@ -178,6 +182,7 @@ def child_gen(
                     rin.maxcnt_ea,
                     rin.target,
                     cn_comb,
+                    rng=rng,
                 )
             else:
                 logger.error('Addition is not implemented for mol or mol_bs')
@@ -204,6 +209,7 @@ def child_gen(
                     rin.symprec,
                     rin.target,
                     cn_comb,
+                    rng=rng,
                 )
             else:
                 logger.error('Elimination is not implemented for mol or mol_bs')
@@ -233,6 +239,7 @@ def child_gen(
                     rin.maxcnt_ea,
                     rin.target,
                     cn_comb,
+                    rng=rng,
                 )
             else:
                 logger.error('Substitution is not implemented for mol or mol_bs')
@@ -274,6 +281,7 @@ def child_gen(
                                         comm=None,
                                         mpi_rank=0,
                                         mpi_size=1,
+                                        rng=rng,
                                     )
         # ------ update
         init_struc_data.update(tmp_struc_data)
