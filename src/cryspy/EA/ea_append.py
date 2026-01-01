@@ -14,6 +14,7 @@ from ..IO import change_input, out_results, pkl_data
 
 logger = getLogger('cryspy')
 
+
 def append_struc(rin, init_struc_data, rng=None):
     # ---------- append structures by EA
     logger.info('# ---------- Append structures by EA')
@@ -28,33 +29,33 @@ def append_struc(rin, init_struc_data, rng=None):
     # ---------- natural selection
     logger.info('# ------ natural selection')
     ranking, _, _ = survival_fittest(
-                        fitness,
-                        opt_struc_data,
-                        None,
-                        None,
-                        rin.n_fittest,
-                        rin.fit_reverse,
-                        rin.emax_ea,
-                        rin.emin_ea,
-                        rng,
-                    )
+        fitness=fitness,
+        struc_data=opt_struc_data,
+        elite_struc=None,
+        elite_fitness=None,
+        n_fittest=rin.n_fittest,
+        fit_reverse=rin.fit_reverse,
+        emax_ea=rin.emax_ea,
+        emin_ea=rin.emin_ea,
+        rng=rng,
+    )
     logger.info('ranking without duplication:')
     for cid in ranking:
-            logger.info(f'Structure ID {cid:>6}, fitness: {fitness[cid]:>10.5f}')
+        logger.info(f'Structure ID {cid:>6}, fitness: {fitness[cid]:>10.5f}')
 
     # ---------- generate children by EA
     logger.info('# ------ Generate children')
     # init_struc_data will be updated and saved in child_gen function
     init_struc_data, parents, operation = child_gen(
-                                                rin,
-                                                ranking,
-                                                fitness,
-                                                opt_struc_data,
-                                                init_struc_data,
-                                                None,
-                                                None,
-                                                rng,
-                                            )
+        rin=rin,
+        ranking=ranking,
+        fittest=fitness,
+        struc_data=opt_struc_data,
+        init_struc_data=init_struc_data,
+        struc_mol_id=None,
+        nat_data=None,
+        rng=rng,
+    )
 
     # ---------- id_queueing
     # id_queueing is treated after this append_struc function
@@ -66,60 +67,64 @@ def append_struc(rin, init_struc_data, rng=None):
     else:
         # ------ initialize
         # -- ea_info
-        ea_info = pd.DataFrame(columns=['Gen',
-                                        'Population',
-                                        'Crossover',
-                                        'Permutation',
-                                        'Strain',
-                                        'Random',
-                                        'Elite',
-                                        'crs_lat',
-                                        'slct_func',
-                                        ])
+        ea_info = pd.DataFrame(columns=[
+            'Gen',
+            'Population',
+            'Crossover',
+            'Permutation',
+            'Strain',
+            'Random',
+            'Elite',
+            'crs_lat',
+            'slct_func',
+        ])
         ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
         # -- ea_origin
-        ea_origin = pd.DataFrame(columns=['Gen', 'Struc_ID', 'Operation', 'Parent'])
+        ea_origin = pd.DataFrame(columns=[
+            'Gen',
+            'Struc_ID',
+            'Operation',
+            'Parent',
+        ])
         ea_origin.iloc[:, 0:2] = ea_origin.iloc[:, 0:2].astype(int)
-    # ------ register ea_info
-    tmp_info = pd.DataFrame([[
-                        rin.tot_struc,
-                        rin.n_pop,
-                        rin.n_crsov,
-                        rin.n_perm,
-                        rin.n_strain,
-                        rin.n_rand,
-                        0,
-                        rin.crs_lat,
-                        rin.slct_func
-                    ]],
-                    columns=ea_info.columns
-                )
-    ea_info = pd.concat([ea_info, tmp_info], axis=0, ignore_index=True)
-    # ------ out ea_info
+    # ------ register and out ea_info
+    ea_info.loc[len(ea_info)] = {
+        'Gen':         rin.tot_struc,    # Using tot_struc as generation number for append
+        'Population':  rin.n_pop,
+        'Crossover':   rin.n_crsov,
+        'Permutation': rin.n_perm,
+        'Strain':      rin.n_strain,
+        'Random':      rin.n_rand,
+        'Elite':       0,
+        'crs_lat':     rin.crs_lat,
+        'slct_func':   rin.slct_func,
+    }
     out_results.out_ea_info(ea_info)
 
     # ---------- ea_origin
     # ------ EA operation part
+    rows = []
     for cid in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
-        tmp_origin = pd.DataFrame([[
-                            rin.tot_struc,
-                            cid, operation[cid],
-                            parents[cid],
-                        ]],
-                        columns=ea_origin.columns
-                    )
-        ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
+        rows.append([
+            rin.tot_struc,
+            cid,
+            operation[cid],
+            parents[cid],
+        ])
+    tmp_origin = pd.DataFrame(rows, columns=ea_origin.columns)
+    ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------ random part
-    for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand, rin.tot_struc + rin.n_pop):
-        tmp_origin = pd.DataFrame([[
-                            rin.tot_struc,
-                            cid,
-                            'random',
-                            None
-                        ]],
-                        columns=ea_origin.columns
-                    )
-        ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
+    rows = []
+    for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand,
+                     rin.tot_struc + rin.n_pop):
+        rows.append([
+            rin.tot_struc,
+            cid,
+            'random',
+            None,
+        ])
+    tmp_origin = pd.DataFrame(rows, columns=ea_origin.columns)
+    ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------  out ea_origin
     out_results.out_ea_origin(ea_origin)
 

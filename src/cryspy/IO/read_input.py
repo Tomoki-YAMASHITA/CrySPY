@@ -38,6 +38,8 @@ class ReadInput:
     ll_nat: tuple = field(default=None)
     ul_nat: tuple = field(default=None)
     charge: tuple = field(default=None)
+    min_comp: tuple = field(default=None)
+    max_comp: tuple = field(default=None)
     # ------ mol or mol_bs
     mol_file: tuple = field(default=None)
     nmol: tuple = field(default=None)
@@ -52,6 +54,20 @@ class ReadInput:
     maxlen: float = field(default=None)
     dangle: float = field(default=None)
     maxcnt: int = field(default=None)
+
+    # ---------- visual section
+    ymax: float = field(default=None)
+    markersize: int = field(default=None)
+    fig_format: str = field(default=None)
+    # ------ for EA-vc
+    show_max: float = field(default=None)
+    label_stable: bool = field(default=None)
+    vmax: float = field(default=None)
+    bottom_margin: float = field(default=None)
+    axis_order: str = field(default=None)
+    plot_min_gen: int = field(default=None)
+    plot_max_gen: int = field(default=None)
+    hull_ref_gen: int = field(default=None)
 
     # ---------- option section
     check_mindist_opt: bool = field(default=None)
@@ -115,12 +131,6 @@ class ReadInput:
     subs_max: int = field(default=None)
     target: str = field(default=None)
     end_point: tuple = field(default=None)
-    cgen: int = field(default=None)
-    show_max: float = field(default=None)
-    label_stable: bool = field(default=None)
-    vmax: float = field(default=None)
-    bottom_margin: float = field(default=None)
-    fig_format: str = field(default=None)
     n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
     rot_max_angle: float = field(default=None)     # not implemented yet, for EA mol
@@ -166,6 +176,7 @@ class ReadInput:
         # ---------- import readers
         from .readers.basic import BasicReader
         from .readers.structure import StructureReader
+        from .readers.visual import VisualReader
         from .readers.option import OptionReader
         from .readers.bo import BOReader
         from .readers.laqa import LAQAReader
@@ -176,6 +187,7 @@ class ReadInput:
         from .readers.soiap import SoiapReader
         from .readers.lammps import LAMMPSReader
         from .readers.ase import ASEReader
+
         # ---------- read cryspy.in
         filename = 'cryspy.in'
         if not os.path.isfile(filename):
@@ -186,6 +198,7 @@ class ReadInput:
         # ---------- read sections
         BasicReader(config, self).read()
         StructureReader(config, self).read()
+        VisualReader(config, self).read()
         OptionReader(config, self).read()    # do this prior to EA for append_struc_ea
         if self.algo == 'BO':
             BOReader(config, self).read()

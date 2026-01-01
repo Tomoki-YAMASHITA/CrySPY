@@ -192,22 +192,22 @@ def _bayes_opt(
     if noprint:
         with redirect_stdout(open(os.devnull, 'w')):
             actions = policy.bayes_search(
-                                max_num_probes=1,
-                                num_search_each_probe=nselect,
-                                simulator=None,
-                                score=score,
-                                interval=0,
-                                num_rand_basis = num_rand_basis,
-                            )
+                max_num_probes=1,
+                num_search_each_probe=nselect,
+                simulator=None,
+                score=score,
+                interval=0,
+                num_rand_basis = num_rand_basis,
+            )
     else:
         actions = policy.bayes_search(
-                            max_num_probes=1,
-                            num_search_each_probe=nselect,
-                            simulator=None,
-                            score=score,
-                            interval=0,
-                            num_rand_basis = num_rand_basis,
-                        )
+            max_num_probes=1,
+            num_search_each_probe=nselect,
+            simulator=None,
+            score=score,
+            interval=0,
+            num_rand_basis = num_rand_basis,
+        )
 
     # ---------- mean, var, score
     p_mean = policy.get_post_fmean(X)

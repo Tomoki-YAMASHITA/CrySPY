@@ -704,7 +704,44 @@ def _calc_cn_comb_single(ll, ul, charges):
 #
 # ---------- composition constraints
 #
-def precompute_feasible_N(ll_nat, ul_nat, min_comp, max_comp):
+def get_feasible_composition(min_comp, max_comp, tol=1e-12):
+    # ---------- convert to numpy array
+    min_comp = np.array(min_comp, float)
+    max_comp = np.array(max_comp, float)
+
+    # ---------- check feasibility
+    if np.any(min_comp > max_comp + tol):
+        return None
+
+    # ---------- check sum to 1 feasibility
+    if not (min_comp.sum() - tol <= 1.0 <= max_comp.sum() + tol):
+        return None
+
+    # ---------- feasible composition range
+    feasible_comp = []
+    for i in range(len(min_comp)):
+        low = max(
+            min_comp[i],
+            1.0 - (max_comp.sum() - max_comp[i])
+        )
+        high = min(
+            max_comp[i],
+            1.0 - (min_comp.sum() - min_comp[i])
+        )
+        # ------ rounding junk handling
+        if high < low:
+            if high >= low - tol:
+                high = low
+            else:
+                return None
+        # ------
+        feasible_comp.append((low, high))
+
+    # ---------- return
+    return feasible_comp
+
+
+def precompute_feasible_N(ll_nat, ul_nat, feasible_comp, tol=1e-12):
     """
     Precompute feasible total atom numbers N under composition constraints.
 
@@ -714,10 +751,7 @@ def precompute_feasible_N(ll_nat, ul_nat, min_comp, max_comp):
         Lower bounds of atom counts for each species.
     ul_nat : tuple[int]
         Upper bounds of atom counts for each species.
-    min_comp : tuple[float]
-        Lower bounds of composition fractions x_i (for each species).
-    max_comp : tuple[float]
-        Upper bounds of composition fractions x_i (for each species).
+    feasible_comp : list of (min_i, max_i)
 
     Returns
     -------
@@ -730,8 +764,8 @@ def precompute_feasible_N(ll_nat, ul_nat, min_comp, max_comp):
     # ---------- convert to np.array
     ll = np.array(ll_nat, dtype=int)
     ul = np.array(ul_nat, dtype=int)
-    min_comp = np.array(min_comp, dtype=float)
-    max_comp = np.array(max_comp, dtype=float)
+    low_comp  = np.array([c[0] for c in feasible_comp], dtype=float)
+    high_comp = np.array([c[1] for c in feasible_comp], dtype=float)
 
     # ---------- lower and upper limits for total atom number N
     N_l = int(ll.sum())
@@ -740,8 +774,8 @@ def precompute_feasible_N(ll_nat, ul_nat, min_comp, max_comp):
     # ---------- find feasible N
     feasible_N = []
     for N in range(max(1, N_l), N_u + 1):    # N must be at least 1
-        lower = np.maximum(ll, np.ceil(min_comp * N).astype(int))    # L_i(N)
-        upper = np.minimum(ul, np.floor(max_comp * N).astype(int))   # U_i(N)
+        lower = np.maximum(ll, np.ceil(low_comp * N - tol).astype(int))    # L_i(N)
+        upper = np.minimum(ul, np.floor(high_comp * N + tol).astype(int))   # U_i(N)
         # ------ feasibility check: lower_i <= upper_i for all i
         if (lower > upper).any():
             continue

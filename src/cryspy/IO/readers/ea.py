@@ -222,44 +222,6 @@ class EAReader(BaseReader):
         if not len(self.rin.end_point) == len(self.rin.atype):
             raise ValueError('len(end_point) == len(atype), check end_point')
 
-        # ---------- cgen
-        try:
-            self.rin.cgen = self.config.getint('EA', 'cgen')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.cgen = None
-
-        # ---------- show_max
-        try:
-            self.rin.show_max = self.config.getfloat('EA', 'show_max')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.show_max = 0.2
-
-        # ---------- label_stable
-        try:
-            self.rin.label_stable = self.config.getboolean('EA', 'label_stable')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.label_stable = True
-
-        # ---------- vmax
-        try:
-            self.rin.vmax = self.config.getfloat('EA', 'vmax')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.vmax = 0.2
-
-        # ---------- bottom_margin
-        try:
-            self.rin.bottom_margin = self.config.getfloat('EA', 'bottom_margin')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.bottom_margin = 0.02
-
-        # ---------- fig_format
-        try:
-            self.rin.fig_format = self.config.get('EA', 'fig_format')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.fig_format = 'svg'
-        if self.rin.fig_format not in ['svg', 'png', 'pdf']:
-            raise ValueError('fig_format must be svg, png, or pdf')
-
 
     def _read_ea_mol(self):
         # ---------- n_rotation

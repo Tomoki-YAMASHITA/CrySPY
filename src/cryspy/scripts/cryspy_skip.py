@@ -45,7 +45,7 @@ def main():
 
     # ---------- restart
     if os.path.isfile('cryspy.stat'):
-        rin, init_struc_data = cryspy_restart.restart()
+        rin, init_struc_data, rng = cryspy_restart.restart()
     else:
         logger.error('cryspy.stat file does not exist.')
         os.remove('lock_cryspy')

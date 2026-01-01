@@ -95,10 +95,10 @@ def interact_plot_conv_hull(cgen=None, show_unstable=0.2, ternary_style='2d'):
     # ---------- current generation
     if cgen is None:
         cgen = max(pd_data.keys())
-    pd = pd_data[cgen]
+    phase_diagram = pd_data[cgen]
 
     # ---------- plot
-    plotter = PDPlotter(pd, show_unstable=show_unstable, ternary_style=ternary_style)
+    plotter = PDPlotter(phase_diagram, show_unstable=show_unstable, ternary_style=ternary_style)
     plotter.show()
 
 
@@ -111,13 +111,11 @@ def plot_conv_hull_binary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2, 
     # ---------- current generation
     if cgen is None:
         cgen = max(pd_data.keys())
-    c_rslt = rslt_data[rslt_data['Gen'] == cgen]
-    cgen_ids = c_rslt.index.values    # current IDs [array]
-    pd = pd_data[cgen]
+    phase_diagram = pd_data[cgen]
     hdist = hdist_data[cgen]
 
     # ---------- plot
-    fig, ax = draw_convex_hull_binary(pd, hdist, cgen_ids, show_max, label_stable, vmax, bottom_margin)
+    fig, ax = draw_convex_hull_binary(phase_diagram, hdist, None, show_max, label_stable, vmax, bottom_margin)
 
     # ---------- return
     return fig, ax
@@ -132,13 +130,11 @@ def plot_conv_hull_ternary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2)
     # ---------- current generation
     if cgen is None:
         cgen = max(pd_data.keys())
-    c_rslt = rslt_data[rslt_data['Gen'] == cgen]
-    cgen_ids = c_rslt.index.values    # current IDs [array]
-    pd = pd_data[cgen]
+    phase_diagram = pd_data[cgen]
     hdist = hdist_data[cgen]
 
     # ---------- plot
-    fig, ax = draw_convex_hull_ternary(pd, hdist, cgen_ids, show_max, label_stable, vmax)
+    fig, ax = draw_convex_hull_ternary(phase_diagram, hdist, None, show_max, label_stable, vmax)
 
     # ---------- return
     return fig, ax

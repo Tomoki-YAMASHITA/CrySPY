@@ -43,7 +43,7 @@ def main():
 
     # ---------- restart
     if os.path.isfile('cryspy.stat'):
-        rin, init_struc_data = cryspy_restart.restart()
+        rin, init_struc_data, rng = cryspy_restart.restart()
     else:
         logger.error('cryspy.stat file does not exist.')
         os.remove('lock_cryspy')
@@ -64,24 +64,27 @@ def main():
 
     # ---------- calc convex hull
     logger.info('# ------ Calculate convex hull')
-    pd, hdist = calc_convex_hull(
+    phase_diagram, hdist = calc_convex_hull(
         atype=rin.atype,
         gen=gen,
         end_point=rin.end_point,
         rslt_data=rslt_data,
         nat_data=nat_data,
+        ymax=rin.ymax,
         show_max=rin.show_max,
         label_stable=rin.label_stable,
         vmax=rin.vmax,
         bottom_margin=rin.bottom_margin,
+        markersize=rin.markersize,
         fig_format=rin.fig_format,
         emax_ea=rin.emax_ea,
         emin_ea=rin.emin_ea,
+        axis_order=rin.axis_order,
     )
     logger.info('# ------ Save data')
     out_hdist(gen, hdist, nat_data)
     hdist_data[gen] = hdist
-    pd_data[gen] = pd
+    pd_data[gen] = phase_diagram
     pkl_data.save_hdist_data(hdist_data)
     pkl_data.save_pd_data(pd_data)
 

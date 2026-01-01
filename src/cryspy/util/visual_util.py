@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 # ---------- import later
+#from matplotlib.ticker import MaxNLocator
 #from pymatgen.analysis.phase_diagram import PDPlotter
 
 
@@ -26,7 +27,7 @@ def set_params():
         'ytick.labelsize': 16,
         # ---------- lines
         'lines.linewidth': 2.0,
-        'lines.markersize': 12,
+        'lines.markersize': 10,
         # ---------- grid
         'grid.linestyle': ':',
         # ---------- legend
@@ -40,83 +41,222 @@ def set_params():
         'svg.fonttype': 'path',  # Embed characters as paths
         #'svg.fonttype': 'none',  # Assume fonts are installed on the machine
         'pdf.fonttype': 42,  # embed fonts in PDF using type42 (True type)
+        # ---------- save
+        'savefig.bbox': 'tight',
+        'savefig.pad_inches': 0.05,
     }
     plt.rcParams.update(rcParams_dict)
 
 
+def plot_energy_RS(rslt_data, ymax=0.2, markersize=10):
+    '''
+    # ---------- args
+    ymax (float): max value of y-axis
+    markersize (int): size of markers
+    '''
+    # ---------- setting
+    from matplotlib.ticker import MaxNLocator
+    set_params()
+
+    # ---------- fig
+    fig, ax = plt.subplots(1, 1)
+
+    # ---------- xlim, ylim
+    ndata = len(rslt_data)
+    dx = max(1, ndata*0.05)    # 5% or min 1
+    xmin = -dx
+    xmax = ndata + dx
+    ymin = -ymax*0.1
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True, steps=[1, 2, 5, 10]))
+
+    # ---------- hline at zero
+    ax.axhline(y=0.0, color='k', linestyle='--')
+
+    # ---------- plot
+    ax.plot(
+        rslt_data.index,
+        rslt_data['E_eV_atom'] - rslt_data['E_eV_atom'].min(),
+        'o',
+        markersize=markersize,
+        markeredgecolor='black',
+    )
+
+    # ---------- label
+    ax.set_xlabel('Structure ID')
+    ax.set_ylabel('Energy (eV/atom)')
+
+    # ---------- return
+    plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
+    return fig, ax
+
+
+def plot_energy_EA(rslt_data, ymax=0.2, markersize=10):
+    '''
+    # ---------- args
+    ymax (float): max value of y-axis
+    markersize (int): size of markers
+    '''
+    # ---------- setting
+    from matplotlib.ticker import MaxNLocator
+    set_params()
+
+    # ---------- fig
+    fig, ax = plt.subplots(1, 1)
+
+    # ---------- xlim, ylim
+    ndata = len(rslt_data)
+    dx = max(1, ndata*0.05)    # 5% or min 1
+    xmin = -dx
+    xmax = ndata + dx
+    ymin = -ymax*0.1
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True, steps=[1, 2, 5, 10]))
+
+    # ---------- hline at zero
+    ax.axhline(y=0.0, color='k', linestyle='--')
+
+    # ---------- plot
+    gmax = rslt_data['Gen'].max()
+    for g in range(1, gmax+1):    # generation starts from 1
+        gfilter = rslt_data['Gen'] == g
+        ax.plot(
+            rslt_data.index[gfilter],
+            rslt_data['E_eV_atom'][gfilter] - rslt_data['E_eV_atom'].min(),
+            'o',
+            markersize=markersize,
+            markeredgecolor='black',
+        )
+
+    # ---------- label
+    ax.set_xlabel('Structure ID')
+    ax.set_ylabel('Energy (eV/atom)')
+
+    # ---------- return
+    plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
+    return fig, ax
+
+
 def draw_convex_hull_binary(
-        pd,
+        phase_diagram,
         hdist,
-        cgen_ids,
-        show_max=0.2,
+        filtered_ids=None,
+        ymax=0.2,
         label_stable=True,
         vmax=0.2,
         bottom_margin=0.02,
+        markersize=10,
+        axis_order='lr',
     ):
     '''
     # ---------- args
-    pd (PhaseDiagram): phase diagram object
+    phase_diagram (PhaseDiagram): phase diagram object
     hdist (dict): hull distance of all structures, {ID: distance, ...}
-    cgen_ids (array): ID array of current generation structures
-    show_max (float): max value of y-axis (binary) or hull distance (ternary)
+    filtered_ids (array): ID array for filtering structures to be plotted
+    ymax (float): max value of y-axis
     label_stable (bool): whether to show stable compositions
     vmax (float): max value of colorbar for hull distance
     bottom_margin (float): bottom margin of y-axis
+    markersize (int): size of markers
+    axis_order (str): order of axis for binary phase diagram, 'lr' or 'rl'
     '''
 
     # ---------- setting
     set_params()
     from pymatgen.analysis.phase_diagram import PDPlotter
 
+    # ---------- axis order
+    flip_x = (axis_order == "rl")
+    def tx(x):
+        return 1.0 - x if flip_x else x
+
+    # ---------- PDPlotter
+    plotter_mpl = PDPlotter(
+        phase_diagram,
+        show_unstable=0.0,
+        backend='matplotlib',
+        linewidth=1.5,
+        markerfacecolor='darkslateblue',
+        markersize=markersize,
+    )
+    lines, stable_entries, unstable_entries = plotter_mpl.pd_plot_data
+
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
-    plotter_mpl = PDPlotter(pd, show_unstable=0.0, backend='matplotlib', linewidth=1.5, markerfacecolor='darkslateblue', markersize=10)
-    plotter_mpl.get_plot(label_stable=label_stable, label_unstable=False, ax=ax)
     ax.set_axisbelow(True)
 
     # ---------- hline
     ax.axhline(y=0, xmin=0, xmax=1, color='black', linestyle='--', zorder=1)
 
-    # ---------- label for only binary system
-    # default fontweight is 'bold' in PDPlotter, so set 'normal'
-    ax.set_xlabel('Composition', fontsize=20, fontweight='normal')
-    ax.set_ylabel('Formation energy (eV/atom)', fontsize=20, fontweight='normal')
+    # ---------- draw hull lines
+    for xs, ys in lines:
+        xs_tx = [tx(x) for x in xs]
+        ax.plot(xs_tx, ys, color="black", linewidth=1.5, zorder=1)
 
-    # ---------- texts
-    for text in ax.texts:
-        text.set_fontsize(14)
-        text.set_fontweight('normal')    # bold --> normal
+    # ---------- stable entries (points + optional text)
+    for coord, entry in stable_entries.items():
+        x = tx(coord[0])
+        y = coord[1]
+        ax.plot(
+            x,
+            y,
+            'o',
+            color="darkslateblue",
+            markeredgecolor="black",
+            markersize=markersize,
+            zorder=2,
+        )
+        if label_stable and entry.name:
+            ax.annotate(
+                entry.name,
+                xy=(x, y),
+                xytext=(0, -10),    # 10 points vertical offset
+                textcoords="offset points",
+                fontsize=14,
+                fontweight="normal",
+                ha="center",
+                va="top",
+            )
 
-    # ---------- scatter: unstable entries
-    scat_x = []
-    scat_y= []
-    scat_c = []
-    lines, stable_entries, unstable_entries = plotter_mpl.pd_plot_data
+    # ---------- unstable entries (colored by hull distance)
+    scat_x, scat_y, scat_c = [], [], []
+    s = markersize**2 / 2    # size for scatter
     for entry, coord in unstable_entries.items():
-        if entry.entry_id is not None:
-            scat_x.append(coord[0])
-            scat_y.append(coord[1])
-            scat_c.append(hdist[entry.entry_id])
-    mappable = ax.scatter(scat_x, scat_y, s=50, c=scat_c, vmin=0, vmax=vmax, cmap='Oranges_r', marker='D', edgecolors='black', zorder=2)
+        if entry.entry_id is None:
+            continue
+        if filtered_ids is not None:
+            if entry.entry_id not in filtered_ids:
+                continue
+        scat_x.append(tx(coord[0]))
+        scat_y.append(coord[1])
+        scat_c.append(hdist[entry.entry_id])
+    mappable = ax.scatter(
+        scat_x,
+        scat_y,
+        s=s,
+        c=scat_c,
+        vmin=0,
+        vmax=vmax,
+        cmap="Oranges_r",
+        marker="D",
+        edgecolors="black",
+        zorder=3,
+    )
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.8, pad=0.05)
     cbar.ax.tick_params(labelsize=14)
     cbar.set_label('Hull distance (eV/atom)', size=20, rotation=270, labelpad=30)
 
-    # ---------- mark the current generation
-    stable_compos = {entry.entry_id: compos for compos, entry in stable_entries.items()}
-    unstable_compos = {entry.entry_id: compos for entry, compos in unstable_entries.items()}
-    for cid in cgen_ids:
-        if cid in stable_compos:
-            mx, my = stable_compos[cid][0], stable_compos[cid][1]
-            ax.plot(mx, my, '+', markeredgecolor='white')
-        elif cid in unstable_compos:
-            mx, my = unstable_compos[cid][0], unstable_compos[cid][1]
-            ax.plot(mx, my, '+', markersize=10, markeredgewidth=0.5,  markeredgecolor='navy')
-
     # ---------- ylim
-    stable_y = list(stable_entries.keys())
-    ymin = min(stable_y, key=lambda x: x[1])[1] - bottom_margin
-    ax.set_ylim(ymin, show_max)
+    stable_y = [coord[1] for coord in stable_entries.keys()]
+    ymin = min(stable_y) - bottom_margin
+    ax.set_ylim(ymin, ymax)
+
+    # ---------- label
+    # default fontweight is 'bold' in PDPlotter, so set 'normal'
+    ax.set_xlabel('Composition', fontsize=20, fontweight='normal')
+    ax.set_ylabel('Formation energy (eV/atom)', fontsize=20, fontweight='normal')
 
     # ---------- return
     plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
@@ -124,64 +264,88 @@ def draw_convex_hull_binary(
 
 
 def draw_convex_hull_ternary(
-        pd,
+        phase_diagram,
         hdist,
-        cgen_ids,
+        filtered_ids=None,
         show_max=0.2,
         label_stable=True,
         vmax=0.2,
+        markersize=10,
+        ordering=None,
     ):
     '''
     # ---------- args
-    pd (PhaseDiagram): phase diagram object
+    phase_diagram (PhaseDiagram): phase diagram object
     hdist (dict): hull distance of all structures, {ID: distance, ...}
-    cgen_ids (array): ID array of current generation structures
+    filtered_ids (array): ID array for filtering structures to be plotted
     show_max (float): max value of y-axis (binary) or hull distance (ternary)
     label_stable (bool): whether to show stable compositions
     vmax (float): max value of colorbar for hull distance
+    markersize (int): size of markers
+    ordering (list): order of axis for ternary phase diagram, e.g. ['A', 'B', 'C']
     '''
 
     # ---------- setting
     set_params()
     from pymatgen.analysis.phase_diagram import PDPlotter
+    from pymatgen.analysis.phase_diagram import order_phase_diagram
 
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
-    plotter_mpl = PDPlotter(pd, show_unstable=0.0, backend='matplotlib', linewidth=1.5, markerfacecolor='darkslateblue', markersize=10)
-    plotter_mpl.get_plot(label_stable=label_stable, label_unstable=False, ax=ax)
+    plotter_mpl = PDPlotter(
+        phase_diagram,
+        show_unstable=0.0,
+        backend='matplotlib',
+        linewidth=1.5,
+        markerfacecolor='darkslateblue',
+        markersize=markersize,
+    )
+    plotter_mpl.get_plot(
+        label_stable=label_stable,
+        label_unstable=False,
+        ax=ax,
+        ordering=ordering,
+    )
 
     # ---------- texts
     for text in ax.texts:
         text.set_fontsize(14)
         text.set_fontweight('normal')    # bold --> normal
 
-    # ---------- scatter: unstable entries
-    scat_x = []
-    scat_y= []
-    scat_c = []
+    # ---------- ordering for scatter and marking
     lines, stable_entries, unstable_entries = plotter_mpl.pd_plot_data
-    for entry, coord in unstable_entries.items():
-        if entry.entry_id is not None:
-            if hdist[entry.entry_id] <= show_max:
-                scat_x.append(coord[0])
-                scat_y.append(coord[1])
-                scat_c.append(hdist[entry.entry_id])
-    mappable = ax.scatter(scat_x, scat_y, s=30, c=scat_c, vmin=0, vmax=vmax, cmap='Oranges_r', marker='D', edgecolors='black', zorder=3)
+    orderd_lines, ordered_stable_entries, ordered_unstable_entries = order_phase_diagram(
+        lines, stable_entries, unstable_entries, ordering
+    )
+
+    # ---------- scatter: unstable entries
+    scat_x, scat_y, scat_c = [], [], []
+    s = markersize**2 / 2    # size for scatter
+    for entry, coord in ordered_unstable_entries.items():
+        if entry.entry_id is None:
+            continue
+        if filtered_ids is not None:
+            if entry.entry_id not in filtered_ids:
+                continue
+        if hdist[entry.entry_id] <= show_max:
+            scat_x.append(coord[0])
+            scat_y.append(coord[1])
+            scat_c.append(hdist[entry.entry_id])
+    mappable = ax.scatter(
+        scat_x,
+        scat_y,
+        s=s,
+        c=scat_c,
+        vmin=0,
+        vmax=vmax,
+        cmap='Oranges_r',
+        marker='D',
+        edgecolors='black',
+        zorder=3,
+    )
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=-0.1)
     cbar.ax.tick_params(labelsize=14)
     cbar.set_label('Hull distance (eV/atom)', size=20, rotation=270, labelpad=30)
-
-    # ---------- mark the current generation
-    stable_compos = {entry.entry_id: compos for compos, entry in stable_entries.items()}
-    unstable_compos = {entry.entry_id: compos for entry, compos in unstable_entries.items()}
-    for cid in cgen_ids:
-        if cid in hdist and hdist[cid] <= show_max:
-            if cid in stable_compos:
-                mx, my = stable_compos[cid][0], stable_compos[cid][1]
-                ax.plot(mx, my, '+', markeredgecolor='white', zorder=2)
-            elif cid in unstable_compos:
-                mx, my = unstable_compos[cid][0], unstable_compos[cid][1]
-                ax.plot(mx, my, '+', markersize=6, markeredgewidth=0.5,  markeredgecolor='navy', zorder=4)
 
     # ---------- return
     plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode

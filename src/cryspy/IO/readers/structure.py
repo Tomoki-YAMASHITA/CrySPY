@@ -2,6 +2,9 @@ import configparser
 import re
 from .base import BaseReader
 
+# ---------- import later
+#from ...util.struc_util import get_feasible_composition
+
 
 class StructureReader(BaseReader):
     """
@@ -162,6 +165,39 @@ class StructureReader(BaseReader):
                         'charge must contain at least one positive and one negative value '
                         '(zero is allowed).'
                     )
+            # ------ min_comp, max_comp
+            try:
+                self.rin.min_comp = self.config.get('structure', 'min_comp')
+                self.rin.min_comp = tuple([float(x) for x in self.rin.min_comp.split()])
+                if len(self.rin.min_comp) != len(self.rin.atype):
+                    raise ValueError('not len(min_comp) == len(atype), check min_comp')
+                if any((c < 0.0) or (c > 1.0) for c in self.rin.min_comp):
+                    raise ValueError('min_comp must be between 0.0 and 1.0')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.rin.min_comp = None
+            try:
+                self.rin.max_comp = self.config.get('structure', 'max_comp')
+                self.rin.max_comp = tuple([float(x) for x in self.rin.max_comp.split()])
+                if len(self.rin.max_comp) != len(self.rin.atype):
+                    raise ValueError('not len(max_comp) == len(atype), check max_comp')
+                if any((c < 0.0) or (c > 1.0) for c in self.rin.max_comp):
+                    raise ValueError('max_comp must be between 0.0 and 1.0')
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                self.rin.max_comp = None
+            # -- check min_comp and max_comp
+            k = len(self.rin.atype)
+            if (self.rin.min_comp is None) and (self.rin.max_comp is None):
+                pass
+            else:
+                # allow one-sided input by filling the other side
+                if self.rin.min_comp is None:
+                    self.rin.min_comp = tuple(0.0 for _ in range(k))
+                if self.rin.max_comp is None:
+                    self.rin.max_comp = tuple(1.0 for _ in range(k))
+                # check feasibility
+                from ...util.struc_util import get_feasible_composition
+                if get_feasible_composition(self.rin.min_comp, self.rin.max_comp) is None:
+                    raise ValueError('No feasible composition exists for the given min_comp and max_comp')
 
         # ---------- mol or mol_bs
         if self.rin.struc_mode in ['mol', 'mol_bs']:

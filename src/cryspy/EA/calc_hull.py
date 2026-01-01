@@ -16,14 +16,17 @@ def calc_convex_hull(
         end_point,
         rslt_data,
         nat_data,
+        ymax,
         show_max,
         label_stable,
         vmax,
         bottom_margin,
+        markersize,
         fig_format,
         emax_ea=None,
         emin_ea=None,
         mpl_draw=True,
+        axis_order=None,
     ):
     '''
     Input:
@@ -32,21 +35,21 @@ def calc_convex_hull(
         end_point (tuple): end points e.g. (0.0  0.0)
         rslt_data (DataFrame): result data
         nat_data (dict): number of atoms of all structures, {ID: (nat1, nat2, ...), ...}
-        show_max (float): max value of y-axis (binary) or hull distance (ternary)
+        ymax (float): Binary only. max value of y-axis
+        show_max (float): Ternary only. Plots structures with hull distance ≤ show_max
         label_stable (bool): whether to show stable compositions
         vmax (float): max value of colorbar for hull distance
         bottom_margin (float): bottom margin of y-axis
+        markersize (int): size of markers
         fig_format (str): format of figure, 'svg', 'png', or 'pdf'.
         emax_ea (float): maximum energy for cutoff
         emin_ea (float): minimum energy for cutoff
+        mpl_draw (bool): whether to draw convex hull figure
+        axis_order (str): order of axis for binary and ternary phase diagrams
 
     Return:
         hdist [dict]: hull distance of all structures, {ID: distance, ...}
     '''
-
-    # ---------- current generation
-    c_rslt = rslt_data[rslt_data['Gen'] == gen]
-    cgen_ids = c_rslt.index.values    # current IDs [array]
 
     # ---------- rslt --> entries
     e_all = rslt_data[rslt_data['Gen'] <= gen]['E_eV_atom'].to_dict()    # energy data under gen
@@ -73,17 +76,95 @@ def calc_convex_hull(
     end_entry_values = [ComputedEntry(element, end_e) for element, end_e in zip(atype, end_point)]
 
     # ---------- PhaseDiagram and hull distance
-    pd = PhaseDiagram(end_entry_values + list(entries.values()))
-    hdist = {cid: pd.get_e_above_hull(entries[cid]) for cid in entries}
+    phase_diagram = PhaseDiagram(end_entry_values + list(entries.values()))
+    hdist = {cid: phase_diagram.get_e_above_hull(entries[cid]) for cid in entries}
+
+    # ---------- axis order
+    if len(atype) == 2:    # ordering not used for binary system
+        if axis_order is None:
+            axis_order = 'lr'
+    if len(atype) == 3:
+        ordering = None
+        if axis_order is None:
+            axis_order ='tlr'
+        ordering = _build_ordering(atype, axis_order)
 
     # ---------- draw convex hull
     if mpl_draw:
         if len(atype) == 2:
-            fig, _ = draw_convex_hull_binary(pd, hdist, cgen_ids, show_max, label_stable, vmax, bottom_margin)
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}', bbox_inches='tight')
+            fig, _ = draw_convex_hull_binary(
+                phase_diagram=phase_diagram,
+                hdist=hdist,
+                filtered_ids=None,
+                ymax=ymax,
+                label_stable=label_stable,
+                vmax=vmax,
+                bottom_margin=bottom_margin,
+                markersize=markersize,
+                axis_order=axis_order,
+            )
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
         elif len(atype) == 3:
-            fig, _ = draw_convex_hull_ternary(pd, hdist, cgen_ids, show_max, label_stable, vmax)
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}', bbox_inches='tight')
+            fig, _ = draw_convex_hull_ternary(
+                phase_diagram=phase_diagram,
+                hdist=hdist,
+                filtered_ids=None,
+                show_max=show_max,
+                label_stable=label_stable,
+                vmax=vmax,
+                markersize=markersize,
+                ordering=ordering,
+            )
+            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
 
     # ---------- return
-    return pd, hdist
+    return phase_diagram, hdist
+
+
+def _build_ordering(atype, axis_order):
+    """
+    Build ordering list for PDPlotter / order_phase_diagram.
+
+    Interpretation of `axis_order`:
+        Ternary (len(atype) == 3):
+            axis_order is a length-3 string consisting of 't', 'l', 'r'.
+            axis_order[i] indicates whether atype[i] is plotted on
+            Top, Left, or Right of the ternary triangle.
+
+    Example:
+        atype = ('Li', 'Ca', 'Cl')
+        axis_order = "rtl"
+            Li -> Right
+            Ca -> Top
+            Cl -> Left
+        returns ['Ca', 'Cl', 'Li']   # [Up, Left, Right]
+
+    Returns:
+        list[str] or None
+            For ternary: [Up, Left, Right]
+            For other dimensions: None (ordering not applied)
+    """
+    # ---------- ternary system
+    if len(atype) == 3:
+        idx_t = axis_order.index('t')
+        idx_l = axis_order.index('l')
+        idx_r = axis_order.index('r')
+        up    = _to_special_formula(atype[idx_t])
+        left  = _to_special_formula(atype[idx_l])
+        right = _to_special_formula(atype[idx_r])
+        return [up, left, right]
+
+    # ---------- higher components
+    # ordering control is not supported for >3 components
+    return None
+
+
+def _to_special_formula(sym: str) -> str:
+    special_formulas = {
+        "O":  "O2",
+        "N":  "N2",
+        "F":  "F2",
+        "Cl": "Cl2",
+        "H":  "H2",
+    }
+    return special_formulas.get(sym, sym)

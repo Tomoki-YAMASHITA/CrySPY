@@ -94,14 +94,14 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         else:
             nstruc = rin.tot_struc
         init_struc_data, struc_mol_id = gen_random(
-                                            rin=rin,
-                                            nstruc=nstruc,
-                                            id_offset=0,
-                                            comm=comm,
-                                            mpi_rank=mpi_rank,
-                                            mpi_size=mpi_size,
-                                            rng=rng
-                                        )
+            rin=rin,
+            nstruc=nstruc,
+            id_offset=0,
+            comm=comm,
+            mpi_rank=mpi_rank,
+            mpi_size=mpi_size,
+            rng=rng
+        )
         # ########## MPI end
         if mpi_rank == 0:
             # ------ init_POSCARS
@@ -139,11 +139,17 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         pkl_data.save_opt_struc(opt_struc_data)
 
         # ---------- initialize rslt_data
-        rslt_data = pd.DataFrame(columns=['Spg_num', 'Spg_sym',
-                                        'Spg_num_opt', 'Spg_sym_opt',
-                                        'E_eV_atom', 'Magmom', 'Opt'])
+        rslt_data = pd.DataFrame(columns=[
+            'Spg_num',
+            'Spg_sym',
+            'Spg_num_opt',
+            'Spg_sym_opt',
+            'E_eV_atom',
+            'Magmom',
+            'Opt',
+        ])
         rslt_data[['Spg_num', 'Spg_num_opt']] = rslt_data[
-                                    ['Spg_num', 'Spg_num_opt']].astype(int)
+            ['Spg_num', 'Spg_num_opt']].astype(int)
         pkl_data.save_rslt(rslt_data)
 
         # ---------- initialize for each algorithm

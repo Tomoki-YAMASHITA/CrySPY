@@ -16,7 +16,6 @@ from ..util.struc_util import out_poscar, out_cif
 #from ..BO.select_descriptor import select_descriptor
 #from ..BO import bo_next_select
 #from ..EA.calc_ef import calc_ef
-#from ..EA.calc_hull import calc_convex_hull_2d
 #from ..EA.ea_next_gen import next_gen_EA
 #from ..LAQA.calc_score import calc_laqa_bias
 #from ..LAQA import laqa_next_selection
@@ -100,9 +99,8 @@ class Ctrl_job:
         self.job_stat = {}
         # ---------- check job status
         for cid in self.tmp_running[:self.rin.njob]:
-            # ------ mkdir
-            if not os.path.isdir(f'work/{cid}'):
-                os.mkdir(f'work/{cid}')
+            # ------ makedirs
+            os.makedirs(f'work/{cid}', exist_ok=True)
             # ------ check stat_job file
             stat_path = f'work/{cid}' + '/stat_job'
             try:

@@ -34,15 +34,15 @@ def initialize(rin, init_struc_data, rslt_data, rng=None):
     # ---------- rslt_data, add and sort
     rslt_data['Select'] = pd.Series(dtype=int)
     rslt_data = rslt_data[[
-                    'Select',
-                    'Spg_num',
-                    'Spg_sym',
-                    'Spg_num_opt',
-                    'Spg_sym_opt',
-                    'E_eV_atom',
-                    'Magmom',
-                    'Opt',
-                ]]
+        'Select',
+        'Spg_num',
+        'Spg_sym',
+        'Spg_num_opt',
+        'Spg_sym_opt',
+        'E_eV_atom',
+        'Magmom',
+        'Opt',
+    ]]
     pkl_data.save_rslt(rslt_data)
 
     # ---------- random select
