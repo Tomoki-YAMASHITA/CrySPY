@@ -10,6 +10,9 @@ def out_input(rin):
         if key == 'struc_mode':
             logger.info('')
             logger.info('[structure]')
+        if key == 'ymax':
+            logger.info('')
+            logger.info('[visual]')
         if key == 'check_mindist_opt':
             logger.info('')
             logger.info('[option]')

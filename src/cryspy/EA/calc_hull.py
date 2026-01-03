@@ -1,5 +1,8 @@
-from ..util.visual_util import draw_convex_hull_binary, draw_convex_hull_ternary
-
+from ..util.visual_util import (
+    draw_convex_hull_binary,
+    draw_convex_hull_ternary,
+    build_ordering,
+)
 from logging import getLogger
 
 import numpy as np
@@ -87,7 +90,7 @@ def calc_convex_hull(
         ordering = None
         if axis_order is None:
             axis_order ='tlr'
-        ordering = _build_ordering(atype, axis_order)
+        ordering = build_ordering(atype, axis_order)
 
     # ---------- draw convex hull
     if mpl_draw:
@@ -119,52 +122,3 @@ def calc_convex_hull(
 
     # ---------- return
     return phase_diagram, hdist
-
-
-def _build_ordering(atype, axis_order):
-    """
-    Build ordering list for PDPlotter / order_phase_diagram.
-
-    Interpretation of `axis_order`:
-        Ternary (len(atype) == 3):
-            axis_order is a length-3 string consisting of 't', 'l', 'r'.
-            axis_order[i] indicates whether atype[i] is plotted on
-            Top, Left, or Right of the ternary triangle.
-
-    Example:
-        atype = ('Li', 'Ca', 'Cl')
-        axis_order = "rtl"
-            Li -> Right
-            Ca -> Top
-            Cl -> Left
-        returns ['Ca', 'Cl', 'Li']   # [Up, Left, Right]
-
-    Returns:
-        list[str] or None
-            For ternary: [Up, Left, Right]
-            For other dimensions: None (ordering not applied)
-    """
-    # ---------- ternary system
-    if len(atype) == 3:
-        idx_t = axis_order.index('t')
-        idx_l = axis_order.index('l')
-        idx_r = axis_order.index('r')
-        up    = _to_special_formula(atype[idx_t])
-        left  = _to_special_formula(atype[idx_l])
-        right = _to_special_formula(atype[idx_r])
-        return [up, left, right]
-
-    # ---------- higher components
-    # ordering control is not supported for >3 components
-    return None
-
-
-def _to_special_formula(sym: str) -> str:
-    special_formulas = {
-        "O":  "O2",
-        "N":  "N2",
-        "F":  "F2",
-        "Cl": "Cl2",
-        "H":  "H2",
-    }
-    return special_formulas.get(sym, sym)

@@ -1,20 +1,16 @@
 from ..IO import pkl_data
-from ..util.visual_util import set_params, draw_convex_hull_binary, draw_convex_hull_ternary
-
-import matplotlib.pyplot as plt
+from ..util.visual_util  import (
+    plot_energy_RS,
+    plot_energy_EA,
+    draw_convex_hull_binary,
+    draw_convex_hull_ternary,
+    get_generation_range,
+    build_ordering
+)
 from pymatgen.analysis.phase_diagram import PDPlotter
-import numpy as np
 
 
-def plot_energy(
-        title=None,
-        ymax=2.0,
-        ymin=-0.2,
-        markersize=12,
-        marker_edge_width=1.0,
-        marker_edge_color='black',
-        alpha=1.0,
-    ):
+def plot_energy(ymax=0.2, markersize=10):
     # ---------- load data
     rslt_data = pkl_data.load_rslt()
 
@@ -24,71 +20,17 @@ def plot_energy(
     else:
         lgen = False
 
-    # ---------- data info
-    # ------ Generation
-    if lgen:
-        gmax = rslt_data['Gen'].max()
-        print(f'Number of generation: {gmax}')
-    # ------ Number of structures
-    ndata = len(rslt_data)
-    print(f'Number of data: {ndata}')
-    # ------ check success and error
-    nsuccess = rslt_data['E_eV_atom'].count()
-    nerror = ndata - nsuccess
-    print(f'Success: {nsuccess}')
-    print(f'Error: {nerror}')
-    # ------ minimum
-    Emin = rslt_data['E_eV_atom'].min()
-    print(f'Emin: {Emin} eV/atom')
-
-    # ---------- setting for plot
-    set_params()
-    dx = 1
-    xmin = -dx
-    xmax = ndata + dx
-
     # ---------- plot
-    fig, ax = plt.subplots()
-    ax.set_title(title)
-    ax.set_xlabel('Structure ID')
-    ax.set_ylabel('Energy (eV/atom)')
-    ax.set_xlim([xmin, xmax])
-    ax.set_ylim([ymin, ymax])
-    ax.hlines(0.0, xmin, xmax, 'k', '--')    # E = 0 line
-    # ------ EA
-    if lgen:
-        tx = 0
-        for g in range(1, gmax+1):    # generation starts from 1
-            gfilter = rslt_data['Gen'] == g
-            num = len(rslt_data[gfilter])
-            x = np.arange(0, num) + tx
-            ax.plot(
-                x,
-                rslt_data['E_eV_atom'][gfilter] - Emin,
-                'o',
-                ms=markersize,
-                mew=marker_edge_width,
-                markeredgecolor=marker_edge_color,
-                alpha=alpha,
-            )
-            tx += num
-    # ------ RS
-    else:
-        ax.plot(
-            rslt_data.index,
-            rslt_data['E_eV_atom'] - Emin,
-            'o',
-            ms=markersize,
-            mew=marker_edge_width,
-            markeredgecolor=marker_edge_color,
-            alpha=alpha,
-        )
+    if not lgen:    # RS
+        fig, ax = plot_energy_RS(rslt_data, ymax, markersize)
+    else:    # EA
+        fig, ax = plot_energy_EA(rslt_data, ymax, markersize)
 
     # ---------- return
     return fig, ax
 
 
-def interact_plot_conv_hull(cgen=None, show_unstable=0.2, ternary_style='2d'):
+def interactive_plot_convex_hull(cgen=None, show_unstable=0.2, ternary_style='2d'):
     # ---------- load data
     pd_data = pkl_data.load_pd_data()
 
@@ -102,39 +44,110 @@ def interact_plot_conv_hull(cgen=None, show_unstable=0.2, ternary_style='2d'):
     plotter.show()
 
 
-def plot_conv_hull_binary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2, bottom_margin=0.02):
+def plot_convex_hull_binary(
+    plot_min_gen=None,
+    plot_max_gen=None,
+    hull_ref_gen=None,
+    ymax=0.2,
+    label_stable=True,
+    vmax=0.2,
+    bottom_margin=0.04,
+    markersize=10,
+    axis_order='lr',
+):
     # ---------- load data
     pd_data = pkl_data.load_pd_data()
     hdist_data = pkl_data.load_hdist_data()
     rslt_data = pkl_data.load_rslt()
 
-    # ---------- current generation
-    if cgen is None:
-        cgen = max(pd_data.keys())
-    phase_diagram = pd_data[cgen]
-    hdist = hdist_data[cgen]
+    # ---------- generation range
+    g_max_avail = max(pd_data.keys())
+    g_min, g_max, g_ref = get_generation_range(
+        plot_min_gen=plot_min_gen,
+        plot_max_gen=plot_max_gen,
+        hull_ref_gen=hull_ref_gen,
+        g_max_avail=g_max_avail,
+    )
+
+    # ---------- phase_diagram, hdist
+    phase_diagram = pd_data[g_ref]
+    hdist = hdist_data[g_ref]
+
+    # ---------- filtering generations
+    if plot_min_gen is not None or plot_max_gen is not None:
+        filtered_rslt = rslt_data[(rslt_data['Gen'] >= g_min) & (rslt_data['Gen'] <= g_max)]
+        filtered_ids = filtered_rslt.index.values
+    else:
+        filtered_ids = None
 
     # ---------- plot
-    fig, ax = draw_convex_hull_binary(phase_diagram, hdist, None, show_max, label_stable, vmax, bottom_margin)
+    fig, ax = draw_convex_hull_binary(
+        phase_diagram=phase_diagram,
+        hdist=hdist,
+        filtered_ids=filtered_ids,
+        ymax=ymax,
+        label_stable=label_stable,
+        vmax=vmax,
+        bottom_margin=bottom_margin,
+        markersize=markersize,
+        axis_order=axis_order,
+    )
 
     # ---------- return
     return fig, ax
 
 
-def plot_conv_hull_ternary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2):
+def plot_convex_hull_ternary(
+    plot_min_gen=None,
+    plot_max_gen=None,
+    hull_ref_gen=None,
+    show_max=0.2,
+    label_stable=True,
+    vmax=0.2,
+    markersize=10,
+    axis_order='tlr',
+):
     # ---------- load data
     pd_data = pkl_data.load_pd_data()
     hdist_data = pkl_data.load_hdist_data()
     rslt_data = pkl_data.load_rslt()
+    rin = pkl_data.load_input()
+    atype = rin.atype
 
-    # ---------- current generation
-    if cgen is None:
-        cgen = max(pd_data.keys())
-    phase_diagram = pd_data[cgen]
-    hdist = hdist_data[cgen]
+    # ---------- generation range
+    g_max_avail = max(pd_data.keys())
+    g_min, g_max, g_ref = get_generation_range(
+        plot_min_gen=plot_min_gen,
+        plot_max_gen=plot_max_gen,
+        hull_ref_gen=hull_ref_gen,
+        g_max_avail=g_max_avail,
+    )
+
+    # ---------- phase_diagram, hdist
+    phase_diagram = pd_data[g_ref]
+    hdist = hdist_data[g_ref]
+
+    # ---------- filtering generations
+    if plot_min_gen is not None or plot_max_gen is not None:
+        filtered_rslt = rslt_data[(rslt_data['Gen'] >= g_min) & (rslt_data['Gen'] <= g_max)]
+        filtered_ids = filtered_rslt.index.values
+    else:
+        filtered_ids = None
+
+    # ---------- ordering
+    ordering = build_ordering(atype, axis_order)
 
     # ---------- plot
-    fig, ax = draw_convex_hull_ternary(phase_diagram, hdist, None, show_max, label_stable, vmax)
+    fig, ax = draw_convex_hull_ternary(
+        phase_diagram=phase_diagram,
+        hdist=hdist,
+        filtered_ids=filtered_ids,
+        show_max=show_max,
+        label_stable=label_stable,
+        vmax=vmax,
+        markersize=markersize,
+        ordering=ordering,
+    )
 
     # ---------- return
     return fig, ax

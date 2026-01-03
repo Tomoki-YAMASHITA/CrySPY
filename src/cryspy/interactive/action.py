@@ -6,9 +6,6 @@ from ..start import cryspy_init
 from ..util.utility import set_logger, backup_cryspy, clean_cryspy
 
 from .restart_interact import restart_interact
-from .manage_structure import get_ase_atoms
-from .energy_plot import plot_energy, interact_plot_conv_hull, plot_conv_hull_binary, plot_conv_hull_ternary
-from .show_dist import show_dist
 
 
 # ---------- logger
@@ -95,38 +92,3 @@ def restart(
     else:
         logger.error('cryspy.stat file does not exist.')
     os.remove('lock_cryspy')
-
-
-def get_atoms(status: str, cid: int):
-    return get_ase_atoms(status, cid)
-
-
-def plot_E(
-        title=None,
-        ymax=2.0,
-        ymin=-0.2,
-        markersize=12,
-        marker_edge_width=1.0,
-        marker_edge_color='black',
-        alpha=1.0,
-    ):
-    fig, ax = plot_energy(title, ymax, ymin, markersize, marker_edge_width, marker_edge_color, alpha)
-    return fig, ax
-
-
-def interactive_plot_convex_hull(cgen=None, show_unstable=0.2, ternary_style='2d'):
-    interact_plot_conv_hull(cgen, show_unstable, ternary_style)
-
-
-def plot_convex_hull_binary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2, bottom_margin=0.02):
-    fig, ax = plot_conv_hull_binary(cgen, show_max, label_stable, vmax, bottom_margin)
-    return fig, ax
-
-
-def plot_convex_hull_ternary(cgen=None, show_max=0.2, label_stable=True, vmax=0.2):
-    fig, ax = plot_conv_hull_ternary(cgen, show_max, label_stable, vmax)
-    return fig, ax
-
-
-#def structure_distance(r_cut=6.0, n_max=8, l_max=2, add_str=None, add_e=None):
-#    show_dist(r_cut, n_max, l_max, add_str, add_e)

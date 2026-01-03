@@ -14,6 +14,8 @@ from cryspy.util.visual_util import (
     plot_energy_EA,
     draw_convex_hull_binary,
     draw_convex_hull_ternary,
+    get_generation_range,
+    build_ordering,
 )
 
 
@@ -127,42 +129,21 @@ def plot_EA_vc(rin):
 
     # ---------- generation range
     g_max_avail = max(pd_data.keys())
-    # ------ plot_min_gen
-    if rin.plot_min_gen is not None:
-        if rin.plot_min_gen > g_max_avail:
-            logger.error(f'plot_min_gen = {rin.plot_min_gen} is larger than the maximum generation in pd_data')
-            logger.error(f'Latest generation in pd_data is {g_max_avail}')
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        g_min = rin.plot_min_gen
-    else:
-        g_min = 1
-    # ------ plot_max_gen
-    if rin.plot_max_gen is not None:
-        if rin.plot_max_gen > g_max_avail:
-            logger.error(f'plot_max_gen = {rin.plot_max_gen} is larger than the maximum generation in pd_data')
-            logger.error(f'Latest generation in pd_data is {g_max_avail}')
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        g_max = rin.plot_max_gen
-    else:
-        g_max = g_max_avail
-    # ------ hull_ref_gen
-    if rin.hull_ref_gen is not None:
-        if rin.hull_ref_gen > g_max_avail:
-            logger.error(f'hull_ref_gen = {rin.hull_ref_gen} is larger than the maximum generation in pd_data')
-            logger.error(f'Latest generation in pd_data is {g_max_avail}')
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        hull_ref_gen = rin.hull_ref_gen
-    elif rin.plot_max_gen is not None:
-        hull_ref_gen = rin.plot_max_gen
-    else:
-        hull_ref_gen = g_max_avail
+    try:
+        g_min, g_max, g_ref = get_generation_range(
+            plot_min_gen=rin.plot_min_gen,
+            plot_max_gen=rin.plot_max_gen,
+            hull_ref_gen=rin.hull_ref_gen,
+            g_max_avail=g_max_avail,
+        )
+    except ValueError as e:
+        logger.error(str(e))
+        os.remove('lock_cryspy')
+        raise SystemExit(1)
 
     # ---------- phase_diagram, hdist
-    phase_diagram = pd_data[hull_ref_gen]
-    hdist = hdist_data[hull_ref_gen]
+    phase_diagram = pd_data[g_ref]
+    hdist = hdist_data[g_ref]
 
     # ---------- filtering generations
     if rin.plot_min_gen is not None or rin.plot_max_gen is not None:
@@ -178,34 +159,33 @@ def plot_EA_vc(rin):
         if axis_order is None:
             axis_order = 'lr'
     if len(atype) == 3:
-        ordering = None
         if axis_order is None:
             axis_order ='tlr'
-        ordering = _build_ordering(atype, axis_order)
+        ordering = build_ordering(atype, axis_order)
 
     # ---------- plot
     if len(rin.atype) == 2:
         fig, ax = draw_convex_hull_binary(
-            phase_diagram,
-            hdist,
-            filtered_ids,
-            rin.ymax,
-            rin.label_stable,
-            rin.vmax,
-            rin.bottom_margin,
-            rin.markersize,
-            axis_order,
+            phase_diagram=phase_diagram,
+            hdist=hdist,
+            filtered_ids=filtered_ids,
+            ymax=rin.ymax,
+            label_stable=rin.label_stable,
+            vmax=rin.vmax,
+            bottom_margin=rin.bottom_margin,
+            markersize=rin.markersize,
+            axis_order=axis_order,
         )
     elif len(rin.atype) == 3:
         fig, ax = draw_convex_hull_ternary(
-            phase_diagram,
-            hdist,
-            filtered_ids,
-            rin.show_max,
-            rin.label_stable,
-            rin.vmax,
-            rin.markersize,
-            ordering,
+            phase_diagram=phase_diagram,
+            hdist=hdist,
+            filtered_ids=filtered_ids,
+            show_max=rin.show_max,
+            label_stable=rin.label_stable,
+            vmax=rin.vmax,
+            markersize=rin.markersize,
+            ordering=ordering,
         )
     else:
         logger.error(f'len(rin.atype) = {len(rin.atype)} is not supported in cryspy-Eplot')
@@ -243,70 +223,6 @@ def plot_EA_vc(rin):
     os.makedirs('data/convex_hull', exist_ok=True)
     fig.savefig(fname)
     logger.info(f'Convex hull plot saved as {fname}')
-
-
-def _build_ordering(atype, axis_order):
-    """
-    Build ordering list for PDPlotter / order_phase_diagram.
-
-    Interpretation of `axis_order`:
-        Binary (len(atype) == 2):
-            axis_order is a length-2 string consisting of 'l' and 'r'.
-            axis_order[i] indicates whether atype[i] is plotted on
-            Left or Right of the binary phase diagram.
-
-        Ternary (len(atype) == 3):
-            axis_order is a length-3 string consisting of 't', 'l', 'r'.
-            axis_order[i] indicates whether atype[i] is plotted on
-            Top, Left, or Right of the ternary triangle.
-
-    Example:
-        atype = ('Li', 'Ca', 'Cl')
-        axis_order = "rtl"
-            Li -> Right
-            Ca -> Top
-            Cl -> Left
-        returns ['Ca', 'Cl', 'Li']   # [Up, Left, Right]
-
-    Returns:
-        list[str] or None
-            For binary: [Left, Right]
-            For ternary: [Up, Left, Right]
-            For other dimensions: None (ordering not applied)
-    """
-
-    # ---------- binary system
-    if len(atype) == 2:
-        idx_l = axis_order.index('l')
-        idx_r = axis_order.index('r')
-        left  = _to_special_formula(atype[idx_l])
-        right = _to_special_formula(atype[idx_r])
-        return [left, right]
-
-    # ---------- ternary system
-    elif len(atype) == 3:
-        idx_t = axis_order.index('t')
-        idx_l = axis_order.index('l')
-        idx_r = axis_order.index('r')
-        up    = _to_special_formula(atype[idx_t])
-        left  = _to_special_formula(atype[idx_l])
-        right = _to_special_formula(atype[idx_r])
-        return [up, left, right]
-
-    # ---------- higher components
-    # ordering control is not supported for >3 components
-    return None
-
-
-def _to_special_formula(sym: str) -> str:
-    special_formulas = {
-        "O":  "O2",
-        "N":  "N2",
-        "F":  "F2",
-        "Cl": "Cl2",
-        "H":  "H2",
-    }
-    return special_formulas.get(sym, sym)
 
 
 # ----------

@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 
 def set_params():
-    # ---------- rcParams
     rcParams_dict = {
         # ---------- figure
         'figure.figsize': (8, 6),
@@ -146,7 +145,7 @@ def draw_convex_hull_binary(
         ymax=0.2,
         label_stable=True,
         vmax=0.2,
-        bottom_margin=0.02,
+        bottom_margin=0.04,
         markersize=10,
         axis_order='lr',
     ):
@@ -350,3 +349,91 @@ def draw_convex_hull_ternary(
     # ---------- return
     plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
     return fig, ax
+
+
+def get_generation_range(plot_min_gen, plot_max_gen, hull_ref_gen, g_max_avail):
+    # ------ plot_min_gen
+    if plot_min_gen is not None:
+        if plot_min_gen > g_max_avail:
+            raise ValueError(
+                f'plot_min_gen = {plot_min_gen} is larger than the maximum generation in pd_data '
+                f'(latest = {g_max_avail})'
+            )
+        g_min = plot_min_gen
+    else:
+        g_min = 1
+
+    # ------ plot_max_gen
+    if plot_max_gen is not None:
+        if plot_max_gen > g_max_avail:
+            raise ValueError(
+                f'plot_max_gen = {plot_max_gen} is larger than the maximum generation in pd_data '
+                f'(latest = {g_max_avail})'
+            )
+        g_max = plot_max_gen
+    else:
+        g_max = g_max_avail
+
+    # ------ hull_ref_gen
+    if hull_ref_gen is not None:
+        if hull_ref_gen > g_max_avail:
+            raise ValueError(
+                f'hull_ref_gen = {hull_ref_gen} is larger than the maximum generation in pd_data '
+                f'Latest generation in pd_data is {g_max_avail}'
+            )
+        g_ref = hull_ref_gen
+    elif plot_max_gen is not None:
+        g_ref = plot_max_gen
+    else:
+        g_ref = g_max_avail
+
+    return g_min, g_max, g_ref
+
+
+def build_ordering(atype, axis_order):
+    """
+    Build ordering list for PDPlotter / order_phase_diagram.
+
+    Interpretation of `axis_order`:
+        Ternary (len(atype) == 3):
+            axis_order is a length-3 string consisting of 't', 'l', 'r'.
+            axis_order[i] indicates whether atype[i] is plotted on
+            Top, Left, or Right of the ternary triangle.
+
+    Example:
+        atype = ('Li', 'Ca', 'Cl')
+        axis_order = "rtl"
+            Li -> Right
+            Ca -> Top
+            Cl -> Left
+        returns ['Ca', 'Cl', 'Li']   # [Up, Left, Right]
+
+    Returns:
+        list[str] or None
+            For ternary: [Up, Left, Right]
+            For other dimensions: None (ordering not applied)
+    """
+    # ---------- ternary system
+    if len(atype) == 3:
+        idx_t = axis_order.index('t')
+        idx_l = axis_order.index('l')
+        idx_r = axis_order.index('r')
+        up    = to_special_formula(atype[idx_t])
+        left  = to_special_formula(atype[idx_l])
+        right = to_special_formula(atype[idx_r])
+        return [up, left, right]
+
+    # ---------- higher components
+    # ordering control is not supported for >3 components
+    return None
+
+
+def to_special_formula(sym: str) -> str:
+    special_formulas = {
+        "O":  "O2",
+        "N":  "N2",
+        "F":  "F2",
+        "Cl": "Cl2",
+        "H":  "H2",
+    }
+    return special_formulas.get(sym, sym)
