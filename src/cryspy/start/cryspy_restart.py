@@ -140,6 +140,36 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                     comm.Abort(1)      # stop for MPI
                 raise SystemExit(1)    # stop for sereial
 
+    # ---------- vc: plot composition window
+    if mpi_rank == 0:
+        if (
+                rin.algo == 'EA-vc'
+                and (rin.min_comp is not None or rin.max_comp is not None)
+                and len(rin.atype) in (2, 3)
+            ):
+            gen = pkl_data.load_gen()
+            fname = f'./data/convex_hull/composition_window_{gen}.{rin.fig_format}'
+            comp_changed = (
+                rin.min_comp != pin.min_comp
+                or rin.max_comp != pin.max_comp
+                or rin.axis_order != pin.axis_order
+                or rin.fig_format != pin.fig_format
+            )
+            if comp_changed:
+                from ..util.visual_util import save_composition_window
+                save_composition_window(
+                    atype=rin.atype,
+                    gen=gen,
+                    min_comp=rin.min_comp,
+                    max_comp=rin.max_comp,
+                    fig_format=rin.fig_format,
+                    axis_order=rin.axis_order,
+                )
+                logger.info(
+                    f'Composition window saved as '
+                    f'    ./data/convex_hull/composition_window_{gen}.{rin.fig_format}'
+                )
+
     # ---------- return
     return rin, init_struc_data, rng
 
@@ -158,8 +188,16 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
     # ---------- generate structures
     # only init_struc_data in rank0 is important
     nstruc = rin.tot_struc - len(init_struc_data)
-    tmp_struc_data, tmp_struc_mol_id = gen_random(rin, nstruc, len(init_struc_data),
-                                        comm, mpi_rank, mpi_size, rng)
+    tmp_struc_data, tmp_struc_mol_id = gen_random(
+        rin=rin,
+        nstruc=nstruc,
+        id_offset=len(init_struc_data),
+        comm=comm,
+        mpi_rank=mpi_rank,
+        mpi_size=mpi_size,
+        feasible_N=None,
+        rng=rng,
+    )
 
     if mpi_rank == 0:
         out_poscar(tmp_struc_data, './data/init_POSCARS')

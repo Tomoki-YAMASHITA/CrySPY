@@ -20,6 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "pyxtal>=0.5.3",
+    "mpltern",
 ]
 dynamic = ["version"]
 

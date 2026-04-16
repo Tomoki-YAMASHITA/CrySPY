@@ -16,6 +16,12 @@ from ..RS.rs_gen import gen_random
 from ..util.struc_util import set_mindist, out_poscar, get_nat
 #from ..util.struc_util import get_mol_data
 
+# ---------- import later
+#from .gen_struc_EA.addition import get_add_dnat_comb
+#from .gen_struc_EA.elimination import get_elim_dnat_comb
+#from .gen_struc_EA.substitution import get_subs_comb
+#from ..util.struc_util import get_feasible_composition, precompute_feasible_N
+
 
 logger = getLogger('cryspy')
 
@@ -30,14 +36,6 @@ def child_gen(
         nat_data=None,
         rng=None,
     ):
-
-    # ---------- instantiate SelectParents class
-    sp = SelectParents(ranking, rng)    # after set_xxx, we can use sp.get_parents(n_parent)
-    if rin.slct_func == 'TNM':
-        sp.set_tournament(rin.t_size)
-    else:
-        sp.set_roulette(fittest, rin.a_rlt, rin.b_rlt, rin.fit_reverse)
-        logger.debug(f'cumulative fitness in roulette: {sp.cum_fit}')
 
     # ---------- set mindist
     logger.info('# -- mindist')
@@ -74,6 +72,56 @@ def child_gen(
     else:
         cn_comb = None
 
+    # ------ vc: pre-check parent feasibility and precompute per-parent operation data
+    perm_pid_list = None
+    if vc:
+        perm_pid_list, add_dnat_map, elim_dnat_map, subs_comb_map = _check_parent_feasibility(
+            rin, ranking, nat_data, cn_comb=cn_comb
+        )
+
+    # ---------- helper: build SelectParents with common selector settings
+    def _build_sp(parent_ids):
+        sp_local = SelectParents(parent_ids, rng)
+        if rin.slct_func == 'TNM':
+            sp_local.set_tournament(rin.t_size)
+        else:
+            # roulette needs fitness for IDs in parent_ids
+            fit_local = {pid: fittest[pid] for pid in parent_ids}
+            sp_local.set_roulette(fit_local, rin.a_rlt, rin.b_rlt, rin.fit_reverse)
+            logger.debug(f'cumulative fitness in roulette: {sp_local.cum_fit}')
+        return sp_local
+
+    # ---------- parent selectors for each operation
+    # ------ crossover and strain
+    sp_co = _build_sp(ranking)
+    logger.info(f'eligible candidates for crossover and strain: {len(sp_co.ranking)}')
+    # ------ permutation
+    if vc:
+        sp_pm = _build_sp(perm_pid_list) if rin.n_perm > 0 else None
+    else:
+        sp_pm = _build_sp(ranking) if rin.n_perm > 0 else None
+    if sp_pm is not None:
+        logger.info(f'eligible candidates for permutation: {len(sp_pm.ranking)}')
+    # ------ EA-vc only operation-specific parent pools
+    sp_add = _build_sp(list(add_dnat_map.keys())) if (vc and rin.n_add > 0) else None
+    sp_elim = _build_sp(list(elim_dnat_map.keys())) if (vc and rin.n_elim > 0) else None
+    sp_subs = _build_sp(list(subs_comb_map.keys())) if (vc and rin.n_subs > 0) else None
+    if sp_add is not None:
+        logger.info(f'eligible candidates for addition: {len(sp_add.ranking)}')
+    if sp_elim is not None:
+        logger.info(f'eligible candidates for elimination: {len(sp_elim.ranking)}')
+    if sp_subs is not None:
+        logger.info(f'eligible candidates for substitution: {len(sp_subs.ranking)}')
+
+    # ---------- vc: feasible composition / feasible N
+    feasible_comp = None
+    feasible_N = None
+    if vc and (rin.min_comp is not None or rin.max_comp is not None):
+        from ..util.struc_util import get_feasible_composition, precompute_feasible_N
+        feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+        feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
+        logger.info(f'Feasible total atom counts for composition constraints: {len(feasible_N)}')
+
     # ---------- Crossover
     if rin.n_crsov > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
@@ -82,7 +130,7 @@ def child_gen(
                 rin.nat,
                 mindist,
                 struc_data,
-                sp,
+                sp_co,
                 rin.n_crsov,
                 id_start,
                 rin.symprec,
@@ -93,6 +141,7 @@ def child_gen(
                 rin.ll_nat,
                 rin.ul_nat,
                 cn_comb,
+                feasible_N,
                 struc_mol_id=None,
                 molecular=False,
                 rng=rng,
@@ -114,7 +163,7 @@ def child_gen(
                 rin.atype,
                 mindist,
                 struc_data,
-                sp,
+                sp_pm,
                 rin.n_perm,
                 id_start,
                 rin.symprec,
@@ -141,7 +190,7 @@ def child_gen(
                 rin.atype,
                 mindist,
                 struc_data,
-                sp,
+                sp_co,
                 rin.n_strain,
                 id_start,
                 rin.symprec,
@@ -172,16 +221,16 @@ def child_gen(
                     rin.atype,
                     mindist,
                     struc_data,
-                    sp,
+                    sp_add,
                     rin.n_add,
                     rin.add_max,
                     nat_data,
                     rin.ul_nat,
+                    add_dnat_map,
                     id_start,
                     rin.symprec,
                     rin.maxcnt_ea,
                     rin.target,
-                    cn_comb,
                     rng=rng,
                 )
             else:
@@ -200,15 +249,15 @@ def child_gen(
                 el_children, el_parents, el_operation = gen_elimination(
                     rin.atype,
                     struc_data,
-                    sp,
+                    sp_elim,
                     rin.n_elim,
                     rin.elim_max,
                     nat_data,
                     rin.ll_nat,
+                    elim_dnat_map,
                     id_start,
                     rin.symprec,
                     rin.target,
-                    cn_comb,
                     rng=rng,
                 )
             else:
@@ -228,17 +277,17 @@ def child_gen(
                     rin.atype,
                     mindist,
                     struc_data,
-                    sp,
+                    sp_subs,
                     rin.n_subs,
                     rin.subs_max,
                     nat_data,
                     rin.ll_nat,
                     rin.ul_nat,
+                    subs_comb_map,
                     id_start,
                     rin.symprec,
                     rin.maxcnt_ea,
                     rin.target,
-                    cn_comb,
                     rng=rng,
                 )
             else:
@@ -281,6 +330,7 @@ def child_gen(
                                         comm=None,
                                         mpi_rank=0,
                                         mpi_size=1,
+                                        feasible_N=feasible_N,
                                         rng=rng,
                                     )
         # ------ update
@@ -307,3 +357,132 @@ def child_gen(
     # ----------return
     return init_struc_data, parents, operation
     #return init_struc_data, parents, operation, struc_mol_id
+
+
+def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):
+    """
+    Validate parent feasibility and precompute per-parent operation data.
+
+    Returns
+    -------
+    perm_pid_list : list[int]
+        Parent IDs that can be used for permutation (>=2 non-zero elements).
+    add_dnat_map : dict[int, list[tuple[int, ...]]]
+        Per-parent addition candidates: `add_dnat_map[pid] = dnat_comb`.
+        (`dnat_comb` is the list of feasible delta-nat tuples for that parent.)
+    elim_dnat_map : dict[int, list[tuple[int, ...]]]
+        Per-parent elimination candidates: `elim_dnat_map[pid] = dnat_comb`.
+    subs_comb_map : dict[int, list[list[tuple[str, str]]]]
+        Per-parent substitution candidates: `subs_comb_map[pid] = subs_comb`.
+    """
+    def abort(msg):
+        logger.error(msg)
+        os.remove('lock_cryspy')
+        raise SystemExit(1)
+
+    def in_comp_range(nat):
+        if rin.min_comp is None or rin.max_comp is None:
+            return True
+        ntot = sum(nat)
+        if ntot <= 0:
+            return False
+        return all(
+            (cmin - tol) <= (n_i / ntot) <= (cmax + tol)
+            for n_i, cmin, cmax in zip(nat, rin.min_comp, rin.max_comp)
+        )
+
+    def apply_subs_to_nat(parent_nat, subs_list, atype):
+        idx = {a: i for i, a in enumerate(atype)}
+        new_nat = list(parent_nat)
+        for from_elem, to_elem in subs_list:
+            i = idx[from_elem]
+            j = idx[to_elem]
+            new_nat[i] -= 1
+            new_nat[j] += 1
+            if new_nat[i] < 0:
+                return None
+        return tuple(new_nat)
+
+    from .gen_struc_EA.addition import get_add_dnat_comb
+    from .gen_struc_EA.elimination import get_elim_dnat_comb
+    from .gen_struc_EA.substitution import get_subs_comb
+
+    # ---------- valid parent IDs from ranking
+    ranked_pids = []
+    for cid in ranking:
+        nat = nat_data.get(cid)
+        if nat is not None and sum(nat) > 0:
+            ranked_pids.append(cid)
+
+    # ---------- crossover feasibility
+    if rin.n_crsov > 0 and len(ranked_pids) < 2:
+        abort(
+            f'Crossover requires at least 2 parent candidates, but got {len(ranked_pids)}.'
+        )
+
+    # ---------- permutation feasibility + list
+    perm_pid_list = [pid for pid in ranked_pids if sum(1 for n in nat_data[pid] if n > 0) >= 2]
+    if rin.n_perm > 0 and len(perm_pid_list) == 0:
+        abort('Permutation requires at least one parent containing >=2 non-zero elements.')
+
+    # ---------- default maps (for non EA-vc or disabled ops)
+    add_dnat_map = None
+    elim_dnat_map = None
+    subs_comb_map = None
+
+    # ---------- EA-vc only: precompute add/elim/subs feasibility data
+    if rin.algo == 'EA-vc':
+        # ------ addition
+        if rin.n_add > 0:
+            add_dnat_map = {}
+            for pid in ranked_pids:
+                parent_nat = tuple(nat_data[pid])
+                dnat_list = get_add_dnat_comb(rin.ul_nat, rin.add_max, parent_nat, cn_comb)
+                dnat_ok = []
+                for dnat in dnat_list:
+                    new_nat = tuple(a + b for a, b in zip(parent_nat, dnat))
+                    if in_comp_range(new_nat):
+                        dnat_ok.append(tuple(dnat))
+                if dnat_ok:
+                    add_dnat_map[pid] = dnat_ok
+            if len(add_dnat_map) == 0:
+                abort('Addition has no feasible parent under current nat/composition constraints.')
+
+        # ------ elimination
+        if rin.n_elim > 0:
+            elim_dnat_map = {}
+            for pid in ranked_pids:
+                parent_nat = tuple(nat_data[pid])
+                dnat_list = get_elim_dnat_comb(rin.ll_nat, rin.elim_max, parent_nat, cn_comb)
+                dnat_ok = []
+                for dnat in dnat_list:
+                    new_nat = tuple(a - b for a, b in zip(parent_nat, dnat))
+                    if sum(new_nat) > 0 and in_comp_range(new_nat):
+                        dnat_ok.append(tuple(dnat))
+                if dnat_ok:
+                    elim_dnat_map[pid] = dnat_ok
+            if len(elim_dnat_map) == 0:
+                abort('Elimination has no feasible parent under current nat/composition constraints.')
+
+        # ------ substitution
+        if rin.n_subs > 0:
+            subs_comb_map = {}
+            cn_set = {tuple(row) for row in cn_comb} if cn_comb is not None else None
+            for pid in ranked_pids:
+                parent_nat = tuple(nat_data[pid])
+                subs_patterns = get_subs_comb(
+                    rin.atype, rin.ll_nat, rin.ul_nat, rin.subs_max, parent_nat, cn_set
+                )
+                subs_ok = []
+                for subs_list in subs_patterns:
+                    new_nat = apply_subs_to_nat(parent_nat, subs_list, rin.atype)
+                    if new_nat is not None and in_comp_range(new_nat):
+                        subs_ok.append(subs_list)
+                if subs_ok:
+                    subs_comb_map[pid] = subs_ok
+            if len(subs_comb_map) == 0:
+                abort('Substitution has no feasible parent under current nat/composition constraints.')
+
+    # ---------- return
+    return perm_pid_list, add_dnat_map, elim_dnat_map, subs_comb_map
+

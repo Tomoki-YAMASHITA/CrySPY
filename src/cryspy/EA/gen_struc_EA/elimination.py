@@ -17,10 +17,10 @@ def gen_elimination(
         elim_max,
         nat_data,
         ll_nat,
+        elim_dnat_map,
         id_start=None,
         symprec=0.01,
         target='random',
-        cn_comb=None,
         rng=None,
     ):
     '''
@@ -34,10 +34,10 @@ def gen_elimination(
     elim_max (int): maximum number of atoms to eliminate
     nat_data (dict): {id: nat}
     ll_nat (tuple): lower limit of nat, e.g. (1, 1)
+    elim_dnat_map (dict): {id: list of delta nat combinations for elimination}
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     target (str): only 'random' for now
-    cn_comb (np.ndarray): charge neutral combinations
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -72,10 +72,7 @@ def gen_elimination(
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
         # ------ delta nat conbinations
-        dnat_comb = _get_dnat_comb(ll_nat, elim_max, nat_data[pid_A], cn_comb)
-        if len(dnat_comb) == 0:
-            logger.warning('Elimination: no combinations found. Change parent')
-            continue
+        dnat_comb = elim_dnat_map[pid_A]
         # ------ elim_element_list, e.g. ['Li', 'Li', 'O']
         if target == 'random':
             dnat = dnat_comb[rng.integers(len(dnat_comb))] 
@@ -101,26 +98,6 @@ def gen_elimination(
 
     # ---------- return
     return children, parents, operation
-
-
-def _get_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb):
-    dnat_comb = []
-    if cn_comb is None:
-        max_del_per_element = [min(current, elim_max) for current in parent_nat]
-        for dnat in product(*[range(max_del + 1) for max_del in max_del_per_element]):
-            new_nat = np.array(parent_nat) - np.array(dnat)
-            if 0 < sum(dnat) <= elim_max and np.sum(new_nat) > 0 and np.all(new_nat >= ll_nat):
-                dnat_comb.append(dnat)
-    else:    # charge neutrality
-        mask = cn_comb.sum(axis=1) <= elim_max
-        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
-        for dnat in cn_comb_delta:
-            new_nat = np.array(parent_nat) - dnat
-            if np.all(new_nat >= ll_nat) and np.sum(new_nat) > 0:
-                dnat_comb.append(tuple(dnat))
-
-    # ---------- return
-    return dnat_comb
 
 
 def gen_child(parent_A, elim_element_list, rng=None):
@@ -158,3 +135,23 @@ def gen_child(parent_A, elim_element_list, rng=None):
     # ---------- return
     #            no need to check distance in elimination
     return child
+
+
+def get_elim_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb):
+    dnat_comb = []
+    if cn_comb is None:
+        max_del_per_element = [min(current, elim_max) for current in parent_nat]
+        for dnat in product(*[range(max_del + 1) for max_del in max_del_per_element]):
+            new_nat = np.array(parent_nat) - np.array(dnat)
+            if 0 < sum(dnat) <= elim_max and np.sum(new_nat) > 0 and np.all(new_nat >= ll_nat):
+                dnat_comb.append(dnat)
+    else:    # charge neutrality
+        mask = cn_comb.sum(axis=1) <= elim_max
+        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
+        for dnat in cn_comb_delta:
+            new_nat = np.array(parent_nat) - dnat
+            if np.all(new_nat >= ll_nat) and np.sum(new_nat) > 0:
+                dnat_comb.append(tuple(dnat))
+
+    # ---------- return
+    return dnat_comb

@@ -47,7 +47,7 @@ def interactive_plot_convex_hull(cgen=None, show_unstable=0.2, ternary_style='2d
 def plot_convex_hull_binary(
     plot_min_gen=None,
     plot_max_gen=None,
-    hull_ref_gen=None,
+    ref_gen=None,
     ymax=0.2,
     label_stable=True,
     vmax=0.2,
@@ -65,7 +65,7 @@ def plot_convex_hull_binary(
     g_min, g_max, g_ref = get_generation_range(
         plot_min_gen=plot_min_gen,
         plot_max_gen=plot_max_gen,
-        hull_ref_gen=hull_ref_gen,
+        ref_gen=ref_gen,
         g_max_avail=g_max_avail,
     )
 
@@ -100,8 +100,8 @@ def plot_convex_hull_binary(
 def plot_convex_hull_ternary(
     plot_min_gen=None,
     plot_max_gen=None,
-    hull_ref_gen=None,
-    show_max=0.2,
+    ref_gen=None,
+    show_max=None,
     label_stable=True,
     vmax=0.2,
     markersize=10,
@@ -119,7 +119,7 @@ def plot_convex_hull_ternary(
     g_min, g_max, g_ref = get_generation_range(
         plot_min_gen=plot_min_gen,
         plot_max_gen=plot_max_gen,
-        hull_ref_gen=hull_ref_gen,
+        ref_gen=ref_gen,
         g_max_avail=g_max_avail,
     )
 

@@ -18,11 +18,11 @@ def gen_addition(
         add_max,
         nat_data,
         ul_nat,
+        add_dnat_map,
         id_start=None,
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
-        cn_comb=None,
         rng=None,
     ):
     '''
@@ -35,11 +35,11 @@ def gen_addition(
     add_max (int): maximum number of atoms to add
     nat_data (dict): {id: nat}
     ul_nat (tuple): upper limit of nat, e.g. (8, 8)
+    add_dnat_map (dict): {id: list of delta nat combinations for addition}
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in addition
     target (str): target for addition, only 'random' for now
-    cn_comb (np.ndarray): charge neutral combinations
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -73,11 +73,8 @@ def gen_addition(
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
-        # ------ delta nat conbinations
-        dnat_comb =_get_dnat_comb(ul_nat, add_max, nat_data[pid_A], cn_comb)
-        if len(dnat_comb) == 0:
-            logger.warning('Addition: no combinations found. Change parent')
-            continue
+        # ------ delta nat combinations
+        dnat_comb = add_dnat_map[pid_A]
         # ------ add_element_list, e.g. ['Li', 'Li', 'O']
         if target == 'random':
             dnat = dnat_comb[rng.integers(len(dnat_comb))] 
@@ -110,25 +107,6 @@ def gen_addition(
 
     # ---------- return
     return children, parents, operation
-
-
-def _get_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
-    dnat_comb = []
-    if cn_comb is None:
-        max_add_per_element = [min(ul - current, add_max) for ul, current in zip(ul_nat, parent_nat)]
-        for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
-            if 0 < sum(dnat) <= add_max:
-                dnat_comb.append(dnat)
-    else:    # charge neutrality
-        mask = cn_comb.sum(axis=1) <= add_max
-        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
-        for dnat in cn_comb_delta:
-            new_nat = np.array(parent_nat) + dnat
-            if np.all(new_nat <= ul_nat):
-                dnat_comb.append(tuple(dnat))
-
-    # ---------- return
-    return dnat_comb
 
 
 def gen_child(
@@ -204,3 +182,65 @@ def gen_child(
     # ---------- complete
     child = sort_by_atype(child, atype)
     return child
+
+
+def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
+    """
+    Generate candidate delta nat (number of atoms) for addition.
+
+    This function returns all feasible atom-count increments to be added to
+    `parent_nat` under the upper-bound and maximum-addition constraints.
+
+    Parameters
+    ----------
+    ul_nat : tuple[int]
+        Per-element upper bounds of atom counts.
+    add_max : int
+        Maximum total number of atoms to add in one operation.
+    parent_nat : tuple[int]
+        nat of the parent structure.
+    cn_comb (np.ndarray): charge neutral combinations
+
+    Returns
+    -------
+    dnat_comb : list[tuple[int, ...]]
+        Each candidate satisfies:
+        - 0 < sum(dnat) <= add_max
+        - parent_nat + dnat <= ul_nat (element-wise)
+
+    Examples
+    --------
+    Case 1: `cn_comb is None`
+    parent_nat = (2, 4, 3), ul_nat = (4, 6, 5), add_max = 2
+
+    Possible outputs include:
+    [
+        (1, 0, 0), (0, 1, 0), (0, 0, 1),
+        (2, 0, 0), (0, 2, 0), (0, 0, 2),
+        (1, 1, 0), (1, 0, 1), (0, 1, 1),
+    ]
+
+    For example:
+    - dnat = (1, 0, 1) -> new_nat = (3, 4, 4)
+    - dnat = (0, 2, 0) -> new_nat = (2, 6, 3)
+
+    Case 2: `cn_comb` is given
+    Only `dnat` rows from `cn_comb` with sum(dnat) <= add_max and
+    parent_nat + dnat <= ul_nat are kept.
+    """
+    dnat_comb = []
+    if cn_comb is None:
+        max_add_per_element = [min(ul - current, add_max) for ul, current in zip(ul_nat, parent_nat)]
+        for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
+            if 0 < sum(dnat) <= add_max:
+                dnat_comb.append(dnat)
+    else:    # charge neutrality
+        mask = cn_comb.sum(axis=1) <= add_max
+        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
+        for dnat in cn_comb_delta:
+            new_nat = np.array(parent_nat) + dnat
+            if np.all(new_nat <= ul_nat):
+                dnat_comb.append(tuple(dnat))
+
+    # ---------- return
+    return dnat_comb

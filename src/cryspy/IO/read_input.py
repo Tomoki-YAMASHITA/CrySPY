@@ -59,15 +59,16 @@ class ReadInput:
     ymax: float = field(default=None)
     markersize: int = field(default=None)
     fig_format: str = field(default=None)
+    # ------ for EA
+    plot_min_gen: int = field(default=None)
+    plot_max_gen: int = field(default=None)
+    ref_gen: int = field(default=None)
     # ------ for EA-vc
     show_max: float = field(default=None)
     label_stable: bool = field(default=None)
     vmax: float = field(default=None)
     bottom_margin: float = field(default=None)
     axis_order: str = field(default=None)
-    plot_min_gen: int = field(default=None)
-    plot_max_gen: int = field(default=None)
-    hull_ref_gen: int = field(default=None)
 
     # ---------- option section
     check_mindist_opt: bool = field(default=None)

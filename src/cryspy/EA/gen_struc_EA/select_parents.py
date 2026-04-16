@@ -46,7 +46,8 @@ class SelectParents:
         # ---------- select parents
         parent_id = []
         while len(parent_id) < n_parent:
-            t_indx = rng.choice(len(self.ranking), self.t_size, replace=False)
+            t_size_eff = min(self.t_size, len(self.ranking))
+            t_indx = rng.choice(len(self.ranking), t_size_eff, replace=False)
             if parent_id:    # not allow the same parent in crossover
                 if parent_id[0] == self.ranking[min(t_indx)]:
                     continue

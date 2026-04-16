@@ -154,9 +154,15 @@ def out_ea_origin(ea_origin):
 # ---------- EA-vc
 def out_nat_data(nat_data, atype):
     with open('./data/nat_data', 'w') as f:
-        f.write(f'    ID    {atype}\n')
+        f.write(f'    ID    {atype}    Composition\n')
         for cid, nat in nat_data.items():
-            f.write(f'{cid:6}    {nat}\n')
+            ntot = sum(nat)
+            if ntot == 0:
+                comp = tuple(0.0 for _ in nat)
+            else:
+                comp = tuple(n / ntot for n in nat)
+            comp_str = '(' + ', '.join(f'{c:.3f}' for c in comp) + ')'
+            f.write(f'{cid:6}    {nat}    {comp_str}\n')
 
 
 def out_hdist(gen, hdist, nat_data):

@@ -32,8 +32,53 @@ class VisualReader(BaseReader):
             raise ValueError('fig_format must be svg, png, or pdf')
 
         # ---------- EA-vc
+        if self.rin.algo in ['EA', 'EA-vc']:
+            self._read_ea()
+
+        # ---------- EA-vc
         if self.rin.algo == 'EA-vc':
             self._read_ea_vc()
+
+
+    def _read_ea(self):
+        # ---------- plot_min_gen, plot_max_gen
+        try:
+            self.rin.plot_min_gen = self.config.getint('visual', 'plot_min_gen')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.plot_min_gen = None
+        try:
+            self.rin.plot_max_gen = self.config.getint('visual', 'plot_max_gen')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.plot_max_gen = None
+        if self.rin.plot_min_gen is not None:
+            if self.rin.plot_min_gen < 0:
+                raise ValueError('plot_min_gen must be a non-negative integer')
+        if self.rin.plot_max_gen is not None:
+            if self.rin.plot_max_gen < 0:
+                raise ValueError('plot_max_gen must be a non-negative integer')
+        if (
+            self.rin.plot_min_gen is not None and
+            self.rin.plot_max_gen is not None
+        ):
+            if self.rin.plot_min_gen > self.rin.plot_max_gen:
+                raise ValueError('plot_min_gen must be <= plot_max_gen')
+
+        # ---------- ref_gen
+        try:
+            self.rin.ref_gen = self.config.getint('visual', 'ref_gen')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.ref_gen = None
+        if self.rin.ref_gen is not None:
+            if self.rin.ref_gen < 0:
+                raise ValueError('ref_gen must be non-negative int')
+            if self.rin.plot_min_gen is None and self.rin.plot_max_gen is None:
+                raise ValueError('ref_gen must be used with plot_min/max_gen')
+            if self.rin.plot_min_gen is not None:
+                if self.rin.ref_gen < self.rin.plot_min_gen:
+                    raise ValueError('ref_gen must be >= plot_min_gen')
+            if self.rin.plot_max_gen is not None:
+                if self.rin.ref_gen < self.rin.plot_max_gen:
+                    raise ValueError('ref_gen must be >= plot_max_gen')
 
 
     def _read_ea_vc(self):
@@ -41,7 +86,7 @@ class VisualReader(BaseReader):
         try:
             self.rin.show_max = self.config.getfloat('visual', 'show_max')
         except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.show_max = 0.2
+            self.rin.show_max = None
 
         # ---------- label_stable
         try:
@@ -85,41 +130,4 @@ class VisualReader(BaseReader):
                 raise ValueError('axis_order must contain 2 or 3 unique characters')
             self.rin.axis_order = axis_order  # save the processed axis_order
 
-        # ---------- plot_min_gen, plot_max_gen
-        try:
-            self.rin.plot_min_gen = self.config.getint('visual', 'plot_min_gen')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.plot_min_gen = None
-        try:
-            self.rin.plot_max_gen = self.config.getint('visual', 'plot_max_gen')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.plot_max_gen = None
-        if self.rin.plot_min_gen is not None:
-            if self.rin.plot_min_gen < 0:
-                raise ValueError('plot_min_gen must be a non-negative integer')
-        if self.rin.plot_max_gen is not None:
-            if self.rin.plot_max_gen < 0:
-                raise ValueError('plot_max_gen must be a non-negative integer')
-        if (
-            self.rin.plot_min_gen is not None and
-            self.rin.plot_max_gen is not None
-        ):
-            if self.rin.plot_min_gen > self.rin.plot_max_gen:
-                raise ValueError('plot_min_gen must be <= plot_max_gen')
 
-        # ---------- hull_ref_gen
-        try:
-            self.rin.hull_ref_gen = self.config.getint('visual', 'hull_ref_gen')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.hull_ref_gen = None
-        if self.rin.hull_ref_gen is not None:
-            if self.rin.hull_ref_gen < 0:
-                raise ValueError('hull_ref_gen must be non-negative int')
-            if self.rin.plot_min_gen is None and self.rin.plot_max_gen is None:
-                raise ValueError('hull_ref_gen must be used with plot_min/max_gen')
-            if self.rin.plot_min_gen is not None:
-                if self.rin.hull_ref_gen < self.rin.plot_min_gen:
-                    raise ValueError('hull_ref_gen must be >= plot_min_gen')
-            if self.rin.plot_max_gen is not None:
-                if self.rin.hull_ref_gen < self.rin.plot_max_gen:
-                    raise ValueError('hull_ref_gen must be >= plot_max_gen')

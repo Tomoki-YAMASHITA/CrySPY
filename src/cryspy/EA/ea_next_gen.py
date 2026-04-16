@@ -13,7 +13,7 @@ from ..IO import io_stat, pkl_data
 from ..IO.out_results import out_ea_info, out_ea_origin, out_hdist
 from ..util.utility import backup_cryspy
 
-# import later
+# ---------- import later
 #from ..EA.calc_hull import calc_convex_hull
 #from ..util.visual_util import plot_energy_EA
 
@@ -137,6 +137,7 @@ def _next_gen(
     # ---------- current generation
     c_rslt = rslt_data[rslt_data['Gen'] == gen]
     cgen_ids = c_rslt.index.values    # current IDs [array]
+    c_struc_data = {cid: opt_struc_data[cid] for cid in cgen_ids}
 
     # ---------- fitness
     if rin.algo != 'EA-vc':
@@ -153,6 +154,20 @@ def _next_gen(
                 elite_fitness[cid] = hdist[cid]
             logger.debug(f'elite_fitness in EA-vc: {elite_fitness}')
 
+    # ---------- composition constraints to pool (EA-vc only)
+    if rin.algo == 'EA-vc' and (rin.min_comp is not None or rin.max_comp is not None):
+        logger.info('# ------ Apply composition constraints')
+        c_struc_data, c_fitness = _composition_filter(
+            rin, c_struc_data, c_fitness, nat_data
+        )
+        if elite_struc is not None:
+            elite_struc, elite_fitness = _composition_filter(
+                rin, elite_struc, elite_fitness, nat_data
+            )
+        logger.info(f'Current candidates after composition filter: {len(c_struc_data)}')
+        if elite_struc is not None:
+            logger.info(f'Elite structures after composition filter: {len(elite_struc)}')
+
     # ---------- natural selection
     logger.info('# ------ natural selection')
     if rin.algo == 'EA-vc':
@@ -162,7 +177,6 @@ def _next_gen(
     else:
         emax_ea = rin.emax_ea
         emin_ea = rin.emin_ea
-    c_struc_data = {cid: opt_struc_data[cid] for cid in cgen_ids}
     ranking, fit_with_elite, struc_with_elite = survival_fittest(
         fitness=c_fitness,
         struc_data=c_struc_data,
@@ -177,6 +191,15 @@ def _next_gen(
     logger.info('ranking without duplication (including elite):')
     for cid in ranking:
             logger.info(f'Structure ID {cid:>6}, fitness: {fit_with_elite[cid]:>10.5f}')
+
+    # ---------- check minimum required number of parents
+    min_required = 2 if rin.n_crsov > 0 else 1
+    if len(ranking) < min_required:
+        logger.error(
+            f'Not enough parent candidates after natural selection: required {min_required}, got {len(ranking)}'
+        )
+        os.remove('lock_cryspy')
+        raise SystemExit(1)
 
     # ---------- generate children by EA
     logger.info('# ------ Generate children')
@@ -304,3 +327,50 @@ def _next_gen(
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
 
+
+def _composition_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
+    """
+    Filter parent pool by composition constraints.
+
+    Parameters
+    ----------
+    rin : ReadInput
+    struc_data : dict
+        {cid: structure}
+    fitness : dict
+        {cid: fitness}
+    nat_data : dict
+        {cid: nat tuple}
+
+    Returns
+    -------
+    f_struc_data : dict
+    f_fitness : dict
+    """
+
+    # ---------- initialize
+    min_comp = rin.min_comp
+    max_comp = rin.max_comp
+    f_struc_data = {}
+    f_fitness = {}
+
+    # ---------- keep IDs whose nat satisfies min/max composition
+    for cid, struc in struc_data.items():
+        nat = nat_data.get(cid)
+        if nat is None:
+            continue
+        n_tot = sum(nat)
+        if n_tot <= 0:
+            continue
+
+        ok = all(
+            (cmin - tol) <= (n_i / n_tot) <= (cmax + tol)
+            for n_i, cmin, cmax in zip(nat, min_comp, max_comp)
+        )
+        if not ok:
+            continue
+
+        f_struc_data[cid] = struc
+        f_fitness[cid] = fitness[cid]
+
+    return f_struc_data, f_fitness

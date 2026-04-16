@@ -19,11 +19,11 @@ def gen_substitution(
         nat_data,
         ll_nat,
         ul_nat,
+        subs_comb_map,
         id_start=None,
         symprec=0.01,
         maxcnt_ea=50,
         target='random',
-        cn_comb=None,
         rng=None
     ):
     '''
@@ -39,17 +39,17 @@ def gen_substitution(
     nat_data (dict): {id: nat}
     ll_nat (tuple): lower limit of nat, e.g. (1, 1)
     ul_nat (tuple): upper limit of nat, e.g. (8, 8)
+    subs_comb_map (dict): {id: list of substitution patterns}
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in substitution
     target (str): only 'random' for now
-    cn_comb (np.ndarray): charge neutral combinations
     rng (np.random.Generator): random number generator
 
     # ---------- return
     children (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, )}
-    operation (dict): {id: 'strain'}
+    operation (dict): {id: 'substitution'}
     '''
 
     # ---------- initialize rng
@@ -72,21 +72,13 @@ def gen_substitution(
         else:
             cid = id_start
 
-    # ---------- charge neutrality
-    cn_set = None
-    if cn_comb is not None:
-        cn_set = {tuple(row) for row in cn_comb}
-
     # ---------- generate structures by substitution
     while struc_cnt < n_subs:
         # ------ select parents
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
-        # ------ get subs comb
-        subs_comb = _get_subs_comb(atype, ll_nat, ul_nat, subs_max, nat_data[pid_A], cn_set)
-        if len(subs_comb) == 0:
-            logger.warning('Substitution: no combinations found. Change parent')
-            continue
+        # ------ substitution combinations
+        subs_comb = subs_comb_map[pid_A]
         # ------ subs_element_list, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
         if target == 'random':
             subs_element_list = subs_comb[int(rng.integers(len(subs_comb)))]
@@ -111,54 +103,6 @@ def gen_substitution(
 
     # ---------- return
     return children, parents, operation
-
-
-def _get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
-    # ---------- initialize
-    subs_comb = []
-
-    # ---------- maximum number of subs for each element pair (no constraints)
-    max_subs = {}
-    for i, from_elem in enumerate(atype):
-        for j, to_elem in enumerate(atype):
-            if i != j:
-                max_subs[(from_elem, to_elem)] = min(parent_nat[i], subs_max)
-
-    # ---------- all combinations of substitution counts for each pair from 0 to max_subs
-    pairs = list(max_subs.keys())
-    max_counts = [max_subs[pair] for pair in pairs]
-    # precompute element index and index pairs for speed
-    idx = {elem: i for i, elem in enumerate(atype)}
-    index_pairs = [(idx[from_elem], idx[to_elem]) for (from_elem, to_elem) in pairs]
-    for counts in product(*[range(max_count + 1) for max_count in max_counts]):
-        total_subs = sum(counts)
-        if 0 < total_subs <= subs_max:
-            # ------ new_nat after substitution
-            new_nat = list(parent_nat)
-            remain_nat = list(parent_nat)    # to track remaining atoms
-            for (from_idx, to_idx), count in zip(index_pairs, counts):
-                new_nat[from_idx] -= count
-                remain_nat[from_idx] -= count
-                if remain_nat[from_idx] < 0:
-                    break
-                new_nat[to_idx] += count
-            # ------ skip if any element goes negative
-            if any(n < 0 for n in remain_nat):
-                continue
-            # ------ check if new_nat is within limits
-            if all(ll <= n <= ul for n, ll, ul in zip(new_nat, ll_nat, ul_nat)):
-                # ------ charge-neutral check using precomputed cn_comb
-                if cn_set is not None and tuple(new_nat) not in cn_set:
-                    continue  # not charge-neutral --> skip this pattern
-                # ------ OK: store this substitution pattern
-                subs_list = []
-                for pair, count in zip(pairs, counts):
-                    subs_list.extend([pair] * count)
-                if subs_list:
-                    subs_comb.append(subs_list)
-
-    # ---------- return
-    return subs_comb
 
 
 def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target='random', rng=None):
@@ -214,8 +158,56 @@ def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target=
         else:
             type0 = atype[mindist_ij[0]]
             type1 = atype[mindist_ij[1]]
-            logger.warning(f'mindist in addition: {type0} - {type1}, {dist}. retry.')
+            logger.warning(f'mindist in substitution: {type0} - {type1}, {dist}. retry.')
             cnt += 1
             if cnt >= maxcnt_ea:
                 logger.warning('Substitution: cnt >= maxcnt_ea. Change parent.')
                 return None    # change parent
+
+
+def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
+    # ---------- initialize
+    subs_comb = []
+
+    # ---------- maximum number of subs for each element pair (no constraints)
+    max_subs = {}
+    for i, from_elem in enumerate(atype):
+        for j, to_elem in enumerate(atype):
+            if i != j:
+                max_subs[(from_elem, to_elem)] = min(parent_nat[i], subs_max)
+
+    # ---------- all combinations of substitution counts for each pair from 0 to max_subs
+    pairs = list(max_subs.keys())
+    max_counts = [max_subs[pair] for pair in pairs]
+    # precompute element index and index pairs for speed
+    idx = {elem: i for i, elem in enumerate(atype)}
+    index_pairs = [(idx[from_elem], idx[to_elem]) for (from_elem, to_elem) in pairs]
+    for counts in product(*[range(max_count + 1) for max_count in max_counts]):
+        total_subs = sum(counts)
+        if 0 < total_subs <= subs_max:
+            # ------ new_nat after substitution
+            new_nat = list(parent_nat)
+            remain_nat = list(parent_nat)    # to track remaining atoms
+            for (from_idx, to_idx), count in zip(index_pairs, counts):
+                new_nat[from_idx] -= count
+                remain_nat[from_idx] -= count
+                if remain_nat[from_idx] < 0:
+                    break
+                new_nat[to_idx] += count
+            # ------ skip if any element goes negative
+            if any(n < 0 for n in remain_nat):
+                continue
+            # ------ check if new_nat is within limits
+            if all(ll <= n <= ul for n, ll, ul in zip(new_nat, ll_nat, ul_nat)):
+                # ------ charge-neutral check using precomputed cn_comb
+                if cn_set is not None and tuple(new_nat) not in cn_set:
+                    continue  # not charge-neutral --> skip this pattern
+                # ------ OK: store this substitution pattern
+                subs_list = []
+                for pair, count in zip(pairs, counts):
+                    subs_list.extend([pair] * count)
+                if subs_list:
+                    subs_comb.append(subs_list)
+
+    # ---------- return
+    return subs_comb

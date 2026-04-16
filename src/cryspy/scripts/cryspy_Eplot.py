@@ -100,13 +100,59 @@ def plot_EA(rin):
     # ---------- load data
     rslt_data = pkl_data.load_rslt()
 
+    #filtered_rslt = rslt_data[rslt_data['Gen'].between(plot_min_gen, plot_max_gen)]
+
+    # ---------- generation range
+    g_max_avail = rslt_data['Gen'].max()
+    try:
+        g_min, g_max, g_ref = get_generation_range(
+            plot_min_gen=rin.plot_min_gen,
+            plot_max_gen=rin.plot_max_gen,
+            ref_gen=rin.ref_gen,
+            g_max_avail=g_max_avail,
+        )
+    except ValueError as e:
+        logger.error(str(e))
+        os.remove('lock_cryspy')
+        raise SystemExit(1)
+
+    # ---------- filtering generations
+    filtered_g_ref = rslt_data[rslt_data['Gen'] <= g_ref]
+    max_indx = filtered_g_ref.index.max()
+    filtered_rslt = rslt_data[rslt_data['Gen'].between(g_min, g_max)]
+
     # ---------- plot
-    fig, ax = plot_energy_EA(rslt_data, rin.ymax, rin.markersize)
+    fig, ax = plot_energy_EA(filtered_rslt, rin.ymax, rin.markersize, max_indx=max_indx)
 
     # ---------- save figure
+    if rin.plot_min_gen is None and rin.plot_max_gen is None:
+        # ------ normal mode (latest only)
+        fname = f'./data/energy_plot/energy_EA_gen_{g_max_avail}.{rin.fig_format}'
+    elif rin.plot_min_gen is None and rin.plot_max_gen is not None:
+        # ------ only max specified
+        if rin.ref_gen is None:
+            # normal mode
+            fname = f'./data/energy_plot/energy_EA_gen_{rin.plot_max_gen}.{rin.fig_format}'
+        else:
+            # with ref gen
+            if rin.ref_gen == rin.plot_max_gen:
+                # normal mode
+                fname = f'./data/energy_plot/energy_EA_gen_{rin.plot_max_gen}.{rin.fig_format}'
+            else:
+                # different ref gen
+                fname = (
+                    f'./data/energy_plot/energy_EA_gen_{rin.plot_max_gen}'
+                    f'_ref_{rin.ref_gen}.{rin.fig_format}'
+                )
+    else:
+        # ------ min exists (range plot)
+        ref = rin.ref_gen if rin.ref_gen is not None else g_max
+        fname = (
+            f'./data/energy_plot/energy_EA_gen_{g_min}-{g_max}'
+            f'_ref_{ref}.{rin.fig_format}'
+        )
+    # ------ save figure
     os.makedirs('./data/energy_plot', exist_ok=True)
-    gmax = rslt_data['Gen'].max()
-    fname = f'./data/energy_plot/energy_EA_gen_{gmax}.{rin.fig_format}'
     fig.savefig(fname)
     logger.info(f'Energy plot for EA saved as {fname}')
 
@@ -133,7 +179,7 @@ def plot_EA_vc(rin):
         g_min, g_max, g_ref = get_generation_range(
             plot_min_gen=rin.plot_min_gen,
             plot_max_gen=rin.plot_max_gen,
-            hull_ref_gen=rin.hull_ref_gen,
+            ref_gen=rin.ref_gen,
             g_max_avail=g_max_avail,
         )
     except ValueError as e:
@@ -198,26 +244,26 @@ def plot_EA_vc(rin):
         fname = f'./data/convex_hull/conv_hull_gen_{g_max_avail}.{rin.fig_format}'
     elif rin.plot_min_gen is None and rin.plot_max_gen is not None:
         # ------ only max specified
-        if rin.hull_ref_gen is None:
+        if rin.ref_gen is None:
             # normal mode
             fname = f'./data/convex_hull/conv_hull_gen_{rin.plot_max_gen}.{rin.fig_format}'
         else:
             # with ref gen
-            if rin.hull_ref_gen == rin.plot_max_gen:
+            if rin.ref_gen == rin.plot_max_gen:
                 # normal mode
                 fname = f'./data/convex_hull/conv_hull_gen_{rin.plot_max_gen}.{rin.fig_format}'
             else:
                 # different ref gen
                 fname = (
                     f'./data/convex_hull/conv_hull_gen_{rin.plot_max_gen}'
-                    f'_href_{rin.hull_ref_gen}.{rin.fig_format}'
+                    f'_ref_{rin.ref_gen}.{rin.fig_format}'
                 )
     else:
         # ------ min exists (range plot)
-        href = rin.hull_ref_gen if rin.hull_ref_gen is not None else g_max
+        ref = rin.ref_gen if rin.ref_gen is not None else g_max
         fname = (
             f'./data/convex_hull/conv_hull_gen_{g_min}-{g_max}'
-            f'_href_{href}.{rin.fig_format}'
+            f'_ref_{ref}.{rin.fig_format}'
         )
     # ------ save
     os.makedirs('data/convex_hull', exist_ok=True)

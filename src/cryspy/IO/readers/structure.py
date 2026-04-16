@@ -195,9 +195,19 @@ class StructureReader(BaseReader):
                 if self.rin.max_comp is None:
                     self.rin.max_comp = tuple(1.0 for _ in range(k))
                 # check feasibility
-                from ...util.struc_util import get_feasible_composition
-                if get_feasible_composition(self.rin.min_comp, self.rin.max_comp) is None:
+                from ...util.struc_util import get_feasible_composition, precompute_feasible_N
+                feasible_comp = get_feasible_composition(self.rin.min_comp, self.rin.max_comp)
+                if feasible_comp is None:
                     raise ValueError('No feasible composition exists for the given min_comp and max_comp')
+                feasible_N = precompute_feasible_N(
+                    self.rin.ll_nat,
+                    self.rin.ul_nat,
+                    feasible_comp,
+                )
+                if len(feasible_N) == 0:
+                    raise ValueError(
+                        'No feasible nat exists for the given min_comp, max_comp, ll_nat, and ul_nat'
+                    )
 
         # ---------- mol or mol_bs
         if self.rin.struc_mode in ['mol', 'mol_bs']:

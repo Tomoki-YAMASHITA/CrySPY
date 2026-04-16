@@ -100,6 +100,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
             comm=comm,
             mpi_rank=mpi_rank,
             mpi_size=mpi_size,
+            feasible_N=None,
             rng=rng
         )
         # ########## MPI end

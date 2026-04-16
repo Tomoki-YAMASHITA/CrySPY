@@ -39,7 +39,7 @@ def calc_convex_hull(
         rslt_data (DataFrame): result data
         nat_data (dict): number of atoms of all structures, {ID: (nat1, nat2, ...), ...}
         ymax (float): Binary only. max value of y-axis
-        show_max (float): Ternary only. Plots structures with hull distance ≤ show_max
+        show_max (float): Ternary only. If not None, plots structures with hull distance ≤ show_max
         label_stable (bool): whether to show stable compositions
         vmax (float): max value of colorbar for hull distance
         bottom_margin (float): bottom margin of y-axis

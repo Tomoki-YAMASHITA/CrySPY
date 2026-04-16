@@ -28,6 +28,7 @@ def gen_crossover(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        feasible_N=None,
         struc_mol_id=None,
         molecular=False,
         rng=None,
@@ -52,6 +53,7 @@ def gen_crossover(
     ll_nat (tuple): lower limit of nat for EA-vc, e.g. (0, 0)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
     cn_comb (numpy.ndarray): charge neutral combinations
+    feasible_N (list): list of feasible total atom counts for EA-vc with composition constraints
     rng (numpy.random.Generator): random number generator
 
     # ---------- return
@@ -101,6 +103,7 @@ def gen_crossover(
                 ll_nat,
                 ul_nat,
                 cn_comb,
+                feasible_N,
                 rng,
             )
         # ------ success
@@ -144,6 +147,7 @@ def gen_child(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        feasible_N=None,
         rng=None,
     ):
     '''
@@ -163,6 +167,7 @@ def gen_child(
     ll_nat (tuple): lower limit of nat for EA-vc, e.g. (1, 1)
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
     cn_comb (numpy.ndarray): charge neutral combinations
+    feasible_N (list): list of feasible total atom counts for EA-vc with composition constraints
     rng (numpy.random.Generator): random number generator
 
     # ---------- return
@@ -196,15 +201,25 @@ def gen_child(
         # ------ child structure
         child = Structure(lattice, species, coords)
         # ------ check nat_diff
-        # -- for charge neutral combinations
         if vc and cn_comb is not None:
             target_nat = _get_close_cn_comb(child, atype, cn_comb, rng)
-            use_charge = True
+            use_target_nat = True
+            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff_checked = False
+        elif vc and feasible_N is not None:
+            target_nat, nat_diff = _get_close_feasible_nat(child, atype, feasible_N, nat_diff_tole, rng)
+            use_target_nat = True
+            nat_diff_checked = True
+            if target_nat is None:
+                if count > maxcnt_ea:
+                    return None
+                continue    # slice again
         else:
             target_nat = nat
-            use_charge = False
-        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)
-        if any([abs(n) > nat_diff_tole for n in nat_diff]):
+            use_target_nat = False
+            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff_checked = False
+        if (not nat_diff_checked) and any([abs(n) > nat_diff_tole for n in nat_diff]):
             logger.debug(f'nat_diff = {nat_diff}')
             if count > maxcnt_ea:    # fail
                 return None
@@ -227,12 +242,12 @@ def gen_child(
                 continue    # fail --> slice again
         # ------ recheck nat_diff
         # ------ excess of atoms
-        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)    # recheck
+        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)    # recheck
         if any([n > 0 for n in nat_diff]):
             child = _remove_border_line(child, atype, axis,
                                         slice_point, nat_diff)
         # ------ lack of atoms
-        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)    # recheck
+        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)    # recheck
         if any([n < 0 for n in nat_diff]):
             child = _add_border_line(child, atype, mindist, axis, slice_point,
                                         nat_diff, maxcnt_ea)
@@ -246,7 +261,7 @@ def gen_child(
             continue
 
     # ---------- final check for nat
-    nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge)
+    nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
     if not all([n == 0 for n in nat_diff]):
         return None    # failure
 
@@ -323,30 +338,25 @@ def _one_point_crossover(parent_A, parent_B, rng=None):
     return axis, slice_point, species, coords
 
 
-def _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_charge):
+def _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat):
     '''
-    if not vc:
-        original nat - child nat
+    if not vc or use_target_nat:
+        child nat - target nat
         e.g.
-            target_nat = [4, 4]        # original
-            tmp_nat = [3, 5]    # child
+            target_nat = [4, 4]
+            tmp_nat = [3, 5]
             nat_diff = [-1, 1]
-    if vc:
+
+    if vc and not use_target_nat:
+        difference from the allowed range [ll_nat, ul_nat]
         e.g.
             ll_nat = [4, 4, 4]
             ul_nat = [8, 8, 8]
-            tmp_nat = [2, 6, 12]    # child
+            tmp_nat = [2, 6, 12]
             nat_diff = [-2, 0, 4]
-    if vc and cn_comb is not None:
-        target nat - child nat
-        e.g.
-            target_nat = [4, 4]    # closest nat in charge neutral combinations
-            tmp_nat = [3, 5]    # child
-            nat_diff = [-1, 1]
-        e.g.
     '''
     tmp_nat = get_nat(child, atype)
-    if not vc or use_charge:
+    if not vc or use_target_nat:
         nat_diff = [i - j for i, j in zip(tmp_nat, target_nat)]
     else:
         nat_diff = []
@@ -464,8 +474,8 @@ def _add_border_line(child, atype, mindist, axis, slice_point, nat_diff, maxcnt_
             if cnt == maxcnt_ea:
                 return None
 
-        # ---------- return
-        return child
+    # ---------- return
+    return child
 
 
 def _mean_choice(child, axis, slice_point, rng=None):
@@ -508,3 +518,86 @@ def _get_close_cn_comb(child, atype, cn_comb, rng=None):
 
     # ---------- return
     return cn_target_nat
+
+
+def _get_close_feasible_nat(child, atype, feasible_N, nat_diff_tole, rng=None):
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- child_nat
+    child_nat_arr = np.array(get_nat(child, atype), dtype=int)
+    N_child = int(child_nat_arr.sum())
+
+    # ---------- sort feasible_N by distance to child_nat sum
+    sorted_feasible = sorted(
+        feasible_N,
+        key=lambda x: abs(int(x[0]) - N_child)
+    )
+
+    # ---------- find the closest feasible nat within nat_diff_tole
+    for N, lower, upper in sorted_feasible:
+        lower = np.array(lower, dtype=int)
+        upper = np.array(upper, dtype=int)
+        target_nat_arr = _project_to_N_bounds(child_nat_arr, int(N), lower, upper)
+        if target_nat_arr is None:
+            continue
+        nat_diff = child_nat_arr - target_nat_arr
+        if all(abs(int(v)) <= nat_diff_tole for v in nat_diff):
+            return tuple(int(v) for v in target_nat_arr), [int(v) for v in nat_diff]
+
+    # ---------- if no feasible nat within nat_diff_tole
+    return None, None
+
+
+def _project_to_N_bounds(nat_arr, N, lower, upper):
+    """
+    Minimize L1 distance to nat_arr under:
+        lower_i <= n_i <= upper_i, sum_i n_i = N, n_i integer
+    """
+
+    # ---------- clip each species count into [lower, upper]
+    nat_proj_arr = np.clip(nat_arr, lower, upper).astype(int)
+    s = int(nat_proj_arr.sum())
+
+    # Strategy: distribute additions/removals
+    #           so that the result stays close to the original nat_arr
+
+    # ---------- need to increase sum
+    if s < N:
+        need = N - s
+        # adjust N by adding first to species that are farthest below the original nat_arr
+        order = np.argsort(-(nat_arr - nat_proj_arr))  # descending deficit
+        for i in order:
+            cap = int(upper[i] - nat_proj_arr[i])
+            if cap <= 0:
+                continue
+            add_i = min(cap, need)
+            nat_proj_arr[i] += add_i
+            need -= add_i
+            if need == 0:
+                break
+
+    # ---------- need to decrease sum
+    elif s > N:
+        need = s - N
+        # adjust N by removing first from species that are farthest above the original nat_arr
+        order = np.argsort(-(nat_proj_arr - nat_arr))  # descending excess
+        for i in order:
+            cap = int(nat_proj_arr[i] - lower[i])
+            if cap <= 0:
+                continue
+            sub_i = min(cap, need)
+            nat_proj_arr[i] -= sub_i
+            need -= sub_i
+            if need == 0:
+                break
+
+    # ---------- final check
+    s = int(nat_proj_arr.sum())
+    if s != N:
+        logger.error(f'_project_to_N_bounds failed: sum={s}, N={N}')
+        return None
+
+    # ---------- return
+    return nat_proj_arr

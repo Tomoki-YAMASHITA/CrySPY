@@ -13,6 +13,8 @@ from pymatgen.core import Structure
 
 from ...util.struc_util import check_distance, remove_zero
 
+# ---------- import later
+#from ...util.struc_util import sample_nat_from_feasible_N
 
 logger = getLogger('cryspy')
 
@@ -35,6 +37,7 @@ def gen_wo_spg(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        feasible_N=None,
         rng=None,
     ):
     '''
@@ -60,6 +63,7 @@ def gen_wo_spg(
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
     cn_comb (np.array): charge neutral combinations of atoms
+    feasible_N (list): feasible total atom numbers under composition constraints
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -82,7 +86,12 @@ def gen_wo_spg(
         # ------ vc
         if vc:
             if cn_comb is None:
-                nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
+                if feasible_N is None:
+                    nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
+                else:
+                    from ...util.struc_util import sample_nat_from_feasible_N
+                    nat, _ = sample_nat_from_feasible_N(feasible_N, rng)
+                    nat = tuple(int(n) for n in nat)
             else:
                 nat = tuple(cn_comb[rng.integers(len(cn_comb))])
             if sum(nat) == 0:
@@ -149,6 +158,7 @@ def gen_with_find_wy(
         ll_nat=None,
         ul_nat=None,
         cn_comb=None,
+        feasible_N=None,
         rng=None,
     ):
     '''
@@ -177,6 +187,7 @@ def gen_with_find_wy(
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
     cn_comb (np.array): charge neutral combinations of atoms
+    feasible_N (list): feasible total atom numbers under composition constraints
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -203,7 +214,12 @@ def gen_with_find_wy(
         # ------ vc
         if vc:
             if cn_comb is None:
-                nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
+                if feasible_N is None:
+                    nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
+                else:
+                    from ...util.struc_util import sample_nat_from_feasible_N
+                    nat, _ = sample_nat_from_feasible_N(feasible_N, rng)
+                    nat = tuple(int(n) for n in nat)
             else:
                 nat = tuple(cn_comb[rng.integers(len(cn_comb))])
             if sum(nat) == 0:

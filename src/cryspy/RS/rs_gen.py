@@ -8,12 +8,13 @@ from ..util.struc_util import set_mindist, get_mol_data
 # import later
 # from .gen_struc_RS import gen_pyxtal
 # from ..gen_struc_RS import random_generation
+# from ..util.struc_util import get_feasible_composition, precompute_feasible_N
 
 
 logger = getLogger('cryspy')
 
 
-def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size, rng=None):
+def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size, feasible_N=None, rng=None):
     # ---------- log: num of MPI processes
     if mpi_size > 1 and mpi_rank == 0:
         logger.info(f'Number of MPI processes: {mpi_size}')
@@ -48,6 +49,18 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size, rng=None):
         _, _, _, cn_comb = load_cn_comb_data()
     else:
         cn_comb = None
+    if vc and (rin.min_comp is not None or rin.max_comp is not None) and cn_comb is None:
+        if feasible_N is None:
+            from ..util.struc_util import get_feasible_composition, precompute_feasible_N
+            feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+            feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
+        if mpi_rank == 0:
+            logger.info(
+                f'Composition constraints applied to random generation: '
+                f'{len(feasible_N)} feasible total atom counts'
+            )
+    else:
+        feasible_N = None
 
     # ---------- pyxtal
     if not (rin.spgnum == 0 or rin.use_find_wy):
@@ -69,6 +82,7 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size, rng=None):
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
                 cn_comb=cn_comb,
+                feasible_N=feasible_N,
                 rng=rng,
             )
             struc_mol_id = {}     # not used, just for return
@@ -134,6 +148,7 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size, rng=None):
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
                 cn_comb=cn_comb,
+                feasible_N=feasible_N,
                 rng=rng,
             )
             struc_mol_id = {}     # not used, just for return
@@ -165,6 +180,7 @@ def gen_random(rin, nstruc, id_offset, comm, mpi_rank, mpi_size, rng=None):
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
                 cn_comb=cn_comb,
+                feasible_N=feasible_N,
                 rng=rng,
             )
             struc_mol_id = {}     # not used, just for return
