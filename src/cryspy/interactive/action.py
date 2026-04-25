@@ -4,7 +4,6 @@ from typing import Callable
 
 from ..start import cryspy_init
 from ..util.utility import set_logger, backup_cryspy, clean_cryspy
-
 from .restart_interact import restart_interact
 
 

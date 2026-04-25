@@ -60,15 +60,17 @@ class ReadInput:
     markersize: int = field(default=None)
     fig_format: str = field(default=None)
     # ------ for EA
+    ref_gen: int = field(default=None)
     plot_min_gen: int = field(default=None)
     plot_max_gen: int = field(default=None)
-    ref_gen: int = field(default=None)
     # ------ for EA-vc
     show_max: float = field(default=None)
     label_stable: bool = field(default=None)
     vmax: float = field(default=None)
     bottom_margin: float = field(default=None)
     axis_order: str = field(default=None)
+    show_comp_window: bool = field(default=None)
+    ref_gen_comp: int = field(default=None)
 
     # ---------- option section
     check_mindist_opt: bool = field(default=None)

@@ -12,7 +12,7 @@ from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
 from ..util.utility import get_version, backup_cryspy
-from ..util.struc_util import out_poscar, calc_cn_comb
+from ..util.struc_util import out_poscar, calc_cn_comb, get_feasible_composition
 
 # ---------- import later
 #from ..RS import rs_restart
@@ -22,6 +22,7 @@ from ..util.struc_util import out_poscar, calc_cn_comb
 
 
 logger = getLogger('cryspy')
+
 
 def restart(comm=None, mpi_rank=0, mpi_size=1):
     # ---------- start
@@ -148,7 +149,6 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 and len(rin.atype) in (2, 3)
             ):
             gen = pkl_data.load_gen()
-            fname = f'./data/convex_hull/composition_window_{gen}.{rin.fig_format}'
             comp_changed = (
                 rin.min_comp != pin.min_comp
                 or rin.max_comp != pin.max_comp
@@ -156,18 +156,24 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 or rin.fig_format != pin.fig_format
             )
             if comp_changed:
+                logger.info('# ---------- Composition constraints')
                 from ..util.visual_util import save_composition_window
+                next_gen = gen + 1
                 save_composition_window(
                     atype=rin.atype,
-                    gen=gen,
+                    gen=next_gen,
                     min_comp=rin.min_comp,
                     max_comp=rin.max_comp,
                     fig_format=rin.fig_format,
                     axis_order=rin.axis_order,
                 )
+                feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+                logger.info('Feasible composition range:')
+                for symbol, (lower, upper) in zip(rin.atype, feasible_comp):
+                    logger.info(f'    {symbol}: {lower:.3f} - {upper:.3f}')
                 logger.info(
                     f'Composition window saved as '
-                    f'    ./data/convex_hull/composition_window_{gen}.{rin.fig_format}'
+                    f'    ./data/convex_hull/composition_window_{next_gen}.{rin.fig_format}'
                 )
 
     # ---------- return

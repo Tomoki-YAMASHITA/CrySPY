@@ -14,7 +14,7 @@ from ..IO import pkl_data, io_stat, write_input
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
 from ..util.utility import get_version
-from ..util.struc_util import out_poscar, calc_cn_comb
+from ..util.struc_util import out_poscar, calc_cn_comb, get_feasible_composition
 
 # ---------- import later
 #from ..RS import rs_init
@@ -78,6 +78,32 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                 if mpi_size > 1:
                     comm.Abort(1)      # stop for MPI
                 raise SystemExit(1)    # stop for sereial
+
+    # ---------- vc: plot composition window
+    if mpi_rank == 0:
+        if (
+                rin.algo == 'EA-vc'
+                and (rin.min_comp is not None or rin.max_comp is not None)
+                and len(rin.atype) in (2, 3)
+            ):
+            logger.info('# ---------- Composition constraints')
+            from ..util.visual_util import save_composition_window
+            save_composition_window(
+                atype=rin.atype,
+                gen=1,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+                fig_format=rin.fig_format,
+                axis_order=rin.axis_order,
+            )
+            feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+            logger.info('Feasible composition range:')
+            for symbol, (lower, upper) in zip(rin.atype, feasible_comp):
+                logger.info(f'    {symbol}: {lower:.3f} - {upper:.3f}')
+            logger.info(
+                f'Composition window saved as '
+                f'    ./data/convex_hull/composition_window_1.{rin.fig_format}'
+            )
 
     # ---------- generate initial structures
     if not rin.load_struc_flag:

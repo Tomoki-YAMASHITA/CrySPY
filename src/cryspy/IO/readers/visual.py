@@ -41,6 +41,14 @@ class VisualReader(BaseReader):
 
 
     def _read_ea(self):
+        # ---------- ref_gen
+        try:
+            self.rin.ref_gen = self.config.getint('visual', 'ref_gen')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.ref_gen = None
+        if self.rin.ref_gen is not None:
+            if self.rin.ref_gen < 0:
+                raise ValueError('ref_gen must be non-negative int')
         # ---------- plot_min_gen, plot_max_gen
         try:
             self.rin.plot_min_gen = self.config.getint('visual', 'plot_min_gen')
@@ -62,17 +70,8 @@ class VisualReader(BaseReader):
         ):
             if self.rin.plot_min_gen > self.rin.plot_max_gen:
                 raise ValueError('plot_min_gen must be <= plot_max_gen')
-
-        # ---------- ref_gen
-        try:
-            self.rin.ref_gen = self.config.getint('visual', 'ref_gen')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.ref_gen = None
+        # ---------- ref_gen vs plot_min_gen / plot_max_gen
         if self.rin.ref_gen is not None:
-            if self.rin.ref_gen < 0:
-                raise ValueError('ref_gen must be non-negative int')
-            if self.rin.plot_min_gen is None and self.rin.plot_max_gen is None:
-                raise ValueError('ref_gen must be used with plot_min/max_gen')
             if self.rin.plot_min_gen is not None:
                 if self.rin.ref_gen < self.rin.plot_min_gen:
                     raise ValueError('ref_gen must be >= plot_min_gen')
@@ -130,4 +129,18 @@ class VisualReader(BaseReader):
                 raise ValueError('axis_order must contain 2 or 3 unique characters')
             self.rin.axis_order = axis_order  # save the processed axis_order
 
+        # ---------- show_comp_window
+        try:
+            self.rin.show_comp_window = self.config.getboolean('visual', 'show_comp_window')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.show_comp_window = True
+
+        # ---------- ref_gen_comp
+        try:
+            self.rin.ref_gen_comp = self.config.getint('visual', 'ref_gen_comp')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.ref_gen_comp = None
+        if self.rin.ref_gen_comp is not None:
+            if self.rin.ref_gen_comp < 0:
+                raise ValueError('ref_gen_comp must be non-negative int')
 

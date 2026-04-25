@@ -55,6 +55,11 @@ def next_gen_EA(
         if gen not in hdist_data:
             logger.info(f'Calculate convex hull for generation {gen}')
             from ..EA.calc_hull import calc_convex_hull
+            # ------ load ea_info for min_comp and max_comp
+            ea_info = pkl_data.load_ea_info()
+            min_comp = ea_info.loc[ea_info['Gen'] == gen, 'min_comp'].iloc[-1]
+            max_comp = ea_info.loc[ea_info['Gen'] == gen, 'max_comp'].iloc[-1]
+            # ------ calc convex hull and hull distance
             phase_diagram, hdist = calc_convex_hull(
                 atype=rin.atype,
                 gen=gen,
@@ -71,6 +76,9 @@ def next_gen_EA(
                 emax_ea=rin.emax_ea,
                 emin_ea=rin.emin_ea,
                 axis_order=rin.axis_order,
+                min_comp=min_comp,
+                max_comp=max_comp,
+                show_comp_window=rin.show_comp_window,
             )
             out_hdist(gen, hdist, nat_data)
             hdist_data[gen] = hdist
@@ -225,10 +233,21 @@ def _next_gen(
             fitness = rslt_data['E_eV_atom'].to_dict()    # {ID: energy, ..,}
         elif rin.algo == 'EA-vc':
             fitness = hdist
+
+        # ------ candidate pool for elite selection
+        elite_pool_struc = opt_struc_data
+        elite_pool_fitness = fitness
+        if rin.algo == 'EA-vc' and (rin.min_comp is not None or rin.max_comp is not None):
+            logger.info('# ------ Apply composition constraints to elite pool')
+            elite_pool_struc, elite_pool_fitness = _composition_filter(
+                rin, elite_pool_struc, elite_pool_fitness, nat_data
+            )
+            logger.info(f'Elite pool after composition filter: {len(elite_pool_struc)}')
+
         # ------ ranking for all data
         ranking, _, _ = survival_fittest(
-            fitness=fitness,
-            struc_data=opt_struc_data,
+            fitness=elite_pool_fitness,
+            struc_data=elite_pool_struc,
             elite_struc=None,
             elite_fitness=None,
             n_fittest=rin.n_elite,
@@ -239,8 +258,8 @@ def _next_gen(
         )
         for cid in ranking:
             logger.info(f'Structure ID {cid:>6} keeps as the elite')
-            elite_struc[cid] = opt_struc_data[cid]
-            elite_fitness[cid] = fitness[cid]
+            elite_struc[cid] = elite_pool_struc[cid]
+            elite_fitness[cid] = elite_pool_fitness[cid]
     else:
         elite_struc = None
         elite_fitness = None
@@ -270,6 +289,8 @@ def _next_gen(
             'Addition':     rin.n_add,
             'Elimination':  rin.n_elim,
             'Substitution': rin.n_subs,
+            'min_comp':     rin.min_comp,
+            'max_comp':     rin.max_comp,
         })
     ea_info.loc[len(ea_info)] = row
     # ------ out ea_info

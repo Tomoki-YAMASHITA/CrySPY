@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from ..IO import pkl_data
+
 # ---------- import later
 #from matplotlib.ticker import MaxNLocator
-#import mpltern
 #from pymatgen.analysis.phase_diagram import PDPlotter
-
 #from .struc_util import get_feasible_composition
 
 
@@ -155,6 +155,9 @@ def draw_convex_hull_binary(
         bottom_margin=0.04,
         markersize=10,
         axis_order='lr',
+        min_comp=None,
+        max_comp=None,
+        show_comp_window=True,
     ):
     '''
     # ---------- args
@@ -167,6 +170,12 @@ def draw_convex_hull_binary(
     bottom_margin (float): bottom margin of y-axis
     markersize (int): size of markers
     axis_order (str): order of axis for binary phase diagram, 'lr' or 'rl'
+    min_comp : tuple[float, float] or None
+        Minimum composition fractions for each component.
+    max_comp : tuple[float, float] or None
+        Maximum composition fractions for each component.
+    show_comp_window : bool
+        Whether to overlay the feasible composition range on the convex hull plot.
     '''
 
     # ---------- setting
@@ -177,6 +186,8 @@ def draw_convex_hull_binary(
     flip_x = (axis_order == "rl")
     def tx(x):
         return 1.0 - x if flip_x else x
+    def tx_interval(xmin, xmax):
+        return sorted((tx(xmin), tx(xmax)))
 
     # ---------- PDPlotter
     plotter_mpl = PDPlotter(
@@ -195,6 +206,23 @@ def draw_convex_hull_binary(
 
     # ---------- hline
     ax.axhline(y=0, xmin=0, xmax=1, color='black', linestyle='--', zorder=1)
+
+    # ---------- composition window overlay
+    if show_comp_window and (min_comp is not None or max_comp is not None):
+        from .struc_util import get_feasible_composition
+        feasible_comp = get_feasible_composition(min_comp, max_comp)
+        if feasible_comp is not None:
+            overlap_min, overlap_max = feasible_comp[0]
+            # In binary convex-hull plots, the x-axis is composition of atype[1],
+            # so convert the feasible range of atype[0] into x = 1 - c.
+            overlap_plot_min, overlap_plot_max = tx_interval(1.0 - overlap_max, 1.0 - overlap_min)
+            ax.axvspan(
+                overlap_plot_min,
+                overlap_plot_max,
+                color='C0',
+                alpha=0.2,
+                zorder=0,
+            )
 
     # ---------- draw hull lines
     for xs, ys in lines:
@@ -270,6 +298,7 @@ def draw_convex_hull_binary(
 
 
 def draw_convex_hull_ternary(
+        atype,
         phase_diagram,
         hdist,
         filtered_ids=None,
@@ -277,10 +306,14 @@ def draw_convex_hull_ternary(
         label_stable=True,
         vmax=0.2,
         markersize=10,
-        ordering=None,
+        axis_order='tlr',
+        min_comp=None,
+        max_comp=None,
+        show_comp_window=True,
     ):
     '''
     # ---------- args
+    atype (tuple[str, str, str]): element names in the original composition order
     phase_diagram (PhaseDiagram): phase diagram object
     hdist (dict): hull distance of all structures, {ID: distance, ...}
     filtered_ids (array): ID array for filtering structures to be plotted
@@ -288,13 +321,17 @@ def draw_convex_hull_ternary(
     label_stable (bool): whether to show stable compositions
     vmax (float): max value of colorbar for hull distance
     markersize (int): size of markers
-    ordering (list): order of axis for ternary phase diagram, e.g. ['A', 'B', 'C']
+    axis_order (str): order of axis for ternary phase diagram, e.g. 'tlr'
+    min_comp (tuple[float, float, float] or None): minimum composition fractions
+    max_comp (tuple[float, float, float] or None): maximum composition fractions
+    show_comp_window (bool): whether to overlay feasible composition region
     '''
 
     # ---------- setting
     set_params()
     from pymatgen.analysis.phase_diagram import PDPlotter
     from pymatgen.analysis.phase_diagram import order_phase_diagram
+    ordering = build_ordering(atype, axis_order)
 
     # ---------- fig
     fig, ax = plt.subplots(1, 1)
@@ -323,6 +360,27 @@ def draw_convex_hull_ternary(
     orderd_lines, ordered_stable_entries, ordered_unstable_entries = order_phase_diagram(
         lines, stable_entries, unstable_entries, ordering
     )
+
+    # ---------- composition window overlay
+    if show_comp_window and (min_comp is not None or max_comp is not None):
+        poly = _get_feasible_polygon_ternary(min_comp, max_comp)
+        if poly is not None:
+            idx_t = axis_order.index('t')
+            idx_l = axis_order.index('l')
+            idx_r = axis_order.index('r')
+
+            t = poly[idx_t]
+            l = poly[idx_l]
+            r = poly[idx_r]
+            x, y = _ternary_to_xy_tlr(t, l, r)
+            ax.fill(
+                x,
+                y,
+                color='C0',
+                alpha=0.20,
+                edgecolor='none',
+                zorder=0,
+            )
 
     # ---------- scatter: unstable entries
     scat_x, scat_y, scat_c = [], [], []
@@ -358,30 +416,142 @@ def draw_convex_hull_ternary(
     return fig, ax
 
 
-def get_generation_range(plot_min_gen, plot_max_gen, ref_gen, g_max_avail):
-    # ------ plot_min_gen
+def prepare_EA_data(
+        rslt_data=None,
+        ref_gen=None,
+        plot_min_gen=None,
+        plot_max_gen=None,
+    ):
+    # ---------- early checks for input arguments for interactive use
+    if ref_gen is not None:
+        if ref_gen < 0:
+            raise ValueError('ref_gen must be non-negative int')
     if plot_min_gen is not None:
-        if plot_min_gen > g_max_avail:
-            raise ValueError(
-                f'plot_min_gen = {plot_min_gen} is larger than the latest generation '
-                f'(latest = {g_max_avail})'
-            )
-        g_min = plot_min_gen
-    else:
-        g_min = 1
-
-    # ------ plot_max_gen
+        if plot_min_gen < 0:
+            raise ValueError('plot_min_gen must be a non-negative integer')
     if plot_max_gen is not None:
-        if plot_max_gen > g_max_avail:
+        if plot_max_gen < 0:
+            raise ValueError('plot_max_gen must be a non-negative integer')
+    if plot_min_gen is not None and plot_max_gen is not None:
+        if plot_min_gen > plot_max_gen:
+            raise ValueError('plot_min_gen must be <= plot_max_gen')
+    if ref_gen is not None:
+        if plot_min_gen is not None and ref_gen < plot_min_gen:
+            raise ValueError('ref_gen must be >= plot_min_gen')
+        if plot_max_gen is not None and ref_gen < plot_max_gen:
+            raise ValueError('ref_gen must be >= plot_max_gen')
+
+    # ---------- load if None
+    if rslt_data is None:
+        rslt_data = pkl_data.load_rslt()
+
+    # ---------- generation range
+    g_max_avail = rslt_data['Gen'].max()
+    g_min, g_max, g_ref = get_generation_range(
+        ref_gen=ref_gen,
+        plot_min_gen=plot_min_gen,
+        plot_max_gen=plot_max_gen,
+        g_max_avail=g_max_avail,
+    )
+
+    # ---------- filtering
+    filtered_g_ref = rslt_data[rslt_data['Gen'] <= g_ref]
+    max_indx = filtered_g_ref.index.max()
+    filtered_rslt = rslt_data[
+        (rslt_data['Gen'] >= g_min) &
+        (rslt_data['Gen'] <= g_max)
+    ]
+
+    # ---------- return
+    return filtered_rslt, max_indx, g_ref, g_min, g_max
+
+
+def prepare_hull_data(
+        rslt_data=None,
+        ea_info=None,
+        pd_data=None,
+        hdist_data=None,
+        ref_gen=None,
+        plot_min_gen=None,
+        plot_max_gen=None,
+        ref_gen_comp=None,
+    ):
+    # ---------- early checks for input arguments for interactive use
+    if ref_gen is not None:
+        if ref_gen < 0:
+            raise ValueError('ref_gen must be non-negative int')
+    if plot_min_gen is not None:
+        if plot_min_gen < 0:
+            raise ValueError('plot_min_gen must be a non-negative integer')
+    if plot_max_gen is not None:
+        if plot_max_gen < 0:
+            raise ValueError('plot_max_gen must be a non-negative integer')
+    if plot_min_gen is not None and plot_max_gen is not None:
+        if plot_min_gen > plot_max_gen:
+            raise ValueError('plot_min_gen must be <= plot_max_gen')
+    if ref_gen is not None:
+        if plot_min_gen is not None and ref_gen < plot_min_gen:
+            raise ValueError('ref_gen must be >= plot_min_gen')
+        if plot_max_gen is not None and ref_gen < plot_max_gen:
+            raise ValueError('ref_gen must be >= plot_max_gen')
+    if ref_gen_comp is not None:
+        if ref_gen_comp < 0:
+            raise ValueError('ref_gen_comp must be non-negative int')
+
+    # ---------- load if None
+    if pd_data is None:
+        pd_data = pkl_data.load_pd_data()
+    if hdist_data is None:
+        hdist_data = pkl_data.load_hdist_data()
+    if ea_info is None:
+        ea_info = pkl_data.load_ea_info()
+    if rslt_data is None:
+        rslt_data = pkl_data.load_rslt()
+
+    # ---------- generation range
+    g_max_avail = max(pd_data.keys())
+    g_min, g_max, g_ref = get_generation_range(
+        ref_gen=ref_gen,
+        plot_min_gen=plot_min_gen,
+        plot_max_gen=plot_max_gen,
+        g_max_avail=g_max_avail,
+    )
+
+    # ---------- ref_gen for composition window
+    if ref_gen_comp is not None:
+        if ref_gen_comp > g_max_avail:
             raise ValueError(
-                f'plot_max_gen = {plot_max_gen} is larger than the latest generation '
+                f'ref_gen_comp = {ref_gen_comp} is larger than the latest generation '
                 f'(latest = {g_max_avail})'
             )
-        g_max = plot_max_gen
+        g_ref_comp = ref_gen_comp
+    elif ref_gen is not None:
+        g_ref_comp = ref_gen
     else:
-        g_max = g_max_avail
+        g_ref_comp = g_max_avail
 
-    # ------ ref_gen
+    # ---------- phase diagram data
+    phase_diagram = pd_data[g_ref]
+    hdist = hdist_data[g_ref]
+
+    # ---------- composition window
+    comp_row = ea_info.loc[ea_info['Gen'] == g_ref_comp]
+    min_comp = comp_row['min_comp'].iloc[-1]
+    max_comp = comp_row['max_comp'].iloc[-1]
+
+    # ---------- filtering generations
+    if plot_min_gen is not None or plot_max_gen is not None:
+        filtered_rslt = rslt_data[(rslt_data['Gen'] >= g_min) & (rslt_data['Gen'] <= g_max)]
+        filtered_ids = filtered_rslt.index.values
+    else:
+        filtered_ids = None
+
+    # ---------- return
+    return phase_diagram, hdist, min_comp, max_comp, filtered_ids, g_ref, g_min, g_max
+
+
+def get_generation_range(ref_gen, plot_min_gen, plot_max_gen, g_max_avail):
+    # ---------- ref_gen
     if ref_gen is not None:
         if ref_gen > g_max_avail:
             raise ValueError(
@@ -392,6 +562,32 @@ def get_generation_range(plot_min_gen, plot_max_gen, ref_gen, g_max_avail):
     else:
         g_ref = g_max_avail
 
+    # ---------- plot_min_gen
+    if plot_min_gen is not None:
+        if plot_min_gen > g_max_avail:
+            raise ValueError(
+                f'plot_min_gen = {plot_min_gen} is larger than the latest generation '
+                f'(latest = {g_max_avail})'
+            )
+        g_min = plot_min_gen
+    else:
+        g_min = 1
+
+    # ---------- plot_max_gen
+    if plot_max_gen is not None:
+        if plot_max_gen > g_max_avail:
+            raise ValueError(
+                f'plot_max_gen = {plot_max_gen} is larger than the latest generation '
+                f'(latest = {g_max_avail})'
+            )
+        g_max = plot_max_gen
+    else:
+        g_max = g_max_avail
+
+    # ---------- effective plot range
+    g_max = min(g_max, g_ref)
+
+    # ---------- return
     return g_min, g_max, g_ref
 
 
@@ -458,6 +654,42 @@ def to_special_formula(sym: str) -> str:
     return special_formulas.get(sym, sym)
 
 
+def save_composition_window(
+        atype,
+        gen,
+        min_comp,
+        max_comp,
+        fig_format,
+        axis_order=None,
+    ):
+    if min_comp is None and max_comp is None:
+        return
+
+    if len(atype) == 2:
+        if axis_order is None:
+            axis_order = 'lr'
+        fig, _ = plot_composition_window_2d(
+            atype=atype,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            axis_order=axis_order,
+        )
+    elif len(atype) == 3:
+        if axis_order is None:
+            axis_order = 'tlr'
+        fig, _ = plot_composition_window_3d(
+            atype=atype,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            axis_order=axis_order,
+        )
+    else:
+        return
+
+    os.makedirs('./data/convex_hull', exist_ok=True)
+    fig.savefig(f'./data/convex_hull/composition_window_{gen}.{fig_format}')
+
+
 def plot_composition_window_2d(
         atype,
         min_comp,
@@ -497,7 +729,7 @@ def plot_composition_window_2d(
     from .struc_util import get_feasible_composition
 
     # ---------- axis order
-    flip_x = (axis_order == 'rl')
+    flip_x = (axis_order == 'lr')
 
     def tx(x):
         return 1.0 - x if flip_x else x
@@ -529,8 +761,17 @@ def plot_composition_window_2d(
                     color="C1", alpha=alpha_base)
 
     # ---------- element labels
-    ax.text(tx(x1_min + 0.05), -0.25, atype[0], ha="center", va="center")
-    ax.text(tx(x1_from_c2_max - 0.05), 0.25, atype[1], ha="center", va="center")
+    if flip_x:
+        left_label = atype[0]
+        right_label = atype[1]
+    else:
+        left_label = atype[1]
+        right_label = atype[0]
+
+    ax.text(0.0, -0.25, left_label,
+            transform=ax.get_xaxis_transform(), ha="center", va="top", clip_on=False)
+    ax.text(1.0, -0.25, right_label,
+            transform=ax.get_xaxis_transform(), ha="center", va="top", clip_on=False)
 
     # ---------- feasible composition range
     feasible_comp = get_feasible_composition(min_comp, max_comp, tol=tol)
@@ -558,6 +799,7 @@ def plot_composition_window_2d(
     ax.set_xlabel("Composition")
 
     # ---------- return
+    plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
     return fig, ax
 
 
@@ -571,10 +813,6 @@ def plot_composition_window_3d(
     """
     Visualize composition constraints for a ternary system.
 
-    Always plots the feasible region on the ternary diagram.
-    If an overlap (feasible composition region) exists,
-    it is highlighted with color.
-
     Parameters
     ----------
     atype : tuple[str, str, str]
@@ -584,19 +822,14 @@ def plot_composition_window_3d(
     max_comp : tuple[float, float, float]
         Maximum composition fractions for each component.
     axis_order : str, optional
-        Permutation of 't', 'l', 'r' specifying which component
-        goes to top / left / right. Default is 'tlr'.
-        For example, 'rtl' means:
-            atype[0] -> right
-            atype[1] -> top
-            atype[2] -> left
+        Permutation of 't', 'l', 'r' specifying which component goes to
+        top / left / right. Default is 'tlr'.
     tol : float, optional
         Numerical tolerance used when judging feasibility and overlap.
     """
 
     # ---------- setting
     set_params()
-    import mpltern
 
     # ---------- axis order
     idx_t = axis_order.index('t')
@@ -608,56 +841,107 @@ def plot_composition_window_3d(
         return comps[idx_t], comps[idx_l], comps[idx_r]
 
     # ---------- figure setup
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='ternary')
+    fig, ax = plt.subplots(figsize=(6, 6))
 
-    # ---------- draw bands for each component
+    # ---------- triangle frame
+    _draw_triangle_plain(ax)
+
+    # ---------- draw constraint lines for each component
     for i in range(3):
-        for c in (min_comp[i], max_comp[i]):
+        for c in set((min_comp[i], max_comp[i])):
             line = _get_feasible_segment(i, c, tol=tol)
             if line is None:
                 continue
             t, l, r = to_tlr(*line)
-            ax.plot(t, l, r, color='k', linestyle="--", linewidth=1.0)
+            x, y = _ternary_to_xy_tlr(t, l, r)
+
+            label_val = f"{c:.3f}".rstrip('0').rstrip('.')
+
+            # place numeric labels outside the triangle on the axis corresponding
+            # to each component role (top / left / right)
+            if i == idx_t:
+                # top-axis values: outside the right edge, horizontal
+                x_text = 1.0 - 0.5 * c + 0.05
+                y_text = (np.sqrt(3.0) / 2.0) * c
+                angle = 0.0
+            elif i == idx_l:
+                # left-axis values: outside the left edge; larger toward the bottom
+                x_text = 0.5 * (1.0 - c) - 0.05
+                y_text = (np.sqrt(3.0) / 2.0) * (1.0 - c)
+                angle = -60.0
+            elif i == idx_r:
+                # right-axis values: outside the bottom edge; larger toward the right
+                x_text = c
+                y_text = -0.055
+                angle = 60.0
+            else:
+                x_text = 0.0
+                y_text = 0.0
+                angle = 0.0
+
+            ax.text(
+                x_text,
+                y_text,
+                label_val,
+                fontsize=14,
+                ha='center', va='center',
+                rotation=angle,
+                rotation_mode='anchor'
+            )
+
+            ax.plot(x, y, color='k', linestyle='--', linewidth=1.0)
 
     # ---------- feasible polygon
     poly = _get_feasible_polygon_ternary(min_comp, max_comp, tol=tol)
     if poly is None:
-        ax.text(1/3, 1/3, 1/3, "Infeasible", ha="center", va="center")
+        x, y = _ternary_to_xy_tlr(
+            np.array([1.0 / 3.0]),
+            np.array([1.0 / 3.0]),
+            np.array([1.0 / 3.0]),
+        )
+        ax.text(x[0], y[0], 'Infeasible', ha='center', va='center')
     else:
         t, l, r = to_tlr(*poly)
-        n = len(t)
+        x, y = _ternary_to_xy_tlr(t, l, r)
+        n = len(x)
         if n >= 3:
-            # ------ 2D feasible polygon
             ax.fill(
-                t, l, r,
-                color="C0",
+                x, y,
+                color='C0',
                 alpha=0.6,
-                edgecolor="k",
+                edgecolor='k',
             )
         elif n == 2:
-            # ------ 1D feasible line segment
             ax.plot(
-                t, l, r,
-                color="C0",
+                x, y,
+                color='C0',
                 linewidth=3.0,
             )
         elif n == 1:
-            # ------ 0D feasible single composition
             ax.plot(
-                t, l, r,
-                marker="o",
+                x, y,
+                marker='o',
                 markersize=8,
-                color="C0",
-                markeredgecolor="k",
+                color='C0',
+                markeredgecolor='k',
             )
 
-    # ---------- axis labels (mpltern)
-    ax.set_tlabel(atype[idx_t])
-    ax.set_llabel(atype[idx_l])
-    ax.set_rlabel(atype[idx_r])
+    # ---------- axis labels
+    ax.text(0.5, np.sqrt(3.0) / 2.0 + 0.02, atype[idx_t], ha='center', va='bottom', fontsize=14)
+    ax.text(-0.01, -0.01, atype[idx_l], ha='right', va='top', fontsize=14)
+    ax.text(1.01, -0.01, atype[idx_r], ha='left', va='top', fontsize=14)
+
+    # ---------- axis settings
+    ax.set_aspect('equal')
+    ax.set_xlim(-0.08, 1.08)
+    ax.set_ylim(-0.08, np.sqrt(3.0) / 2.0 + 0.1)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
     # ---------- return
+    plt.close(fig)    # not to show the figure in Jupyter notebook when using interactive mode
     return fig, ax
 
 
@@ -846,7 +1130,6 @@ def _get_feasible_polygon_ternary(min_comp, max_comp, tol=1e-12):
     return x1, x2, x3
 
 
-
 def _intersect_two_lines(l1, l2, tol=1e-12):
     """
     Compute the intersection of two constraint lines in 2D composition space.
@@ -905,37 +1188,27 @@ def _intersect_two_lines(l1, l2, tol=1e-12):
     return None
 
 
-def save_composition_window(
-        atype,
-        gen,
-        min_comp,
-        max_comp,
-        fig_format,
-        axis_order=None,
-    ):
-    if min_comp is None and max_comp is None:
-        return
+def _ternary_to_xy_tlr(t, l, r):
+    """
+    Convert ternary coordinates ordered as (top, left, right)
+    into ordinary 2D Cartesian coordinates.
+    """
+    t = np.asarray(t, dtype=float)
+    l = np.asarray(l, dtype=float)
+    r = np.asarray(r, dtype=float)
+    x = r + 0.5 * t
+    y = (np.sqrt(3.0) / 2.0) * t
+    return x, y
 
-    if len(atype) == 2:
-        if axis_order is None:
-            axis_order = 'lr'
-        fig, _ = plot_composition_window_2d(
-            atype=atype,
-            min_comp=min_comp,
-            max_comp=max_comp,
-            axis_order=axis_order,
-        )
-    elif len(atype) == 3:
-        if axis_order is None:
-            axis_order = 'tlr'
-        fig, _ = plot_composition_window_3d(
-            atype=atype,
-            min_comp=min_comp,
-            max_comp=max_comp,
-            axis_order=axis_order,
-        )
-    else:
-        return
 
-    os.makedirs('./data/convex_hull', exist_ok=True)
-    fig.savefig(f'./data/convex_hull/composition_window_{gen}.{fig_format}')
+def _draw_triangle_plain(ax):
+    """
+    Draw the outer frame of a ternary triangle in ordinary matplotlib axes.
+    """
+    verts = np.array([
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [0.5, np.sqrt(3.0) / 2.0],
+        [0.0, 0.0],
+    ])
+    ax.plot(verts[:, 0], verts[:, 1], color='k')

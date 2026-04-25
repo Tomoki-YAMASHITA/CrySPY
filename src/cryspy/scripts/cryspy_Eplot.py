@@ -14,8 +14,8 @@ from cryspy.util.visual_util import (
     plot_energy_EA,
     draw_convex_hull_binary,
     draw_convex_hull_ternary,
-    get_generation_range,
-    build_ordering,
+    prepare_EA_data,
+    prepare_hull_data,
 )
 
 
@@ -97,59 +97,37 @@ def plot_EA(rin):
     # ---------- logger
     logger = getLogger('cryspy')
 
-    # ---------- load data
-    rslt_data = pkl_data.load_rslt()
-
-    #filtered_rslt = rslt_data[rslt_data['Gen'].between(plot_min_gen, plot_max_gen)]
-
-    # ---------- generation range
-    g_max_avail = rslt_data['Gen'].max()
+    # ---------- prepare data
     try:
-        g_min, g_max, g_ref = get_generation_range(
+        (
+            filtered_rslt,
+            max_indx,
+            g_ref,
+            g_min,
+            g_max,
+        ) = prepare_EA_data(
+            rslt_data=None,
+            ref_gen=rin.ref_gen,
             plot_min_gen=rin.plot_min_gen,
             plot_max_gen=rin.plot_max_gen,
-            ref_gen=rin.ref_gen,
-            g_max_avail=g_max_avail,
         )
     except ValueError as e:
         logger.error(str(e))
         os.remove('lock_cryspy')
         raise SystemExit(1)
 
-    # ---------- filtering generations
-    filtered_g_ref = rslt_data[rslt_data['Gen'] <= g_ref]
-    max_indx = filtered_g_ref.index.max()
-    filtered_rslt = rslt_data[rslt_data['Gen'].between(g_min, g_max)]
-
     # ---------- plot
     fig, ax = plot_energy_EA(filtered_rslt, rin.ymax, rin.markersize, max_indx=max_indx)
 
-    # ---------- save figure
-    if rin.plot_min_gen is None and rin.plot_max_gen is None:
-        # ------ normal mode (latest only)
-        fname = f'./data/energy_plot/energy_EA_gen_{g_max_avail}.{rin.fig_format}'
-    elif rin.plot_min_gen is None and rin.plot_max_gen is not None:
-        # ------ only max specified
-        if rin.ref_gen is None:
-            # normal mode
-            fname = f'./data/energy_plot/energy_EA_gen_{rin.plot_max_gen}.{rin.fig_format}'
-        else:
-            # with ref gen
-            if rin.ref_gen == rin.plot_max_gen:
-                # normal mode
-                fname = f'./data/energy_plot/energy_EA_gen_{rin.plot_max_gen}.{rin.fig_format}'
-            else:
-                # different ref gen
-                fname = (
-                    f'./data/energy_plot/energy_EA_gen_{rin.plot_max_gen}'
-                    f'_ref_{rin.ref_gen}.{rin.fig_format}'
-                )
+    # ---------- save figure (use effective generation values)
+    if g_min == 1 and g_max == g_ref:
+        # ------ normal plot as of generation g_ref
+        fname = f'./data/energy_plot/energy_EA_gen_{g_ref}.{rin.fig_format}'
     else:
-        # ------ min exists (range plot)
-        ref = rin.ref_gen if rin.ref_gen is not None else g_max
+        # ------ range control
         fname = (
             f'./data/energy_plot/energy_EA_gen_{g_min}-{g_max}'
-            f'_ref_{ref}.{rin.fig_format}'
+            f'_ref_{g_ref}.{rin.fig_format}'
         )
     # ------ save figure
     os.makedirs('./data/energy_plot', exist_ok=True)
@@ -168,46 +146,41 @@ def plot_EA_vc(rin):
     # ---------- logger
     logger = getLogger('cryspy')
 
-    # ---------- load data
-    pd_data = pkl_data.load_pd_data()
-    hdist_data = pkl_data.load_hdist_data()
-    rslt_data = pkl_data.load_rslt()
-
-    # ---------- generation range
-    g_max_avail = max(pd_data.keys())
+    # ---------- prepare data
     try:
-        g_min, g_max, g_ref = get_generation_range(
-            plot_min_gen=rin.plot_min_gen,
-            plot_max_gen=rin.plot_max_gen,
-            ref_gen=rin.ref_gen,
-            g_max_avail=g_max_avail,
-        )
+        (
+            phase_diagram,
+            hdist,
+            min_comp,
+            max_comp,
+            filtered_ids,
+            g_ref,
+            g_min,
+            g_max,
+        ) = prepare_hull_data(
+                rslt_data=None,
+                ea_info=None,
+                pd_data=None,
+                hdist_data=None,
+                ref_gen=rin.ref_gen,
+                plot_min_gen=rin.plot_min_gen,
+                plot_max_gen=rin.plot_max_gen,
+                ref_gen_comp=rin.ref_gen_comp,
+            )
     except ValueError as e:
         logger.error(str(e))
         os.remove('lock_cryspy')
         raise SystemExit(1)
 
-    # ---------- phase_diagram, hdist
-    phase_diagram = pd_data[g_ref]
-    hdist = hdist_data[g_ref]
-
-    # ---------- filtering generations
-    if rin.plot_min_gen is not None or rin.plot_max_gen is not None:
-        filtered_rslt = rslt_data[(rslt_data['Gen'] >= g_min) & (rslt_data['Gen'] <= g_max)]
-        filtered_ids = filtered_rslt.index.values
-    else:
-        filtered_ids = None
-
     # ---------- axis order
     atype = rin.atype
     axis_order = rin.axis_order
-    if len(atype) == 2:    # ordering not used for binary system
+    if len(atype) == 2:
         if axis_order is None:
             axis_order = 'lr'
     if len(atype) == 3:
         if axis_order is None:
             axis_order ='tlr'
-        ordering = build_ordering(atype, axis_order)
 
     # ---------- plot
     if len(rin.atype) == 2:
@@ -221,9 +194,13 @@ def plot_EA_vc(rin):
             bottom_margin=rin.bottom_margin,
             markersize=rin.markersize,
             axis_order=axis_order,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            show_comp_window=rin.show_comp_window,
         )
     elif len(rin.atype) == 3:
         fig, ax = draw_convex_hull_ternary(
+            atype=atype,
             phase_diagram=phase_diagram,
             hdist=hdist,
             filtered_ids=filtered_ids,
@@ -231,39 +208,25 @@ def plot_EA_vc(rin):
             label_stable=rin.label_stable,
             vmax=rin.vmax,
             markersize=rin.markersize,
-            ordering=ordering,
+            axis_order=axis_order,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            show_comp_window=rin.show_comp_window,
         )
     else:
         logger.error(f'len(rin.atype) = {len(rin.atype)} is not supported in cryspy-Eplot')
         os.remove('lock_cryspy')
         raise SystemExit(1)
 
-    # ---------- save figure
-    if rin.plot_min_gen is None and rin.plot_max_gen is None:
-        # ------ normal mode (latest only)
-        fname = f'./data/convex_hull/conv_hull_gen_{g_max_avail}.{rin.fig_format}'
-    elif rin.plot_min_gen is None and rin.plot_max_gen is not None:
-        # ------ only max specified
-        if rin.ref_gen is None:
-            # normal mode
-            fname = f'./data/convex_hull/conv_hull_gen_{rin.plot_max_gen}.{rin.fig_format}'
-        else:
-            # with ref gen
-            if rin.ref_gen == rin.plot_max_gen:
-                # normal mode
-                fname = f'./data/convex_hull/conv_hull_gen_{rin.plot_max_gen}.{rin.fig_format}'
-            else:
-                # different ref gen
-                fname = (
-                    f'./data/convex_hull/conv_hull_gen_{rin.plot_max_gen}'
-                    f'_ref_{rin.ref_gen}.{rin.fig_format}'
-                )
+    # ---------- save figure (use effective generation values)
+    if g_min == 1 and g_max == g_ref:
+        # ------ normal plot as of generation g_ref
+        fname = f'./data/convex_hull/conv_hull_gen_{g_ref}.{rin.fig_format}'
     else:
-        # ------ min exists (range plot)
-        ref = rin.ref_gen if rin.ref_gen is not None else g_max
+        # ------ range control
         fname = (
             f'./data/convex_hull/conv_hull_gen_{g_min}-{g_max}'
-            f'_ref_{ref}.{rin.fig_format}'
+            f'_ref_{g_ref}.{rin.fig_format}'
         )
     # ------ save
     os.makedirs('data/convex_hull', exist_ok=True)

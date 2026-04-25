@@ -7,9 +7,6 @@ from ..IO.out_results import out_ea_info, out_nat_data
 from ..IO import io_stat, pkl_data
 from ..util.struc_util import get_nat
 
-# ---------- import later
-#from ..util.visual_util import save_composition_window
-
 
 logger = getLogger('cryspy')
 
@@ -36,6 +33,8 @@ def initialize(rin, init_struc_data, rslt_data):
             'Elite',
             'crs_lat',
             'slct_func',
+            'min_comp',
+            'max_comp',
         ])
         ea_info.iloc[:, 0:7] = ea_info.iloc[:, 0:7].astype(int)
         ea_info.loc[len(ea_info)] = {
@@ -48,6 +47,8 @@ def initialize(rin, init_struc_data, rslt_data):
             'Elite':       0,
             'crs_lat':     rin.crs_lat,
             'slct_func':   rin.slct_func,
+            'min_comp':    rin.min_comp,
+            'max_comp':    rin.max_comp,
         }
     if rin.algo == 'EA-vc':
         ea_info = pd.DataFrame(columns=[
@@ -63,6 +64,8 @@ def initialize(rin, init_struc_data, rslt_data):
             'Elite',
             'crs_lat',
             'slct_func',
+            'min_comp',
+            'max_comp',
         ])
         ea_info.iloc[:, 0:10] = ea_info.iloc[:, 0:10].astype(int)
         ea_info.loc[len(ea_info)] = {
@@ -78,6 +81,8 @@ def initialize(rin, init_struc_data, rslt_data):
             'Elite':        0,
             'crs_lat':      rin.crs_lat,
             'slct_func':    rin.slct_func,
+            'min_comp':    rin.min_comp,
+            'max_comp':    rin.max_comp,
         }
     out_ea_info(ea_info)
     # ------ ea_origin
@@ -133,25 +138,6 @@ def initialize(rin, init_struc_data, rslt_data):
             nat_data[cid] = tmp_nat
         out_nat_data(nat_data, rin.atype)
         os.makedirs('data/convex_hull', exist_ok=True)
-
-        # -- composition constraints
-        if (
-                (rin.min_comp is not None or rin.max_comp is not None)
-                and len(rin.atype) in (2, 3)
-            ):
-            from ..util.visual_util import save_composition_window
-            save_composition_window(
-                atype=rin.atype,
-                gen=gen,
-                min_comp=rin.min_comp,
-                max_comp=rin.max_comp,
-                fig_format=rin.fig_format,
-                axis_order=rin.axis_order,
-            )
-            logger.info(
-                f'Composition window saved as '
-                f'    ./data/convex_hull/composition_window_{gen}.{rin.fig_format}'
-            )
 
     # ---------- save
     pkl_data.save_id_queueing(id_queueing)

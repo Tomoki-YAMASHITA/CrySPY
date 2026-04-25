@@ -61,6 +61,21 @@ def main():
     nat_data = pkl_data.load_nat_data()
     pd_data = pkl_data.load_pd_data()
     hdist_data = pkl_data.load_hdist_data()
+    ea_info = pkl_data.load_ea_info()
+
+    # ---------- gen validity check
+    g_max_avail = int(rslt_data['Gen'].max())
+    if gen > g_max_avail:
+        logger.error(
+            f'gen = {gen} is larger than the latest available generation '
+            f'(latest = {g_max_avail})'
+        )
+        os.remove('lock_cryspy')
+        raise SystemExit(1)
+
+    # ---------- min_comp/max_comp
+    min_comp = ea_info.loc[ea_info['Gen'] == gen, 'min_comp'].iloc[-1]
+    max_comp = ea_info.loc[ea_info['Gen'] == gen, 'max_comp'].iloc[-1]
 
     # ---------- calc convex hull
     logger.info('# ------ Calculate convex hull')
@@ -80,6 +95,9 @@ def main():
         emax_ea=rin.emax_ea,
         emin_ea=rin.emin_ea,
         axis_order=rin.axis_order,
+        min_comp=min_comp,
+        max_comp=max_comp,
+        show_comp_window=rin.show_comp_window,
     )
     logger.info('# ------ Save data')
     out_hdist(gen, hdist, nat_data)

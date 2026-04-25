@@ -1,7 +1,6 @@
 from ..util.visual_util import (
     draw_convex_hull_binary,
     draw_convex_hull_ternary,
-    build_ordering,
 )
 from logging import getLogger
 
@@ -30,6 +29,9 @@ def calc_convex_hull(
         emin_ea=None,
         mpl_draw=True,
         axis_order=None,
+        min_comp=None,
+        max_comp=None,
+        show_comp_window=True,
     ):
     '''
     Input:
@@ -49,6 +51,9 @@ def calc_convex_hull(
         emin_ea (float): minimum energy for cutoff
         mpl_draw (bool): whether to draw convex hull figure
         axis_order (str): order of axis for binary and ternary phase diagrams
+        min_comp (tuple): Minimum composition fractions
+        max_comp (tuple): Maximum composition fractions
+        show_comp_window (bool): Whether to overlay feasible composition range
 
     Return:
         hdist [dict]: hull distance of all structures, {ID: distance, ...}
@@ -87,10 +92,8 @@ def calc_convex_hull(
         if axis_order is None:
             axis_order = 'lr'
     if len(atype) == 3:
-        ordering = None
         if axis_order is None:
             axis_order ='tlr'
-        ordering = build_ordering(atype, axis_order)
 
     # ---------- draw convex hull
     if mpl_draw:
@@ -105,10 +108,14 @@ def calc_convex_hull(
                 bottom_margin=bottom_margin,
                 markersize=markersize,
                 axis_order=axis_order,
+                min_comp=min_comp,
+                max_comp=max_comp,
+                show_comp_window=show_comp_window,
             )
             fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
         elif len(atype) == 3:
             fig, _ = draw_convex_hull_ternary(
+                atype=atype,
                 phase_diagram=phase_diagram,
                 hdist=hdist,
                 filtered_ids=None,
@@ -116,7 +123,10 @@ def calc_convex_hull(
                 label_stable=label_stable,
                 vmax=vmax,
                 markersize=markersize,
-                ordering=ordering,
+                axis_order=axis_order,
+                min_comp=min_comp,
+                max_comp=max_comp,
+                show_comp_window=show_comp_window,
             )
             fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
 
