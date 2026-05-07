@@ -832,3 +832,24 @@ def sample_nat_from_feasible_N(feasible_N, rng=None):
 
     # ---------- return
     return nat, N
+
+
+def filter_cn_comb_comp(cn_comb, min_comp=None, max_comp=None, tol=1e-12):
+    """
+    Filter charge-neutral combinations by composition window.
+    """
+    if cn_comb is None or len(cn_comb) == 0:
+        return np.empty((0, 0), dtype=int)
+
+    comp = cn_comb / cn_comb.sum(axis=1, keepdims=True)
+
+    mask = np.ones(len(cn_comb), dtype=bool)    # all True initially
+    if min_comp is not None:
+        min_comp = np.asarray(min_comp, dtype=float)
+        mask &= np.all(comp >= (min_comp - tol), axis=1)
+    if max_comp is not None:
+        max_comp = np.asarray(max_comp, dtype=float)
+        mask &= np.all(comp <= (max_comp + tol), axis=1)
+
+    return cn_comb[mask]
+

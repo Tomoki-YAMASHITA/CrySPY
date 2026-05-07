@@ -201,6 +201,7 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
         comm=comm,
         mpi_rank=mpi_rank,
         mpi_size=mpi_size,
+        cn_comb_comp=None,
         feasible_N=None,
         rng=rng,
     )

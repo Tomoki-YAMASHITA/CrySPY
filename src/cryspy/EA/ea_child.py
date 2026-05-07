@@ -58,12 +58,14 @@ def child_gen(
     pre_nstruc = len(init_struc_data)
     id_start = pre_nstruc
     vc = True if rin.algo == 'EA-vc' else False
+    use_comp_window = (rin.min_comp is not None or rin.max_comp is not None)
+    use_charge_neutral = (rin.charge is not None)
     # ------ vc: charge neutral
-    if vc and rin.charge is not None:
+    if vc and use_charge_neutral:
         _, _, _, cn_comb = pkl_data.load_cn_comb_data()
         # -- check for add_max and elim_max
         check_max = min(rin.add_max, rin.elim_max)
-        mask = cn_comb.sum(axis=1) <= check_max
+        mask = cn_comb.sum(axis=1) <= check_max    # e.g. dnat = (1, 0, 1) --> sum = 2 <= check_max
         if len(cn_comb[mask]) == 0:    # delta combinations
             logger.error('No charge neutral combinations found for addition and elimination.')
             logger.error('Please check the parameters rin.add_max and rin.elim_max.')
@@ -113,14 +115,32 @@ def child_gen(
     if sp_subs is not None:
         logger.info(f'eligible candidates for substitution: {len(sp_subs.ranking)}')
 
-    # ---------- vc: feasible composition / feasible N
+    # ---------- vc: charge neutrality and composition window
     feasible_comp = None
     feasible_N = None
-    if vc and (rin.min_comp is not None or rin.max_comp is not None):
+    cn_comb_to_use = cn_comb
+    cn_comb_comp = None
+
+    # ------ composition window only
+    if vc and use_comp_window and not use_charge_neutral:
         from ..util.struc_util import get_feasible_composition, precompute_feasible_N
         feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
         feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
         logger.info(f'Feasible total atom counts for composition constraints: {len(feasible_N)}')
+
+    # ------ charge neutrality + composition window
+    elif vc and use_comp_window and use_charge_neutral:
+        from ..util.struc_util import filter_cn_comb_comp
+        cn_comb_comp = filter_cn_comb_comp(
+            cn_comb,
+            min_comp=rin.min_comp,
+            max_comp=rin.max_comp,
+        )
+        if len(cn_comb_comp) == 0:
+            logger.error('No charge-neutral compositions satisfy min/max_comp.')
+            os.remove('lock_cryspy')
+            raise SystemExit(1)
+        cn_comb_to_use = cn_comb_comp
 
     # ---------- Crossover
     if rin.n_crsov > 0:
@@ -140,7 +160,7 @@ def child_gen(
                 vc,
                 rin.ll_nat,
                 rin.ul_nat,
-                cn_comb,
+                cn_comb_to_use,
                 feasible_N,
                 struc_mol_id=None,
                 molecular=False,
@@ -330,6 +350,7 @@ def child_gen(
                                         comm=None,
                                         mpi_rank=0,
                                         mpi_size=1,
+                                        cn_comb_comp=cn_comb_comp,
                                         feasible_N=feasible_N,
                                         rng=rng,
                                     )

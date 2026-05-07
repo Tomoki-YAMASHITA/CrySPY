@@ -154,19 +154,20 @@ def out_ea_origin(ea_origin):
 # ---------- EA-vc
 def out_nat_data(nat_data, atype):
     with open('./data/nat_data', 'w') as f:
-        f.write(f'    ID    {atype}    Composition\n')
+        f.write(f'      ID    {atype}    Composition\n')
         for cid, nat in nat_data.items():
             ntot = sum(nat)
             if ntot == 0:
                 comp = tuple(0.0 for _ in nat)
             else:
                 comp = tuple(n / ntot for n in nat)
+            nat_str = '(' + ', '.join(f'{n:5d}' for n in nat) + ')'
             comp_str = '(' + ', '.join(f'{c:.3f}' for c in comp) + ')'
-            f.write(f'{cid:6}    {nat}    {comp_str}\n')
+            f.write(f'{cid:8}    {nat_str}    {comp_str}\n')
 
 
 def out_hdist(gen, hdist, nat_data):
     with open(f'./data/convex_hull/hull_dist_all_gen_{gen}', 'w') as f:
-        f.write(f'    ID    hull distance (eV/atom)    Num_atom\n')
+        f.write(f'      ID    hull distance (eV/atom)    Num_atom\n')
         for cid, dist in sorted(hdist.items(), key=lambda x: x[1]):
-            f.write(f'{cid:6}    {dist:>23.6f}    {nat_data[cid]}\n')
+            f.write(f'{cid:8}    {dist:>23.6f}    {nat_data[cid]}\n')
