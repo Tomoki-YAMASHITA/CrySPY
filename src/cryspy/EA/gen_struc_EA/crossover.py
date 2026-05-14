@@ -8,6 +8,9 @@ from pymatgen.core.periodic_table import DummySpecie
 from ...util.struc_util import origin_shift, sort_by_atype, check_distance
 from ...util.struc_util import find_site, cal_g, sort_by_atype_mol, get_nat
 
+# ---------- import later
+#from ...util.charge_neutral import is_charge_neutral_nat
+
 
 logger = getLogger('cryspy')
 
@@ -29,6 +32,10 @@ def gen_crossover(
         ul_nat=None,
         cn_comb=None,
         feasible_N=None,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
         struc_mol_id=None,
         molecular=False,
         rng=None,
@@ -54,6 +61,10 @@ def gen_crossover(
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
     cn_comb (numpy.ndarray): charge neutral combinations
     feasible_N (list): list of feasible total atom counts for EA-vc with composition constraints
+    charge (tuple): charge of each atom type
+    cn_data (dict): charge-neutral data for enumerate/sample mode
+    min_comp (tuple): lower composition bounds
+    max_comp (tuple): upper composition bounds
     rng (numpy.random.Generator): random number generator
 
     # ---------- return
@@ -104,6 +115,10 @@ def gen_crossover(
                 ul_nat,
                 cn_comb,
                 feasible_N,
+                charge,
+                cn_data,
+                min_comp,
+                max_comp,
                 rng,
             )
         # ------ success
@@ -148,6 +163,10 @@ def gen_child(
         ul_nat=None,
         cn_comb=None,
         feasible_N=None,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
         rng=None,
     ):
     '''
@@ -168,6 +187,10 @@ def gen_child(
     ul_nat (tuple): upper limit of nat for EA-vc, e.g. (8, 8)
     cn_comb (numpy.ndarray): charge neutral combinations
     feasible_N (list): list of feasible total atom counts for EA-vc with composition constraints
+    charge (tuple): charge of each atom type
+    cn_data (dict): charge-neutral data for enumerate/sample mode
+    min_comp (tuple): lower composition bounds
+    max_comp (tuple): upper composition bounds
     rng (numpy.random.Generator): random number generator
 
     # ---------- return
@@ -201,19 +224,53 @@ def gen_child(
         # ------ child structure
         child = Structure(lattice, species, coords)
         # ------ check nat_diff
-        if vc and cn_comb is not None:
-            target_nat = _get_close_cn_comb(child, atype, cn_comb, rng)
+        # -- charge neutrality in sample mode
+        if vc and cn_data is not None and cn_data['mode'] == 'sample':
+            # -- choose close target_nat by local search around child_nat
+            child_nat = get_nat(child, atype)
+            target_nat = _sample_close_cn_nat(
+                child_nat,
+                ll_nat,
+                ul_nat,
+                charge,
+                nat_diff_tole=nat_diff_tole,
+                min_comp=min_comp,
+                max_comp=max_comp,
+                rng=rng,
+            )
+
+            # -- no close charge-neutral target_nat found
             use_target_nat = True
-            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
-            nat_diff_checked = False
-        elif vc and feasible_N is not None:
-            target_nat, nat_diff = _get_close_feasible_nat(child, atype, feasible_N, nat_diff_tole, rng)
-            use_target_nat = True
-            nat_diff_checked = True
             if target_nat is None:
                 if count > maxcnt_ea:
                     return None
                 continue    # slice again
+
+            # -- check difference from target_nat
+            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff_checked = False
+
+        # -- charge neutrality in enumerate mode
+        elif vc and cn_comb is not None:
+            # -- choose closest target_nat from precomputed charge-neutral combinations
+            target_nat = _get_close_cn_comb(child, atype, cn_comb, rng)
+            use_target_nat = True
+            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff_checked = False
+
+        # -- composition constraints only
+        elif vc and feasible_N is not None:
+            # -- choose close target_nat from feasible total atom counts
+            target_nat, nat_diff = _get_close_feasible_nat(child, atype, feasible_N, nat_diff_tole, rng)
+            use_target_nat = True
+            nat_diff_checked = True
+
+            # -- no close composition-valid target_nat found
+            if target_nat is None:
+                if count > maxcnt_ea:
+                    return None
+                continue    # slice again
+
         else:
             target_nat = nat
             use_target_nat = False
@@ -601,3 +658,92 @@ def _project_to_N_bounds(nat_arr, N, lower, upper):
 
     # ---------- return
     return nat_proj_arr
+
+
+def _sample_close_cn_nat(
+        child_nat,
+        ll_nat,
+        ul_nat,
+        charge,
+        nat_diff_tole=4,
+        min_comp=None,
+        max_comp=None,
+        rng=None,
+        tol=1e-12,
+    ):
+    """
+    Sample a charge-neutral nat close to child_nat.
+    """
+    # ---------- rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- convert to np.array
+    child_nat = np.array(child_nat, dtype=int)
+    ll = np.array(ll_nat, dtype=int)
+    ul = np.array(ul_nat, dtype=int)
+    k = len(child_nat)
+
+    # ---------- make dnat grid
+    vals = np.arange(-nat_diff_tole, nat_diff_tole + 1, dtype=int)
+    mesh = np.meshgrid(*([vals] * k), indexing='ij')
+    dnat_grid = np.stack(mesh, axis=-1).reshape(-1, k)
+
+    # ---------- distance from child_nat
+    dist = np.abs(dnat_grid).sum(axis=1)
+
+    # ---------- target nat grid
+    target_grid = child_nat + dnat_grid
+
+    # ---------- check bounds
+    mask = np.all(target_grid >= ll, axis=1)
+    mask &= np.all(target_grid <= ul, axis=1)
+
+    # ---------- check total atoms
+    total = target_grid.sum(axis=1)
+    mask &= total > 0
+
+    # ---------- check composition constraints
+    if min_comp is not None or max_comp is not None:
+        comp = np.zeros_like(target_grid, dtype=float)
+        comp[mask] = target_grid[mask] / total[mask, None]
+        if min_comp is not None:
+            min_comp = np.asarray(min_comp, dtype=float)
+            mask &= np.all(comp >= min_comp - tol, axis=1)
+        if max_comp is not None:
+            max_comp = np.asarray(max_comp, dtype=float)
+            mask &= np.all(comp <= max_comp + tol, axis=1)
+
+    # ---------- check charge neutrality
+    if all(isinstance(c, int) for c in charge):
+        # ------ single-valence case
+        charges = np.array(charge, dtype=int)
+        mask &= (target_grid @ charges == 0)
+        candidates = target_grid[mask]
+        candidate_dist = dist[mask]
+    else:
+        # ------ multi-valence case
+        from ...util.charge_neutral import is_charge_neutral_nat
+        candidates = []
+        candidate_dist = []
+        # -- check each candidate in the extended valence space
+        for target_nat, d in zip(target_grid[mask], dist[mask]):
+            if is_charge_neutral_nat(target_nat, charge):
+                candidates.append(target_nat)
+                candidate_dist.append(d)
+        if len(candidates) == 0:
+            return None
+        candidates = np.array(candidates, dtype=int)
+        candidate_dist = np.array(candidate_dist, dtype=int)
+
+    # ---------- no candidate
+    if len(candidates) == 0:
+        return None
+
+    # ---------- choose one of the closest candidates
+    min_dist = candidate_dist.min()
+    closest = candidates[candidate_dist == min_dist]
+    nat = closest[rng.integers(len(closest))]
+
+    # ---------- return
+    return tuple(int(n) for n in nat)

@@ -5,6 +5,9 @@ import numpy as np
 
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
 
+# ---------- import later
+#from ...util.charge_neutral import is_charge_neutral_nat
+
 
 logger = getLogger('cryspy')
 
@@ -15,9 +18,6 @@ def gen_addition(
         struc_data,
         sp,
         n_add,
-        add_max,
-        nat_data,
-        ul_nat,
         add_dnat_map,
         id_start=None,
         symprec=0.01,
@@ -32,9 +32,6 @@ def gen_addition(
     struc_data (dict): {id: structure data}
     sp (instance): instance of SelectParents class
     n_add (int): number of structures to generate by addition
-    add_max (int): maximum number of atoms to add
-    nat_data (dict): {id: nat}
-    ul_nat (tuple): upper limit of nat, e.g. (8, 8)
     add_dnat_map (dict): {id: list of delta nat combinations for addition}
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
@@ -77,7 +74,8 @@ def gen_addition(
         dnat_comb = add_dnat_map[pid_A]
         # ------ add_element_list, e.g. ['Li', 'Li', 'O']
         if target == 'random':
-            dnat = dnat_comb[rng.integers(len(dnat_comb))] 
+            dnat = dnat_comb[rng.integers(len(dnat_comb))]
+            logger.debug(f'Addition debug: dnat={dnat}')
             add_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
         child = gen_child(
@@ -99,6 +97,7 @@ def gen_addition(
                 spg_num = 0
                 spg_sym = None
             tmp_nat = get_nat(child, atype)
+            logger.debug(f'Addition debug: cid={cid}, child_nat={tmp_nat}')
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by addition.'
                 f' Space group: {spg_num:>3} {spg_sym}')
@@ -184,7 +183,7 @@ def gen_child(
     return child
 
 
-def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
+def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb=None, charge=None):
     """
     Generate candidate delta nat (number of atoms) for addition.
 
@@ -200,6 +199,7 @@ def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
     parent_nat : tuple[int]
         nat of the parent structure.
     cn_comb (np.ndarray): charge neutral combinations
+    charge (tuple): charge of each atom type
 
     Returns
     -------
@@ -207,6 +207,7 @@ def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
         Each candidate satisfies:
         - 0 < sum(dnat) <= add_max
         - parent_nat + dnat <= ul_nat (element-wise)
+        - parent_nat + dnat is charge-neutral if charge is given and cn_comb is None
 
     Examples
     --------
@@ -227,14 +228,35 @@ def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb):
     Case 2: `cn_comb` is given
     Only `dnat` rows from `cn_comb` with sum(dnat) <= add_max and
     parent_nat + dnat <= ul_nat are kept.
+
+    Case 3: `cn_comb is None` and `charge` is given
+    All dnat candidates are locally enumerated, and only candidates where
+    parent_nat + dnat is charge-neutral are kept.
     """
+    # ---------- charge-neutral checker
+    if charge is not None and cn_comb is None:
+        from ...util.charge_neutral import is_charge_neutral_nat
+
+    # ---------- initialize
     dnat_comb = []
+
+    # ---------- without precomputed charge-neutral combinations
     if cn_comb is None:
-        max_add_per_element = [min(ul - current, add_max) for ul, current in zip(ul_nat, parent_nat)]
+        max_add_per_element = [
+            min(ul - current, add_max)
+            for ul, current in zip(ul_nat, parent_nat)
+        ]
         for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
             if 0 < sum(dnat) <= add_max:
+                # ------ charge-neutral check
+                if charge is not None:
+                    new_nat = tuple(a + b for a, b in zip(parent_nat, dnat))
+                    if not is_charge_neutral_nat(new_nat, charge):
+                        continue
                 dnat_comb.append(dnat)
-    else:    # charge neutrality
+
+    # ---------- with precomputed charge-neutral combinations
+    else:
         mask = cn_comb.sum(axis=1) <= add_max
         cn_comb_delta = cn_comb[mask].copy()    # delta combinations
         for dnat in cn_comb_delta:

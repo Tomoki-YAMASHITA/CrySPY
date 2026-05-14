@@ -14,11 +14,8 @@ from pyxtal import pyxtal
 from pyxtal.tolerance import Tol_matrix
 
 from ...util.struc_util import check_distance, sort_by_atype
-from ...util.struc_util import get_nat, remove_zero
+from ...util.struc_util import get_nat, remove_zero, choose_vc_nat
 from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
-
-# ---------- import later
-#from ...util.struc_util import sample_nat_from_feasible_N
 
 
 logger = getLogger('cryspy')
@@ -38,7 +35,10 @@ def gen_struc(
         vc=False,
         ll_nat=None,
         ul_nat=None,
-        cn_comb=None,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
         feasible_N=None,
         rng=None,
     ):
@@ -64,7 +64,10 @@ def gen_struc(
     vc (bool): variable composition. it needs ll_nat and ul_nat
     ll_nat (tuple): lower limit of number of atoms (e.g. (0, 0))
     ul_nat (tuple): upper limit of number of atoms (e.g. (8, 8))
-    cn_comb (np.array): charge neutral combinations of atoms
+    charge (tuple): charge of each atom type
+    cn_data (dict): charge-neutral data for enumerate/sample mode
+    min_comp (tuple): lower composition bounds
+    max_comp (tuple): upper composition bounds
     feasible_N (list): feasible total atom numbers under composition constraints
     rng (np.random.Generator): random number generator
 
@@ -93,15 +96,17 @@ def gen_struc(
         # ------ generate structure
         tmp_crystal = pyxtal()
         if vc:    # variable composition
-            if cn_comb is None:
-                if feasible_N is None:
-                    nat = tuple([rng.integers(l, u+1) for l, u in zip(ll_nat, ul_nat)])
-                else:
-                    from ...util.struc_util import sample_nat_from_feasible_N
-                    nat, _ = sample_nat_from_feasible_N(feasible_N, rng)
-                    nat = tuple(int(n) for n in nat)
-            else:
-                nat = tuple(cn_comb[rng.integers(len(cn_comb))])
+            # ------ choose nat for variable-composition generation
+            nat = choose_vc_nat(
+                ll_nat=ll_nat,
+                ul_nat=ul_nat,
+                charge=charge,
+                cn_data=cn_data,
+                min_comp=min_comp,
+                max_comp=max_comp,
+                feasible_N=feasible_N,
+                rng=rng,
+            )
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist

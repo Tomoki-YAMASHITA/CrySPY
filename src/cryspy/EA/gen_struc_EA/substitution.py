@@ -15,10 +15,6 @@ def gen_substitution(
         struc_data,
         sp,
         n_subs,
-        subs_max,
-        nat_data,
-        ll_nat,
-        ul_nat,
         subs_comb_map,
         id_start=None,
         symprec=0.01,
@@ -35,10 +31,6 @@ def gen_substitution(
     struc_data (dict): {id: structure data}
     sp (instance): instance of SelectParents class
     n_subs (int): number of structures to generate by substitution
-    subs_max (int): maximum number of atoms to substitute
-    nat_data (dict): {id: nat}
-    ll_nat (tuple): lower limit of nat, e.g. (1, 1)
-    ul_nat (tuple): upper limit of nat, e.g. (8, 8)
     subs_comb_map (dict): {id: list of substitution patterns}
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
@@ -165,7 +157,46 @@ def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target=
                 return None    # change parent
 
 
-def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
+def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set=None, charge=None):
+    """
+    Generate candidate substitution patterns.
+
+    This function returns all feasible substitution patterns under the
+    lower-bound, upper-bound, and maximum-substitution constraints.
+
+    Parameters
+    ----------
+    atype : tuple[str]
+        Atom types.
+    ll_nat : tuple[int]
+        Per-element lower bounds of atom counts.
+    ul_nat : tuple[int]
+        Per-element upper bounds of atom counts.
+    subs_max : int
+        Maximum total number of atoms to substitute in one operation.
+    parent_nat : tuple[int]
+        nat of the parent structure.
+    cn_set : set[tuple[int, ...]]
+        Set of charge-neutral nat tuples from precomputed cn_comb.
+    charge : tuple
+        Charge of each atom type.
+
+    Returns
+    -------
+    subs_comb : list[list[tuple[str, str]]]
+        List of substitution patterns.
+        Each pattern is a list of (from_elem, to_elem) pairs.
+
+    Notes
+    -----
+    If cn_set is given, charge neutrality is checked by membership in cn_set.
+    If cn_set is None and charge is given, charge neutrality is checked from
+    new_nat after substitution.
+    """
+    # ---------- charge-neutral checker
+    if charge is not None and cn_set is None:
+        from ...util.charge_neutral import is_charge_neutral_nat
+
     # ---------- initialize
     subs_comb = []
 
@@ -179,9 +210,11 @@ def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
     # ---------- all combinations of substitution counts for each pair from 0 to max_subs
     pairs = list(max_subs.keys())
     max_counts = [max_subs[pair] for pair in pairs]
-    # precompute element index and index pairs for speed
+
+    # ---------- precompute element index and index pairs for speed
     idx = {elem: i for i, elem in enumerate(atype)}
     index_pairs = [(idx[from_elem], idx[to_elem]) for (from_elem, to_elem) in pairs]
+
     for counts in product(*[range(max_count + 1) for max_count in max_counts]):
         total_subs = sum(counts)
         if 0 < total_subs <= subs_max:
@@ -194,14 +227,23 @@ def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set):
                 if remain_nat[from_idx] < 0:
                     break
                 new_nat[to_idx] += count
+
             # ------ skip if any element goes negative
             if any(n < 0 for n in remain_nat):
                 continue
+
             # ------ check if new_nat is within limits
             if all(ll <= n <= ul for n, ll, ul in zip(new_nat, ll_nat, ul_nat)):
                 # ------ charge-neutral check using precomputed cn_comb
-                if cn_set is not None and tuple(new_nat) not in cn_set:
-                    continue  # not charge-neutral --> skip this pattern
+                if cn_set is not None:
+                    if tuple(new_nat) not in cn_set:
+                        continue    # not charge-neutral --> skip this pattern
+
+                # ------ charge-neutral check without precomputed cn_comb
+                elif charge is not None:
+                    if not is_charge_neutral_nat(new_nat, charge):
+                        continue    # not charge-neutral --> skip this pattern
+
                 # ------ OK: store this substitution pattern
                 subs_list = []
                 for pair, count in zip(pairs, counts):

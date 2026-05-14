@@ -38,6 +38,8 @@ class ReadInput:
     ll_nat: tuple = field(default=None)
     ul_nat: tuple = field(default=None)
     charge: tuple = field(default=None)
+    cn_mode: str = field(default=None)
+    max_cn_grid_points: int = field(default=None)
     min_comp: tuple = field(default=None)
     max_comp: tuple = field(default=None)
     # ------ mol or mol_bs

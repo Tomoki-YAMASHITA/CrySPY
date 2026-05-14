@@ -12,13 +12,15 @@ from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
 from ..util.utility import get_version, backup_cryspy
-from ..util.struc_util import out_poscar, calc_cn_comb, get_feasible_composition
+from ..util.struc_util import out_poscar
 
 # ---------- import later
 #from ..RS import rs_restart
 #from ..BO import bo_restart
 #from ..LAQA import laqa_restart
 #from ..EA import ea_append
+#from ..util.charge_neutral import prepare_cn_data
+#from ..util.struc_util import get_feasible_composition
 
 
 logger = getLogger('cryspy')
@@ -42,6 +44,8 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
         if mpi_rank == 0:
             logger.error(e)
             os.remove('lock_cryspy')
+        if mpi_size > 1:
+            comm.Abort(1)      # stop for MPI
         raise SystemExit(1)
     if mpi_rank == 0:
         try:
@@ -89,6 +93,8 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             if mpi_rank == 0:
                 logger.error('tot_struc < len(init_struc_data)')
                 os.remove('lock_cryspy')
+            if mpi_size > 1:
+                comm.Abort(1)      # stop for MPI
             raise SystemExit(1)
 
     # ---------- append structures by EA (option)
@@ -129,17 +135,26 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             os.remove('lock_cryspy')
         raise SystemExit()
 
-    # ---------- vc: calc charge-neutral combinations
+    # ---------- vc: prepare charge-neutral data
     if mpi_rank == 0:
         if rin.algo == 'EA-vc' and rin.charge is not None:
-            logger.info('# ---------- Calculate charge-neutral combinations')
-            cn_comb = calc_cn_comb(rin.ll_nat, rin.ul_nat, rin.charge)
-            if len(cn_comb) == 0:
-                logger.error('No charge neutral combinations found.')
+            try:
+                from ..util.charge_neutral import prepare_cn_data
+                cn_data = prepare_cn_data(
+                    rin.ll_nat,
+                    rin.ul_nat,
+                    rin.charge,
+                    cn_mode=rin.cn_mode,
+                    max_cn_grid_points=rin.max_cn_grid_points,
+                )
+                if cn_data['mode'] == 'enumerate' and len(cn_data['cn_comb']) == 0:
+                    raise ValueError('No charge neutral combinations found.')
+            except Exception as e:
+                logger.error(e)
                 os.remove('lock_cryspy')
                 if mpi_size > 1:
                     comm.Abort(1)      # stop for MPI
-                raise SystemExit(1)    # stop for sereial
+                raise SystemExit(1)    # stop for serial
 
     # ---------- vc: plot composition window
     if mpi_rank == 0:
@@ -157,6 +172,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             )
             if comp_changed:
                 logger.info('# ---------- Composition constraints')
+                from ..util.struc_util import get_feasible_composition
                 from ..util.visual_util import save_composition_window
                 next_gen = gen + 1
                 save_composition_window(
@@ -201,7 +217,7 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
         comm=comm,
         mpi_rank=mpi_rank,
         mpi_size=mpi_size,
-        cn_comb_comp=None,
+        cn_data=None,    # let gen_random load cn_comb_data.pkl on each MPI rank
         feasible_N=None,
         rng=rng,
     )

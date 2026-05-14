@@ -11,7 +11,7 @@ from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
 
 # ---------- import later
-#from ..IO.pkl_data import load_cn_comb_data, save_cn_comb_data
+#from .charge_neutral import filter_cn_comb_comp, sample_cn_nat, sample_cn_nat_comp
 
 
 logger = getLogger('cryspy')
@@ -522,183 +522,92 @@ def remove_zero(atype_in, nat_in, mindist_in):
     return atype_out, nat_out, mindist_out
 
 
-#
-# ---------- charge neutrality
-#
 
-def calc_cn_comb(ll_nat, ul_nat, charge, use_pkl=True):
+def choose_vc_nat(
+        ll_nat,
+        ul_nat,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
+        feasible_N=None,
+        rng=None,
+    ):
     """
-    Calculate charge-neutral combinations of atoms
-
-    # ---------- args
-    ll_nat (tuple): lower limit of the number of atoms
-    ul_nat (tuple): upper limit of the number of atoms
-    charge (tuple): charge of each atom type
-    use_pkl (bool): if True, load/save data from/to pkl file
-
-    # ---------- retrun
-    cn_comb (np.ndarray): array of charge-neutral combinations
-
-    # ---------- example
-    e.g. Na-Cl
-    ll_nat = (0, 0)
-    ul_nat = (4, 4)
-    charge = (1, -1)
-
-    cn_comb = array([[1, 1],
-                     [2, 2],
-                     [3, 3],
-                     [4, 4]])
-
-    # ---------- multi-valence example
-    e.g. Fe-O
-    ll_nat = (4, 4)
-    ul_nat = (10, 10)
-    charge = ((2, 3), -2)   # (Fe2+, Fe3+), O2-
-
-    Expanded representation:
-    ll_ext = (0, 0, 4)      # multivalent: no ll per valence; ll applies to total only
-    ul_ext = (10, 10, 10)
-    charge_ext = (2, 3, -2)
+    Choose one nat for variable-composition structure generation.
     """
-    # ---------- try loading pkl data if it exists
-    if use_pkl:
-        from ..IO.pkl_data import load_cn_comb_data, save_cn_comb_data
-        try:
-            old_ll, old_ul, old_charge, old_cn_comb = load_cn_comb_data()
-            if (ll_nat == old_ll) and (ul_nat == old_ul) and (charge == old_charge):
-                logger.info('Using old charge neutral combinations data')
-                return old_cn_comb
-        except Exception:
-            pass
+    # ---------- rng
+    if rng is None:
+        rng = np.random.default_rng()
 
-    # ---------- convert bounds to np.array
-    ll = np.array(ll_nat, dtype=int)
-    ul = np.array(ul_nat, dtype=int)
-    k_orig = len(charge)
+    # ---------- flags
+    use_charge_neutral = (charge is not None)
+    use_comp_window = (min_comp is not None or max_comp is not None)
 
-    # ---------- case 1: all charges are single-valence (int)
-    if all(isinstance(c, int) for c in charge):
-        charges = np.array(charge, dtype=int)
-        cn_comb = _calc_cn_comb_single(ll, ul, charges)
+    # ---------- charge neutrality
+    if use_charge_neutral:
+        from .charge_neutral import filter_cn_comb_comp, sample_cn_nat, sample_cn_nat_comp
+        if cn_data is None:
+            raise ValueError('cn_data is required when charge is given.')
 
-    # ---------- case 2: some species have multiple valences
-    # expand each valence to a "pseudo-species"
-    else:
-        valence_list = []        # charges in extended space
-        orig_index = []    # mapping: extended index -> original species index
-        ll_ext_list = []     # lower bounds in extended space
-        for i, c in enumerate(charge):
-            if isinstance(c, int):
-                # single-valence species: lower bound can be kept
-                valence_list.append(c)
-                orig_index.append(i)
-                ll_ext_list.append(ll[i])
-            else:
-                # multivalent: each valence may be absent
-                for v in c:
-                    valence_list.append(v)
-                    orig_index.append(i)
-                    ll_ext_list.append(0)   # no ll per valence; ll applies to total only
-        # ------ convert to np.array
-        charges_ext = np.array(valence_list, dtype=int)
-        ll_ext = np.array(ll_ext_list, dtype=int)
-        ul_ext = np.array([ul[i] for i in orig_index], dtype=int)
+        # ------ enumerate mode
+        if cn_data['mode'] == 'enumerate':
+            cn_comb = cn_data['cn_comb']
+            # -- filter by composition window if needed
+            if use_comp_window:
+                cn_comb = filter_cn_comb_comp(
+                    cn_comb,
+                    min_comp=min_comp,
+                    max_comp=max_comp,
+                )
+            if len(cn_comb) == 0:
+                raise ValueError('No charge-neutral nat is available.')
+            # -- choose one at random
+            nat = tuple(cn_comb[rng.integers(len(cn_comb))])
+            return tuple(int(n) for n in nat)
 
-        # ---------- charge-neutral combinations in the extended space
-        cn_ext = _calc_cn_comb_single(ll_ext, ul_ext, charges_ext)
-        if cn_ext.size == 0:
-            return np.empty((0, k_orig), dtype=int)
+        # ------ sample mode
+        if cn_data['mode'] == 'sample':
+            # -- sample with composition window if needed
+            if use_comp_window:
+                return sample_cn_nat_comp(
+                    ll_nat,
+                    ul_nat,
+                    charge,
+                    min_comp,
+                    max_comp,
+                    feasible_N=feasible_N,
+                    rng=rng,
+                )
 
-        # ---------- aggregate back to original species
-        totals = np.zeros((cn_ext.shape[0], k_orig), dtype=int)    # initialized
-        for j, p in enumerate(orig_index):
-            totals[:, p] += cn_ext[:, j]
+            # -- sample without composition window
+            return sample_cn_nat(
+                ll_nat,
+                ul_nat,
+                charge,
+                rng=rng,
+            )
 
-        # ---------- apply original bounds ll_nat, ul_nat
-        mask_ll = np.all(totals >= ll, axis=1)
-        mask_ul = np.all(totals <= ul, axis=1)
-        final_mask = mask_ll & mask_ul
-        if not np.any(final_mask):
-            return np.empty((0, k_orig), dtype=int)
-        totals_valid = totals[final_mask]
+        raise ValueError('cn_data["mode"] must be enumerate or sample.')
 
-        # ---------- remove duplicate compositions
-        cn_comb = np.unique(totals_valid, axis=0)
+    # ---------- composition constraints only
+    if use_comp_window:
+        # ------ precompute feasible N if not given
+        if feasible_N is None:
+            feasible_comp = get_feasible_composition(min_comp, max_comp)
+            if feasible_comp is None:
+                raise ValueError('No feasible composition exists for min_comp and max_comp.')
+            feasible_N = precompute_feasible_N(ll_nat, ul_nat, feasible_comp)
+        if len(feasible_N) == 0:
+            raise ValueError('No feasible total atom count exists for composition constraints.')
 
-    # ---------- save
-    if use_pkl:
-        cn_comb_data = (ll_nat, ul_nat, charge, cn_comb)
-        save_cn_comb_data(cn_comb_data)
-        logger.info(f'Charge neutral combinations saved: {len(cn_comb)}')
+        # ------ sample nat from feasible N
+        nat, _ = sample_nat_from_feasible_N(feasible_N, rng)
+        return tuple(int(n) for n in nat)
 
-    # ---------- return charge neutral combinations
-    return cn_comb
-
-
-def _calc_cn_comb_single(ll, ul, charges):
-    """
-    Core routine for charge-neutral combinations with single valence per species.
-
-    Parameters
-    ----------
-    ll : np.ndarray, shape (k,)
-        Lower limits of the number of atoms for each species (int).
-    ul : np.ndarray, shape (k,)
-        Upper limits of the number of atoms for each species (int).
-    charges : np.ndarray, shape (k,)
-        Charges of each species (single valence only, all ints).
-
-    Returns
-    -------
-    cn_comb : np.ndarray, shape (N, k)
-        Array of charge-neutral combinations.
-        Each row is (n_1, ..., n_k).
-    """
-
-    # ---------- size
-    k = len(charges)
-
-    # ---------- choose one "dependent" species whose charge != 0
-    #            Select the dependent species: charge with largest absolute value
-    nonzero_q_idx = np.where(charges != 0)[0]
-    dep_idx = nonzero_q_idx[np.argmax(np.abs(charges[nonzero_q_idx]))]    # dependent index
-    indep_idx = [i for i in range(k) if i != dep_idx]
-    q_dep = charges[dep_idx]
-    q_indep = charges[indep_idx]
-
-    # ---------- generate combinations for independent variables only
-    ranges = [np.arange(ll[i], ul[i] + 1) for i in indep_idx]
-    mesh = np.meshgrid(*ranges, indexing='ij')
-    comb_indep = np.stack(mesh, axis=-1).reshape(-1, len(indep_idx))  # (M, k-1)
-
-    # ---------- compute dependent variable from charge neutrality
-    # q_dep * n_dep + sum(q_indep * n_indep) = 0
-    # → n_dep = - sum(q_indep * n_indep) / q_dep
-    sum_indep = comb_indep @ q_indep  # (M,)
-    divisible_mask = (-sum_indep % q_dep == 0)    # divisible by q_dep
-    n_dep = -sum_indep // q_dep
-
-    # ---------- mask
-    in_range_mask = (n_dep >= ll[dep_idx]) & (n_dep <= ul[dep_idx])    # ll <= n_dep <= ul
-    total_atoms = comb_indep.sum(axis=1) + n_dep    # \sum n_indep + n_dep
-    nonzero_mask = (total_atoms != 0)    # total atoms != 0
-    final_mask = divisible_mask & in_range_mask & nonzero_mask
-
-    # ---------- construct final combinations
-    if not np.any(final_mask):
-        cn_comb = np.empty((0, k), dtype=int)    # no valid combinations --> empty array
-    else:
-        valid_indep = comb_indep[final_mask]
-        valid_dep = n_dep[final_mask]
-        # ------ reconstruct full combinations
-        cn_comb = np.zeros((len(valid_dep), k), dtype=int)    # vacant array
-        cn_comb[:, dep_idx] = valid_dep
-        for j, i in enumerate(indep_idx):
-            cn_comb[:, i] = valid_indep[:, j]
-
-    # ---------- return
-    return cn_comb
+    # ---------- no charge neutrality and no composition constraints
+    nat = tuple([rng.integers(l, u + 1) for l, u in zip(ll_nat, ul_nat)])
+    return tuple(int(n) for n in nat)
 
 
 #
@@ -832,24 +741,4 @@ def sample_nat_from_feasible_N(feasible_N, rng=None):
 
     # ---------- return
     return nat, N
-
-
-def filter_cn_comb_comp(cn_comb, min_comp=None, max_comp=None, tol=1e-12):
-    """
-    Filter charge-neutral combinations by composition window.
-    """
-    if cn_comb is None or len(cn_comb) == 0:
-        return np.empty((0, 0), dtype=int)
-
-    comp = cn_comb / cn_comb.sum(axis=1, keepdims=True)
-
-    mask = np.ones(len(cn_comb), dtype=bool)    # all True initially
-    if min_comp is not None:
-        min_comp = np.asarray(min_comp, dtype=float)
-        mask &= np.all(comp >= (min_comp - tol), axis=1)
-    if max_comp is not None:
-        max_comp = np.asarray(max_comp, dtype=float)
-        mask &= np.all(comp <= (max_comp + tol), axis=1)
-
-    return cn_comb[mask]
 

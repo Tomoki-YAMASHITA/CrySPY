@@ -4,6 +4,7 @@ from .base import BaseReader
 
 # ---------- import later
 #from ...util.struc_util import get_feasible_composition
+#from ...util.constants import MAX_CN_GRID_POINTS
 
 
 class StructureReader(BaseReader):
@@ -165,6 +166,27 @@ class StructureReader(BaseReader):
                         'charge must contain at least one positive and one negative value '
                         '(zero is allowed).'
                     )
+            # ------ cn_mode, max_cn_grid_points
+            if self.rin.charge is not None:
+                try:
+                    self.rin.cn_mode = self.config.get('structure', 'cn_mode')
+                except (configparser.NoOptionError, configparser.NoSectionError):
+                    self.rin.cn_mode = 'auto'
+                if self.rin.cn_mode not in ['auto', 'enumerate', 'sample']:
+                    raise ValueError('cn_mode must be auto, enumerate, or sample')
+
+                try:
+                    self.rin.max_cn_grid_points = self.config.getint(
+                        'structure', 'max_cn_grid_points'
+                    )
+                except (configparser.NoOptionError, configparser.NoSectionError):
+                    from ...util.constants import MAX_CN_GRID_POINTS
+                    self.rin.max_cn_grid_points = MAX_CN_GRID_POINTS
+                if self.rin.max_cn_grid_points <= 0:
+                    raise ValueError('max_cn_grid_points must be positive')
+            else:
+                self.rin.cn_mode = None
+                self.rin.max_cn_grid_points = None
             # ------ min_comp, max_comp
             try:
                 self.rin.min_comp = self.config.get('structure', 'min_comp')

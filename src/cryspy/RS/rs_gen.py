@@ -21,7 +21,7 @@ def gen_random(
         comm,
         mpi_rank,
         mpi_size,
-        cn_comb_comp=None,
+        cn_data=None,
         feasible_N=None,
         rng=None,
     ):
@@ -51,7 +51,7 @@ def gen_random(
 
     # ---------- log
     if mpi_rank == 0:
-        logger.info('# ------ generate structures')
+        logger.info('# ------ Generate random structures')
 
     # ---------- EA-vc
     vc = True if rin.algo == 'EA-vc' else False
@@ -60,30 +60,15 @@ def gen_random(
 
     # ------ charge neutrality
     if vc and use_charge_neutral:
-        _, _, _, cn_comb = load_cn_comb_data()
-    else:
-        cn_comb = None
-
-    # ------ charge neutrality and composition constraints
-    if vc and use_charge_neutral and use_comp_window:
-        if cn_comb_comp is None:
-            from ..util.struc_util import filter_cn_comb_comp
-            cn_comb_comp = filter_cn_comb_comp(
-                cn_comb,
-                min_comp=rin.min_comp,
-                max_comp=rin.max_comp,
-            )
+        if cn_data is None:
+            cn_data = load_cn_comb_data()
         if mpi_rank == 0:
-            if len(cn_comb_comp) == 0:
-                logger.error('No charge-neutral compositions satisfy min/max_comp.')
-                os.remove('lock_cryspy')
-                if mpi_size > 1:
-                    comm.Abort(1)      # stop for MPI
-                raise SystemExit(1)    # stop for serial
-        feasible_N = None
+            logger.info(f'Charge-neutral mode for structure generation: {cn_data["mode"]}')
+    else:
+        cn_data = None
 
-    # ------ composition constraints only
-    elif vc and use_comp_window and not use_charge_neutral:
+    # ------ composition constraints
+    if vc and use_comp_window:
         if feasible_N is None:
             from ..util.struc_util import get_feasible_composition, precompute_feasible_N
             feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
@@ -93,17 +78,8 @@ def gen_random(
                 f'Composition constraints applied to random generation: '
                 f'{len(feasible_N)} feasible total atom counts'
             )
-        cn_comb_comp = None
     else:
         feasible_N = None
-        cn_comb_comp = None
-
-    # ------ cn_comb to use
-    if use_charge_neutral and use_comp_window:
-        cn_comb_to_use = cn_comb_comp
-    else:
-        cn_comb_to_use = cn_comb
-
 
     # ---------- pyxtal
     if not (rin.spgnum == 0 or rin.use_find_wy):
@@ -124,7 +100,10 @@ def gen_random(
                 vc=vc,
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
-                cn_comb=cn_comb_to_use,
+                charge=rin.charge,
+                cn_data=cn_data,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
                 feasible_N=feasible_N,
                 rng=rng,
             )
@@ -190,7 +169,10 @@ def gen_random(
                 vc=vc,
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
-                cn_comb=cn_comb_to_use,
+                charge=rin.charge,
+                cn_data=cn_data,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
                 feasible_N=feasible_N,
                 rng=rng,
             )
@@ -222,7 +204,10 @@ def gen_random(
                 vc=vc,
                 ll_nat=rin.ll_nat,
                 ul_nat=rin.ul_nat,
-                cn_comb=cn_comb_to_use,
+                charge=rin.charge,
+                cn_data=cn_data,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
                 feasible_N=feasible_N,
                 rng=rng,
             )

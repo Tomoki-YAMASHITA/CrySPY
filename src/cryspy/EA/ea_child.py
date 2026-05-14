@@ -21,6 +21,7 @@ from ..util.struc_util import set_mindist, out_poscar, get_nat
 #from .gen_struc_EA.elimination import get_elim_dnat_comb
 #from .gen_struc_EA.substitution import get_subs_comb
 #from ..util.struc_util import get_feasible_composition, precompute_feasible_N
+#from ..util.charge_neutral import filter_cn_comb_comp
 
 
 logger = getLogger('cryspy')
@@ -60,19 +61,28 @@ def child_gen(
     vc = True if rin.algo == 'EA-vc' else False
     use_comp_window = (rin.min_comp is not None or rin.max_comp is not None)
     use_charge_neutral = (rin.charge is not None)
-    # ------ vc: charge neutral
+    # ------ vc: charge neutrality
+    # cn_data keeps the charge-neutral metadata loaded from cn_comb_data.pkl.
+    # cn_comb is used only in enumerate mode; sample mode keeps cn_comb as None.
+    cn_data = None
+    cn_comb = None
     if vc and use_charge_neutral:
-        _, _, _, cn_comb = pkl_data.load_cn_comb_data()
-        # -- check for add_max and elim_max
-        check_max = min(rin.add_max, rin.elim_max)
-        mask = cn_comb.sum(axis=1) <= check_max    # e.g. dnat = (1, 0, 1) --> sum = 2 <= check_max
-        if len(cn_comb[mask]) == 0:    # delta combinations
-            logger.error('No charge neutral combinations found for addition and elimination.')
-            logger.error('Please check the parameters rin.add_max and rin.elim_max.')
+        cn_data = pkl_data.load_cn_comb_data()
+        logger.info(f'Charge-neutral mode for child generation: {cn_data["mode"]}')
+
+        # -- enumerate mode: use precomputed charge-neutral nat combinations
+        if cn_data.get('mode') == 'enumerate':
+            cn_comb = cn_data['cn_comb']
+
+        # -- sample mode: cn_comb is not available; use cn_data and charge downstream
+        elif cn_data.get('mode') == 'sample':
+            cn_comb = None
+        # -- unexpected
+        else:
+            logger.error('cn_data["mode"] must be enumerate or sample.')
             os.remove('lock_cryspy')
             raise SystemExit(1)
-    else:
-        cn_comb = None
+
 
     # ------ vc: pre-check parent feasibility and precompute per-parent operation data
     perm_pid_list = None
@@ -115,32 +125,29 @@ def child_gen(
     if sp_subs is not None:
         logger.info(f'eligible candidates for substitution: {len(sp_subs.ranking)}')
 
-    # ---------- vc: charge neutrality and composition window
+    # ---------- vc: prepare composition data for crossover and random generation
     feasible_comp = None
     feasible_N = None
-    cn_comb_to_use = cn_comb
-    cn_comb_comp = None
+    cn_comb_for_crossover = cn_comb
 
-    # ------ composition window only
-    if vc and use_comp_window and not use_charge_neutral:
+    if vc and use_comp_window:
         from ..util.struc_util import get_feasible_composition, precompute_feasible_N
         feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
         feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
         logger.info(f'Feasible total atom counts for composition constraints: {len(feasible_N)}')
 
-    # ------ charge neutrality + composition window
-    elif vc and use_comp_window and use_charge_neutral:
-        from ..util.struc_util import filter_cn_comb_comp
-        cn_comb_comp = filter_cn_comb_comp(
-            cn_comb,
-            min_comp=rin.min_comp,
-            max_comp=rin.max_comp,
-        )
-        if len(cn_comb_comp) == 0:
-            logger.error('No charge-neutral compositions satisfy min/max_comp.')
-            os.remove('lock_cryspy')
-            raise SystemExit(1)
-        cn_comb_to_use = cn_comb_comp
+        # ------ enumerate mode: filter charge-neutral combinations by composition window
+        if use_charge_neutral and cn_data['mode'] == 'enumerate':
+            from ..util.charge_neutral import filter_cn_comb_comp
+            cn_comb_for_crossover = filter_cn_comb_comp(
+                cn_comb,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+            )
+            if len(cn_comb_for_crossover) == 0:
+                logger.error('No charge-neutral compositions satisfy min/max_comp.')
+                os.remove('lock_cryspy')
+                raise SystemExit(1)
 
     # ---------- Crossover
     if rin.n_crsov > 0:
@@ -157,11 +164,15 @@ def child_gen(
                 rin.crs_lat,
                 rin.nat_diff_tole,
                 rin.maxcnt_ea,
-                vc,
-                rin.ll_nat,
-                rin.ul_nat,
-                cn_comb_to_use,
-                feasible_N,
+                vc=vc,
+                ll_nat=rin.ll_nat,
+                ul_nat=rin.ul_nat,
+                cn_comb=cn_comb_for_crossover,
+                feasible_N=feasible_N,
+                charge=rin.charge,
+                cn_data=cn_data,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
                 struc_mol_id=None,
                 molecular=False,
                 rng=rng,
@@ -243,9 +254,6 @@ def child_gen(
                     struc_data,
                     sp_add,
                     rin.n_add,
-                    rin.add_max,
-                    nat_data,
-                    rin.ul_nat,
                     add_dnat_map,
                     id_start,
                     rin.symprec,
@@ -271,9 +279,6 @@ def child_gen(
                     struc_data,
                     sp_elim,
                     rin.n_elim,
-                    rin.elim_max,
-                    nat_data,
-                    rin.ll_nat,
                     elim_dnat_map,
                     id_start,
                     rin.symprec,
@@ -299,10 +304,6 @@ def child_gen(
                     struc_data,
                     sp_subs,
                     rin.n_subs,
-                    rin.subs_max,
-                    nat_data,
-                    rin.ll_nat,
-                    rin.ul_nat,
                     subs_comb_map,
                     id_start,
                     rin.symprec,
@@ -350,7 +351,7 @@ def child_gen(
                                         comm=None,
                                         mpi_rank=0,
                                         mpi_size=1,
-                                        cn_comb_comp=cn_comb_comp,
+                                        cn_data=cn_data,
                                         feasible_N=feasible_N,
                                         rng=rng,
                                     )
@@ -458,7 +459,13 @@ def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):
             add_dnat_map = {}
             for pid in ranked_pids:
                 parent_nat = tuple(nat_data[pid])
-                dnat_list = get_add_dnat_comb(rin.ul_nat, rin.add_max, parent_nat, cn_comb)
+                dnat_list = get_add_dnat_comb(
+                    rin.ul_nat,
+                    rin.add_max,
+                    parent_nat,
+                    cn_comb=cn_comb,
+                    charge=rin.charge,
+                )
                 dnat_ok = []
                 for dnat in dnat_list:
                     new_nat = tuple(a + b for a, b in zip(parent_nat, dnat))
@@ -474,7 +481,13 @@ def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):
             elim_dnat_map = {}
             for pid in ranked_pids:
                 parent_nat = tuple(nat_data[pid])
-                dnat_list = get_elim_dnat_comb(rin.ll_nat, rin.elim_max, parent_nat, cn_comb)
+                dnat_list = get_elim_dnat_comb(
+                    rin.ll_nat,
+                    rin.elim_max,
+                    parent_nat,
+                    cn_comb=cn_comb,
+                    charge=rin.charge,
+                )
                 dnat_ok = []
                 for dnat in dnat_list:
                     new_nat = tuple(a - b for a, b in zip(parent_nat, dnat))
@@ -492,7 +505,13 @@ def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):
             for pid in ranked_pids:
                 parent_nat = tuple(nat_data[pid])
                 subs_patterns = get_subs_comb(
-                    rin.atype, rin.ll_nat, rin.ul_nat, rin.subs_max, parent_nat, cn_set
+                    rin.atype,
+                    rin.ll_nat,
+                    rin.ul_nat,
+                    rin.subs_max,
+                    parent_nat,
+                    cn_set=cn_set,
+                    charge=rin.charge,
                 )
                 subs_ok = []
                 for subs_list in subs_patterns:
