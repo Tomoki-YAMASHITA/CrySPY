@@ -75,7 +75,6 @@ def gen_addition(
         # ------ add_element_list, e.g. ['Li', 'Li', 'O']
         if target == 'random':
             dnat = dnat_comb[rng.integers(len(dnat_comb))]
-            logger.debug(f'Addition debug: dnat={dnat}')
             add_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
         child = gen_child(
@@ -97,7 +96,6 @@ def gen_addition(
                 spg_num = 0
                 spg_sym = None
             tmp_nat = get_nat(child, atype)
-            logger.debug(f'Addition debug: cid={cid}, child_nat={tmp_nat}')
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                 f' from {pid_A:>6} by addition.'
                 f' Space group: {spg_num:>3} {spg_sym}')

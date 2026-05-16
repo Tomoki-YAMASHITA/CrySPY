@@ -33,6 +33,8 @@ changelog = "https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/CHANGELOG.md
 "cryspy-Eplot" = "cryspy.scripts.cryspy_Eplot:main"
 "cryspy-calc-convex-hull" = "cryspy.scripts.cryspy_calc_convex_hull:main"
 "cryspy-skip" = "cryspy.scripts.cryspy_skip:main"
+"cryspy-print" = "cryspy.scripts.cryspy_print:main"
+"cryspy-extract-struc" = "cryspy.scripts.cryspy_extract_struc:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
