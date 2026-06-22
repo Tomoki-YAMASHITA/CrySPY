@@ -70,6 +70,8 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         logger.info('# ---------- Initialize RNG with seed from input (serial run)')
         rng = np.random.default_rng(rin.seed)
         logger.info(f'RNG seed: {rin.seed}')
+    elif mpi_rank == 0 and rin.seed is not None:
+        logger.warning('seed is ignored in MPI mode')
 
     # ---------- vc: prepare charge-neutral data
     if mpi_rank == 0:
@@ -226,3 +228,8 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         if rin.stress_step_flag:
             stress_step_data = {}
             pkl_data.save_stress_step(stress_step_data)
+
+        # ---------- save RNG state
+        if mpi_size == 1 and rng is not None:
+            rng_state_data = (rng.bit_generator.state, rin.seed)
+            pkl_data.save_rng_state(rng_state_data)

@@ -126,7 +126,8 @@ def main():
         # ------ common parts to save
         pkl_data.save_opt_struc(opt_struc_data)
         pkl_data.save_rslt(rslt_data)
-        out_rslt(rslt_data)
+        if rin.rslt_out == 'always':
+            out_rslt(rslt_data)
         logger.info(f'Structure ID {cid} skipped successfully')
 
     # ---------- unlock

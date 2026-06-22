@@ -63,9 +63,30 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
     # ---------- RNG (seed is for serial debug only)
     rng = None
     if mpi_size == 1 and rin.seed is not None:
-        logger.info('# ---------- Initialize RNG with seed from input (serial run)')
-        rng = np.random.default_rng(rin.seed)
+        # ------ restore RNG state
+        restored = False
+        if rin.seed == pin.seed:
+            try:
+                rng_state, saved_seed = pkl_data.load_rng_state()
+            except FileNotFoundError:
+                pass
+            else:
+                if saved_seed == rin.seed:
+                    rng = np.random.default_rng(saved_seed)
+                    rng.bit_generator.state = rng_state
+                    restored = True
+        # ------ restore or initialize
+        if restored:
+            logger.info('# ---------- Restore RNG state (serial run)')
+        else:
+            logger.info('# ---------- Initialize RNG with seed from input (serial run)')
+            rng = np.random.default_rng(rin.seed)
+            rng_state_data = (rng.bit_generator.state, rin.seed)
+            pkl_data.save_rng_state(rng_state_data)
+        # ------ log
         logger.info(f'RNG seed: {rin.seed}')
+    elif mpi_rank == 0 and rin.seed is not None:
+        logger.warning('seed is ignored in MPI mode')
 
     # ------ load init_struc_data for appending structures
     # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
@@ -131,6 +152,10 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             if rin.algo == 'LAQA':
                 from ..LAQA import laqa_restart
                 laqa_restart.restart(rin, prev_nstruc)
+            # ------ save RNG state
+            if mpi_size == 1 and rng is not None:
+                rng_state_data = (rng.bit_generator.state, rin.seed)
+                pkl_data.save_rng_state(rng_state_data)
             # ------ remove lock_cryspy
             os.remove('lock_cryspy')
         raise SystemExit()

@@ -12,7 +12,7 @@ from ..IO import io_stat, out_results, pkl_data
 logger = getLogger('cryspy')
 
 
-def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
+def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
     # ---------- log
     logger.info('# ------ Bayesian optimization')
 
@@ -92,7 +92,10 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
         descriptors = np.array(descriptors)
         targets = np.array(targets, dtype=float)
         # ------ Bayesian optimization
-        seed_bo = None if rin.seed is None else int(rin.seed)
+        if rng is None:
+            seed_bo = None
+        else:
+            seed_bo = int(rng.integers(0, 2**32, dtype=np.uint32))
         actions, cryspy_mean, cryspy_var, cryspy_score = _bayes_opt(
             s_act, descriptors, targets, nselect,
             rin.score, rin.cdev, rin.num_rand_basis, noprint, seed_bo)
@@ -141,6 +144,11 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False):
     io_stat.set_id(stat, 'selected_id', id_queueing)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
+
+    # ---------- save RNG state
+    if rng is not None:
+        rng_state_data = (rng.bit_generator.state, rin.seed)
+        pkl_data.save_rng_state(rng_state_data)
 
     # ---------- out and log
     logger.info(f'# ---------- Selection: {n_selection}')

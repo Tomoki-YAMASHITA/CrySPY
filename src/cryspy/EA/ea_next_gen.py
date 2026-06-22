@@ -10,7 +10,7 @@ import pandas as pd
 from .ea_child import child_gen
 from .survival import survival_fittest
 from ..IO import io_stat, pkl_data
-from ..IO.out_results import out_ea_info, out_ea_origin, out_hdist
+from ..IO.out_results import out_rslt, out_ea_info, out_ea_origin, out_hdist
 from ..util.utility import backup_cryspy
 
 # ---------- import later
@@ -33,8 +33,14 @@ def next_gen_EA(
         rng=None,
     ):
 
-    # ---------- log
+    # ---------- log, out
     logger.info(f'Done generation {gen}')
+    if rin.rslt_out == 'cycle':
+        out_rslt(rslt_data)
+        logger.info(
+            'Results saved as ./data/cryspy_rslt and '
+            './data/cryspy_rslt_energy_asc'
+        )
 
     # ---------- EA: plot
     if rin.algo == 'EA':
@@ -348,6 +354,10 @@ def _next_gen(
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)
 
+    # ---------- save RNG state
+    if rng is not None:
+        rng_state_data = (rng.bit_generator.state, rin.seed)
+        pkl_data.save_rng_state(rng_state_data)
 
 def _composition_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
     """

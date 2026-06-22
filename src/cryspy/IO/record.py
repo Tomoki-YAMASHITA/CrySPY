@@ -80,10 +80,8 @@ def record_opt(
                               spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                               energy, ef, nat, magmom, check_opt]
     save_rslt(rslt_data)
-    if rin.algo != 'EA-vc':
+    if rin.rslt_out == 'always':
         out_rslt(rslt_data)
-    else:    # EA-vc
-        out_rslt(rslt_data, order_ef=True)
 
     # ---------- return
     return opt_struc_data, rslt_data

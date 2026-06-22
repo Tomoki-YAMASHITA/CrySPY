@@ -75,6 +75,7 @@ class ReadInput:
     ref_gen_comp: int = field(default=None)
 
     # ---------- option section
+    rslt_out: str = field(default=None)
     check_mindist_opt: bool = field(default=None)
     stop_chkpt: int = field(default=None)
     load_struc_flag: bool = field(default=None)

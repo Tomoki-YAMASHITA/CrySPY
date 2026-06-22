@@ -546,7 +546,8 @@ class Ctrl_job:
                                             spg_num_opt, spg_sym_opt,
                                             energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
-            out_rslt(self.rslt_data)
+            if self.rin.rslt_out == 'always':
+                out_rslt(self.rslt_data)
         # ---------- BO
         elif self.rin.algo == 'BO':
             # ------ save rslt
@@ -555,7 +556,8 @@ class Ctrl_job:
                                             spg_num_opt, spg_sym_opt,
                                             energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
-            out_rslt(self.rslt_data)
+            if self.rin.rslt_out == 'always':
+                out_rslt(self.rslt_data)
             # ------ update and save descriptors
             self.opt_dscrpt_data[self.cid] = None
             pkl_data.save_opt_dscrpt_data(self.opt_dscrpt_data)
@@ -566,7 +568,8 @@ class Ctrl_job:
                                             spg_num_opt, spg_sym_opt,
                                             energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
-            out_rslt(self.rslt_data)
+            if self.rin.rslt_out == 'always':
+                out_rslt(self.rslt_data)
             # ---------- laqa data
             self.laqa_step[self.cid].append(0)
             self.laqa_struc[self.cid].append(None)
@@ -595,7 +598,8 @@ class Ctrl_job:
                                             spg_num_opt, spg_sym_opt,
                                             energy, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
-            out_rslt(self.rslt_data)
+            if self.rin.rslt_out == 'always':
+                out_rslt(self.rslt_data)
         elif self.rin.algo == 'EA-vc':
             ef = np.nan
             nat = self.nat_data[self.cid]
@@ -604,7 +608,8 @@ class Ctrl_job:
                                             spg_num_opt, spg_sym_opt,
                                             energy, ef, nat, magmom, check_opt]
             pkl_data.save_rslt(self.rslt_data)
-            out_rslt(self.rslt_data)
+            if self.rin.rslt_out == 'always':
+                out_rslt(self.rslt_data)
         # ---------- move to fin
         mv_fin(self.cid)
         # ---------- update status
@@ -644,8 +649,14 @@ class Ctrl_job:
             )
 
     def next_select_BO(self, noprint=False):
-        # ---------- log
+        # ---------- log, out
         logger.info(f'\nDone selection {self.n_selection}')
+        if self.rin.rslt_out == 'cycle':
+            out_rslt(self.rslt_data)
+            logger.info(
+                'Results saved as ./data/cryspy_rslt and '
+                './data/cryspy_rslt_energy_asc'
+            )
         # ---------- done all structures
         if len(self.rslt_data) == self.rin.tot_struc:
             logger.info('\nDone all structures!')
@@ -673,10 +684,23 @@ class Ctrl_job:
         bo_id_data = (self.n_selection, self.id_queueing,
                       self.id_running, self.id_select_hist)
         from ..BO import bo_next_select
-        bo_next_select.next_select(self.rin, self.rslt_data,
-                                   bo_id_data, bo_data, noprint)
+        bo_next_select.next_select(
+            self.rin,
+            self.rslt_data,
+            bo_id_data,
+            bo_data,
+            noprint,
+            rng=self.rng,
+        )
 
     def next_select_LAQA(self):
+        # ---------- out
+        if self.rin.rslt_out == 'cycle':
+            out_rslt(self.rslt_data)
+            logger.info(
+                'Results saved as ./data/cryspy_rslt and '
+                './data/cryspy_rslt_energy_asc'
+            )
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
             logger.info('\nLAQA is ready')
@@ -810,10 +834,8 @@ def regist_opt(
                               spg_num, spg_sym, spg_num_opt, spg_sym_opt,
                               energy, ef, nat, magmom, check_opt]
     pkl_data.save_rslt(rslt_data)
-    if rin.algo != 'EA-vc':
+    if rin.rslt_out == 'always':
         out_rslt(rslt_data)
-    else:    # EA-vc
-        out_rslt(rslt_data, order_ef=True)
 
     # ---------- return
     return opt_struc_data, rslt_data

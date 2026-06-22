@@ -96,7 +96,7 @@ def gen_struc(
         # ------ generate structure
         tmp_crystal = pyxtal()
         if vc:    # variable composition
-            # ------ choose nat for variable-composition generation
+            # -- choose nat for variable-composition generation
             nat = choose_vc_nat(
                 ll_nat=ll_nat,
                 ul_nat=ul_nat,
@@ -116,6 +116,9 @@ def gen_struc(
                 tmp_nat = tuple(nat)
                 tmp_atype = atype
                 tolmat = _set_tol_mat(tmp_atype, mindist)
+        # ------ RNG for PyXtal
+        pyxtal_seed = int(rng.integers(0, 2**32, dtype=np.uint32))
+        pyxtal_rng = np.random.default_rng(pyxtal_seed)
         try:
             f = StringIO()    # to get output from pyxtal
             with redirect_stdout(f):
@@ -127,7 +130,7 @@ def gen_struc(
                     factor=vol_factor,
                     conventional=False,
                     tm=tolmat,
-                    random_state=rng,
+                    random_state=pyxtal_rng,
                 )
             s = f.getvalue().rstrip()    # to delete \n
             if s:
@@ -233,6 +236,10 @@ def gen_struc_mol(
             spg = rng.choice(spgnum)
         # ------ generate structure
         if timeout_mol is None:
+            # -- RNG for PyXtal
+            pyxtal_seed = int(rng.integers(0, 2**32, dtype=np.uint32))
+            pyxtal_rng = np.random.default_rng(pyxtal_seed)
+            # -- generate crystal
             tmp_crystal = pyxtal(molecular=True)
             try:
                 f = StringIO()    # to get output from pyxtal
@@ -245,7 +252,7 @@ def gen_struc_mol(
                         factor=vol_factor,
                         conventional=False,
                         tm=tolmat,
-                        random_state=rng,
+                        random_state=pyxtal_rng,
                     )
                 s = f.getvalue().rstrip()    # to delete \n
                 if s:
@@ -399,6 +406,9 @@ def gen_struc_mol_break_sym(
             spg = rng.integers(1, 231)
         else:
             spg = rng.choice(spgnum)
+        # ------ RNG for PyXtal
+        pyxtal_seed = int(rng.integers(0, 2**32, dtype=np.uint32))
+        pyxtal_rng = np.random.default_rng(pyxtal_seed)
         # ------ generate structure
         tmp_crystal = pyxtal()
         try:
@@ -412,7 +422,7 @@ def gen_struc_mol_break_sym(
                     factor=vol_factor,
                     conventional=False,
                     tm=tolmat,
-                    random_state=rng,
+                    random_state=pyxtal_rng,
                 )
             s = f.getvalue().rstrip()    # to delete \n
             if s:

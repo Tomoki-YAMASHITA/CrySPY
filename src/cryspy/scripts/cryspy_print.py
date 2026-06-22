@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 import argparse
 import gzip
+from logging import getLogger
 from pathlib import Path
 import pickle
 from pprint import pprint
+
+from cryspy.IO.out_results import out_rslt
+from cryspy.util.utility import set_logger
 
 
 PPRINT_FILES = {
     'id_queueing.pkl',
     'id_running.pkl',
-    'rslt_data.pkl',
     'energy_step_data.pkl',
     'force_step_data.pkl',
     'stress_step_data.pkl',
@@ -47,6 +50,10 @@ STRUCTURE_FILES = {
 
 INPUT_FILES = {
     'input_data.pkl',
+}
+
+RESULT_FILES = {
+    'rslt_data.pkl',
 }
 
 HDIST_FILES = {
@@ -116,6 +123,36 @@ def out_input(rin):
             print(f'{key} = {getattr(rin, key)}')
 
 
+def print_rslt_data(rslt_data, no_sort=False, head=None, tail=None, all_rows=False):
+    # ---------- constant
+    DEFAULT_MAX_ROWS = 100
+
+    # ---------- options
+    if no_sort:
+        df = rslt_data
+        sort_msg = 'Not sorted'
+    else:
+        order = 'Ef_eV_atom' if 'Ef_eV_atom' in rslt_data.columns else 'E_eV_atom'
+        df = rslt_data.sort_values(by=[order], ascending=True)
+        sort_msg = f'Sorted by: {order}'
+    if head is not None:
+        print(df.head(head).to_string())
+        return
+    if tail is not None:
+        print(df.tail(tail).to_string())
+        return
+    if all_rows or len(df) <= DEFAULT_MAX_ROWS:
+        print(df.to_string())
+        return
+
+    # ---------- print first DEFAULT_MAX_ROWS rows
+    print(f'Number of structures: {len(df)}')
+    print(sort_msg)
+    print(f'Showing first {DEFAULT_MAX_ROWS} rows. Use --head N, --tail N, or --all to display more.')
+    print('')
+    print(df.head(DEFAULT_MAX_ROWS).to_string())
+
+
 def main():
     '''
     print pkl_data
@@ -123,7 +160,45 @@ def main():
     # ---------- argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', help='input file')
+    parser.add_argument('--no-sort', action='store_true',
+                        help='do not sort rslt_data.pkl')
+    row_selection = parser.add_mutually_exclusive_group()
+    row_selection.add_argument('--head', type=int,
+                               help='show first N rows of rslt_data.pkl')
+    row_selection.add_argument('--tail', type=int,
+                               help='show last N rows of rslt_data.pkl')
+    row_selection.add_argument('--all', action='store_true',
+                               help='show all rows of rslt_data.pkl')
+    parser.add_argument('--write', action='store_true',
+                        help='write cryspy_rslt files from rslt_data.pkl')
     args = parser.parse_args()
+    # ------ check options for rslt_data.pkl
+    if args.head is not None and args.head <= 0:
+        parser.error('--head must be a positive integer')
+    if args.tail is not None and args.tail <= 0:
+        parser.error('--tail must be a positive integer')
+    if args.write and any([
+            args.no_sort,
+            args.head is not None,
+            args.tail is not None,
+            args.all]):
+        parser.error('--write cannot be used with display options')
+    if args.write and not Path('cryspy.in').is_file():
+        parser.error(
+            '--write must be run in a directory containing cryspy.in'
+        )
+
+    # ---------- logger for --write
+    if args.write:
+        set_logger(
+            noprint=False,
+            debug=False,
+            logfile='log_cryspy',
+            errfile='err_cryspy',
+            debugfile='debug_cryspy',
+        )
+        logger = getLogger('cryspy')
+        logger.info('# ---------- cryspy-print command with --write')
 
     # ---------- extract pkl_name
     #     e.g.
@@ -148,6 +223,19 @@ def main():
 
     elif pkl_name in INPUT_FILES:
         out_input(pkl_data)
+
+    elif pkl_name in RESULT_FILES:
+        if args.write:
+            out_rslt(pkl_data)
+            logger.info('Generated ./data/cryspy_rslt')
+            logger.info('Generated ./data/cryspy_rslt_energy_asc')
+        else:
+            print_rslt_data(
+                pkl_data,
+                no_sort=args.no_sort,
+                head=args.head,
+                tail=args.tail,
+                all_rows=args.all)
 
     elif pkl_name in HDIST_FILES:
         if pkl_data:

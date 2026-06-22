@@ -3,17 +3,17 @@ Output results in ./data/xxx
 '''
 
 
-def out_rslt(rslt_data, order_ef=False):
+def out_rslt(rslt_data):
     # ---------- asc in Struc_ID or (Gen or Select)
     with open('./data/cryspy_rslt', 'w') as f:
         f.write(rslt_data.to_string())
 
     # ---------- asc in energy
+    if 'Ef_eV_atom' in rslt_data.columns:
+        order = 'Ef_eV_atom'
+    else:
+        order = 'E_eV_atom'
     with open('./data/cryspy_rslt_energy_asc', 'w') as f:
-        if not order_ef:
-            order = 'E_eV_atom'
-        else:
-            order = 'Ef_eV_atom'
         f.write(rslt_data.sort_values(
             by=[order], ascending=True).to_string())
 

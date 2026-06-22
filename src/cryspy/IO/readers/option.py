@@ -7,6 +7,14 @@ class OptionReader(BaseReader):
     Reader for [option] section
     """
     def read(self):
+        # ---------- rslt_out
+        try:
+            self.rin.rslt_out = self.config.get('option', 'rslt_out')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.rslt_out = 'always'
+        if self.rin.rslt_out not in ['always', 'cycle', 'off']:
+            raise ValueError('rslt_out must be always, cycle, or off')
+
         # ---------- check_mindist_opt
         try:
             self.rin.check_mindist_opt = self.config.getboolean('option', 'check_mindist_opt')
@@ -88,7 +96,7 @@ class OptionReader(BaseReader):
         # ---------- seed
         try:
             self.rin.seed = self.config.getint('option', 'seed')
-            if self.rin.seed < 0:
-                raise ValueError('seed must be non-negative int')
+            if not 0 <= self.rin.seed <= 2**32 - 1:
+                raise ValueError('seed must be an int between 0 and 2**32 - 1')
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.rin.seed = None
