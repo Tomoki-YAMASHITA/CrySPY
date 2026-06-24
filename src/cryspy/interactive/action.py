@@ -66,10 +66,6 @@ def restart(
         logger.error('lock_cryspy file exists')
         raise SystemExit(1)
 
-    # ---------- crspy.stat
-    with open('lock_cryspy', 'w'):
-        pass    # create vacant file
-
     # ---------- check args
     if njob < 0:
         logger.error('njob must be positive.')
@@ -77,6 +73,10 @@ def restart(
     if optimizer not in ['BFGS', 'LBFGS', 'FIRE']:
         logger.error(f'optimizer = {optimizer} is not supported.')
         raise ValueError(f'optimizer = {optimizer} is not supported.')
+
+    # ---------- create lock file
+    with open('lock_cryspy', 'w'):
+        pass    # create vacant file
 
     # ---------- restart
     if os.path.isfile('cryspy.stat'):
