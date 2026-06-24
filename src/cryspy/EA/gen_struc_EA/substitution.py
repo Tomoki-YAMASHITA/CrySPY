@@ -51,7 +51,6 @@ def gen_substitution(
     # ---------- initialize
     struc_cnt = 0
     children = {}
-    #children_mol_id = {}
     parents = {}
     operation = {}
 

@@ -15,6 +15,7 @@ from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
 from ..util.utility import get_version
 from ..util.struc_util import out_poscar
+from ..util.struc_validation import validate_loaded_structures
 
 # ---------- import later
 #from ..RS import rs_init
@@ -121,24 +122,59 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                 f'    ./data/convex_hull/composition_window_1.{rin.fig_format}'
             )
 
-    # ---------- generate initial structures
-    if not rin.load_struc_flag:
+    # ---------- init
+    init_struc_data = {}
+
+    # ------ number of required structures
+    if rin.algo in ['EA', 'EA-vc']:
+        n_target = rin.n_pop
+    else:
+        n_target = rin.tot_struc
+
+    # ------ load initial structures
+    if rin.load_struc_flag:
+        if mpi_rank == 0:
+            logger.info('# ---------- Load initial structure data')
+            logger.info('Load ./data/pkl_data/init_struc_data.pkl')
+            try:
+                init_struc_data = pkl_data.load_init_struc()
+                validate_loaded_structures(rin, init_struc_data)
+            except ValueError as e:
+                logger.error(e)
+                os.remove('lock_cryspy')
+                if mpi_size > 1:
+                    comm.Abort(1)      # stop for MPI
+                raise SystemExit(1)
+            n_loaded = len(init_struc_data)
+        else:
+            n_loaded = None
+        # -- share number of loaded structures ########## MPI
+        if mpi_size > 1:
+            n_loaded = comm.bcast(n_loaded, root=0)
+    else:
+        n_loaded = 0
+
+    # ------ number of structures to generate
+    nstruc = n_target - n_loaded
+
+    # ------ generate structures
+    if nstruc > 0:
         if mpi_size > 1:
             comm.barrier()
         if mpi_rank == 0:
             time_start = datetime.today()
             logger.info('# ---------- Initial structure generation')
+            if n_loaded > 0:
+                logger.info(
+                    f'Generate {nstruc} random structures '
+                    f'to complete the initial population'
+                )
         # ########## MPI start
-        # ------ structure generation
         # only init_struc_data in rank0 is important
-        if rin.algo in ['EA', 'EA-vc']:
-            nstruc = rin.n_pop
-        else:
-            nstruc = rin.tot_struc
-        init_struc_data, struc_mol_id = gen_random(
+        tmp_struc_data = gen_random(
             rin=rin,
             nstruc=nstruc,
-            id_offset=0,
+            id_offset=n_loaded,
             comm=comm,
             mpi_rank=mpi_rank,
             mpi_size=mpi_size,
@@ -148,33 +184,17 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         )
         # ########## MPI end
         if mpi_rank == 0:
-            # ------ init_POSCARS
-            out_poscar(init_struc_data, './data/init_POSCARS', mode='w')
-            # ------ save
-            pkl_data.save_init_struc(init_struc_data)
-            if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
-                pkl_data.save_struc_mol_id(struc_mol_id)
-            # ------ time
+            init_struc_data.update(tmp_struc_data)
+
+    # ------ save initial structures
+    if mpi_rank == 0:
+        out_poscar(init_struc_data, './data/init_POSCARS', mode='w')
+        pkl_data.save_init_struc(init_struc_data)
+        # ------ time
+        if nstruc > 0:
             time_end = datetime.today()
             etime = time_end - time_start
             logger.info(f'Elapsed time for structure generation: {etime}')
-    else:
-        # ------ load initial structure
-        if mpi_rank == 0:
-            logger.info('# --------- Load initial structure data')
-            logger.info('Load ./data/pkl_data/init_struc_data.pkl')
-            init_struc_data = pkl_data.load_init_struc()
-            # -- check
-            if rin.algo not in ['EA', 'EA-vc']:
-                if not rin.tot_struc == len(init_struc_data):
-                    logger.error(f'rin.tot_struc = {rin.tot_struc},'
-                                    f' len(init_struc_data) = {len(init_struc_data)}')
-                    os.remove('lock_cryspy')
-                    if mpi_size > 1:
-                        comm.Abort(1)      # stop for MPI
-                    raise SystemExit(1)
-            # -- init_POSCARS
-            out_poscar(init_struc_data, './data/init_POSCARS', mode='w')
 
     if mpi_rank == 0:
         # ---------- initialize stat

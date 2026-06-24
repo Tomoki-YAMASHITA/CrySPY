@@ -29,7 +29,6 @@ def next_gen_EA(
         opt_struc_data,
         rslt_data,
         nat_data=None,
-        struc_mol_id=None,
         rng=None,
     ):
 
@@ -119,7 +118,6 @@ def next_gen_EA(
         opt_struc_data,
         rslt_data,
         nat_data,
-        struc_mol_id,
         rng,
     )
 
@@ -131,7 +129,6 @@ def _next_gen(
         opt_struc_data,
         rslt_data,
         nat_data=None,
-        struc_mol_id=None,
         rng=None,
     ):
 
@@ -168,19 +165,19 @@ def _next_gen(
                 elite_fitness[cid] = hdist[cid]
             logger.debug(f'elite_fitness in EA-vc: {elite_fitness}')
 
-    # ---------- composition constraints to pool (EA-vc only)
-    if rin.algo == 'EA-vc' and (rin.min_comp is not None or rin.max_comp is not None):
-        logger.info('# ------ Apply composition constraints')
-        c_struc_data, c_fitness = _composition_filter(
+    # ---------- filter candidates for natural selection (EA-vc only)
+    if rin.algo == 'EA-vc':
+        logger.info('# ------ Apply nat/composition constraints')
+        c_struc_data, c_fitness = _constraint_filter(
             rin, c_struc_data, c_fitness, nat_data
         )
         if elite_struc is not None:
-            elite_struc, elite_fitness = _composition_filter(
+            elite_struc, elite_fitness = _constraint_filter(
                 rin, elite_struc, elite_fitness, nat_data
             )
-        logger.info(f'Current candidates after composition filter: {len(c_struc_data)}')
+        logger.info(f'Current candidates after constraint filter: {len(c_struc_data)}')
         if elite_struc is not None:
-            logger.info(f'Elite structures after composition filter: {len(elite_struc)}')
+            logger.info(f'Elite structures after constraint filter: {len(elite_struc)}')
 
     # ---------- natural selection
     logger.info('# ------ natural selection')
@@ -225,7 +222,6 @@ def _next_gen(
         fittest=fit_with_elite,
         struc_data=struc_with_elite,
         init_struc_data=init_struc_data,
-        struc_mol_id=struc_mol_id,
         nat_data=nat_data,
         rng=rng,
     )
@@ -240,15 +236,15 @@ def _next_gen(
         elif rin.algo == 'EA-vc':
             fitness = hdist
 
-        # ------ candidate pool for elite selection
+        # ------ filter candidates for elite selection
         elite_pool_struc = opt_struc_data
         elite_pool_fitness = fitness
-        if rin.algo == 'EA-vc' and (rin.min_comp is not None or rin.max_comp is not None):
-            logger.info('# ------ Apply composition constraints to elite pool')
-            elite_pool_struc, elite_pool_fitness = _composition_filter(
+        if rin.algo == 'EA-vc':
+            logger.info('# ------ Apply nat/composition constraints to elite candidates')
+            elite_pool_struc, elite_pool_fitness = _constraint_filter(
                 rin, elite_pool_struc, elite_pool_fitness, nat_data
             )
-            logger.info(f'Elite pool after composition filter: {len(elite_pool_struc)}')
+            logger.info(f'Elite candidates after constraint filter: {len(elite_pool_struc)}')
 
         # ------ ranking for all data
         ranking, _, _ = survival_fittest(
@@ -359,7 +355,8 @@ def _next_gen(
         rng_state_data = (rng.bit_generator.state, rin.seed)
         pkl_data.save_rng_state(rng_state_data)
 
-def _composition_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
+
+def _constraint_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
     """
     Filter parent pool by composition constraints.
 
@@ -385,7 +382,8 @@ def _composition_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
     f_struc_data = {}
     f_fitness = {}
 
-    # ---------- keep IDs whose nat satisfies min/max composition
+    # ---------- keep IDs whose nat satisfies ll/ul_nat
+    #            and min/max composition
     for cid, struc in struc_data.items():
         nat = nat_data.get(cid)
         if nat is None:
@@ -394,12 +392,22 @@ def _composition_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
         if n_tot <= 0:
             continue
 
-        ok = all(
-            (cmin - tol) <= (n_i / n_tot) <= (cmax + tol)
-            for n_i, cmin, cmax in zip(nat, min_comp, max_comp)
+        # ------ ll_nat, ul_nat
+        nat_ok = all(
+            ll <= n_i <= ul
+            for n_i, ll, ul in zip(nat, rin.ll_nat, rin.ul_nat)
         )
-        if not ok:
+        if not nat_ok:
             continue
+
+        # ------ min_comp, max_comp
+        if min_comp is not None and max_comp is not None:
+            comp_ok = all(
+                (cmin - tol) <= (n_i / n_tot) <= (cmax + tol)
+                for n_i, cmin, cmax in zip(nat, min_comp, max_comp)
+            )
+            if not comp_ok:
+                continue
 
         f_struc_data[cid] = struc
         f_fitness[cid] = fitness[cid]

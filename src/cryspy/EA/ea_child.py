@@ -33,7 +33,6 @@ def child_gen(
         fittest,
         struc_data,
         init_struc_data,
-        struc_mol_id=None,
         nat_data=None,
         rng=None,
     ):
@@ -53,7 +52,6 @@ def child_gen(
         )
     # ---------- initialize
     children = {}
-    #children_mol_id = {}
     parents = {}
     operation = {}
     pre_nstruc = len(init_struc_data)
@@ -173,14 +171,10 @@ def child_gen(
                 cn_data=cn_data,
                 min_comp=rin.min_comp,
                 max_comp=rin.max_comp,
-                struc_mol_id=None,
-                molecular=False,
                 rng=rng,
             )
         else:
             logger.error('Crossover is not implemented for mol or mol_bs')
-            # co = Crossover(rin, mindist)
-            # eagen.gen_crossover(rin, co, struc_mol_id, molecular=True)
         # ------ update
         children.update(co_children)
         parents.update(co_parents)
@@ -200,14 +194,10 @@ def child_gen(
                 rin.symprec,
                 rin.ntimes,
                 rin.maxcnt_ea,
-                struc_mol_id=None,
-                molecular=False,
                 rng=rng,
             )
         else:
             logger.error('Permutation is not implemented for mol or mol_bs')
-            # pm = Permutation(mindist)
-            # eagen.gen_permutation(rin, pm, struc_mol_id, molecular=True)
         # ------ update
         children.update(pm_children)
         parents.update(pm_parents)
@@ -227,15 +217,10 @@ def child_gen(
                 rin.symprec,
                 rin.sigma_st,
                 rin.maxcnt_ea,
-                struc_mol_id=None,
-                molecular=False,
-                protect_mol_struc=True,
                 rng=rng,
             )
         else:
             logger.error('Strain is not implemented for mol or mol_bs')
-            # st = Strain(mindist)
-            # eagen.gen_strain(rin, st, struc_mol_id, protect_mol_struc=True)
         # ------ update
         children.update(st_children)
         parents.update(st_parents)
@@ -321,21 +306,13 @@ def child_gen(
             operation.update(sb_operation)
             id_start += rin.n_subs
 
-    # ---------- Rotation
-    # if rin.struc_mode in ['mol', 'mol_bs']:
-    #     if rin.n_rotation > 0:
-    #         rot = Rotation(mindist)
-    #         eagen.gen_rotation(rin, struc_mol_id, rot=rot)
-
     # ---------- write init_POSCARS
     out_poscar(children, './data/init_POSCARS')
 
     # ---------- update init_struc_data
     init_struc_data.update(children)
-    # if rin.struc_mode in ['mol', 'mol_bs']:
-    #     struc_mol_id.update(children_mol_id)
 
-    # ---------- save EA-vc_data.pkl
+    # ---------- save nat_data for EA-vc
     if rin.algo == 'EA-vc':
         for cid, struc in children.items():
             nat_data[cid] = get_nat(struc, rin.atype)
@@ -344,7 +321,7 @@ def child_gen(
     # ---------- random generation
     if rin.n_rand > 0:
         logger.info('# ------ Random structure generation')
-        tmp_struc_data, tmp_mol_id = gen_random(
+        tmp_struc_data = gen_random(
                                         rin=rin,
                                         nstruc=rin.n_rand,
                                         id_offset=id_start,
@@ -357,9 +334,7 @@ def child_gen(
                                     )
         # ------ update
         init_struc_data.update(tmp_struc_data)
-        # if rin.struc_mode in ['mol', 'mol_bs']:
-        #     struc_mol_id.update(tmp_mol_id)
-        # ------ save EA-vc_data.pkl
+        # ------ save nat_data for EA-vc
         if rin.algo == 'EA-vc':
             for cid, struc in tmp_struc_data.items():
                 nat_data[cid] = get_nat(struc, rin.atype)
@@ -369,8 +344,6 @@ def child_gen(
 
     # ---------- save init_struc_data
     pkl_data.save_init_struc(init_struc_data)
-    # if rin.struc_mode in ['mol', 'mol_bs']:
-    #     pkl_data.save_struc_mol_id(struc_mol_id)
 
     # ---------- out nat_data
     if rin.algo == 'EA-vc':
@@ -378,7 +351,6 @@ def child_gen(
 
     # ----------return
     return init_struc_data, parents, operation
-    #return init_struc_data, parents, operation, struc_mol_id
 
 
 def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):

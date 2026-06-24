@@ -5,7 +5,6 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 
 from ...util.struc_util import sort_by_atype, check_distance, get_nat, remove_zero
-#from ...util.struc_util import cal_g, sort_by_atype_mol, find_site
 
 
 logger = getLogger('cryspy')
@@ -21,8 +20,6 @@ def gen_permutation(
         symprec=0.01,
         ntimes=1,
         maxcnt_ea=50,
-        struc_mol_id=None,
-        molecular=False,
         rng=None
     ):
     '''
@@ -48,7 +45,6 @@ def gen_permutation(
     # ---------- initialize
     struc_cnt = 0
     children = {}
-    #children_mol_id = {}
     parents = {}
     operation = {}
 
@@ -71,18 +67,10 @@ def gen_permutation(
             logger.warning(f'Permutation: {pid_A} is composed of only single element')
             continue
         # ------ generate child
-        if molecular:
-            logger.error('Permutation for molecular is not implemented yet')
-            # child, mol_id = pm.gen_child_mol(rin,
-            #                                     self.sp.struc_data[pid_A],
-            #                                     struc_mol_id[pid_A])
-        else:
-            child = gen_child(atype, mindist, parent_A, ntimes, maxcnt_ea, rng)
+        child = gen_child(atype, mindist, parent_A, ntimes, maxcnt_ea, rng)
         # ------ success
         if child is not None:
             children[cid] = child
-            # if molecular:
-            #     children_mol_id[cid] = mol_id
             parents[cid] = (pid_A, )    # tuple
             operation[cid] = 'permutation'
             try:

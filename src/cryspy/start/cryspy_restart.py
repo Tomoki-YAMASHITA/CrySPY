@@ -89,7 +89,6 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
         logger.warning('seed is ignored in MPI mode')
 
     # ------ load init_struc_data for appending structures
-    # In EA, one can not change tot_struc, so struc_mol_id need not be considered here
     # _append_struc is not allowed in EA and EA-vc either
     init_struc_data = pkl_data.load_init_struc()
     append_flag = False
@@ -127,11 +126,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             if mpi_rank == 0:
                 # ------ backup
                 backup_cryspy()
-    #
-    # struc_mol_id has not developed yet here
-    #if rin.struc_mode in ['mol', 'mol_bs']:
-    #    struc_mol_id = pkl_data.load_struc_mol_id()
-    #
+                # ------ append struc
                 from ..EA import ea_append
                 prev_nstruc = len(init_struc_data)
                 # init_struc_data is saved in ea_append.append_struc()
@@ -235,7 +230,7 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
     # ---------- generate structures
     # only init_struc_data in rank0 is important
     nstruc = rin.tot_struc - len(init_struc_data)
-    tmp_struc_data, tmp_struc_mol_id = gen_random(
+    tmp_struc_data = gen_random(
         rin=rin,
         nstruc=nstruc,
         id_offset=len(init_struc_data),
@@ -251,7 +246,6 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
         out_poscar(tmp_struc_data, './data/init_POSCARS')
         # ---------- update and save
         init_struc_data.update(tmp_struc_data)
-        # ToDo: struc_mol_id
         pkl_data.save_init_struc(init_struc_data)
 
         # ---------- time

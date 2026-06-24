@@ -52,7 +52,6 @@ def append_struc(rin, init_struc_data, rng=None):
         fittest=fitness,
         struc_data=opt_struc_data,
         init_struc_data=init_struc_data,
-        struc_mol_id=None,
         nat_data=None,
         rng=rng,
     )

@@ -270,16 +270,6 @@ def save_gen(gen):
         pickle.dump(gen, f)
 
 
-def load_struc_mol_id():
-    with open('./data/pkl_data/struc_mol_id_data.pkl', 'rb') as f:
-        return pickle.load(f)
-
-
-def save_struc_mol_id(struc_mol_id):
-    with open('./data/pkl_data/struc_mol_id_data.pkl', 'wb') as f:
-        pickle.dump(struc_mol_id, f)
-
-
 def load_elite_struc():
     with open('./data/pkl_data/elite_struc.pkl', 'rb') as f:
         return pickle.load(f)

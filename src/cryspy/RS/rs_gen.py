@@ -107,11 +107,10 @@ def gen_random(
                 feasible_N=feasible_N,
                 rng=rng,
             )
-            struc_mol_id = {}     # not used, just for return
         # ------ molecular crystal
         elif rin.struc_mode == 'mol':
             mol_data = get_mol_data(rin.mol_file)
-            init_struc_data, struc_mol_id = gen_pyxtal.gen_struc_mol(
+            init_struc_data = gen_pyxtal.gen_struc_mol(
                 nstruc=nstruc_list[mpi_rank],
                 atype=rin.atype,
                 nat=rin.nat,
@@ -130,7 +129,7 @@ def gen_random(
         # ------ molecular crystal breaking symmetry
         elif rin.struc_mode == 'mol_bs':
             mol_data = get_mol_data(rin.mol_file)
-            init_struc_data, struc_mol_id = gen_pyxtal.gen_struc_mol_break_sym(
+            init_struc_data = gen_pyxtal.gen_struc_mol_break_sym(
                 nstruc=nstruc_list[mpi_rank],
                 atype=rin.atype,
                 nat=rin.nat,
@@ -176,7 +175,6 @@ def gen_random(
                 feasible_N=feasible_N,
                 rng=rng,
             )
-            struc_mol_id = {}     # not used, just for return
         else:
             # ---- findwy
             # -- check fwpath
@@ -211,22 +209,20 @@ def gen_random(
                 feasible_N=feasible_N,
                 rng=rng,
             )
-            struc_mol_id = {}     # not used, just for return
 
     # ------ gather init_struc_data for MPI
     if mpi_size > 1:
         # -- parallel
         # only init_struc_data in rank0 is important
-        init_struc_data, struc_mol_id = _gather_struc(
-            rin,
+        init_struc_data = _gather_struc(
             init_struc_data,
-            struc_mol_id,
-            comm, mpi_rank
+            comm,
+            mpi_rank,
         )
 
     # ---------- return
     # only init_struc_data in rank0 is important
-    return init_struc_data, struc_mol_id
+    return init_struc_data
 
 
 def _divide_task(ntask, size, offset=0):
@@ -281,7 +277,7 @@ def _divide_task(ntask, size, offset=0):
     return ntask_list, offset_list
 
 
-def _gather_struc(rin, struc_dict, mol_id_dict, comm, mpi_rank):
+def _gather_struc(struc_dict, comm, mpi_rank):
     '''
     only if mpi_size > 1
     '''
@@ -293,14 +289,6 @@ def _gather_struc(rin, struc_dict, mol_id_dict, comm, mpi_rank):
             struc_dict.update(d)
     else:
         assert data is None
-    # ---------- for mol_id
-    if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
-        data = mol_id_dict
-        data = comm.gather(data, root=0)
-        if mpi_rank == 0:
-            for d in data:
-                mol_id_dict.update(d)
-        else:
-            assert data is None
+
     # ---------- return
-    return struc_dict, mol_id_dict
+    return struc_dict

@@ -6,7 +6,7 @@ from pymatgen.core import Structure, Lattice
 from pymatgen.core.periodic_table import DummySpecie
 
 from ...util.struc_util import origin_shift, sort_by_atype, check_distance
-from ...util.struc_util import find_site, cal_g, sort_by_atype_mol, get_nat
+from ...util.struc_util import get_nat
 
 # ---------- import later
 #from ...util.charge_neutral import is_charge_neutral_nat
@@ -36,8 +36,6 @@ def gen_crossover(
         cn_data=None,
         min_comp=None,
         max_comp=None,
-        struc_mol_id=None,
-        molecular=False,
         rng=None,
     ):
     '''
@@ -76,7 +74,6 @@ def gen_crossover(
     # ---------- initialize
     struc_cnt = 0
     children = {}
-    #children_mol_id = {}
     parents = {}
     operation = {}
 
@@ -97,30 +94,26 @@ def gen_crossover(
         parent_A = struc_data[pid_A]
         parent_B = struc_data[pid_B]
         # ------ generate child
-        if molecular:
-            logger.error('molecular crossover is not implemented yet.')
-            raise SystemExit(1)
-        else:
-            child = gen_child(
-                atype,
-                nat,
-                mindist,
-                parent_A,
-                parent_B,
-                crs_lat,
-                nat_diff_tole,
-                maxcnt_ea,
-                vc,
-                ll_nat,
-                ul_nat,
-                cn_comb,
-                feasible_N,
-                charge,
-                cn_data,
-                min_comp,
-                max_comp,
-                rng,
-            )
+        child = gen_child(
+            atype,
+            nat,
+            mindist,
+            parent_A,
+            parent_B,
+            crs_lat,
+            nat_diff_tole,
+            maxcnt_ea,
+            vc,
+            ll_nat,
+            ul_nat,
+            cn_comb,
+            feasible_N,
+            charge,
+            cn_data,
+            min_comp,
+            max_comp,
+            rng,
+        )
         # ------ success
         if child is not None:
             # -- Niggli reduction
@@ -129,8 +122,6 @@ def gen_crossover(
             except Exception as e:
                 logger.warning(f'Niggli reduction failed: {e}')
             children[cid] = child
-            # if molecular:
-            #     children_mol_id[cid] = mol_id
             parents[cid] = (pid_A, pid_B)
             operation[cid] = 'crossover'
             try:

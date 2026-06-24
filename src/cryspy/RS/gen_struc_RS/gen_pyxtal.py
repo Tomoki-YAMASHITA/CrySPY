@@ -213,7 +213,6 @@ def gen_struc_mol(
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
-    struc_mol_id (dict):    not implemented yet, just return vacant dict for now
     '''
 
     # ---------- initialize rng
@@ -222,7 +221,6 @@ def gen_struc_mol(
 
     # ---------- initialize
     init_struc_data = {}
-    struc_mol_id = {}    # for EA and mol, not implemented yet
 
     # ---------- Tol_matrix
     tolmat = _set_tol_mat(atype, mindist)
@@ -334,8 +332,7 @@ def gen_struc_mol(
                     f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
 
     # ---------- return
-    #            struc_mol_id is not implemented yet, just return vacant dict for now
-    return init_struc_data, struc_mol_id
+    return init_struc_data
 
 
 def gen_struc_mol_break_sym(
@@ -382,7 +379,6 @@ def gen_struc_mol_break_sym(
 
     # ---------- return
     init_struc_data (dict): {ID: pymatgen Structure, ...}
-    struc_mol_id (dict):   not implemented yet, just return vacant dict for now
     '''
 
     # ---------- initialize rng
@@ -391,7 +387,6 @@ def gen_struc_mol_break_sym(
 
     # ---------- initialize
     init_struc_data = {}
-    struc_mol_id = {}    # for EA and mol, not implemented yet
 
     # ------ dummy atom type
     atype_dummy = get_atype_dummy(len(mol_data))
@@ -455,10 +450,6 @@ def gen_struc_mol_break_sym(
             # -- save dummy coords
             dum_species = tmp_struc.species
             dum_coords = tmp_struc.cart_coords
-            # if rin.algo in ['EA', 'EA-vc']:
-            #     tmp_mol_indx = []
-            #     tmp_id = []
-            #     tmp_id_cnt = 0
             # -- remove dummy
             tmp_struc.remove_sites(range(0, len(dum_species)))
             tmp_struc_ori = tmp_struc.copy()
@@ -543,21 +534,11 @@ def gen_struc_mol_break_sym(
             # -- tmp_struc --> init_struc_data
             cid = len(init_struc_data) + id_offset
             init_struc_data[cid] = tmp_struc
-            # if rin.algo in ['EA', 'EA-vc'] and rin.struc_mode in ['mol', 'mol_bs']:
-            #     # calculate interatomic distance of mol_data
-            #     mol_dists = []
-            #     for j, mol in enumerate(mol_data):
-            #         tmp_dists = []
-            #         for n, m in enumerate(mol):
-            #             tmp_dists.append(mol.get_distance(0, n))
-            #         mol_dists.append(tmp_dists)
-            #     struc_mol_id.update({cid: [tmp_mol_indx, tmp_id, mol_dists]})
             logger.info(f'Structure ID {cid:>6} was generated.'
                     f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
 
     # ---------- return
-    #            struc_mol_id is not implemented yet, just return vacant dict for now
-    return init_struc_data, struc_mol_id
+    return init_struc_data
 
 
 def _set_tol_mat(atype, mindist):

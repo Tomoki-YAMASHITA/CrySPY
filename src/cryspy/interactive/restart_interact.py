@@ -191,6 +191,5 @@ def restart_interact(
                 opt_struc_data,
                 rslt_data,
                 nat_data,
-                struc_mol_id=None,
                 rng=rng,
             )

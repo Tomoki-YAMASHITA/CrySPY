@@ -52,7 +52,6 @@ def gen_addition(
     # ---------- initialize
     struc_cnt = 0
     children = {}
-    #children_mol_id = {}
     parents = {}
     operation = {}
 

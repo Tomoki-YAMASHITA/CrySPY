@@ -59,8 +59,6 @@ class Ctrl_job:
             self.laqa_score = pkl_data.load_laqa_score()
         elif self.rin.algo in ['EA', 'EA-vc']:
             self.gen = pkl_data.load_gen()
-            if self.rin.struc_mode in ['mol', 'mol_bs']:
-                self.struc_mol_id = pkl_data.load_struc_mol_id()
             if self.rin.algo == 'EA-vc':
                 self.nat_data = pkl_data.load_nat_data()
             # do not have to load ea_data and hdist_data here.
@@ -644,7 +642,6 @@ class Ctrl_job:
                 self.opt_struc_data,
                 self.rslt_data,
                 nat_data=nat_data,
-                struc_mol_id=None,
                 rng=self.rng,
             )
 

@@ -5,7 +5,7 @@ from pymatgen.core import Structure
 from pymatgen.core.periodic_table import DummySpecie
 
 from ...util.struc_util import sort_by_atype, get_nat
-from ...util.struc_util import sort_by_atype_mol, check_distance, cal_g, find_site
+from ...util.struc_util import check_distance
 
 
 logger = getLogger('cryspy')
@@ -21,9 +21,6 @@ def gen_strain(
         symprec=0.01,
         sigma_st=0.5,
         maxcnt_ea=50,
-        struc_mol_id=None,
-        molecular=False,
-        protect_mol_struc=True,
         rng=None,
     ):
     '''
@@ -49,7 +46,6 @@ def gen_strain(
     # ---------- initialize
     struc_cnt = 0
     children = {}
-    #children_mol_id = {}
     parents = {}
     operation = {}
 
@@ -68,21 +64,10 @@ def gen_strain(
         pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
         parent_A = struc_data[pid_A]
         # ------ generate child
-        if molecular:
-            logger.error('protect_mol_struc is not implemented yet.')
-            # if protect_mol_struc:
-                # child, mol_id = gen_child_mol(rin,
-                #                                     struc_data[pid],
-                #                                     struc_mol_id[pid])
-            #else:
-            #    child = gen_child(atype, mindist, parent_struc, sigma_st, maxcnt_ea)
-        else:
-            child = gen_child(atype, mindist, parent_A, sigma_st, maxcnt_ea, rng)
+        child = gen_child(atype, mindist, parent_A, sigma_st, maxcnt_ea, rng)
         # ------ success
         if child is not None:
             children[cid] = child
-            # if molecular:
-            #     children_mol_id[cid] = mol_id
             parents[cid] = (pid_A, )    # tuple
             operation[cid] = 'strain'
             try:

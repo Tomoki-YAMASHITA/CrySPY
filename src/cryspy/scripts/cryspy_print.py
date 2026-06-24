@@ -17,6 +17,7 @@ PPRINT_FILES = {
     'force_step_data.pkl',
     'stress_step_data.pkl',
     'kpt_data.pkl',
+    'rng_state_data.pkl',
     # ------ EA
     'gen.pkl',
     'ea_info.pkl',
