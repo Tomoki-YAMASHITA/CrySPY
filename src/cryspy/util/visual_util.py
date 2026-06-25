@@ -244,7 +244,7 @@ def draw_convex_hull_binary(
         )
         if label_stable and entry.name:
             ax.annotate(
-                entry.name,
+                to_element_label(entry.name),
                 xy=(x, y),
                 xytext=(0, -10),    # 10 points vertical offset
                 textcoords="offset points",
@@ -352,6 +352,7 @@ def draw_convex_hull_ternary(
 
     # ---------- texts
     for text in ax.texts:
+        text.set_text(to_element_label(text.get_text()))
         text.set_fontsize(14)
         text.set_fontweight('normal')    # bold --> normal
 
@@ -652,6 +653,22 @@ def to_special_formula(sym: str) -> str:
         "H":  "H2",
     }
     return special_formulas.get(sym, sym)
+
+
+def to_element_label(formula: str) -> str:
+    element_labels = {
+        "O2": "O",    # for binary
+        "N2": "N",
+        "F2": "F",
+        "Cl2": "Cl",
+        "H2": "H",
+        r"O$_{2}$": "O",    # for ternary
+        r"N$_{2}$": "N",
+        r"F$_{2}$": "F",
+        r"Cl$_{2}$": "Cl",
+        r"H$_{2}$": "H",
+    }
+    return element_labels.get(formula, formula)
 
 
 def save_composition_window(
