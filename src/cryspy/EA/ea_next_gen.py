@@ -161,7 +161,11 @@ def _next_gen(
         # ------ update elite_fitness
         #        need to update elite_fitness every time hull distance is updated
         if elite_fitness is not None:
-            for cid in elite_fitness:
+            for cid in list(elite_fitness):
+                if cid not in hdist:
+                    del elite_struc[cid]
+                    del elite_fitness[cid]
+                    continue
                 elite_fitness[cid] = hdist[cid]
             logger.debug(f'elite_fitness in EA-vc: {elite_fitness}')
 
@@ -409,6 +413,9 @@ def _constraint_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
             if not comp_ok:
                 continue
 
+        # ------ fitness
+        if cid not in fitness:
+            continue
         f_struc_data[cid] = struc
         f_fitness[cid] = fitness[cid]
 
