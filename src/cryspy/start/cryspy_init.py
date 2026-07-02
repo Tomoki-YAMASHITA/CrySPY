@@ -13,7 +13,6 @@ import pandas as pd
 from ..IO import pkl_data, io_stat, write_input
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
-from ..util.utility import get_version
 from ..util.struc_util import out_poscar
 from ..util.struc_validation import validate_loaded_structures
 
@@ -30,9 +29,6 @@ logger = getLogger('cryspy')
 
 
 def initialize(comm=None, mpi_rank=0, mpi_size=1):
-    # ---------- start
-    if mpi_rank == 0:
-        logger.info('\n\n\nStart CrySPY ' + get_version() + '\n\n')
     # ---------- check versions
     if mpi_rank == 0:
         logger.info('# ---------- Library version info')
@@ -51,8 +47,9 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
     except Exception as e:
         if mpi_rank == 0:
             logger.error(e)
-            os.remove('lock_cryspy')
         if mpi_size > 1:
+            if mpi_rank == 0:
+                os.remove('lock_cryspy')
             comm.Abort(1)      # stop for MPI
         raise SystemExit(1)
     # ########## MPI end
@@ -90,8 +87,8 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                     raise ValueError('No charge neutral combinations found.')
             except Exception as e:
                 logger.error(e)
-                os.remove('lock_cryspy')
                 if mpi_size > 1:
+                    os.remove('lock_cryspy')
                     comm.Abort(1)      # stop for MPI
                 raise SystemExit(1)    # stop for serial
 
@@ -141,8 +138,8 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                 validate_loaded_structures(rin, init_struc_data)
             except ValueError as e:
                 logger.error(e)
-                os.remove('lock_cryspy')
                 if mpi_size > 1:
+                    os.remove('lock_cryspy')
                     comm.Abort(1)      # stop for MPI
                 raise SystemExit(1)
             n_loaded = len(init_struc_data)

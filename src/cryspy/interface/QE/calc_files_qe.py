@@ -24,10 +24,8 @@ def check_input_qe(rin):
                         break
                 if not found:
                     logger.error('Could not find in ./calc_in/: ' + fname_candidates[0] + ' or ' + fname_candidates[-1])
-                    os.remove('lock_cryspy')
                     raise SystemExit(1)
         else:
             if not os.path.isfile('./calc_in/' + f):
                 logger.error('Could not find ./calc_in/' + f)
-                os.remove('lock_cryspy')
                 raise SystemExit(1)

@@ -46,12 +46,14 @@ def restart_interact(
     rin, init_struc_data, rng = cryspy_restart.restart()
     if rin.calc_code != 'ASE':
         logger.error('Use ASE for calc_code in interactive mode')
-        os.remove('lock_cryspy')
         raise ValueError('Use ASE for calc_code in interactive mode')
     if rin.algo not in ['RS', 'EA', 'EA-vc']:
-        logger.error(f'algo = {rin.algo} is not supported in interactive mode')
-        os.remove('lock_cryspy')
-        raise ValueError(f'algo = {rin.algo} is not supported in interactive mode')
+        logger.error(
+            f'algo = {rin.algo} is not supported in interactive mode'
+        )
+        raise ValueError(
+            f'algo = {rin.algo} is not supported in interactive mode'
+        )
     if rin.nstage > 1:
         logger.warning('nstage is ignored in interactive mode')
     if njob == 0:

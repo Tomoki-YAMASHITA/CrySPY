@@ -1,7 +1,5 @@
 from logging import getLogger
 
-import os
-
 from .gen_struc_EA.select_parents import SelectParents
 from .gen_struc_EA.crossover import gen_crossover
 from .gen_struc_EA.permutation import gen_permutation
@@ -78,7 +76,6 @@ def child_gen(
         # -- unexpected
         else:
             logger.error('cn_data["mode"] must be enumerate or sample.')
-            os.remove('lock_cryspy')
             raise SystemExit(1)
 
 
@@ -144,7 +141,6 @@ def child_gen(
             )
             if len(cn_comb_for_crossover) == 0:
                 logger.error('No charge-neutral compositions satisfy min/max_comp.')
-                os.remove('lock_cryspy')
                 raise SystemExit(1)
 
     # ---------- Crossover
@@ -248,7 +244,6 @@ def child_gen(
                 )
             else:
                 logger.error('Addition is not implemented for mol or mol_bs')
-                os.remove('lock_cryspy')
                 raise SystemExit(1)
             # ------ update
             children.update(ad_children)
@@ -272,7 +267,6 @@ def child_gen(
                 )
             else:
                 logger.error('Elimination is not implemented for mol or mol_bs')
-                os.remove('lock_cryspy')
                 raise SystemExit(1)
             # ------ update
             children.update(el_children)
@@ -298,7 +292,6 @@ def child_gen(
                 )
             else:
                 logger.error('Substitution is not implemented for mol or mol_bs')
-                os.remove('lock_cryspy')
                 raise SystemExit(1)
             # ------ update
             children.update(sb_children)
@@ -371,7 +364,6 @@ def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):
     """
     def abort(msg):
         logger.error(msg)
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     def in_comp_range(nat):

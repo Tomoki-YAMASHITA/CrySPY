@@ -94,19 +94,16 @@ def next_gen_EA(
     # ---------- flag for next selection or generation
     if not go_next_sg:
         logger.info('\nEA is ready')
-        os.remove('lock_cryspy')
         raise SystemExit()
 
     # ---------- check point 3
     if rin.stop_chkpt == 3:
         logger.info('\nStop at check point 3: EA is ready')
-        os.remove('lock_cryspy')
         raise SystemExit()
 
     # ---------- maxgen_ea
     if 0 < rin.maxgen_ea <= gen:
         logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
-        os.remove('lock_cryspy')
         raise SystemExit()
 
     # ---------- EA
@@ -213,7 +210,6 @@ def _next_gen(
         logger.error(
             f'Not enough parent candidates after natural selection: required {min_required}, got {len(ranking)}'
         )
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- generate children by EA

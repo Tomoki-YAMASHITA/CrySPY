@@ -30,11 +30,19 @@ def initialize_db() -> None:
             ON records(status, id)
             """
         )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_records_energy_id
+            ON records(energy, id)
+            """
+        )
         conn.commit()
 
 
-def connect_db() -> sqlite3.Connection:
-    conn = sqlite3.connect('data/db_data/rslt_data.db')
+def connect_db(
+    db_path: str = 'data/db_data/rslt_data.db',
+) -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path)
     conn.execute('PRAGMA foreign_keys = ON')
     conn.execute('PRAGMA busy_timeout = 5000')
     return conn

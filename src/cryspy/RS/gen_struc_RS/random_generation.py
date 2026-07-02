@@ -358,10 +358,6 @@ def _gen_lattice(spgnum, minlen, maxlen, dangle, rng=None):
             csys = 'Cubic'
         else:
             logger.error('spg is wrong')
-            try:
-                os.remove('lock_cryspy')
-            except FileNotFoundError:
-                pass
             raise SystemExit(1)
     # ---------- generate lattice constants a, b, c, alpha, beta, gamma
     if csys == 'Triclinic':
@@ -616,10 +612,6 @@ def _gen_eq_atoms(wydata2, rng=None):
                 pos.append(2.0 * rval[0])
             else:
                 logger.error('unknown ch in conversion in gen_wycoord')
-                try:
-                    os.remove('lock_cryspy')
-                except FileNotFoundError:
-                    pass
                 raise SystemExit(1)
         pos = np.array(pos)
         eq_positions.append(pos + each['add'])

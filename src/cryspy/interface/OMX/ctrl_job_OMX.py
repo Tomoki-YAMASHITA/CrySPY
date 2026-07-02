@@ -26,7 +26,6 @@ def next_stage_OMX(rin, stage, work_path, nat, kpt_data, cid):
     for file in OMX_files:
         if not os.path.isfile(work_path + file):
             logger.error('Not found ' + work_path + file)
-            os.remove('lock_cryspy')
             raise SystemExit(1)
         os.rename(work_path + file, work_path + f'stage{stage}_' + file)
 

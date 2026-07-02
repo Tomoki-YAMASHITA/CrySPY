@@ -11,7 +11,7 @@ import numpy as np
 from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random
-from ..util.utility import get_version, backup_cryspy
+from ..util.utility import backup_cryspy
 from ..util.struc_util import out_poscar
 
 # ---------- import later
@@ -27,10 +27,6 @@ logger = getLogger('cryspy')
 
 
 def restart(comm=None, mpi_rank=0, mpi_size=1):
-    # ---------- start
-    if mpi_rank == 0:
-        logger.info('\n\n\nRestart CrySPY ' + get_version() + '\n\n')
-
     # ---------- read input and check the change
     # ########## MPI start
     if mpi_size > 1:
@@ -43,8 +39,9 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
     except Exception as e:
         if mpi_rank == 0:
             logger.error(e)
-            os.remove('lock_cryspy')
         if mpi_size > 1:
+            if mpi_rank == 0:
+                os.remove('lock_cryspy')
             comm.Abort(1)      # stop for MPI
         raise SystemExit(1)
     if mpi_rank == 0:
@@ -55,10 +52,10 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             pkl_data.save_input(rin)       # save input data to input_data.pkl
         except Exception as e:
             logger.error(e)
-            os.remove('lock_cryspy')
             if mpi_size > 1:
+                os.remove('lock_cryspy')
                 comm.Abort(1)      # stop for MPI
-            raise SystemExit(1)    # stop for sereial
+            raise SystemExit(1)    # stop for serial
 
     # ---------- RNG (seed is for serial debug only)
     rng = None
@@ -112,8 +109,9 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
         elif rin.tot_struc < len(init_struc_data):
             if mpi_rank == 0:
                 logger.error('tot_struc < len(init_struc_data)')
-                os.remove('lock_cryspy')
             if mpi_size > 1:
+                if mpi_rank == 0:
+                    os.remove('lock_cryspy')
                 comm.Abort(1)      # stop for MPI
             raise SystemExit(1)
 
@@ -151,8 +149,6 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
             if mpi_size == 1 and rng is not None:
                 rng_state_data = (rng.bit_generator.state, rin.seed)
                 pkl_data.save_rng_state(rng_state_data)
-            # ------ remove lock_cryspy
-            os.remove('lock_cryspy')
         raise SystemExit()
 
     # ---------- vc: prepare charge-neutral data
@@ -171,8 +167,8 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                     raise ValueError('No charge neutral combinations found.')
             except Exception as e:
                 logger.error(e)
-                os.remove('lock_cryspy')
                 if mpi_size > 1:
+                    os.remove('lock_cryspy')
                     comm.Abort(1)      # stop for MPI
                 raise SystemExit(1)    # stop for serial
 

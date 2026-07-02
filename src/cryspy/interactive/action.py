@@ -3,7 +3,12 @@ import os
 from typing import Callable
 
 from ..start import cryspy_init
-from ..util.utility import set_logger, backup_cryspy, clean_cryspy
+from ..util.utility import (
+    backup_cryspy,
+    clean_cryspy,
+    get_version,
+    set_logger,
+)
 from .restart_interact import restart_interact
 
 
@@ -15,6 +20,10 @@ set_logger(
 logger = getLogger('cryspy')
 
 
+def _log_banner():
+    logger.info(f'\n\n\nCrySPY {get_version()}\n\n')
+
+
 def initialize():
     # ---------- lock file
     if os.path.isfile('lock_cryspy'):
@@ -22,20 +31,96 @@ def initialize():
         raise IOError('lock_cryspy file exists')
     with open('lock_cryspy', 'w'):
         pass    # create vacant file
-    # ---------- initialize
-    if not os.path.isfile('cryspy.stat'):
-        cryspy_init.initialize()
-    else:
-        logger.error('cryspy.stat file exists. Clean files to start from the beginning.')
-    os.remove('lock_cryspy')
+
+    try:
+        # ---------- check mode
+        if os.path.isfile('data/db_data/rslt_data.db'):
+            logger.error(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+            raise IOError(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+
+        # ---------- banner
+        _log_banner()
+
+        # ---------- initialize
+        if not os.path.isfile('cryspy.stat'):
+            cryspy_init.initialize()
+        else:
+            logger.error(
+                'cryspy.stat file exists. '
+                'Clean files to start from the beginning.'
+            )
+
+    finally:
+        # ---------- unlock
+        os.remove('lock_cryspy')
 
 
 def backup():
-    backup_cryspy()
+    # ---------- lock file
+    if os.path.isfile('lock_cryspy'):
+        logger.error('lock_cryspy file exists')
+        raise IOError('lock_cryspy file exists')
+    with open('lock_cryspy', 'w'):
+        pass    # create vacant file
+
+    try:
+        # ---------- check mode
+        if os.path.isfile('data/db_data/rslt_data.db'):
+            logger.error(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+            raise IOError(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+
+        # ---------- banner
+        _log_banner()
+
+        # ---------- backup
+        backup_cryspy()
+
+    finally:
+        # ---------- unlock
+        os.remove('lock_cryspy')
 
 
 def clean(skip_yes=False):
-    clean_cryspy(skip_yes)
+    # ---------- lock file
+    if os.path.isfile('lock_cryspy'):
+        logger.error('lock_cryspy file exists')
+        raise IOError('lock_cryspy file exists')
+    with open('lock_cryspy', 'w'):
+        pass    # create vacant file
+
+    try:
+        # ---------- check mode
+        if os.path.isfile('data/db_data/rslt_data.db'):
+            logger.error(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+            raise IOError(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+
+        # ---------- banner
+        _log_banner()
+
+        # ---------- clean
+        clean_cryspy(skip_yes)
+
+    finally:
+        # ---------- unlock
+        os.remove('lock_cryspy')
 
 
 def restart(
@@ -78,16 +163,31 @@ def restart(
     with open('lock_cryspy', 'w'):
         pass    # create vacant file
 
-    # ---------- restart
-    if os.path.isfile('cryspy.stat'):
-        restart_interact(
-            njob,
-            calculator,
-            optimizer,
-            symmetry,
-            fmax,
-            steps,
-        )
-    else:
-        logger.error('cryspy.stat file does not exist.')
-    os.remove('lock_cryspy')
+    try:
+        # ---------- check mode
+        if os.path.isfile('data/db_data/rslt_data.db'):
+            logger.error(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
+            raise SystemExit(1)
+
+        # ---------- banner
+        _log_banner()
+
+        # ---------- restart
+        if os.path.isfile('cryspy.stat'):
+            restart_interact(
+                njob,
+                calculator,
+                optimizer,
+                symmetry,
+                fmax,
+                steps,
+            )
+        else:
+            logger.error('cryspy.stat file does not exist.')
+
+    finally:
+        # ---------- unlock
+        os.remove('lock_cryspy')

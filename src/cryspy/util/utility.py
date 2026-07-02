@@ -13,7 +13,7 @@ import sys
 logger = getLogger('cryspy')
 
 def get_version():
-    return '1.5.0b7'
+    return '1.5.0b8'
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -71,18 +71,16 @@ def check_fwpath(fwpath):
         fwpath = sr.stdout.strip()    # to delete \n
         if fwpath == '':
             logger.error('There is no find_wy program in your path')
-            os.remove('lock_cryspy')
             raise SystemExit(1)
     else:
         # ---------- check fwpath written in cryspy.in
         if not os.path.isfile(fwpath):
             logger.error(f'There is no find_wy program in {fwpath}')
-            os.remove('lock_cryspy')
             raise SystemExit(1)
     return fwpath
 
 
-def backup_cryspy():
+def backup_cryspy(ht=False):
 
     # ---------- print
     logger.info('Backup data')
@@ -93,7 +91,22 @@ def backup_cryspy():
     os.makedirs(dst, exist_ok=True)
 
     # ---------- file/directory list
-    flist = ['cryspy.in', 'cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'cryspy_interactive.ipynb']
+    if ht:
+        flist = [
+            'cryspy.in',
+            'debug_cryspy-ht',
+            'err_cryspy-ht',
+            'log_cryspy-ht',
+        ]
+    else:
+        flist = [
+            'cryspy.in',
+            'cryspy.stat',
+            'debug_cryspy',
+            'err_cryspy',
+            'log_cryspy',
+            'cryspy_interactive.ipynb',
+        ]
     dlist = ['calc_in', 'data']
 
     # ---------- backup
@@ -105,19 +118,39 @@ def backup_cryspy():
             shutil.copytree(d, dst + d)
 
 
-def clean_cryspy(skip_yes=False):
+def clean_cryspy(skip_yes=False, ht=False):
     # ---------- yes/no
     if not skip_yes:
         while True:
-            choice = input("Are you sure you want to clean the data? 'yes' or 'no' [y/n]: ").lower()
+            choice = input(
+                "Are you sure you want to clean the data? "
+                "'yes' or 'no' [y/n]: "
+            ).lower()
             if choice in ['y', 'yes']:
                 break
             elif choice in ['n', 'no']:
                 return
 
     # ---------- file/directory list
-    fdlist = ['cryspy.stat', 'debug_cryspy', 'err_cryspy', 'log_cryspy', 'lock_cryspy',
-              'data', 'work', 'tmp_gen_struc']
+    if ht:
+        fdlist = [
+            'debug_cryspy-ht',
+            'err_cryspy-ht',
+            'log_cryspy-ht',
+            'STOP_CRYSPY_HT',
+            'data',
+            'tmp_gen_struc',
+        ]
+    else:
+        fdlist = [
+            'cryspy.stat',
+            'debug_cryspy',
+            'err_cryspy',
+            'log_cryspy',
+            'data',
+            'work',
+            'tmp_gen_struc',
+        ]
 
     # ---------- clean
     dname = datetime.now().strftime("%Y%m%d_%H%M%S")

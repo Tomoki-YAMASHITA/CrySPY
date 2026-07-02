@@ -1,5 +1,4 @@
 from logging import getLogger
-import os
 
 import numpy as np
 
@@ -25,7 +24,6 @@ def calc_ef(energy, nat, end_point):
     # ---------- check
     if len(nat) != len(end_point):
         logger.error('len(nat) != len(end_point)')
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- calc formation energy

@@ -1,5 +1,4 @@
 from logging import getLogger
-import os
 
 from ..IO import io_stat, pkl_data
 from ..IO.out_results import out_laqa_id_hist
@@ -26,7 +25,6 @@ def next_selection(rin, laqa_id_data, laqa_data):
     # ---------- done LAQA
     if len(id_queueing) == 0:
         logger.info('\nDone all structures!')
-        os.remove('lock_cryspy')
         raise SystemExit()
 
     # ---------- append id_select_hist and out

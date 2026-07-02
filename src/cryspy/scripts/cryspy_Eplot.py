@@ -38,28 +38,30 @@ def main():
         with open('lock_cryspy', 'w'):
             pass    # create vacant file
 
-    # ---------- restart
-    if os.path.isfile('cryspy.stat'):
-        rin, init_struc_data, rng = cryspy_restart.restart()
-    else:
-        logger.error('cryspy.stat file does not exist.')
-        os.remove('lock_cryspy')
-        raise SystemExit(1)
+    try:
+        # ---------- restart
+        if os.path.isfile('cryspy.stat'):
+            rin, init_struc_data, rng = cryspy_restart.restart()
+        else:
+            logger.error('cryspy.stat file does not exist.')
+            raise SystemExit(1)
 
-    # ---------- algo check
-    if rin.algo == 'RS':
-        plot_RS(rin)
-    elif rin.algo == 'EA':
-        plot_EA(rin)
-    elif rin.algo == 'EA-vc':
-        plot_EA_vc(rin)
-    else:
-        logger.error(f'algo = {rin.algo} is not supported in cryspy-Eplot')
-        os.remove('lock_cryspy')
-        raise SystemExit(1)
+        # ---------- algo check
+        if rin.algo == 'RS':
+            plot_RS(rin)
+        elif rin.algo == 'EA':
+            plot_EA(rin)
+        elif rin.algo == 'EA-vc':
+            plot_EA_vc(rin)
+        else:
+            logger.error(
+                f'algo = {rin.algo} is not supported in cryspy-Eplot'
+            )
+            raise SystemExit(1)
 
-    # ---------- unlock
-    os.remove('lock_cryspy')
+    finally:
+        # ---------- unlock
+        os.remove('lock_cryspy')
 
 
 # ----------
@@ -113,7 +115,6 @@ def plot_EA(rin):
         )
     except ValueError as e:
         logger.error(str(e))
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- plot
@@ -169,7 +170,6 @@ def plot_EA_vc(rin):
             )
     except ValueError as e:
         logger.error(str(e))
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- axis order
@@ -215,7 +215,6 @@ def plot_EA_vc(rin):
         )
     else:
         logger.error(f'len(rin.atype) = {len(rin.atype)} is not supported in cryspy-Eplot')
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- save figure (use effective generation values)

@@ -109,7 +109,6 @@ class Ctrl_job:
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if not cid == int(istat.split()[0]):
                     logger.error(f'ID is wrong in work/{cid}')
-                    os.remove('lock_cryspy')
                     raise SystemExit(1)
                 self.stage_stat[cid] = int(sstat.split()[0])
                 if jstat[0:3] == 'sub':
@@ -129,7 +128,6 @@ class Ctrl_job:
         for tid in self.rin.recalc:
             if tid not in self.opt_struc_data:
                 logger.error(f'ID {tid} has not yet been calculated')
-                os.remove('lock_cryspy')
                 raise SystemExit(1)
         # ---------- append IDs to the head of id_queueing
         self.id_queueing = list(self.rin.recalc) + self.id_queueing
@@ -181,7 +179,6 @@ class Ctrl_job:
         # ---------- error
         else:
             logger.error('Wrong stage in '+self.work_path+'stat_job')
-            os.remove('lock_cryspy')
             raise SystemExit(1)
 
     def ctrl_next_stage(self):
@@ -274,7 +271,6 @@ class Ctrl_job:
             self.ctrl_collect_ea(nat)
         else:
             logger.error('Error, algo')
-            os.remove('lock_cryspy')
             raise SystemExit(1)
         # ---------- move to fin
         if self.rin.algo == 'LAQA':
@@ -469,7 +465,6 @@ class Ctrl_job:
         # ---------- algo is wrong
         else:
             logger.error('Error, algo in ctrl_next_struc')
-            os.remove('lock_cryspy')
             raise SystemExit(1)
         # ---------- nat for EA-vc
         if self.rin.algo == 'EA-vc':
@@ -657,22 +652,18 @@ class Ctrl_job:
         # ---------- done all structures
         if len(self.rslt_data) == self.rin.tot_struc:
             logger.info('\nDone all structures!')
-            os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
             logger.info('\nBO is ready')
-            os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if self.rin.stop_chkpt == 3:
             logger.info('\nStop at check point 3: BO is ready')
-            os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- max_select_bo
         if 0 < self.rin.max_select_bo <= self.n_selection:
             logger.info(f'\nReached max_select_bo: {self.rin.max_select_bo}')
-            os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- BO
         backup_cryspy()
@@ -701,12 +692,10 @@ class Ctrl_job:
         # ---------- flag for next selection or generation
         if not self.go_next_sg:
             logger.info('\nLAQA is ready')
-            os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- check point 3
         if self.rin.stop_chkpt == 3:
             logger.info('\nStop at check point 3: LAQA is ready')
-            os.remove('lock_cryspy')
             raise SystemExit()
         # ---------- selection of LAQA
         backup_cryspy()
@@ -727,7 +716,6 @@ def prepare_jobfile(jobfile, cid, work_path):
     # ---------- check
     if not os.path.isfile('./calc_in/' + jobfile):
         logger.error('Could not find ./calc_in' + jobfile)
-        os.remove('lock_cryspy')
         raise SystemExit(1)
 
     # ---------- replace CrySPY_ID in jobfile
@@ -856,7 +844,6 @@ def update_status(cid, id_queueing, id_running, operation):
         io_stat.clean_id(stat, cid)
     else:
         logger.error('operation is wrong')
-        os.remove('lock_cryspy')
         raise SystemExit(1)
     io_stat.set_id(stat, 'id_queueing', id_queueing)
     io_stat.write_stat(stat)

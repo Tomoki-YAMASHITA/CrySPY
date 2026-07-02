@@ -8,10 +8,9 @@ import os
 
 import numpy as np
 
-from ...IO import write_input
+from ...IO import pkl_data, write_input
 from ...IO.read_input import ReadInput
 from ...RS.rs_gen import gen_random
-from ...util.utility import get_version
 from ..db.record import insert_init_struc
 from ..db.sqlite import connect_db, initialize_db
 from .check_input import check_input
@@ -21,9 +20,6 @@ logger = getLogger('cryspy')
 
 
 def initialize():
-    # ---------- start
-    logger.info('\n\n\nStart CrySPY high-throughput mode ' + get_version() + '\n\n')
-
     # ---------- check versions
     logger.info('# ---------- Library version info')
     logger.info(f'ase version: {version("ase")}')
@@ -41,11 +37,13 @@ def initialize():
     # ---------- check input
     check_input(rin)
 
-    # ---------- write input
-    write_input.out_input(rin)
-
-    # ---------- make data directory
+    # ---------- make data directories
     os.makedirs('data/db_data', exist_ok=True)
+    os.makedirs('data/pkl_data', exist_ok=True)
+
+    # ---------- write and save input
+    write_input.out_input(rin)
+    pkl_data.save_input(rin)
 
     # ---------- RNG
     rng = None
@@ -76,6 +74,11 @@ def initialize():
     with connect_db() as conn:
         for struc in init_struc_data.values():
             insert_init_struc(conn, struc, rin.nat)
+
+    # ---------- save RNG state
+    if rng is not None:
+        rng_state_data = (rng.bit_generator.state, rin.seed)
+        pkl_data.save_rng_state(rng_state_data)
 
     # ---------- return
     return rin

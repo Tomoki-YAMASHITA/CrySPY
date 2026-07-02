@@ -32,10 +32,6 @@ def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
             tolmat = Tol_matrix(prototype='molecular', factor=factor)
         else:
             logger.error('struc_mode is wrong')
-            try:
-                os.remove('lock_cryspy')
-            except FileNotFoundError:
-                pass
             raise SystemExit(1)
         # ------ set mindist
         mindist = []
@@ -72,10 +68,6 @@ def get_atype_dummy(n_mol_file):
     noble_gas = ['Rn', 'Xe', 'Kr', 'Ar', 'Ne', 'He']
     if n_mol_file > len(noble_gas):
         logger.error('len(mol_file) > len(noble_gas)')
-        try:
-            os.remove('lock_cryspy')
-        except FileNotFoundError:
-            pass
         raise SystemExit(1)
     atype = noble_gas[:n_mol_file]
     return atype
@@ -104,10 +96,6 @@ def get_mol_data(mol_file):
             mol = pyxtal_mol_data[mf]
         else:
             logger.error('no molecular files')
-            try:
-                os.remove('lock_cryspy')
-            except FileNotFoundError:
-                pass
             raise SystemExit(1)
         mol_data.append(mol)
     return mol_data
@@ -364,10 +352,6 @@ def rot_mat(angles, seq='zyx', degree=False):
     '''
     if not len(seq) == len(angles):
         logger.error('not len(seq) == len(angles)')
-        try:
-            os.remove('lock_cryspy')
-        except FileNotFoundError:
-            pass
         raise SystemExit(1)
 
     if degree:
