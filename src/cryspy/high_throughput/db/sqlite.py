@@ -18,8 +18,12 @@ def initialize_db() -> None:
                 nat               BLOB NOT NULL,
                 init_lattice      BLOB NOT NULL,
                 init_frac_coords  BLOB NOT NULL,
+                init_spg_num      INTEGER NOT NULL,
+                init_spg_sym      TEXT,
                 opt_lattice       BLOB,
                 opt_frac_coords   BLOB,
+                opt_spg_num       INTEGER NOT NULL,
+                opt_spg_sym       TEXT,
                 energy            REAL
             )
             """

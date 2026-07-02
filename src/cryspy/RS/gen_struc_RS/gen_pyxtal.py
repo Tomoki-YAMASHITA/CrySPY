@@ -21,7 +21,7 @@ from ...util.struc_util import get_atype_dummy, scale_cell_mol, rot_mat
 logger = getLogger('cryspy')
 
 
-def gen_struc(
+def gen_struc_batch(
         nstruc,
         atype,
         nat,
@@ -81,18 +81,110 @@ def gen_struc(
 
     # ---------- initialize
     init_struc_data = {}
+    tolmat = None
+    if not vc:
+        tolmat = set_tol_mat(atype, mindist)
+
+    # ---------- generate structures
+    for cid in range(id_offset, id_offset + nstruc):
+        init_struc_data[cid] = gen_struc(
+            atype=atype,
+            nat=nat,
+            mindist=mindist,
+            spgnum=spgnum,
+            symprec=symprec,
+            cid=cid,
+            vol_factor=vol_factor,
+            vol_mu=vol_mu,
+            vol_sigma=vol_sigma,
+            vc=vc,
+            ll_nat=ll_nat,
+            ul_nat=ul_nat,
+            charge=charge,
+            cn_data=cn_data,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            feasible_N=feasible_N,
+            tolmat=tolmat,
+            rng=rng,
+        )
+
+    # ---------- return
+    return init_struc_data
+
+
+
+def gen_struc(
+        atype,
+        nat,
+        mindist,
+        spgnum,
+        symprec=0.01,
+        cid=0,
+        vol_factor=1.1,
+        vol_mu=None,
+        vol_sigma=None,
+        vc=False,
+        ll_nat=None,
+        ul_nat=None,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
+        feasible_N=None,
+        tolmat=None,
+        rng=None,
+    ):
+    '''
+    Generate a random structure for a given space group
+
+        tuple may be replaced by list
+
+    # ---------- args
+    atype (tuple): atom type (e.g. ('Na', 'Cl'))
+    nat (tuple): number of atoms (e.g. (4, 4)), None if vc=True
+    mindist (): minimum interatomic distance (e.g. ((2.0, 1.5), (1.5, 2.0)))
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    symprec (float): symmetry tolerance
+    cid (int): structure ID
+    vol_factor (float): volume factor for structure generation
+    vol_mu (float): mean for volume scaling
+    vol_sigma (float): standard deviation for volume scaling
+    # ------ for EA-vc
+    vc (bool): variable composition. it needs ll_nat and ul_nat
+    ll_nat (tuple): lower limit of number of atoms (e.g. (0, 0))
+    ul_nat (tuple): upper limit of number of atoms (e.g. (8, 8))
+    charge (tuple): charge of each atom type
+    cn_data (dict): charge-neutral data for enumerate/sample mode
+    min_comp (tuple): lower composition bounds
+    max_comp (tuple): upper composition bounds
+    feasible_N (list): feasible total atom numbers under composition constraints
+    tolmat (Tol_matrix): precomputed tolerance matrix
+    rng (np.random.Generator): random number generator
+
+    # ---------- return
+    tmp_struc (Structure): generated structure
+    '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- initialize
     if not vc:
         tmp_nat = nat
         tmp_atype = atype
-        tolmat = _set_tol_mat(tmp_atype, mindist)
+        if tolmat is None:
+            tolmat = set_tol_mat(tmp_atype, mindist)
 
-    # ---------- loop for structure generation
-    while len(init_struc_data) < nstruc:
+    # ---------- generate structure
+    while True:
         # ------ spgnum --> spg
         if spgnum == 'all':
             spg = rng.integers(1, 231)
         else:
             spg = rng.choice(spgnum)
+
         # ------ generate structure
         tmp_crystal = pyxtal()
         if vc:    # variable composition
@@ -110,15 +202,23 @@ def gen_struc(
             if sum(nat) == 0:
                 continue    # restart
             if 0 in nat:    # remove 0 from numIons and corresponding index in atype, mindist
-                tmp_atype, tmp_nat, tmp_mindist = remove_zero(atype, nat, mindist)
-                tolmat = _set_tol_mat(tmp_atype, tmp_mindist)
+                tmp_atype, tmp_nat, tmp_mindist = remove_zero(
+                    atype,
+                    nat,
+                    mindist,
+                )
+                tolmat = set_tol_mat(tmp_atype, tmp_mindist)
             else:
                 tmp_nat = tuple(nat)
                 tmp_atype = atype
-                tolmat = _set_tol_mat(tmp_atype, mindist)
+                tolmat = set_tol_mat(tmp_atype, mindist)
+
         # ------ RNG for PyXtal
-        pyxtal_seed = int(rng.integers(0, 2**32, dtype=np.uint32))
+        pyxtal_seed = int(
+            rng.integers(0, 2**32, dtype=np.uint32)
+        )
         pyxtal_rng = np.random.default_rng(pyxtal_seed)
+
         try:
             f = StringIO()    # to get output from pyxtal
             with redirect_stdout(f):
@@ -138,43 +238,51 @@ def gen_struc(
         except Exception as e:
             logger.warning(f'{e}:     spg = {spg} retry.')
             continue
-        if tmp_crystal.valid:
-            tmp_struc = tmp_crystal.to_pymatgen(resort=False)
+
+        if not tmp_crystal.valid:
+            continue
+
+        tmp_struc = tmp_crystal.to_pymatgen(resort=False)
+        tmp2_nat = get_nat(tmp_struc, tmp_atype)
+
+        # -- check the number of atoms
+        if tmp2_nat != tmp_nat:
+            # (pyxtal 0.1.4) cryspy adopts "conventional=False",
+            #     which is better for DFT calculation
+            # pyxtal returns conventional cell, that is, too many atoms
+            tmp_struc = tmp_struc.get_primitive_structure()
+
+            # recheck nat
             tmp2_nat = get_nat(tmp_struc, tmp_atype)
-            # -- check the number of atoms
-            if tmp2_nat != tmp_nat:
-                # (pyxtal 0.1.4) cryspy adopts "conventional=False",
-                #     which is better for DFT calculation
-                # pyxtal returns conventional cell, that is, too many atoms
-                tmp_struc = tmp_struc.get_primitive_structure()
-                # recheck nat
-                tmp2_nat = get_nat(tmp_struc, tmp_atype)
-                if tmp2_nat != tmp_nat:    # failure
-                    continue
-            # -- sort, just in case
-            tmp_struc = sort_by_atype(tmp_struc, tmp_atype)
-            # -- scale volume
-            if vol_mu is not None:
-                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
-                tmp_struc.scale_lattice(volume=vol)
-            # -- check actual space group
-            try:
-                spg_sym, spg_num = tmp_struc.get_space_group_info(
-                    symprec=symprec)
-            except TypeError:
-                spg_num = 0
-                spg_sym = None
-            # -- tmp_struc --> init_struc_data
-            cid = len(init_struc_data) + id_offset
-            init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6}: {nat}'
-                    f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+            if tmp2_nat != tmp_nat:    # failure
+                continue
 
-    # ---------- return
-    return init_struc_data
+        # -- sort, just in case
+        tmp_struc = sort_by_atype(tmp_struc, tmp_atype)
+
+        # -- scale volume
+        if vol_mu is not None:
+            vol = rng.normal(loc=vol_mu, scale=vol_sigma)
+            tmp_struc.scale_lattice(volume=vol)
+
+        # -- check actual space group
+        try:
+            spg_sym, spg_num = tmp_struc.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+
+        # -- log
+        logger.info(f'Structure ID {cid:>6}: {nat}'
+                f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+
+        # ---------- return
+        return tmp_struc
 
 
-def gen_struc_mol(
+def gen_struc_mol_batch(
         nstruc,
         atype,
         nat,
@@ -223,20 +331,94 @@ def gen_struc_mol(
     init_struc_data = {}
 
     # ---------- Tol_matrix
-    tolmat = _set_tol_mat(atype, mindist)
+    tolmat = set_tol_mat(atype, mindist)
 
-    # ---------- loop for structure generattion
-    while len(init_struc_data) < nstruc:
+    # ---------- generate structures
+    for cid in range(id_offset, id_offset + nstruc):
+        init_struc_data[cid] = gen_struc_mol(
+            atype=atype,
+            nat=nat,
+            mindist=mindist,
+            spgnum=spgnum,
+            mol_data=mol_data,
+            nmol=nmol,
+            symprec=symprec,
+            cid=cid,
+            vol_factor=vol_factor,
+            vol_mu=vol_mu,
+            vol_sigma=vol_sigma,
+            timeout_mol=timeout_mol,
+            tolmat=tolmat,
+            rng=rng,
+        )
+
+    # ---------- return
+    return init_struc_data
+
+
+def gen_struc_mol(
+        atype,
+        nat,
+        mindist,
+        spgnum,
+        mol_data,
+        nmol,
+        symprec=0.01,
+        cid=0,
+        vol_factor=1.1,
+        vol_mu=None,
+        vol_sigma=None,
+        timeout_mol=None,
+        tolmat=None,
+        rng=None,
+    ):
+    '''
+    Generate a random molecular crystal structure for a given space group
+
+    # ---------- args
+    atype (tuple): atom type (e.g. ('Na', 'Cl'))
+    nat (tuple): number of atoms (e.g. (4, 4))
+    mindist (): minimum interatomic distance (e.g. ((2.0, 1.5), (1.5, 2.0)))
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    mol_data (tuple or list): pymatgen Molecule data
+    nmol (tuple): number of molecules (e.g. (4, 4))
+    symprec (float): symmetry tolerance
+    cid (int): structure ID
+    vol_factor (float): volume factor for structure generation
+    vol_mu (float): mean for volume scaling
+    vol_sigma (float): standard deviation for volume scaling
+    timeout_mol (None or float): if float, timeout for molecular structure generation
+    tolmat (Tol_matrix): precomputed tolerance matrix
+    rng (np.random.Generator): random number generator
+
+    # ---------- return
+    tmp_struc (Structure): generated structure
+    '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- Tol_matrix
+    if tolmat is None:
+        tolmat = set_tol_mat(atype, mindist)
+
+    # ---------- generate structure
+    while True:
         # ------ spgnum --> spg
         if spgnum == 'all':
             spg = rng.integers(1, 231)
         else:
             spg = rng.choice(spgnum)
+
         # ------ generate structure
         if timeout_mol is None:
             # -- RNG for PyXtal
-            pyxtal_seed = int(rng.integers(0, 2**32, dtype=np.uint32))
+            pyxtal_seed = int(
+                rng.integers(0, 2**32, dtype=np.uint32)
+            )
             pyxtal_rng = np.random.default_rng(pyxtal_seed)
+
             # -- generate crystal
             tmp_crystal = pyxtal(molecular=True)
             try:
@@ -257,36 +439,62 @@ def gen_struc_mol(
                     logger.warning(s)
                 tmp_valid = tmp_crystal.valid
                 if tmp_valid:
-                    tmp_struc = tmp_crystal.to_pymatgen(resort=False)
+                    tmp_struc = tmp_crystal.to_pymatgen(
+                        resort=False
+                    )
             except Exception as e:
                 logger.warning(f'{e}:     spg = {spg} retry.')
                 continue
         else:
             # -- seed for RNG in child process
-            seed = int(rng.integers(0, 2**32, dtype=np.uint32))
+            seed = int(
+                rng.integers(0, 2**32, dtype=np.uint32)
+            )
+
             # -- multiprocess for hangup prevention
             q = Queue()
-            p = Process(target=_mp_mc, args=(tolmat, spg, mol_data, nmol, vol_factor, seed, q))
+            p = Process(
+                target=_mp_mc,
+                args=(
+                    tolmat,
+                    spg,
+                    mol_data,
+                    nmol,
+                    vol_factor,
+                    seed,
+                    q,
+                ),
+            )
             p.start()
             p.join(timeout=timeout_mol)
             if p.is_alive():
                 p.terminate()
             p.join()    # finalize process
+
             # -- get result from queue
             try:
                 tmp = q.get(timeout=1.0)
                 # to avoid blocking forever if the child process exits without putting data
             except Exception:
-                logger.warning('timeout for molecular structure generation (no queue message). retry.')
+                logger.warning(
+                    'timeout for molecular structure generation '
+                    '(no queue message). retry.'
+                )
                 continue
+
             # -- check error from child process
-            if isinstance(tmp, tuple) and len(tmp) >= 1 and tmp[0] == "error":
+            if (
+                isinstance(tmp, tuple)
+                and len(tmp) >= 1
+                and tmp[0] == "error"
+            ):
                 e = tmp[1]
                 msg = tmp[2] if len(tmp) > 2 else ""
                 if msg:
                     logger.warning(msg)
                 logger.warning(f'{e}: spg = {spg} retry.')
                 continue
+
             # -- unpack result
             tmp_struc, tmp_valid, msg = tmp
             if msg:
@@ -295,47 +503,59 @@ def gen_struc_mol(
                 continue
 
         # ------ check validity
-        if tmp_valid:
-            # -- scale volume
-            if vol_mu is not None:
-                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
-                vol = vol * tmp_struc.num_sites / sum(nat)    # for conv. cell
-                tmp_struc = scale_cell_mol(tmp_struc, mol_data, vol)
-                if not tmp_struc:    # case: scale_cell_mol returns False
-                    logger.warning('failed scale cell. retry.')
-                    continue
-            # -- check nat
+        if not tmp_valid:
+            continue
+
+        # -- scale volume
+        if vol_mu is not None:
+            vol = rng.normal(loc=vol_mu, scale=vol_sigma)
+            vol = vol * tmp_struc.num_sites / sum(nat)    # for conv. cell
+            tmp_struc = scale_cell_mol(
+                tmp_struc,
+                mol_data,
+                vol,
+            )
+            if not tmp_struc:    # case: scale_cell_mol returns False
+                logger.warning('failed scale cell. retry.')
+                continue
+
+        # -- check nat
+        tmp_nat = get_nat(tmp_struc, atype)
+        if tmp_nat != nat:
+            # cryspy adopts conventional=True
+            # pyxtal returns conventional cell,
+            # too many atoms if centering
+            tmp_struc = tmp_struc.get_primitive_structure()
+
+            # recheck nat
             tmp_nat = get_nat(tmp_struc, atype)
-            if tmp_nat != nat:
-                # cryspy adopts conventional=True
-                # pyxtal returns conventional cell,
-                # too many atoms if centering
-                tmp_struc = tmp_struc.get_primitive_structure()
-                # recheck nat
-                tmp_nat = get_nat(tmp_struc, atype)
-                if tmp_nat != nat:    # failure
-                    logger.warning(f'different num. of atoms. {tmp_nat}, {nat} retry.')
-                    continue
-            # -- sort
-            tmp_struc = sort_by_atype(tmp_struc, atype)
-            # -- space group info
-            try:
-                spg_sym, spg_num = tmp_struc.get_space_group_info(
-                    symprec=symprec)
-            except TypeError:
-                spg_num = 0
-                spg_sym = None
-            # -- register the structure in pymatgen format
-            cid = len(init_struc_data) + id_offset
-            init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6} was generated.'
-                    f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+            if tmp_nat != nat:    # failure
+                logger.warning(
+                    f'different num. of atoms. {tmp_nat}, {nat} retry.'
+                )
+                continue
 
-    # ---------- return
-    return init_struc_data
+        # -- sort
+        tmp_struc = sort_by_atype(tmp_struc, atype)
+
+        # -- space group info
+        try:
+            spg_sym, spg_num = tmp_struc.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+
+        # -- log
+        logger.info(f'Structure ID {cid:>6} was generated.'
+                f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+
+        # ---------- return
+        return tmp_struc
 
 
-def gen_struc_mol_break_sym(
+def gen_struc_mol_break_sym_batch(
         nstruc,
         atype,
         nat,
@@ -392,18 +612,104 @@ def gen_struc_mol_break_sym(
     atype_dummy = get_atype_dummy(len(mol_data))
 
     # ---------- Tol_matrix for dummy atoms
-    tolmat = _set_tol_mat(atype_dummy, mindist_dummy)
+    tolmat = set_tol_mat(atype_dummy, mindist_dummy)
 
-    # ---------- loop for structure generattion
-    while len(init_struc_data) < nstruc:
+    # ---------- generate structures
+    for cid in range(id_offset, id_offset + nstruc):
+        init_struc_data[cid] = gen_struc_mol_break_sym(
+            atype=atype,
+            nat=nat,
+            mindist=mindist,
+            mindist_dummy=mindist_dummy,
+            spgnum=spgnum,
+            mol_data=mol_data,
+            nmol=nmol,
+            symprec=symprec,
+            cid=cid,
+            vol_factor=vol_factor,
+            vol_mu=vol_mu,
+            vol_sigma=vol_sigma,
+            rot_mol=rot_mol,
+            nrot=nrot,
+            atype_dummy=atype_dummy,
+            tolmat=tolmat,
+            rng=rng,
+        )
+
+    # ---------- return
+    return init_struc_data
+
+
+def gen_struc_mol_break_sym(
+        atype,
+        nat,
+        mindist,
+        mindist_dummy,
+        spgnum,
+        mol_data,
+        nmol,
+        symprec=0.01,
+        cid=0,
+        vol_factor=1.1,
+        vol_mu=None,
+        vol_sigma=None,
+        rot_mol='random_wyckoff',
+        nrot=20,
+        atype_dummy=None,
+        tolmat=None,
+        rng=None,
+    ):
+    '''
+    Generate a random molecular crystal structure
+    molecules are put at a Wyckoff position without consideration of symmetry
+
+    # ---------- args
+    atype (tuple): atom type (e.g. ('Na', 'Cl'))
+    nat (tuple): number of atoms (e.g. (4, 4))
+    mindist (): minimum interatomic distance (e.g. ((2.0, 1.5), (1.5, 2.0)))
+    mindist_dummy: mindist for dummy atoms (= intermolecular distance)
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    mol_data (tuple or list): pymatgen Molecule data
+    nmol (tuple): number of molecules (e.g. (4, 4))
+    symprec (float): symmetry tolerance
+    cid (int): structure ID
+    vol_factor (float): volume factor for structure generation
+    vol_mu (float): mean for volume scaling
+    vol_sigma (float): standard deviation for volume scaling
+    rot_mol (str): rotation option. 'random', 'random_mol', or 'random_wyckoff'
+    nrot (int): maximum number of trials to rotate molecules
+    atype_dummy (tuple): precomputed dummy atom types
+    tolmat (Tol_matrix): precomputed tolerance matrix
+    rng (np.random.Generator): random number generator
+
+    # ---------- return
+    tmp_struc (Structure): generated structure
+    '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ------ dummy atom type
+    if atype_dummy is None:
+        atype_dummy = get_atype_dummy(len(mol_data))
+
+    # ---------- Tol_matrix for dummy atoms
+    if tolmat is None:
+        tolmat = set_tol_mat(atype_dummy, mindist_dummy)
+
+    # ---------- generate structure
+    while True:
         # ------ spgnum --> spg
         if spgnum == 'all':
             spg = rng.integers(1, 231)
         else:
             spg = rng.choice(spgnum)
+
         # ------ RNG for PyXtal
         pyxtal_seed = int(rng.integers(0, 2**32, dtype=np.uint32))
         pyxtal_rng = np.random.default_rng(pyxtal_seed)
+
         # ------ generate structure
         tmp_crystal = pyxtal()
         try:
@@ -425,123 +731,173 @@ def gen_struc_mol_break_sym(
         except Exception as e:
             logger.warning(f'{e}:    spg = {spg} retry.')
             continue
-        if tmp_crystal.valid:
-            # -- each wyckoff position --> dummy atom
-            dums = []        # dummy atoms
-            dum_pos = []     # internal position of dummy
-            dum_type = {}    # type of dummy
-                                #  e.g. {DummySpecie X00+: 'Rn',
-                                #        DummySpecie X10+: 'Rn',
-                                #        DummySpecie X20+: 'Xe',
-                                #        DummySpecie X30+: 'Xe'}
-            for i, site in enumerate(tmp_crystal.atom_sites):
-                dum = DummySpecie(f"X{i}")
-                dums.append(dum)
-                dum_pos.append(site.position)
-                dum_type[dum] = site.specie
-            # -- tmp_struc with dummy atoms
-            lattice = tmp_crystal.lattice.get_matrix()
-            tmp_struc = Structure.from_spacegroup(spg, lattice, dums, dum_pos)
-            tmp_struc = tmp_struc.get_primitive_structure()
-            # -- scale volume
-            if vol_mu is not None:
-                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
-                tmp_struc.scale_lattice(volume=vol)
-            # -- save dummy coords
-            dum_species = tmp_struc.species
-            dum_coords = tmp_struc.cart_coords
-            # -- remove dummy
-            tmp_struc.remove_sites(range(0, len(dum_species)))
-            tmp_struc_ori = tmp_struc.copy()
-            rot_success = False
-            # -- rotate molecules
-            for nrel in range(nrot):
-                tmp_struc = tmp_struc_ori.copy()
-                for (dum_specie, dum_coord) in zip(dum_species, dum_coords):
-                    mol_index = atype_dummy.index(dum_type[dum_specie])
-                    mol = mol_data[mol_index]
-                    # rotation option
-                    if rot_mol is None:
-                        rot_mol_coord = mol.cart_coords
-                    if rot_mol == 'random':
-                        angle = 2 * np.pi * rng.random(3)
-                        R = rot_mat(angle)
-                        rot_mol_coord = np.matmul(mol.cart_coords, R)
-                    if rot_mol == 'random_mol':
-                        # each mol_data
-                        mol_angles = []    # [angles of mol 1, angles of mol 2, ...]
-                        for i in range(len(mol_data)):
-                            mol_angles.append(2 * np.pi * rng.random(3))
-                        angle = mol_angles[mol_index]
-                        R = rot_mat(angle)
-                        rot_mol_coord = np.matmul(mol.cart_coords, R)
-                    if rot_mol == 'random_wyckoff':
-                        # each Wyckoff
-                        dum_angles = {}    # e.g.
-                                            # {DummySpecie X00+: array([ , , ]),
-                                            #  DummySpecie X10+: array([ , , ]),
-                                            #  DummySpecie X20+: array([ , , ]),
-                                            #  DummySpecie X30+: array([ , , ])}
-                        angles = 2 * np.pi * rng.random((len(dums), 3))
-                        for (dum, angle) in zip(dums, angles):
-                            dum_angles[dum] = angle
-                        angle = dum_angles[dum_specie]
-                        R = rot_mat(angle)
-                        rot_mol_coord = np.matmul(mol.cart_coords, R)
-                    # rotate coord
-                    coord = rot_mol_coord + dum_coord
-                    # append mol
-                    for i, ms in enumerate(mol.species):
-                        tmp_struc.append(ms, coord[i], coords_are_cartesian=True)
-                # -- check nat
+
+        if not tmp_crystal.valid:
+            continue
+
+        # -- each wyckoff position --> dummy atom
+        dums = []        # dummy atoms
+        dum_pos = []     # internal position of dummy
+        dum_type = {}    # type of dummy
+                            #  e.g. {DummySpecie X00+: 'Rn',
+                            #        DummySpecie X10+: 'Rn',
+                            #        DummySpecie X20+: 'Xe',
+                            #        DummySpecie X30+: 'Xe'}
+        for i, site in enumerate(tmp_crystal.atom_sites):
+            dum = DummySpecie(f"X{i}")
+            dums.append(dum)
+            dum_pos.append(site.position)
+            dum_type[dum] = site.specie
+
+        # -- tmp_struc with dummy atoms
+        lattice = tmp_crystal.lattice.get_matrix()
+        tmp_struc = Structure.from_spacegroup(
+            spg,
+            lattice,
+            dums,
+            dum_pos,
+        )
+        tmp_struc = tmp_struc.get_primitive_structure()
+
+        # -- scale volume
+        if vol_mu is not None:
+            vol = rng.normal(loc=vol_mu, scale=vol_sigma)
+            tmp_struc.scale_lattice(volume=vol)
+
+        # -- save dummy coords
+        dum_species = tmp_struc.species
+        dum_coords = tmp_struc.cart_coords
+
+        # -- remove dummy
+        tmp_struc.remove_sites(range(0, len(dum_species)))
+        tmp_struc_ori = tmp_struc.copy()
+        rot_success = False
+
+        # -- rotate molecules
+        for nrel in range(nrot):
+            tmp_struc = tmp_struc_ori.copy()
+            for dum_specie, dum_coord in zip(
+                dum_species,
+                dum_coords,
+            ):
+                mol_index = atype_dummy.index(
+                    dum_type[dum_specie]
+                )
+                mol = mol_data[mol_index]
+
+                # rotation option
+                if rot_mol is None:
+                    rot_mol_coord = mol.cart_coords
+                if rot_mol == 'random':
+                    angle = 2 * np.pi * rng.random(3)
+                    R = rot_mat(angle)
+                    rot_mol_coord = np.matmul(
+                        mol.cart_coords,
+                        R,
+                    )
+                if rot_mol == 'random_mol':
+                    # each mol_data
+                    mol_angles = []    # [angles of mol 1, angles of mol 2, ...]
+                    for i in range(len(mol_data)):
+                        mol_angles.append(
+                            2 * np.pi * rng.random(3)
+                        )
+                    angle = mol_angles[mol_index]
+                    R = rot_mat(angle)
+                    rot_mol_coord = np.matmul(
+                        mol.cart_coords,
+                        R,
+                    )
+                if rot_mol == 'random_wyckoff':
+                    # each Wyckoff
+                    dum_angles = {}    # e.g.
+                                        # {DummySpecie X00+: array([ , , ]),
+                                        #  DummySpecie X10+: array([ , , ]),
+                                        #  DummySpecie X20+: array([ , , ]),
+                                        #  DummySpecie X30+: array([ , , ])}
+                    angles = 2 * np.pi * rng.random(
+                        (len(dums), 3)
+                    )
+                    for dum, angle in zip(dums, angles):
+                        dum_angles[dum] = angle
+                    angle = dum_angles[dum_specie]
+                    R = rot_mat(angle)
+                    rot_mol_coord = np.matmul(
+                        mol.cart_coords,
+                        R,
+                    )
+
+                # rotate coord
+                coord = rot_mol_coord + dum_coord
+
+                # append mol
+                for i, ms in enumerate(mol.species):
+                    tmp_struc.append(
+                        ms,
+                        coord[i],
+                        coords_are_cartesian=True,
+                    )
+
+            # -- check nat
+            tmp_nat = get_nat(tmp_struc, atype)
+            if tmp_nat != nat:
+                # pyxtal returns conventional cell,
+                # too many atoms if centering
+                tmp_struc = tmp_struc.get_primitive_structure()
+
+                # recheck nat
                 tmp_nat = get_nat(tmp_struc, atype)
-                if tmp_nat != nat:
-                    # pyxtal returns conventional cell,
-                    # too many atoms if centering
-                    tmp_struc = tmp_struc.get_primitive_structure()
-                    # recheck nat
-                    tmp_nat = get_nat(tmp_struc, atype)
-                    if tmp_nat != nat:    # failure
-                        if rot_mol is None:
-                            break    # go back to the while loop
-                        continue
-                # -- sort, necessary in molecular crystal
-                tmp_struc = sort_by_atype(tmp_struc, atype)
-                # -- check minimum distance
-                if mindist is not None:
-                    success, mindist_ij, dist = check_distance(tmp_struc,
-                                                               atype,
-                                                               mindist)
-                    if not success:
-                        type0 = atype[mindist_ij[0]]
-                        type1 = atype[mindist_ij[1]]
-                        logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
-                        if rot_mol is None:
-                            break    # go back to the while loop
-                        continue    # failure
-                # -- check actual space group (success)
-                try:
-                    spg_sym, spg_num = tmp_struc.get_space_group_info(
-                        symprec=symprec)
-                except TypeError:
-                    spg_num = 0
-                    spg_sym = None
-                rot_success = True
-                break
-            # -- reach maximum times to rotate (failure)
-            if not rot_success:
-                continue    # go back to the while loop
-            # -- tmp_struc --> init_struc_data
-            cid = len(init_struc_data) + id_offset
-            init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6} was generated.'
-                    f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+                if tmp_nat != nat:    # failure
+                    if rot_mol is None:
+                        break    # go back to the while loop
+                    continue
 
-    # ---------- return
-    return init_struc_data
+            # -- sort, necessary in molecular crystal
+            tmp_struc = sort_by_atype(tmp_struc, atype)
+
+            # -- check minimum distance
+            if mindist is not None:
+                success, mindist_ij, dist = check_distance(
+                    tmp_struc,
+                    atype,
+                    mindist,
+                )
+                if not success:
+                    type0 = atype[mindist_ij[0]]
+                    type1 = atype[mindist_ij[1]]
+                    logger.warning(
+                        f'mindist: {type0} - {type1}, '
+                        f'{dist}. retry.'
+                    )
+                    if rot_mol is None:
+                        break    # go back to the while loop
+                    continue    # failure
+
+            # -- check actual space group (success)
+            try:
+                spg_sym, spg_num = tmp_struc.get_space_group_info(
+                    symprec=symprec
+                )
+            except TypeError:
+                spg_num = 0
+                spg_sym = None
+
+            rot_success = True
+            break
+
+        # -- reach maximum times to rotate (failure)
+        if not rot_success:
+            continue    # go back to the while loop
+
+        # -- log
+        logger.info(f'Structure ID {cid:>6} was generated.'
+                f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+
+        # ---------- return
+        return tmp_struc
 
 
-def _set_tol_mat(atype, mindist):
+def set_tol_mat(atype, mindist):
     tolmat = Tol_matrix()
     for i, itype in enumerate(atype):
         for j, jtype in enumerate(atype):

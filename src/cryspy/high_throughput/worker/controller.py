@@ -124,6 +124,7 @@ def run_controller(
                         record_id,
                         opt_atoms,
                         energy,
+                        rin.symprec,
                     )
                     update_status(
                         conn,

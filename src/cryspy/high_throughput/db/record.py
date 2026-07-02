@@ -5,7 +5,13 @@ import numpy as np
 from ase import Atoms
 from pymatgen.core import Structure
 
-from .convert import array_to_blob, atoms_to_raw, blob_to_array, struc_to_raw
+from .convert import (
+    array_to_blob,
+    atoms_to_raw,
+    blob_to_array,
+    raw_to_struc,
+    struc_to_raw,
+)
 
 
 class Status(IntEnum):
@@ -21,9 +27,19 @@ def insert_init_struc(
     conn: sqlite3.Connection,
     struc: Structure,
     nat: np.ndarray,
+    symprec: float,
     status: Status = Status.WAITING,
 ) -> int:
     """Insert an initial structure into the records table."""
+
+    # ---------- space group
+    try:
+        init_spg_sym, init_spg_num = struc.get_space_group_info(
+            symprec=symprec
+        )
+    except TypeError:
+        init_spg_num = 0
+        init_spg_sym = None
 
     # ---------- structure data
     raw_struc_dict = struc_to_raw(struc)
@@ -41,11 +57,15 @@ def insert_init_struc(
             nat,
             init_lattice,
             init_frac_coords,
+            init_spg_num,
+            init_spg_sym,
             opt_lattice,
             opt_frac_coords,
+            opt_spg_num,
+            opt_spg_sym,
             energy
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             status,
@@ -53,7 +73,11 @@ def insert_init_struc(
             array_to_blob(nat),
             array_to_blob(lattice),
             array_to_blob(frac_coords),
+            init_spg_num,
+            init_spg_sym,
             None,
+            None,
+            0,
             None,
             None,
         ),
@@ -181,10 +205,10 @@ def select_results(
             id,
             status,
             energy,
-            (
-                opt_lattice IS NOT NULL
-                AND opt_frac_coords IS NOT NULL
-            ) AS has_opt
+            init_spg_num,
+            init_spg_sym,
+            opt_spg_num,
+            opt_spg_sym
         FROM records
         WHERE status NOT IN (?, ?)
     """
@@ -253,9 +277,20 @@ def select_results(
             record_id,
             Status(status),
             energy,
-            bool(has_opt),
+            init_spg_num,
+            init_spg_sym,
+            opt_spg_num,
+            opt_spg_sym,
         )
-        for record_id, status, energy, has_opt in rows
+        for (
+            record_id,
+            status,
+            energy,
+            init_spg_num,
+            init_spg_sym,
+            opt_spg_num,
+            opt_spg_sym,
+        ) in rows
     ]
 
 
@@ -315,6 +350,7 @@ def update_opt_struc(
     record_id: int,
     opt_atoms: Atoms,
     energy: float,
+    symprec: float,
 ) -> None:
     """Update an optimized structure in the records table."""
 
@@ -323,6 +359,18 @@ def update_opt_struc(
     lattice = raw_struc_dict["lattice"]
     frac_coords = raw_struc_dict["frac_coords"]
 
+    # ---------- pymatgen Structure for space group
+    opt_struc = raw_to_struc(raw_struc_dict)
+
+    # ---------- space group
+    try:
+        opt_spg_sym, opt_spg_num = opt_struc.get_space_group_info(
+            symprec=symprec
+        )
+    except TypeError:
+        opt_spg_num = 0
+        opt_spg_sym = None
+
     # ---------- update records table
     conn.execute(
         """
@@ -330,12 +378,16 @@ def update_opt_struc(
         SET
             opt_lattice = ?,
             opt_frac_coords = ?,
+            opt_spg_num = ?,
+            opt_spg_sym = ?,
             energy = ?
         WHERE id = ?
         """,
         (
             array_to_blob(lattice),
             array_to_blob(frac_coords),
+            opt_spg_num,
+            opt_spg_sym,
             energy,
             record_id,
         ),

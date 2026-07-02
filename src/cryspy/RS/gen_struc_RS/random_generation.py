@@ -17,7 +17,7 @@ from ...util.struc_util import check_distance, remove_zero, choose_vc_nat
 logger = getLogger('cryspy')
 
 
-def gen_wo_spg(
+def gen_wo_spg_batch(
         nstruc,
         atype,
         nat,
@@ -81,13 +81,103 @@ def gen_wo_spg(
 
     # ---------- initialize
     init_struc_data = {}
+
+    # ---------- generate structures
+    for cid in range(id_offset, id_offset + nstruc):
+        init_struc_data[cid] = gen_wo_spg(
+            atype=atype,
+            nat=nat,
+            mindist=mindist,
+            spgnum=spgnum,
+            minlen=minlen,
+            maxlen=maxlen,
+            dangle=dangle,
+            symprec=symprec,
+            maxcnt=maxcnt,
+            cid=cid,
+            vol_mu=vol_mu,
+            vol_sigma=vol_sigma,
+            vc=vc,
+            ll_nat=ll_nat,
+            ul_nat=ul_nat,
+            charge=charge,
+            cn_data=cn_data,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            feasible_N=feasible_N,
+            rng=rng,
+        )
+
+    # ---------- return
+    return init_struc_data
+
+
+def gen_wo_spg(
+        atype,
+        nat,
+        mindist,
+        spgnum,
+        minlen,
+        maxlen,
+        dangle,
+        symprec=0.01,
+        maxcnt=50,
+        cid=0,
+        vol_mu=None,
+        vol_sigma=None,
+        vc=False,
+        ll_nat=None,
+        ul_nat=None,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
+        feasible_N=None,
+        rng=None,
+    ):
+
+    '''
+    Generate a random structure without space group information
+
+    # ---------- args
+    atype (tuple): atom types, e.g. ('Na', 'Cl')
+    nat (tuple): number of atoms, e.g. (8, 8)
+    mindist (): minumum interatomic distance, e.g. ((2.0, 1.5), (1.5, 2.0))
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    minlen (float): minimum length of lattice vector
+    maxlen (float): maximum length of lattice vector
+    dangle (float): maximum deviation of lattice angle
+    symprec (float): tolerance to find space group
+    maxcnt (int): maximum trial to generate a structure
+    cid (int): structure ID
+    vol_mu (float): mean of volume scaling
+    vol_sigma (float): standard deviation of volume scaling
+    vc (bool): variable composition. it needs ll_nat and ul_nat
+    ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
+    ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
+    charge (tuple): charge of each atom type
+    cn_data (dict): charge-neutral data for enumerate/sample mode
+    min_comp (tuple): lower composition bounds
+    max_comp (tuple): upper composition bounds
+    feasible_N (list): feasible total atom numbers under composition constraints
+    rng (np.random.Generator): random number generator
+
+    # ---------- return
+    tmp_struc (Structure): generated structure
+    '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- initialize
     if not vc:
         tmp_nat = nat
         tmp_atype = atype
         tmp_mindist = mindist
 
-    # ---------- generate structures
-    while len(init_struc_data) < nstruc:
+    # ---------- generate structure
+    while True:
         # ------ vc
         if vc:
             # ------ choose nat for variable-composition generation
@@ -109,43 +199,81 @@ def gen_wo_spg(
                 tmp_nat = tuple(nat)
                 tmp_atype = atype
                 tmp_mindist = mindist
+
         # either tmp_atype or atype is OK in _get_atomlist()
         atomlist = _get_atomlist(tmp_atype, tmp_nat)
+
         # ------ get spg, a, b, c, alpha, beta, gamma
-        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle, rng)
+        spg, a, b, c, alpha, beta, gamma = _gen_lattice(
+            spgnum,
+            minlen,
+            maxlen,
+            dangle,
+            rng,
+        )
+
         # ------ get a1, a2, a3
-        a1, a2, a3 = _calc_latvec(a, b, c, alpha, beta, gamma)
+        a1, a2, a3 = _calc_latvec(
+            a,
+            b,
+            c,
+            alpha,
+            beta,
+            gamma,
+        )
+
         # ------ get structure
-        tmp_struc = _gen_struc_wo_spg(tmp_atype, tmp_nat, atomlist, a1, a2, a3, tmp_mindist, maxcnt, rng)
-        if tmp_struc is not None:    # success of generation
-            # ------ scale volume
-            if vol_mu is not None:
-                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
-                tmp_struc.scale_lattice(volume=vol)
-                # either tmp_atype or atype is OK in check_distance()
-                success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
-                if not success:
-                    type0 = atype[mindist_ij[0]]
-                    type1 = atype[mindist_ij[1]]
-                    logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
-                    continue    # failure
-            # ------ check actual space group using pymatgen
-            try:
-                spg_sym, spg_num = tmp_struc.get_space_group_info(symprec=symprec)
-            except TypeError:
-                spg_num = 0
-                spg_sym = None
-            # ------ register the structure in pymatgen format
-            cid = len(init_struc_data) + id_offset
-            init_struc_data[cid] = tmp_struc
-            logger.info(f'Structure ID {cid:>6}: {nat}'
-                    f' Space group: {spg_num:>3} {spg_sym}')
+        tmp_struc = _gen_struc_wo_spg(
+            tmp_atype,
+            tmp_nat,
+            atomlist,
+            a1,
+            a2,
+            a3,
+            tmp_mindist,
+            maxcnt,
+            rng,
+        )
+        if tmp_struc is None:
+            continue
 
-    # ---------- return
-    return init_struc_data
+        # ------ scale volume
+        if vol_mu is not None:
+            vol = rng.normal(loc=vol_mu, scale=vol_sigma)
+            tmp_struc.scale_lattice(volume=vol)
+
+            # either tmp_atype or atype is OK in check_distance()
+            success, mindist_ij, dist = check_distance(
+                tmp_struc,
+                atype,
+                mindist,
+            )
+            if not success:
+                type0 = atype[mindist_ij[0]]
+                type1 = atype[mindist_ij[1]]
+                logger.warning(
+                    f'mindist: {type0} - {type1}, {dist}. retry.'
+                )
+                continue    # failure
+
+        # ------ check actual space group using pymatgen
+        try:
+            spg_sym, spg_num = tmp_struc.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+
+        # ------ log
+        logger.info(f'Structure ID {cid:>6}: {nat}'
+                f' Space group: {spg_num:>3} {spg_sym}')
+
+        # ------ return
+        return tmp_struc
 
 
-def gen_with_find_wy(
+def gen_with_find_wy_batch(
         nstruc,
         atype,
         nat,
@@ -214,97 +342,252 @@ def gen_with_find_wy(
 
     # ---------- initialize
     init_struc_data = {}
+
+    # ---------- generate structures
+    for cid in range(id_offset, id_offset + nstruc):
+        init_struc_data[cid] = gen_with_find_wy(
+            atype=atype,
+            nat=nat,
+            mindist=mindist,
+            spgnum=spgnum,
+            minlen=minlen,
+            maxlen=maxlen,
+            dangle=dangle,
+            symprec=symprec,
+            maxcnt=maxcnt,
+            cid=cid,
+            vol_mu=vol_mu,
+            vol_sigma=vol_sigma,
+            fwpath=fwpath,
+            mpi_rank=mpi_rank,
+            vc=vc,
+            ll_nat=ll_nat,
+            ul_nat=ul_nat,
+            charge=charge,
+            cn_data=cn_data,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            feasible_N=feasible_N,
+            rng=rng,
+        )
+
+    # ---------- return
+    return init_struc_data
+
+
+def gen_with_find_wy(
+        atype,
+        nat,
+        mindist,
+        spgnum,
+        minlen,
+        maxlen,
+        dangle,
+        symprec=0.01,
+        maxcnt=50,
+        cid=0,
+        vol_mu=None,
+        vol_sigma=None,
+        fwpath='find_wy',
+        mpi_rank=0,
+        vc=False,
+        ll_nat=None,
+        ul_nat=None,
+        charge=None,
+        cn_data=None,
+        min_comp=None,
+        max_comp=None,
+        feasible_N=None,
+        rng=None,
+    ):
+    '''
+    Generate a random structure with space group information
+    using find_wy program
+
+    # ---------- args
+    atype (tuple): atom types, e.g. ('Na', 'Cl')
+    nat (tuple): number of atoms, e.g. (8, 8)
+    mindist (): minimum interatomic distance e.g. ((2.0, 1.5), (1.5, 2.0))
+    spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
+    minlen (float): minimum length of lattice vector
+    maxlen (float): maximum length of lattice vector
+    dangle (float): maximum deviation of lattice angle
+    symprec (float): tolerance to find space group
+    maxcnt (int): maximum trial to generate a structure
+    cid (int): structure ID
+    vol_mu (float): mean of volume scaling
+    vol_sigma (float): standard deviation of volume scaling
+    fwpath (str): specify a path for a executable file of find_wy program
+    mpi_rank (int): rank of MPI process
+    vc (bool): variable composition. it needs ll_nat and ul_nat
+    ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
+    ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
+    charge (tuple): charge of each atom type
+    cn_data (dict): charge-neutral data for enumerate/sample mode
+    min_comp (tuple): lower composition bounds
+    max_comp (tuple): upper composition bounds
+    feasible_N (list): feasible total atom numbers under composition constraints
+    rng (np.random.Generator): random number generator
+
+    # ---------- return
+    tmp_struc (Structure): generated structure
+    '''
+
+    # ---------- initialize rng
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # ---------- initialize
     if not vc:
         tmp_nat = nat
         tmp_atype = atype
         tmp_mindist = mindist
 
     # ---------- cd tmp_gen_struc
-    os.makedirs(f'tmp_gen_struc/rank_{mpi_rank}', exist_ok=True)
-    os.chdir(f'tmp_gen_struc/rank_{mpi_rank}')
+    current_dir = os.getcwd()
+    work_dir = os.path.join(
+        current_dir,
+        'tmp_gen_struc',
+        f'rank_{mpi_rank}',
+    )
+    os.makedirs(work_dir, exist_ok=True)
+    os.chdir(work_dir)
 
-    # ---------- generate structures
-    while len(init_struc_data) < nstruc:
-        # ------ vc
-        if vc:
-            # ------ choose nat for variable-composition generation
-            nat = choose_vc_nat(
-                ll_nat=ll_nat,
-                ul_nat=ul_nat,
-                charge=charge,
-                cn_data=cn_data,
-                min_comp=min_comp,
-                max_comp=max_comp,
-                feasible_N=feasible_N,
-                rng=rng,
+    try:
+        # ---------- generate structure
+        while True:
+            # ------ vc
+            if vc:
+                # ------ choose nat for variable-composition generation
+                nat = choose_vc_nat(
+                    ll_nat=ll_nat,
+                    ul_nat=ul_nat,
+                    charge=charge,
+                    cn_data=cn_data,
+                    min_comp=min_comp,
+                    max_comp=max_comp,
+                    feasible_N=feasible_N,
+                    rng=rng,
+                )
+
+                if sum(nat) == 0:
+                    continue    # restart
+                if 0 in nat:    # remove 0 from nat and corresponding index in atype, mindist
+                    tmp_atype, tmp_nat, tmp_mindist = remove_zero(
+                        atype,
+                        nat,
+                        mindist,
+                    )
+                else:
+                    tmp_nat = tuple(nat)
+                    tmp_atype = atype
+                    tmp_mindist = mindist
+
+            # ------ get spg, a, b, c, alpha, beta, gamma
+            spg, a, b, c, alpha, beta, gamma = _gen_lattice(
+                spgnum,
+                minlen,
+                maxlen,
+                dangle,
+                rng,
             )
 
-            if sum(nat) == 0:
-                continue    # restart
-            if 0 in nat:    # remove 0 from nat and corresponding index in atype, mindist
-                tmp_atype, tmp_nat, tmp_mindist = remove_zero(atype, nat, mindist)
-            else:
-                tmp_nat = tuple(nat)
-                tmp_atype = atype
-                tmp_mindist = mindist
-        # ------ get spg, a, b, c, alpha, beta, gamma
-        spg, a, b, c, alpha, beta, gamma = _gen_lattice(spgnum, minlen, maxlen, dangle, rng)
-        # ------ get cosa, cosb, and cosc
-        cosa, cosb, cosg = _calc_cos(alpha, beta, gamma)
-        # ------ write an input file for find_wy
-        _fw_input(tmp_atype, tmp_nat, spg, a, b, c, cosa, cosb, cosg)
-        # ------ loop for same fw_input
-        cnt = 0
-        while cnt <= maxcnt:
-            # -- run find_wy
-            with open('log_find_wy', 'w') as f:
-                subprocess.call([fwpath, 'input'], stdout=f, stderr=f)
-            # -- generate a structure using POS_WY_SKEL_ALL.json
-            if not os.path.isfile('POS_WY_SKEL_ALL.json'):
-                wyflag = False
-                break
-            wyflag, tmp_struc = _gen_struc_with_spg(tmp_atype, tmp_mindist, maxcnt, rng)
-            if wyflag is False:    # Failure
-                os.remove('POS_WY_SKEL_ALL.json')
-                cnt += 1
-                continue
-            else:    # Success
-                _rm_files()    # rm input POS_WY_SKEL_ALL.json
-                break          # break fw_input loop
-        if wyflag is False:
-            # -- maximum trial or no POS_WY_SKEL_ALL.json file
-            _rm_files()    # clean
-            continue       # to new fw_input
-        # ------ scale volume
-        if vol_mu is not None:
-            vol = rng.normal(loc=vol_mu, scale=vol_sigma)
-            tmp_struc.scale_lattice(volume=vol)
-            success, mindist_ij, dist = check_distance(tmp_struc, atype, mindist)
-            if not success:
-                type0 = atype[mindist_ij[0]]
-                type1 = atype[mindist_ij[1]]
-                logger.warning(f'mindist: {type0} - {type1}, {dist}. retry.')
-                continue    # failure
-        # ------ check actual space group using pymatgen
-        try:
-            spg_sym, spg_num = tmp_struc.get_space_group_info(
-                symprec=symprec)
-        except TypeError:
-            spg_num = 0
-            spg_sym = None
-        # ------ tmp_struc --> init_struc_data
-        cid = len(init_struc_data) + id_offset
-        init_struc_data[cid] = tmp_struc
-        logger.info(f'Structure ID {cid:>6}: {nat}'
-                f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
-        # ------ clean
+            # ------ get cosa, cosb, and cosc
+            cosa, cosb, cosg = _calc_cos(
+                alpha,
+                beta,
+                gamma,
+            )
+
+            # ------ write an input file for find_wy
+            _fw_input(
+                tmp_atype,
+                tmp_nat,
+                spg,
+                a,
+                b,
+                c,
+                cosa,
+                cosb,
+                cosg,
+            )
+
+            # ------ loop for same fw_input
+            cnt = 0
+            while cnt <= maxcnt:
+                # -- run find_wy
+                with open('log_find_wy', 'w') as f:
+                    subprocess.call(
+                        [fwpath, 'input'],
+                        stdout=f,
+                        stderr=f,
+                    )
+
+                # -- generate a structure using POS_WY_SKEL_ALL.json
+                if not os.path.isfile('POS_WY_SKEL_ALL.json'):
+                    wyflag = False
+                    break
+
+                wyflag, tmp_struc = _gen_struc_with_spg(
+                    tmp_atype,
+                    tmp_mindist,
+                    maxcnt,
+                    rng,
+                )
+                if wyflag is False:    # Failure
+                    os.remove('POS_WY_SKEL_ALL.json')
+                    cnt += 1
+                    continue
+                else:    # Success
+                    _rm_files()    # rm input POS_WY_SKEL_ALL.json
+                    break          # break fw_input loop
+
+            if wyflag is False:
+                # -- maximum trial or no POS_WY_SKEL_ALL.json file
+                _rm_files()    # clean
+                continue       # to new fw_input
+
+            # ------ scale volume
+            if vol_mu is not None:
+                vol = rng.normal(loc=vol_mu, scale=vol_sigma)
+                tmp_struc.scale_lattice(volume=vol)
+                success, mindist_ij, dist = check_distance(
+                    tmp_struc,
+                    atype,
+                    mindist,
+                )
+                if not success:
+                    type0 = atype[mindist_ij[0]]
+                    type1 = atype[mindist_ij[1]]
+                    logger.warning(
+                        f'mindist: {type0} - {type1}, '
+                        f'{dist}. retry.'
+                    )
+                    continue    # failure
+
+            # ------ check actual space group using pymatgen
+            try:
+                spg_sym, spg_num = tmp_struc.get_space_group_info(
+                    symprec=symprec
+                )
+            except TypeError:
+                spg_num = 0
+                spg_sym = None
+
+            # ------ log
+            logger.info(f'Structure ID {cid:>6}: {nat}'
+                    f' Space group: {spg:>3} --> {spg_num:>3} {spg_sym}')
+
+            # ------ clean
+            _rm_files()
+
+            # ---------- return
+            return tmp_struc
+
+    finally:
+        # ---------- clean and go back
         _rm_files()
-
-    # ---------- go back to ..
-    os.chdir('../../')
-
-    # ---------- return
-    return init_struc_data
+        os.chdir(current_dir)
 
 
 def _get_atomlist(atype, numIons):

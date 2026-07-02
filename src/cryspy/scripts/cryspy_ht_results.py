@@ -88,16 +88,30 @@ def print_results(
             writer = csv.writer(f)
             writer.writerow([
                 'id',
+                'Spg_num',
+                'Spg_sym',
+                'Spg_num_opt',
+                'Spg_sym_opt',
                 'energy_eV_cell',
                 'status',
-                'opt_struc',
             ])
-            for record_id, status, energy, has_opt in rows:
+            for (
+                record_id,
+                status,
+                energy,
+                init_spg_num,
+                init_spg_sym,
+                opt_spg_num,
+                opt_spg_sym,
+            ) in rows:
                 writer.writerow([
                     record_id,
+                    init_spg_num,
+                    init_spg_sym,
+                    opt_spg_num,
+                    opt_spg_sym,
                     '' if energy is None else energy,
                     status.name,
-                    has_opt,
                 ])
 
         print(f'Output: {output}')
@@ -115,11 +129,27 @@ def print_results(
     # ---------- format
     energy_values = [
         'None' if energy is None else f'{energy:.8f}'
-        for _, _, energy, _ in rows
+        for _, _, energy, _, _, _, _ in rows
     ]
     id_width = max(
         len('ID'),
-        max(len(str(record_id)) for record_id, _, _, _ in rows),
+        max(len(str(record_id)) for record_id, _, _, _, _, _, _ in rows),
+    )
+    init_spg_num_width = max(
+        len('Spg_num'),
+        max(len(str(row[3])) for row in rows),
+    )
+    init_spg_sym_width = max(
+        len('Spg_sym'),
+        max(len(str(row[4])) for row in rows),
+    )
+    opt_spg_num_width = max(
+        len('Spg_num_opt'),
+        max(len(str(row[5])) for row in rows),
+    )
+    opt_spg_sym_width = max(
+        len('Spg_sym_opt'),
+        max(len(str(row[6])) for row in rows),
     )
     energy_width = max(
         len('Energy (eV/cell)'),
@@ -127,9 +157,8 @@ def print_results(
     )
     status_width = max(
         len('Status'),
-        max(len(status.name) for _, status, _, _ in rows),
+        max(len(status.name) for _, status, _, _, _, _, _ in rows),
     )
-    opt_width = len('Opt_struc')
 
     # ---------- information
     print(f'Number of results: {n_results}')
@@ -149,19 +178,33 @@ def print_results(
     # ---------- header
     print(
         f'{"ID":>{id_width}}  '
+        f'{"Spg_num":>{init_spg_num_width}}  '
+        f'{"Spg_sym":<{init_spg_sym_width}}  '
+        f'{"Spg_num_opt":>{opt_spg_num_width}}  '
+        f'{"Spg_sym_opt":<{opt_spg_sym_width}}  '
         f'{"Energy (eV/cell)":>{energy_width}}  '
-        f'{"Status":<{status_width}}  '
-        f'{"Opt_struc":>{opt_width}}'
+        f'{"Status":<{status_width}}'
     )
 
     # ---------- results
     for row, energy_value in zip(rows, energy_values):
-        record_id, status, _, has_opt = row
+        (
+            record_id,
+            status,
+            _,
+            init_spg_num,
+            init_spg_sym,
+            opt_spg_num,
+            opt_spg_sym,
+        ) = row
         print(
             f'{record_id:>{id_width}}  '
+            f'{init_spg_num:>{init_spg_num_width}}  '
+            f'{str(init_spg_sym):<{init_spg_sym_width}}  '
+            f'{opt_spg_num:>{opt_spg_num_width}}  '
+            f'{str(opt_spg_sym):<{opt_spg_sym_width}}  '
             f'{energy_value:>{energy_width}}  '
-            f'{status.name:<{status_width}}  '
-            f'{str(has_opt):>{opt_width}}'
+            f'{status.name:<{status_width}}'
         )
 
 

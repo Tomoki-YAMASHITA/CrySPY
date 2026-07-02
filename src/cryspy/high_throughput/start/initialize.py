@@ -10,7 +10,7 @@ import numpy as np
 
 from ...IO import pkl_data, write_input
 from ...IO.read_input import ReadInput
-from ...RS.rs_gen import gen_random
+from ...RS.rs_gen import RandomStructureGenerator
 from ..db.record import insert_init_struc
 from ..db.sqlite import connect_db, initialize_db
 from .check_input import check_input
@@ -52,28 +52,32 @@ def initialize():
         rng = np.random.default_rng(rin.seed)
         logger.info(f'RNG seed: {rin.seed}')
 
-    # ---------- initial structure generation
-    logger.info('# ---------- Initial structure generation')
-    init_struc_data = gen_random(
-        rin=rin,
-        nstruc=rin.tot_struc,
-        id_offset=1,
-        comm=None,
-        mpi_rank=0,
-        mpi_size=1,
-        rng=rng,
-    )
-
     # ---------- initialize database
     logger.info('# ---------- Initialize database')
     initialize_db()
     logger.info('Database: data/db_data/rslt_data.db')
 
-    # ---------- insert initial structures
-    logger.info('# ---------- Insert initial structures')
+    # ---------- initialize structure generator
+    logger.info('# ---------- Initial structure generation')
+    generator = RandomStructureGenerator(
+        rin=rin,
+        mpi_rank=0,
+        rng=rng,
+    )
+
+    # ---------- generate and insert initial structures
     with connect_db() as conn:
-        for struc in init_struc_data.values():
-            insert_init_struc(conn, struc, rin.nat)
+        for cid in range(1, rin.tot_struc + 1):
+            struc = generator.generate(cid)
+            insert_init_struc(
+                conn,
+                struc,
+                rin.nat,
+                rin.symprec,
+            )
+
+            # ------ commit
+            conn.commit()
 
     # ---------- save RNG state
     if rng is not None:

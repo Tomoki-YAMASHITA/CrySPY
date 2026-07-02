@@ -12,7 +12,7 @@ import pandas as pd
 
 from ..IO import pkl_data, io_stat, write_input
 from ..IO.read_input import ReadInput
-from ..RS.rs_gen import gen_random
+from ..RS.rs_gen import gen_random_batch
 from ..util.struc_util import out_poscar
 from ..util.struc_validation import validate_loaded_structures
 
@@ -168,14 +168,14 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
                 )
         # ########## MPI start
         # only init_struc_data in rank0 is important
-        tmp_struc_data = gen_random(
+        tmp_struc_data = gen_random_batch(
             rin=rin,
             nstruc=nstruc,
             id_offset=n_loaded,
             comm=comm,
             mpi_rank=mpi_rank,
             mpi_size=mpi_size,
-            cn_data=None,    # let gen_random load cn_comb_data.pkl on each MPI rank
+            cn_data=None,    # let gen_random_batch load cn_comb_data.pkl on each MPI rank
             feasible_N=None,
             rng=rng
         )

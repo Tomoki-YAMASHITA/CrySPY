@@ -10,7 +10,7 @@ from .gen_struc_EA.substitution import gen_substitution
 #from .gen_struc_EA.rotation import gen_rotation
 from ..IO import pkl_data
 from ..IO.out_results import out_nat_data
-from ..RS.rs_gen import gen_random
+from ..RS.rs_gen import gen_random_batch
 from ..util.struc_util import set_mindist, out_poscar, get_nat
 #from ..util.struc_util import get_mol_data
 
@@ -314,7 +314,7 @@ def child_gen(
     # ---------- random generation
     if rin.n_rand > 0:
         logger.info('# ------ Random structure generation')
-        tmp_struc_data = gen_random(
+        tmp_struc_data = gen_random_batch(
                                         rin=rin,
                                         nstruc=rin.n_rand,
                                         id_offset=id_start,

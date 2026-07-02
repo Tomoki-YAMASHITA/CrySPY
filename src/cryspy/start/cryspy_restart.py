@@ -10,7 +10,7 @@ import numpy as np
 
 from ..IO import diff_input, pkl_data
 from ..IO.read_input import ReadInput
-from ..RS.rs_gen import gen_random
+from ..RS.rs_gen import gen_random_batch
 from ..util.utility import backup_cryspy
 from ..util.struc_util import out_poscar
 
@@ -226,14 +226,14 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
     # ---------- generate structures
     # only init_struc_data in rank0 is important
     nstruc = rin.tot_struc - len(init_struc_data)
-    tmp_struc_data = gen_random(
+    tmp_struc_data = gen_random_batch(
         rin=rin,
         nstruc=nstruc,
         id_offset=len(init_struc_data),
         comm=comm,
         mpi_rank=mpi_rank,
         mpi_size=mpi_size,
-        cn_data=None,    # let gen_random load cn_comb_data.pkl on each MPI rank
+        cn_data=None,    # let gen_random_batch load cn_comb_data.pkl on each MPI rank
         feasible_N=None,
         rng=rng,
     )

@@ -8,7 +8,7 @@ import numpy as np
 
 from ...IO import diff_input, pkl_data
 from ...IO.read_input import ReadInput
-from ...RS.rs_gen import gen_random
+from ...RS.rs_gen import RandomStructureGenerator
 from ..db.record import (
     count_records,
     insert_init_struc,
@@ -77,22 +77,27 @@ def restart():
                 rng = np.random.default_rng(rin.seed)
             logger.info(f'RNG seed: {rin.seed}')
 
-        # ------ generate structures
+        # ------ initialize structure generator
         nstruc = rin.tot_struc - n_records
-        init_struc_data = gen_random(
+        generator = RandomStructureGenerator(
             rin=rin,
-            nstruc=nstruc,
-            id_offset=n_records + 1,
-            comm=None,
             mpi_rank=0,
-            mpi_size=1,
             rng=rng,
         )
 
-        # ------ insert structures
+        # ------ generate and insert structures
         with connect_db() as conn:
-            for struc in init_struc_data.values():
-                insert_init_struc(conn, struc, rin.nat)
+            for cid in range(n_records + 1, rin.tot_struc + 1):
+                struc = generator.generate(cid)
+                insert_init_struc(
+                    conn,
+                    struc,
+                    rin.nat,
+                    rin.symprec,
+                )
+
+                # ------ commit
+                conn.commit()
 
         # ------ save RNG state
         if rng is not None:
