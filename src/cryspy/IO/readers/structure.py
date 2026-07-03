@@ -241,14 +241,6 @@ class StructureReader(BaseReader):
             self.rin.nmol = tuple([int(x) for x in self.rin.nmol.split()])    # str --> int --> list --> tuple
             if not len(self.rin.mol_file) == len(self.rin.nmol):
                 raise ValueError('not len(mol_file) == len(nmol)')
-            # ------ timeout_mol
-            try:
-                self.rin.timeout_mol = self.config.getfloat('structure', 'timeout_mol')
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                self.rin.timeout_mol = None
-            if self.rin.timeout_mol is not None:
-                if self.rin.timeout_mol <= 0:
-                    raise ValueError('timeout_mol must be None or positive')
 
         # ---------- mol_bs
         if self.rin.struc_mode == 'mol_bs':

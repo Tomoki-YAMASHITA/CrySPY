@@ -4,17 +4,11 @@ Restart CrySPY high-throughput mode
 
 from logging import getLogger
 
-import numpy as np
-
 from ...IO import diff_input, pkl_data
 from ...IO.read_input import ReadInput
-from ...RS.rs_gen import RandomStructureGenerator
-from ..db.record import (
-    count_records,
-    insert_init_struc,
-    reset_running_struc,
-)
+from ..db.record import reset_running_struc, select_record_ids
 from ..db.sqlite import connect_db
+from ..worker.controller_rs import generate_structures_rs
 from .check_input import check_input
 
 
@@ -40,71 +34,74 @@ def restart():
         logger.error(e)
         raise SystemExit(1)
 
-    # ---------- count records
+    # ---------- select record IDs
     with connect_db() as conn:
-        n_records = count_records(conn)
+        existing_ids = set(select_record_ids(conn))
 
-    # ---------- check tot_struc
-    if rin.tot_struc < n_records:
+    # ---------- check record IDs
+    unexpected_ids = sorted(
+        cid
+        for cid in existing_ids
+        if cid < 1 or rin.tot_struc < cid
+    )
+    if unexpected_ids:
         logger.error(
-            f'tot_struc < number of records ({n_records})'
+            f'Database includes IDs outside '
+            f'1 to tot_struc: {unexpected_ids}'
         )
         raise SystemExit(1)
 
-    # ---------- append structures
-    if n_records < rin.tot_struc:
-        logger.info('# ---------- Append structures')
+    # ---------- missing IDs
+    missing_ids = [
+        cid
+        for cid in range(1, rin.tot_struc + 1)
+        if cid not in existing_ids
+    ]
+    recovery_ids = [
+        cid
+        for cid in missing_ids
+        if cid <= pin.tot_struc
+    ]
+    append_ids = [
+        cid
+        for cid in missing_ids
+        if pin.tot_struc < cid
+    ]
+
+    # ---------- generate structures
+    if missing_ids:
+        if recovery_ids and append_ids:
+            logger.info(
+                '# ---------- Recover and append structures'
+            )
+        elif recovery_ids:
+            logger.info(
+                '# ---------- Recover missing structures'
+            )
+        else:
+            logger.info('# ---------- Append structures')
 
         # ------ RNG
-        rng = None
         if rin.seed is not None:
-            restored = False
-            if rin.seed == pin.seed:
-                try:
-                    rng_state, saved_seed = pkl_data.load_rng_state()
-                except FileNotFoundError:
-                    pass
-                else:
-                    if saved_seed == rin.seed:
-                        rng = np.random.default_rng(saved_seed)
-                        rng.bit_generator.state = rng_state
-                        restored = True
-
-            if restored:
-                logger.info('Restore RNG state')
-            else:
-                logger.info('Initialize RNG with seed from input')
-                rng = np.random.default_rng(rin.seed)
+            logger.info('Use ID-based RNG')
             logger.info(f'RNG seed: {rin.seed}')
 
-        # ------ initialize structure generator
-        nstruc = rin.tot_struc - n_records
-        generator = RandomStructureGenerator(
-            rin=rin,
-            mpi_rank=0,
-            rng=rng,
+        # ------ generate and insert structures
+        generate_structures_rs(
+            rin,
+            missing_ids,
         )
 
-        # ------ generate and insert structures
-        with connect_db() as conn:
-            for cid in range(n_records + 1, rin.tot_struc + 1):
-                struc = generator.generate(cid)
-                insert_init_struc(
-                    conn,
-                    struc,
-                    rin.nat,
-                    rin.symprec,
-                )
-
-                # ------ commit
-                conn.commit()
-
-        # ------ save RNG state
-        if rng is not None:
-            rng_state_data = (rng.bit_generator.state, rin.seed)
-            pkl_data.save_rng_state(rng_state_data)
-
-        logger.info(f'Appended {nstruc} structures')
+        # ------ generation results
+        if recovery_ids:
+            logger.info(
+                f'Recovered {len(recovery_ids)} '
+                f'missing structures'
+            )
+        if append_ids:
+            logger.info(
+                f'Appended {len(append_ids)} structures'
+            )
 
     # ---------- save input
     pkl_data.save_input(rin)

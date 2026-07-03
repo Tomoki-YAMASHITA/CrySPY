@@ -13,7 +13,7 @@ from ..db.record import (
     update_status,
 )
 from ..db.sqlite import connect_db
-from .worker import run_worker
+from .worker_opt import run_worker_opt
 
 
 logger = getLogger('cryspy')
@@ -43,10 +43,11 @@ def queue_next_structure(
     return record_id
 
 
-def run_controller(
+def run_controller_opt(
     rin: ReadInput,
     task_queue,
     result_queue,
+    stop_event,
     processes: list[mp.Process],
 ) -> None:
     """Control database access and worker tasks."""
@@ -62,6 +63,7 @@ def run_controller(
         num_active = 0
         no_waiting = False
         stop_requested = False
+        worker_failed = False
         for _ in range(rin.njob):
             if Path('STOP_CRYSPY_HT').is_file():
                 stop_requested = True
@@ -85,13 +87,17 @@ def run_controller(
             return
 
         # ---------- process results
-        while num_active > 0:
+        while num_active > 0 or worker_failed:
+            result = None
             try:
                 # ------ get result
                 result = result_queue.get(timeout=1.0)
 
             except Empty:
-                # ------ check workers
+                pass
+
+            # ------ check workers
+            if not worker_failed:
                 stopped_processes = [
                     process for process in processes
                     if process.exitcode is not None
@@ -102,9 +108,23 @@ def run_controller(
                             f'{process.name} stopped: '
                             f'exitcode = {process.exitcode}'
                         )
-                    raise RuntimeError(
-                        'Worker stopped before returning all results'
-                    ) from None
+
+                    # ------ drain workers
+                    worker_failed = True
+                    stop_event.set()
+                    for _ in processes:
+                        task_queue.put(None)
+
+            # ------ no result
+            if result is None:
+                if (
+                    worker_failed
+                    and all(
+                        process.exitcode is not None
+                        for process in processes
+                    )
+                ):
+                    break
                 continue
 
             record_id, opt_atoms, energy, status = result
@@ -142,8 +162,12 @@ def run_controller(
             if status != Status.ERROR:
                 logger.info(
                     f'    ID {record_id}: '
-                    f'E = {energy:.8f} eV/cell, {status.name}'
+                    f'E = {energy:.8f} eV/atom, {status.name}'
                 )
+
+            # ------ stop assigning tasks
+            if worker_failed:
+                continue
 
             # ------ check stop file
             if (
@@ -166,13 +190,19 @@ def run_controller(
                 else:
                     num_active += 1
 
+        # ---------- worker failure
+        if worker_failed:
+            raise RuntimeError(
+                'Worker stopped before returning all results'
+            ) from None
+
     finally:
         # ---------- close database
         if conn is not None:
             conn.close()
 
 
-def launch_workers(
+def launch_workers_opt(
     rin: ReadInput,
 ) -> None:
     """Launch multiple worker processes."""
@@ -185,10 +215,11 @@ def launch_workers(
         f'{rin.check_mindist_opt}'
     )
 
-    # ---------- queues
+    # ---------- queues and event
     task_queue = mp.Queue()
     result_queue = mp.Queue()
     log_queue = mp.Queue()
+    stop_event = mp.Event()
 
     # ---------- logging
     listener = QueueListener(
@@ -205,11 +236,12 @@ def launch_workers(
         # ---------- start workers
         for worker_id in range(rin.njob):
             process = mp.Process(
-                target=run_worker,
+                target=run_worker_opt,
                 args=(
                     rin,
                     task_queue,
                     result_queue,
+                    stop_event,
                     log_queue,
                     logger.level,
                 ),
@@ -226,10 +258,11 @@ def launch_workers(
         listener_started = True
 
         # ---------- run controller
-        run_controller(
+        run_controller_opt(
             rin,
             task_queue,
             result_queue,
+            stop_event,
             processes,
         )
 
@@ -267,6 +300,9 @@ def launch_workers(
         task_queue.close()
         result_queue.close()
         log_queue.close()
+        task_queue.join_thread()
+        result_queue.join_thread()
+        log_queue.join_thread()
 
     # ---------- check exit codes
     failed_processes = [

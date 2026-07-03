@@ -6,9 +6,10 @@ import argparse
 from logging import getLogger
 import os
 
+from cryspy.high_throughput.start.check_input import check_calc_file
 from cryspy.high_throughput.start.initialize import initialize
 from cryspy.high_throughput.start.restart import restart
-from cryspy.high_throughput.worker.controller import launch_workers
+from cryspy.high_throughput.worker.controller_opt import launch_workers_opt
 from cryspy.util.utility import (
     backup_cryspy,
     clean_cryspy,
@@ -77,8 +78,11 @@ def main():
             logger.info('Stop at check point 2')
             raise SystemExit()
 
+        # ---------- check calculation file
+        check_calc_file(rin)
+
         # ---------- structure optimization with multiple workers
-        launch_workers(rin)
+        launch_workers_opt(rin)
 
     finally:
         # ---------- unlock

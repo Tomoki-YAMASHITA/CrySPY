@@ -29,25 +29,32 @@ class RandomStructureGenerator:
             cn_data=None,
             feasible_N=None,
             rng=None,
+            log_initialization=True,
         ):
         # ---------- initialize
         self.rin = rin
         self.mpi_rank = mpi_rank
-        if rng is None:
+        self.seed = rin.seed
+        show_initialization_log = (
+            mpi_rank == 0
+            and log_initialization
+        )
+        if rng is None and self.seed is None:
             rng = np.random.default_rng()
         self.rng = rng
 
         # ---------- mindist
-        if mpi_rank == 0:
+        if show_initialization_log:
             logger.info('# ------ mindist')
         mindist = set_mindist(
             rin.atype,
             rin.mindist,
             rin.mindist_factor,
             rin.struc_mode,
-            False,
-            None,
-            mpi_rank,
+            dummy=False,
+            mol_file=None,
+            mpi_rank=mpi_rank,
+            no_print=not show_initialization_log,
         )
 
         # ---------- mindist for dummy atoms
@@ -61,10 +68,11 @@ class RandomStructureGenerator:
                 dummy=True,
                 mol_file=rin.mol_file,
                 mpi_rank=mpi_rank,
+                no_print=not show_initialization_log,
             )
 
         # ---------- log
-        if mpi_rank == 0:
+        if show_initialization_log:
             logger.info('# ------ Generate random structures')
 
         # ---------- EA-vc
@@ -79,7 +87,7 @@ class RandomStructureGenerator:
         if vc and use_charge_neutral:
             if cn_data is None:
                 cn_data = load_cn_comb_data()
-            if mpi_rank == 0:
+            if show_initialization_log:
                 logger.info(
                     f'Charge-neutral mode for structure generation: '
                     f'{cn_data["mode"]}'
@@ -103,7 +111,7 @@ class RandomStructureGenerator:
                     rin.ul_nat,
                     feasible_comp,
                 )
-            if mpi_rank == 0:
+            if show_initialization_log:
                 logger.info(
                     f'Composition constraints applied to random generation: '
                     f'{len(feasible_N)} feasible total atom counts'
@@ -163,7 +171,6 @@ class RandomStructureGenerator:
                     'vol_factor': rin.vol_factor,
                     'vol_mu': rin.vol_mu,
                     'vol_sigma': rin.vol_sigma,
-                    'timeout_mol': rin.timeout_mol,
                     'tolmat': tolmat,
                 }
 
@@ -259,10 +266,19 @@ class RandomStructureGenerator:
             self,
             cid,
         ):
+        # ---------- RNG for structure ID
+        if self.seed is None:
+            rng = self.rng
+        else:
+            seed_sequence = np.random.SeedSequence(
+                [self.seed, cid]
+            )
+            rng = np.random.default_rng(seed_sequence)
+
         # ---------- generate structure
         return self._generate(
             cid=cid,
-            rng=self.rng,
+            rng=rng,
             **self._kwargs,
         )
 

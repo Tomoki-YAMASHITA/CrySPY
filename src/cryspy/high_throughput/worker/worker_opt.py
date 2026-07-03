@@ -66,6 +66,9 @@ def process_structure(
             'optimize_structure() must return a finite energy'
         )
 
+    # ---------- eV/cell --> eV/atom
+    energy = energy / len(opt_atoms)
+
     # ---------- check mindist
     mindist_ok = True
     if rin.check_mindist_opt:
@@ -102,10 +105,11 @@ def process_structure(
     return opt_atoms, energy, status
 
 
-def run_worker(
+def run_worker_opt(
     rin: ReadInput,
     task_queue,
     result_queue,
+    stop_event,
     log_queue=None,
     log_level=None,
 ) -> None:
@@ -130,6 +134,10 @@ def run_worker(
 
         # ---------- run optimization
         while True:
+            # ------ stop worker
+            if stop_event.is_set():
+                break
+
             # ------ get task
             task = task_queue.get()
             if task is None:

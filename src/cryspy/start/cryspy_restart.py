@@ -57,9 +57,9 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 comm.Abort(1)      # stop for MPI
             raise SystemExit(1)    # stop for serial
 
-    # ---------- RNG (seed is for serial debug only)
+    # ---------- RNG
     rng = None
-    if mpi_size == 1 and rin.seed is not None:
+    if mpi_rank == 0 and rin.seed is not None:
         # ------ restore RNG state
         restored = False
         if rin.seed == pin.seed:
@@ -72,18 +72,18 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                     rng = np.random.default_rng(saved_seed)
                     rng.bit_generator.state = rng_state
                     restored = True
+
         # ------ restore or initialize
         if restored:
-            logger.info('# ---------- Restore RNG state (serial run)')
+            logger.info('# ---------- Restore RNG state')
         else:
-            logger.info('# ---------- Initialize RNG with seed from input (serial run)')
+            logger.info('# ---------- Initialize RNG with seed from input')
             rng = np.random.default_rng(rin.seed)
             rng_state_data = (rng.bit_generator.state, rin.seed)
             pkl_data.save_rng_state(rng_state_data)
+
         # ------ log
         logger.info(f'RNG seed: {rin.seed}')
-    elif mpi_rank == 0 and rin.seed is not None:
-        logger.warning('seed is ignored in MPI mode')
 
     # ------ load init_struc_data for appending structures
     # _append_struc is not allowed in EA and EA-vc either
@@ -146,7 +146,7 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
                 from ..LAQA import laqa_restart
                 laqa_restart.restart(rin, prev_nstruc)
             # ------ save RNG state
-            if mpi_size == 1 and rng is not None:
+            if rng is not None:
                 rng_state_data = (rng.bit_generator.state, rin.seed)
                 pkl_data.save_rng_state(rng_state_data)
         raise SystemExit()

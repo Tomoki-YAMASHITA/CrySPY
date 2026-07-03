@@ -92,7 +92,8 @@ def print_results(
                 'Spg_sym',
                 'Spg_num_opt',
                 'Spg_sym_opt',
-                'energy_eV_cell',
+                'Num_atom',
+                'E_eV_atom',
                 'status',
             ])
             for (
@@ -103,6 +104,7 @@ def print_results(
                 init_spg_sym,
                 opt_spg_num,
                 opt_spg_sym,
+                nat,
             ) in rows:
                 writer.writerow([
                     record_id,
@@ -110,6 +112,7 @@ def print_results(
                     init_spg_sym,
                     opt_spg_num,
                     opt_spg_sym,
+                    nat,
                     '' if energy is None else energy,
                     status.name,
                 ])
@@ -128,12 +131,12 @@ def print_results(
 
     # ---------- format
     energy_values = [
-        'None' if energy is None else f'{energy:.8f}'
-        for _, _, energy, _, _, _, _ in rows
+        'None' if row[2] is None else f'{row[2]:.8f}'
+        for row in rows
     ]
     id_width = max(
         len('ID'),
-        max(len(str(record_id)) for record_id, _, _, _, _, _, _ in rows),
+        max(len(str(row[0])) for row in rows),
     )
     init_spg_num_width = max(
         len('Spg_num'),
@@ -151,13 +154,17 @@ def print_results(
         len('Spg_sym_opt'),
         max(len(str(row[6])) for row in rows),
     )
+    nat_width = max(
+        len('Num_atom'),
+        max(len(str(row[7])) for row in rows),
+    )
     energy_width = max(
-        len('Energy (eV/cell)'),
+        len('E_eV_atom'),
         max(len(value) for value in energy_values),
     )
     status_width = max(
         len('Status'),
-        max(len(status.name) for _, status, _, _, _, _, _ in rows),
+        max(len(row[1].name) for row in rows),
     )
 
     # ---------- information
@@ -182,7 +189,8 @@ def print_results(
         f'{"Spg_sym":<{init_spg_sym_width}}  '
         f'{"Spg_num_opt":>{opt_spg_num_width}}  '
         f'{"Spg_sym_opt":<{opt_spg_sym_width}}  '
-        f'{"Energy (eV/cell)":>{energy_width}}  '
+        f'{"Num_atom":<{nat_width}}  '
+        f'{"E_eV_atom":>{energy_width}}  '
         f'{"Status":<{status_width}}'
     )
 
@@ -196,6 +204,7 @@ def print_results(
             init_spg_sym,
             opt_spg_num,
             opt_spg_sym,
+            nat,
         ) = row
         print(
             f'{record_id:>{id_width}}  '
@@ -203,6 +212,7 @@ def print_results(
             f'{str(init_spg_sym):<{init_spg_sym_width}}  '
             f'{opt_spg_num:>{opt_spg_num_width}}  '
             f'{str(opt_spg_sym):<{opt_spg_sym_width}}  '
+            f'{str(nat):<{nat_width}}  '
             f'{energy_value:>{energy_width}}  '
             f'{status.name:<{status_width}}'
         )
@@ -255,17 +265,17 @@ def main():
     parser.add_argument(
         '--emin',
         type=float,
-        help='minimum energy in eV/cell',
+        help='minimum energy in eV/atom',
     )
     parser.add_argument(
         '--emax',
         type=float,
-        help='maximum energy in eV/cell',
+        help='maximum energy in eV/atom',
     )
     parser.add_argument(
         '--ewin',
         type=float,
-        help='energy window from the minimum energy in eV/cell',
+        help='energy window from the minimum energy in eV/atom',
     )
     parser.add_argument(
         '-o',

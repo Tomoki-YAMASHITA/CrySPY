@@ -45,7 +45,6 @@ class ReadInput:
     # ------ mol or mol_bs
     mol_file: tuple = field(default=None)
     nmol: tuple = field(default=None)
-    timeout_mol: float = field(default=None)
     rot_mol: str = field(default=None)
     nrot: int = field(default=None)
     mindist_mol_bs: tuple = field(default=None)

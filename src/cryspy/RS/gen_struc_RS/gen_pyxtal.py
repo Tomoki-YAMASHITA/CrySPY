@@ -5,7 +5,6 @@ Random structure generation using PyXtal (https://github.com/qzhu2017/PyXtal)
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 from logging import getLogger
-from multiprocessing import Process, Queue
 
 import numpy as np
 from pymatgen.core import Structure
@@ -295,7 +294,6 @@ def gen_struc_mol_batch(
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
-        timeout_mol=None,
         rng=None,
     ):
     '''
@@ -316,7 +314,6 @@ def gen_struc_mol_batch(
     vol_factor (float): volume factor for structure generation
     vol_mu (float): mean for volume scaling
     vol_sigma (float): standard deviation for volume scaling
-    timeout_mol (None or float): if float, timeout for molecular structure generation
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -347,7 +344,6 @@ def gen_struc_mol_batch(
             vol_factor=vol_factor,
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
-            timeout_mol=timeout_mol,
             tolmat=tolmat,
             rng=rng,
         )
@@ -368,7 +364,6 @@ def gen_struc_mol(
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
-        timeout_mol=None,
         tolmat=None,
         rng=None,
     ):
@@ -387,7 +382,6 @@ def gen_struc_mol(
     vol_factor (float): volume factor for structure generation
     vol_mu (float): mean for volume scaling
     vol_sigma (float): standard deviation for volume scaling
-    timeout_mol (None or float): if float, timeout for molecular structure generation
     tolmat (Tol_matrix): precomputed tolerance matrix
     rng (np.random.Generator): random number generator
 
@@ -412,95 +406,38 @@ def gen_struc_mol(
             spg = rng.choice(spgnum)
 
         # ------ generate structure
-        if timeout_mol is None:
-            # -- RNG for PyXtal
-            pyxtal_seed = int(
-                rng.integers(0, 2**32, dtype=np.uint32)
-            )
-            pyxtal_rng = np.random.default_rng(pyxtal_seed)
+        # -- RNG for PyXtal
+        pyxtal_seed = int(
+            rng.integers(0, 2**32, dtype=np.uint32)
+        )
+        pyxtal_rng = np.random.default_rng(pyxtal_seed)
 
-            # -- generate crystal
-            tmp_crystal = pyxtal(molecular=True)
-            try:
-                f = StringIO()    # to get output from pyxtal
-                with redirect_stdout(f), redirect_stderr(f):
-                    tmp_crystal.from_random(
-                        dim=3,
-                        group=spg,
-                        species=mol_data,
-                        numIons=nmol,
-                        factor=vol_factor,
-                        conventional=False,
-                        tm=tolmat,
-                        random_state=pyxtal_rng,
-                    )
-                s = f.getvalue().rstrip()    # to delete \n
-                if s:
-                    logger.warning(s)
-                tmp_valid = tmp_crystal.valid
-                if tmp_valid:
-                    tmp_struc = tmp_crystal.to_pymatgen(
-                        resort=False
-                    )
-            except Exception as e:
-                logger.warning(f'{e}:     spg = {spg} retry.')
-                continue
-        else:
-            # -- seed for RNG in child process
-            seed = int(
-                rng.integers(0, 2**32, dtype=np.uint32)
-            )
-
-            # -- multiprocess for hangup prevention
-            q = Queue()
-            p = Process(
-                target=_mp_mc,
-                args=(
-                    tolmat,
-                    spg,
-                    mol_data,
-                    nmol,
-                    vol_factor,
-                    seed,
-                    q,
-                ),
-            )
-            p.start()
-            p.join(timeout=timeout_mol)
-            if p.is_alive():
-                p.terminate()
-            p.join()    # finalize process
-
-            # -- get result from queue
-            try:
-                tmp = q.get(timeout=1.0)
-                # to avoid blocking forever if the child process exits without putting data
-            except Exception:
-                logger.warning(
-                    'timeout for molecular structure generation '
-                    '(no queue message). retry.'
+        # -- generate crystal
+        tmp_crystal = pyxtal(molecular=True)
+        try:
+            f = StringIO()    # to get output from pyxtal
+            with redirect_stdout(f), redirect_stderr(f):
+                tmp_crystal.from_random(
+                    dim=3,
+                    group=spg,
+                    species=mol_data,
+                    numIons=nmol,
+                    factor=vol_factor,
+                    conventional=False,
+                    tm=tolmat,
+                    random_state=pyxtal_rng,
                 )
-                continue
-
-            # -- check error from child process
-            if (
-                isinstance(tmp, tuple)
-                and len(tmp) >= 1
-                and tmp[0] == "error"
-            ):
-                e = tmp[1]
-                msg = tmp[2] if len(tmp) > 2 else ""
-                if msg:
-                    logger.warning(msg)
-                logger.warning(f'{e}: spg = {spg} retry.')
-                continue
-
-            # -- unpack result
-            tmp_struc, tmp_valid, msg = tmp
-            if msg:
-                logger.warning(msg)
-            if not tmp_valid:
-                continue
+            s = f.getvalue().rstrip()    # to delete \n
+            if s:
+                logger.warning(s)
+            tmp_valid = tmp_crystal.valid
+            if tmp_valid:
+                tmp_struc = tmp_crystal.to_pymatgen(
+                    resort=False
+                )
+        except Exception as e:
+            logger.warning(f'{e}:     spg = {spg} retry.')
+            continue
 
         # ------ check validity
         if not tmp_valid:
@@ -904,54 +841,3 @@ def set_tol_mat(atype, mindist):
             if i <= j:
                 tolmat.set_tol(itype, jtype, mindist[i][j])
     return tolmat
-
-
-def _mp_mc(tolmat, spg, mol_data, nmol, vol_factor, seed, q):
-    '''
-    Child process: run pyxtal for molecular crystal generation
-    here cannot use rin.xxx and logging
-    
-    Put format:
-        (structure_or_None, valid, msg)   on normal completion
-        ("error", exception, msg)         on exception
-
-    - structure_or_None: pymatgen Structure if valid else None
-    - valid: tmp_crystal.valid (bool)
-    - msg: captured stdout/stderr from pyxtal (str, may be "")
-    '''
-    try:
-        # ---------- RNG
-        if seed is None:
-            rng = np.random.default_rng()
-        else:
-            rng = np.random.default_rng(seed)
-
-        # ---------- generate structure
-        tmp_crystal = pyxtal(molecular=True)
-        f = StringIO()
-        with redirect_stdout(f), redirect_stderr(f):
-            tmp_crystal.from_random(
-                dim=3,
-                group=spg,
-                species=mol_data,
-                numIons=nmol,
-                factor=vol_factor,
-                conventional=False,
-                tm=tolmat,
-                random_state=rng,
-            )
-        msg = f.getvalue().rstrip()    # to delete \n
-
-        # ---------- queue
-        if tmp_crystal.valid:
-            q.put((tmp_crystal.to_pymatgen(resort=False),
-                   tmp_crystal.valid,
-                   msg))
-        else:
-            q.put((None, tmp_crystal.valid, msg))
-
-    except Exception as e:
-        # f may not exist if an exception occurs before StringIO() is created.
-        # Use locals() to avoid UnboundLocalError.
-        msg = f.getvalue().rstrip() if "f" in locals() else ""
-        q.put(("error", e, msg))

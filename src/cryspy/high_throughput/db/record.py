@@ -5,6 +5,7 @@ import numpy as np
 from ase import Atoms
 from pymatgen.core import Structure
 
+from ...util.struc_util import get_nat
 from .convert import (
     array_to_blob,
     atoms_to_raw,
@@ -25,8 +26,9 @@ class Status(IntEnum):
 
 def insert_init_struc(
     conn: sqlite3.Connection,
+    record_id: int,
     struc: Structure,
-    nat: np.ndarray,
+    atype: tuple[str, ...],
     symprec: float,
     status: Status = Status.WAITING,
 ) -> int:
@@ -46,12 +48,16 @@ def insert_init_struc(
     atomic_numbers = raw_struc_dict["atomic_numbers"]
     lattice = raw_struc_dict["lattice"]
     frac_coords = raw_struc_dict["frac_coords"]
-    nat = np.asarray(nat, dtype=np.uint16)
+    nat = np.asarray(
+        get_nat(struc, atype),
+        dtype=np.uint16,
+    )
 
     # ---------- insert into records table
     cursor = conn.execute(
         """
         INSERT INTO records (
+            id,
             status,
             atomic_numbers,
             nat,
@@ -65,9 +71,10 @@ def insert_init_struc(
             opt_spg_sym,
             energy
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
+            record_id,
             status,
             array_to_blob(atomic_numbers),
             array_to_blob(nat),
@@ -87,44 +94,45 @@ def insert_init_struc(
     return cursor.lastrowid
 
 
-def count_records(
+def select_record_ids(
     conn: sqlite3.Connection,
-) -> int:
-    """Count records in the records table."""
+) -> list[int]:
+    """Select all record IDs."""
 
-    # ---------- count records
+    # ---------- select IDs
     cursor = conn.execute(
         """
-        SELECT COUNT(*)
+        SELECT id
         FROM records
+        ORDER BY id ASC
         """
     )
 
     # ---------- return
-    return cursor.fetchone()[0]
+    return [record_id for record_id, in cursor]
 
 
-def count_statuses(
+def select_ids_by_status(
     conn: sqlite3.Connection,
-) -> dict[Status, int]:
-    """Count records for each status."""
+) -> dict[Status, list[int]]:
+    """Select record IDs grouped by status."""
 
-    # ---------- initialize counts
-    counts = {status: 0 for status in Status}
+    # ---------- initialize IDs
+    ids_by_status = {status: [] for status in Status}
 
-    # ---------- count statuses
+    # ---------- select IDs
     cursor = conn.execute(
         """
-        SELECT status, COUNT(*)
+        SELECT id, status
         FROM records
-        GROUP BY status
+        ORDER BY status ASC, id ASC
         """
     )
-    for status, count in cursor:
-        counts[Status(status)] = count
+    for record_id, status in cursor:
+        ids_by_status[Status(status)].append(record_id)
 
     # ---------- return
-    return counts
+    return ids_by_status
 
 
 def get_min_energy(
@@ -208,7 +216,8 @@ def select_results(
             init_spg_num,
             init_spg_sym,
             opt_spg_num,
-            opt_spg_sym
+            opt_spg_sym,
+            nat
         FROM records
         WHERE status NOT IN (?, ?)
     """
@@ -281,6 +290,7 @@ def select_results(
             init_spg_sym,
             opt_spg_num,
             opt_spg_sym,
+            tuple(blob_to_array(nat).tolist()),
         )
         for (
             record_id,
@@ -290,6 +300,7 @@ def select_results(
             init_spg_sym,
             opt_spg_num,
             opt_spg_sym,
+            nat,
         ) in rows
     ]
 
