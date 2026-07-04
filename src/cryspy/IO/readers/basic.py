@@ -4,7 +4,7 @@ from .base import BaseReader
 class BasicReader(BaseReader):
     """Reader for [basic] section"""
 
-    def read(self):
+    def read(self, ht=False):
         # ---------- algo
         self.rin.algo = self.config.get('basic', 'algo')
         if self.rin.algo not in ['RS', 'BO', 'LAQA', 'EA', 'EA-vc']:
@@ -25,20 +25,22 @@ class BasicReader(BaseReader):
                 raise ValueError('tot_struc < 1, check tot_struc')
 
         # ---------- nstage
-        self.rin.nstage = self.config.getint('basic', 'nstage')
-        if self.rin.nstage < 1:
-            raise ValueError('nstage < 1, check nstage')
-        if self.rin.algo == 'LAQA':
-            if not self.rin.nstage == 1:
-                raise ValueError('nstage must be 1 in LAQA')
+        if not ht:
+            self.rin.nstage = self.config.getint('basic', 'nstage')
+            if self.rin.nstage < 1:
+                raise ValueError('nstage < 1, check nstage')
+            if self.rin.algo == 'LAQA':
+                if not self.rin.nstage == 1:
+                    raise ValueError('nstage must be 1 in LAQA')
 
         # ---------- njob
         self.rin.njob = self.config.getint('basic', 'njob')
         if self.rin.njob < 1:
             raise ValueError('njob < 1, check njob')
 
-        # ---------- jobcmd
-        self.rin.jobcmd = self.config.get('basic', 'jobcmd')
+        if not ht:
+            # ---------- jobcmd
+            self.rin.jobcmd = self.config.get('basic', 'jobcmd')
 
-        # ---------- jobfile
-        self.rin.jobfile = self.config.get('basic', 'jobfile')
+            # ---------- jobfile
+            self.rin.jobfile = self.config.get('basic', 'jobfile')

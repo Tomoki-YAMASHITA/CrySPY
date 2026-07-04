@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from dataclasses import fields
 import gzip
 from logging import getLogger
 from pathlib import Path
@@ -80,7 +81,8 @@ def extract_pkl_name(filepath):
 
 def out_input(rin):
     print('[basic]')
-    for key in rin.__annotations__.keys():
+    for data_field in fields(rin):
+        key = data_field.name
         if key == 'struc_mode':
             print('')
             print('[structure]')

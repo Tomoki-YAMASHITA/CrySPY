@@ -1,3 +1,4 @@
+from dataclasses import fields
 from logging import getLogger
 
 
@@ -30,7 +31,8 @@ def diff_in(rin, pin):
         )
 
     # ---------- log
-    for key in rin.__annotations__.keys():
+    for data_field in fields(rin):
+        key = data_field.name
         if getattr(rin, key) != getattr(pin, key):
             if key in immutables:
                 raise ValueError(f'Do not change {key}')

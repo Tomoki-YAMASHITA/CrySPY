@@ -18,7 +18,7 @@ logger = getLogger('cryspy')
 def restart():
     # ---------- read input
     try:
-        rin = ReadInput()
+        rin = ReadInput(ht=True)
     except Exception as e:
         logger.error(e)
         raise SystemExit(1)

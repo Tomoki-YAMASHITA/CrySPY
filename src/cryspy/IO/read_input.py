@@ -1,5 +1,5 @@
 import configparser
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from logging import getLogger
 import os
 
@@ -177,7 +177,10 @@ class ReadInput:
     # ---------- ASE section
     ase_python: str = field(default=None)
 
-    def __post_init__(self):
+    # ---------- initialization only
+    ht: InitVar[bool] = False
+
+    def __post_init__(self, ht):
         # ---------- import readers
         from .readers.basic import BasicReader
         from .readers.structure import StructureReader
@@ -201,7 +204,7 @@ class ReadInput:
         config.read(filename)
 
         # ---------- read sections
-        BasicReader(config, self).read()
+        BasicReader(config, self).read(ht=ht)
         StructureReader(config, self).read()
         VisualReader(config, self).read()
         OptionReader(config, self).read()    # do this prior to EA for append_struc_ea

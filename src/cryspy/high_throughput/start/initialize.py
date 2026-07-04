@@ -26,7 +26,7 @@ def initialize():
     # ---------- read input
     logger.info('# ---------- Read input file, cryspy.in')
     try:
-        rin = ReadInput()
+        rin = ReadInput(ht=True)
     except Exception as e:
         logger.error(e)
         raise SystemExit(1)

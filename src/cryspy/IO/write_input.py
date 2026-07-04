@@ -1,3 +1,4 @@
+from dataclasses import fields
 from logging import getLogger
 
 
@@ -6,7 +7,8 @@ logger = getLogger('cryspy')
 
 def out_input(rin):
     logger.info('[basic]')
-    for key in rin.__annotations__.keys():
+    for data_field in fields(rin):
+        key = data_field.name
         if key == 'struc_mode':
             logger.info('')
             logger.info('[structure]')
