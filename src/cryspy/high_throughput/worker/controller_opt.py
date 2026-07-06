@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from logging import getLogger
 from logging.handlers import QueueListener
 import multiprocessing as mp
@@ -9,6 +10,7 @@ from ...IO.read_input import ReadInput
 from ..db.record import (
     Status,
     claim_next_struc,
+    has_record_with_status,
     update_opt_struc,
     update_status,
 )
@@ -17,6 +19,13 @@ from .worker_opt import run_worker_opt
 
 
 logger = getLogger('cryspy')
+
+
+class RunStatus(Enum):
+    """High-throughput execution status."""
+
+    COMPLETED = auto()
+    STOPPED = auto()
 
 
 def queue_next_structure(
@@ -49,7 +58,7 @@ def run_controller_opt(
     result_queue,
     stop_event,
     processes: list[mp.Process],
-) -> None:
+) -> RunStatus:
     """Control database access and worker tasks."""
 
     # ---------- initialize database connection
@@ -82,9 +91,11 @@ def run_controller_opt(
             num_active += 1
 
         if num_active == 0:
-            if not stop_requested:
-                logger.info('No waiting structures')
-            return
+            if stop_requested:
+                return RunStatus.STOPPED
+
+            logger.info('No waiting structures')
+            return RunStatus.COMPLETED
 
         # ---------- process results
         while num_active > 0 or worker_failed:
@@ -196,6 +207,12 @@ def run_controller_opt(
                 'Worker stopped before returning all results'
             ) from None
 
+        # ---------- run status
+        if stop_requested:
+            return RunStatus.STOPPED
+
+        return RunStatus.COMPLETED
+
     finally:
         # ---------- close database
         if conn is not None:
@@ -204,8 +221,29 @@ def run_controller_opt(
 
 def launch_workers_opt(
     rin: ReadInput,
-) -> None:
+) -> RunStatus:
     """Launch multiple worker processes."""
+
+    # ---------- check stop file
+    if Path('STOP_CRYSPY_HT').is_file():
+        logger.info(
+            'Stop file detected: STOP_CRYSPY_HT'
+        )
+        return RunStatus.STOPPED
+
+    # ---------- check waiting structures
+    conn = connect_db()
+    try:
+        has_waiting = has_record_with_status(
+            conn,
+            Status.WAITING,
+        )
+    finally:
+        conn.close()
+
+    if not has_waiting:
+        logger.info('No waiting structures')
+        return RunStatus.COMPLETED
 
     # ---------- structure optimization
     logger.info('# ---------- Start structure optimizations')
@@ -258,7 +296,7 @@ def launch_workers_opt(
         listener_started = True
 
         # ---------- run controller
-        run_controller_opt(
+        run_status = run_controller_opt(
             rin,
             task_queue,
             result_queue,
@@ -315,3 +353,6 @@ def launch_workers_opt(
                 f'{process.name} failed: exitcode = {process.exitcode}'
             )
         raise SystemExit(1)
+
+    # ---------- return
+    return run_status

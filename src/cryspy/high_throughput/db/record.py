@@ -112,6 +112,28 @@ def select_record_ids(
     return [record_id for record_id, in cursor]
 
 
+def has_record_with_status(
+    conn: sqlite3.Connection,
+    status: Status,
+) -> bool:
+    """Return whether a record with the given status exists."""
+
+    # ---------- check existence
+    cursor = conn.execute(
+        """
+        SELECT EXISTS (
+            SELECT 1
+            FROM records
+            WHERE status = ?
+        )
+        """,
+        (status,),
+    )
+
+    # ---------- return
+    return bool(cursor.fetchone()[0])
+
+
 def select_ids_by_status(
     conn: sqlite3.Connection,
 ) -> dict[Status, list[int]]:

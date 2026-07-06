@@ -5,6 +5,7 @@ from math import isfinite
 import multiprocessing as mp
 from pathlib import Path
 from typing import Callable
+import warnings
 
 from ase import Atoms
 
@@ -15,6 +16,112 @@ from ..db.record import Status
 
 
 logger = getLogger('cryspy')
+
+
+class _WarningAggregator:
+
+    _LOGM_PREFIX = (
+        'logm result may be inaccurate, approximate err = '
+    )
+
+    def __init__(self) -> None:
+        self.record_id = None
+        self.records = {}
+
+    def start(self, record_id: int) -> None:
+        self.record_id = record_id
+        self.records.clear()
+
+    def showwarning(
+        self,
+        message,
+        category,
+        filename,
+        lineno,
+        file=None,
+        line=None,
+    ) -> None:
+        text = str(message)
+
+        # ---------- outside structure optimization
+        if self.record_id is None:
+            logger.warning(
+                f'{filename}:{lineno}: '
+                f'{category.__name__}: {text}'
+            )
+            return
+
+        # ---------- aggregate warnings by source
+        key = (category.__name__, filename, lineno)
+        record = self.records.get(key)
+        if record is None:
+            record = {
+                'count': 0,
+                'first_message': text,
+                'last_message': text,
+                'max_error': None,
+            }
+            self.records[key] = record
+
+        record['count'] += 1
+        record['last_message'] = text
+
+        # ---------- aggregate logm errors
+        if text.startswith(self._LOGM_PREFIX):
+            try:
+                error = float(text[len(self._LOGM_PREFIX):])
+            except ValueError:
+                error = None
+
+            if error is not None:
+                max_error = record['max_error']
+                if max_error is None or error > max_error:
+                    record['max_error'] = error
+            return
+
+        # ---------- log first occurrence
+        if record['count'] == 1:
+            logger.warning(
+                f'ID {self.record_id}: '
+                f'{filename}:{lineno}: '
+                f'{category.__name__}: {text}'
+            )
+
+    def finish(self) -> None:
+        for key, record in self.records.items():
+            category, filename, lineno = key
+            count = record['count']
+
+            # ---------- summarize logm warnings
+            if record['first_message'].startswith(
+                self._LOGM_PREFIX
+            ):
+                max_error = record['max_error']
+                max_error_text = (
+                    'unknown'
+                    if max_error is None
+                    else f'{max_error:.3e}'
+                )
+                logger.warning(
+                    f'ID {self.record_id}: '
+                    f'{filename}:{lineno}: {category}: '
+                    f'logm warning occurred {count} times; '
+                    f'maximum approximate error = '
+                    f'{max_error_text}'
+                )
+
+            # ---------- summarize repeated warnings
+            elif count > 1:
+                logger.warning(
+                    f'ID {self.record_id}: '
+                    f'{filename}:{lineno}: {category}: '
+                    f'warning repeated {count - 1} '
+                    f'additional times; last message: '
+                    f'{record["last_message"]}'
+                )
+
+        self.record_id = None
+        self.records.clear()
 
 
 def _load_optimize_structure(
@@ -122,6 +229,11 @@ def run_worker_opt(
         logger.setLevel(log_level)
         logger.addHandler(QueueHandler(log_queue))
 
+    # ---------- warning aggregator
+    warning_aggregator = _WarningAggregator()
+    original_showwarning = warnings.showwarning
+    warnings.showwarning = warning_aggregator.showwarning
+
     # ---------- worker information
     process = mp.current_process()
     logger.debug(
@@ -148,6 +260,7 @@ def run_worker_opt(
                 f'{process.name}: '
                 f'Start structure optimization: ID {record_id}'
             )
+            warning_aggregator.start(record_id)
             try:
                 # ------ optimize structure
                 opt_atoms, energy, status = process_structure(
@@ -172,6 +285,10 @@ def run_worker_opt(
                 )
                 continue
 
+            finally:
+                # ------ report aggregated warnings
+                warning_aggregator.finish()
+
             # ------ return result
             result_queue.put(
                 (
@@ -188,6 +305,9 @@ def run_worker_opt(
         raise SystemExit(1)
 
     finally:
+        # ---------- restore warning handler
+        warnings.showwarning = original_showwarning
+
         # ---------- worker information
         logger.debug(
             f'Finish worker: {process.name}, PID = {process.pid}'

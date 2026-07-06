@@ -9,7 +9,10 @@ import os
 from cryspy.high_throughput.start.check_input import check_calc_file
 from cryspy.high_throughput.start.initialize import initialize
 from cryspy.high_throughput.start.restart import restart
-from cryspy.high_throughput.worker.controller_opt import launch_workers_opt
+from cryspy.high_throughput.worker.controller_opt import (
+    RunStatus,
+    launch_workers_opt,
+)
 from cryspy.util.utility import (
     backup_cryspy,
     clean_cryspy,
@@ -82,7 +85,11 @@ def main():
         check_calc_file(rin)
 
         # ---------- structure optimization with multiple workers
-        launch_workers_opt(rin)
+        run_status = launch_workers_opt(rin)
+
+        # ---------- finish
+        if run_status == RunStatus.COMPLETED:
+            logger.info('\nDone all structures!')
 
     finally:
         # ---------- unlock
