@@ -5,7 +5,7 @@ import multiprocessing as mp
 from queue import Empty
 
 from ...IO.read_input import ReadInput
-from ..db.record import insert_init_struc
+from ..db.record import Status, initialize_record, update_init_struc
 from ..db.sqlite import connect_db
 from .worker_rs import run_worker_rs
 
@@ -39,6 +39,8 @@ def run_controller_rs(
                 cid = next(cid_iter)
             except StopIteration:
                 break
+            initialize_record(conn, cid, Status.GENERATING)
+            conn.commit()
             task_queue.put(cid)
             num_active += 1
 
@@ -94,13 +96,14 @@ def run_controller_rs(
                 )
 
             try:
-                # ------ insert structure
-                insert_init_struc(
+                # ------ update initial structure
+                update_init_struc(
                     conn,
                     cid,
                     struc,
                     rin.atype,
                     rin.symprec,
+                    Status.WAITING,
                 )
                 conn.commit()
 
@@ -119,6 +122,8 @@ def run_controller_rs(
             except StopIteration:
                 continue
 
+            initialize_record(conn, next_cid, Status.GENERATING)
+            conn.commit()
             task_queue.put(next_cid)
             num_active += 1
 

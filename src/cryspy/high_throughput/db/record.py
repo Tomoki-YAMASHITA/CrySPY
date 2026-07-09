@@ -16,23 +16,51 @@ from .convert import (
 
 
 class Status(IntEnum):
-    WAITING = 0
-    RUNNING = 1
-    DONE = 2
-    ERROR = 3
-    NOT_CONVERGED = 4
-    MINDIST = 5
+    GENERATING = 0
+    WAITING = 1
+    RUNNING = 2
+    DONE = 3
+    ERROR = 4
+    NOT_CONVERGED = 5
+    MINDIST = 6
+    OMIT = 7
 
 
-def insert_init_struc(
+def initialize_record(
+    conn: sqlite3.Connection,
+    record_id: int,
+    status: Status = Status.GENERATING,
+) -> int:
+    """Initialize a record before structure generation."""
+
+    # ---------- initialize records table
+    cursor = conn.execute(
+        """
+        INSERT INTO records (
+            id,
+            status
+        )
+        VALUES (?, ?)
+        """,
+        (
+            record_id,
+            status,
+        ),
+    )
+
+    # ---------- return
+    return cursor.lastrowid
+
+
+def update_init_struc(
     conn: sqlite3.Connection,
     record_id: int,
     struc: Structure,
     atype: tuple[str, ...],
     symprec: float,
     status: Status = Status.WAITING,
-) -> int:
-    """Insert an initial structure into the records table."""
+) -> None:
+    """Update an initial structure in the records table."""
 
     # ---------- space group
     try:
@@ -53,28 +81,21 @@ def insert_init_struc(
         dtype=np.uint16,
     )
 
-    # ---------- insert into records table
-    cursor = conn.execute(
+    # ---------- update records table
+    conn.execute(
         """
-        INSERT INTO records (
-            id,
-            status,
-            atomic_numbers,
-            nat,
-            init_lattice,
-            init_frac_coords,
-            init_spg_num,
-            init_spg_sym,
-            opt_lattice,
-            opt_frac_coords,
-            opt_spg_num,
-            opt_spg_sym,
-            energy
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        UPDATE records
+        SET
+            status = ?,
+            atomic_numbers = ?,
+            nat = ?,
+            init_lattice = ?,
+            init_frac_coords = ?,
+            init_spg_num = ?,
+            init_spg_sym = ?
+        WHERE id = ?
         """,
         (
-            record_id,
             status,
             array_to_blob(atomic_numbers),
             array_to_blob(nat),
@@ -82,16 +103,9 @@ def insert_init_struc(
             array_to_blob(frac_coords),
             init_spg_num,
             init_spg_sym,
-            None,
-            None,
-            0,
-            None,
-            None,
+            record_id,
         ),
     )
-
-    # ---------- return
-    return cursor.lastrowid
 
 
 def select_record_ids(
@@ -513,6 +527,54 @@ def reset_running_struc(
 
     # ---------- return
     return cursor.rowcount
+
+
+def select_status(
+    conn: sqlite3.Connection,
+    record_id: int,
+) -> Status | None:
+    """Select status by ID."""
+
+    # ---------- select status
+    cursor = conn.execute(
+        """
+        SELECT status
+        FROM records
+        WHERE id = ?
+        """,
+        (record_id,),
+    )
+    row = cursor.fetchone()
+
+    # ---------- return
+    return None if row is None else Status(row[0])
+
+
+def reset_result(
+    conn: sqlite3.Connection,
+    record_id: int,
+    status: Status = Status.WAITING,
+) -> None:
+    """Reset result columns and update status."""
+
+    # ---------- reset result
+    conn.execute(
+        """
+        UPDATE records
+        SET
+            status = ?,
+            opt_lattice = NULL,
+            opt_frac_coords = NULL,
+            opt_spg_num = 0,
+            opt_spg_sym = NULL,
+            energy = NULL
+        WHERE id = ?
+        """,
+        (
+            status,
+            record_id,
+        ),
+    )
 
 
 def update_status(

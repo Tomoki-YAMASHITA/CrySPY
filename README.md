@@ -8,54 +8,6 @@ CrySPY (pronounced as crispy) is a crystal structure prediction tool written in 
 Document: https://tomoki-yamashita.github.io/CrySPY_doc  
 Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
-## Latest version
-version 1.4.3 (2025 October 6)
-
-## News
-- [2025 Octorber 6] CrySPY 1.4.3 released.
-    + Bug fix in EA-vc
-- [2025 July 18] CrySPY 1.4.2 released.
-    + Supports VASP and QE for EA-vc
-    + Priority order of structure optimization input file names
-    + Job file auto-rewriting
-    + cryspy-skip subcommand
-    + cryspy-calc-convex-hull subcommand
-    + See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
-- [2025 July 7] CrySPY 1.4.1 released.
-    + Support add_max, elim_max, and subs_max in EA-vc
-    + Support charge neutral condition in EA-vc
-    + New subcommand: cryspy-Eplot
-    + See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
-- [2025 June 17] CrySPY 1.4.0 released.
-    + Support variable-composition evolutionary algorithm
-    + Support interactive mode with Jupyter
-    + There are important changes. See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
-- [2024 May 31] CrySPY 1.3.0 released.
-    + There are important changes. See [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info)
-- [2024 May 10] CrySPY 1.2.5 released.
-    + bug fix for order_ef in out_results.py
-- [2024 May 7] CrySPY 1.2.4 released.
-    + bug fix
-- [2023 October 21] CrySPY 1.2.3 released.
-    + bug fix for MPI
-- [2023 October 18] CrySPY 1.2.2 released.
-    + [Enthalpy](https://tomoki-yamashita.github.io/CrySPY_doc/features/enthalpy/index.html)
-- [2023 September 27] CrySPY 1.2.1 released.
-    + bug fix for ASE interface
-- [2023 July 10] CrySPY 1.2.0 released. Version information/version 1.2.0
-    + Interface for ASE
-    + Adoption of logging
-    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [CHANGELOG](./CHANGELOG.md)
-- [2023 June 14] CrySPY 1.1.1 released
-    + bug fix
-- [2023 May 16] CrySPY 1.1.0 released
-    + MPI parallelization (optional)
-    + New score of LAQA
-    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [CHANGELOG](./CHANGELOG.md)
-- [2023 March 16] CrySPY 1.0.0 released
-    + CrySPY is available in PyPI, so you can install by pip (project name is csp-cryspy).
-    + See also [Version information](https://tomoki-yamashita.github.io/CrySPY_doc/version_info) and [CHANGELOG](./CHANGELOG.md)
-
 
 ## System requirements
 ### Python

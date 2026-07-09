@@ -41,14 +41,6 @@ class VisualReader(BaseReader):
 
 
     def _read_ea(self):
-        # ---------- ref_gen
-        try:
-            self.rin.ref_gen = self.config.getint('visual', 'ref_gen')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.ref_gen = None
-        if self.rin.ref_gen is not None:
-            if self.rin.ref_gen < 0:
-                raise ValueError('ref_gen must be non-negative int')
         # ---------- plot_min_gen, plot_max_gen
         try:
             self.rin.plot_min_gen = self.config.getint('visual', 'plot_min_gen')
@@ -70,6 +62,16 @@ class VisualReader(BaseReader):
         ):
             if self.rin.plot_min_gen > self.rin.plot_max_gen:
                 raise ValueError('plot_min_gen must be <= plot_max_gen')
+
+        # ---------- ref_gen
+        try:
+            self.rin.ref_gen = self.config.getint('visual', 'ref_gen')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.ref_gen = None
+        if self.rin.ref_gen is not None:
+            if self.rin.ref_gen < 0:
+                raise ValueError('ref_gen must be non-negative int')
+
         # ---------- ref_gen vs plot_min_gen / plot_max_gen
         if self.rin.ref_gen is not None:
             if self.rin.plot_min_gen is not None:

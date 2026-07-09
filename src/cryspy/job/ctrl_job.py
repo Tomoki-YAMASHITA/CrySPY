@@ -429,7 +429,7 @@ class Ctrl_job:
         # ---------- calculate Ef
         if self.rin.algo == 'EA-vc':
             from ..EA.calc_ef import calc_ef
-            ef = calc_ef(energy, nat, self.rin.end_point)
+            ef = calc_ef(energy, nat, self.rin.ref_energies)
             logger.info(f'                     Ef = {ef} eV/atom')
             regist_nat = nat
         else:

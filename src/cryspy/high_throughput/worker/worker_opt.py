@@ -3,6 +3,7 @@ from logging import getLogger
 from logging.handlers import QueueHandler
 from math import isfinite
 import multiprocessing as mp
+import os
 from pathlib import Path
 from typing import Callable
 import warnings
@@ -16,6 +17,23 @@ from ..db.record import Status
 
 
 logger = getLogger('cryspy')
+
+
+def _redirect_worker_output(process_name: str):
+    """Redirect worker stdout and stderr to a worker log file."""
+
+    # ---------- worker log file
+    log_dir = Path('data/worker_log')
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = open(log_dir / f'{process_name}.log', 'a', buffering=1)
+
+    # ---------- redirect stdout and stderr
+    print(f'# ---------- {process_name}', file=log_file)
+    os.dup2(log_file.fileno(), 1)    # redirect stdout
+    os.dup2(log_file.fileno(), 2)    # redirect stderr
+
+    # ---------- return
+    return log_file
 
 
 class _WarningAggregator:
@@ -236,6 +254,7 @@ def run_worker_opt(
 
     # ---------- worker information
     process = mp.current_process()
+    worker_log = _redirect_worker_output(process.name)
     logger.debug(
         f'Start worker: {process.name}, PID = {process.pid}'
     )
@@ -312,3 +331,6 @@ def run_worker_opt(
         logger.debug(
             f'Finish worker: {process.name}, PID = {process.pid}'
         )
+
+        # ---------- close worker log
+        worker_log.close()

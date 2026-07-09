@@ -143,7 +143,7 @@ def restart_interact(
         # ---------- calculate Ef for EA-vc
         if rin.algo == 'EA-vc':
             from ..EA.calc_ef import calc_ef
-            ef = calc_ef(energy, nat, rin.end_point)
+            ef = calc_ef(energy, nat, rin.ref_energies)
             regist_nat = nat
         else:
             ef = None

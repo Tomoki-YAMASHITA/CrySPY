@@ -1,10 +1,19 @@
 from collections import Counter
+from dataclasses import dataclass
 from logging import getLogger
+from typing import Optional
 
 import numpy as np
 from pymatgen.core import Structure, Lattice
 from pymatgen.core.periodic_table import DummySpecie
 
+from ..ea_offspring import (
+    GenerationResult,
+    OffspringResult,
+    ParentData,
+    SelectionContext,
+    generate_with_parent_attempts,
+)
 from ...util.struc_util import origin_shift, sort_by_atype, check_distance
 from ...util.struc_util import get_nat
 
@@ -13,6 +22,27 @@ from ...util.struc_util import get_nat
 
 
 logger = getLogger('cryspy')
+
+
+@dataclass(frozen=True)
+class CrossoverContext:
+    """Parameters for crossover generation."""
+
+    atype: tuple[str, ...]
+    nat: tuple[int, ...] | None
+    mindist: tuple[tuple[float, ...], ...]
+    crs_lat: str
+    nat_diff_tole: int
+    maxcnt_ea: int
+    vc: bool
+    ll_nat: tuple[int, ...] | None
+    ul_nat: tuple[int, ...] | None
+    cn_comb: np.ndarray | None
+    feasible_N: list | None
+    charge: tuple[float, ...] | None
+    cn_data: dict | None
+    min_comp: tuple[float, ...] | None
+    max_comp: tuple[float, ...] | None
 
 
 def gen_crossover(
@@ -66,14 +96,14 @@ def gen_crossover(
     rng (numpy.random.Generator): random number generator
 
     # ---------- return
-    children (dict): {id: structure data}
+    offspring_data (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, id of parent_B)}
     operation (dict): {id: 'crossover'}
     '''
 
     # ---------- initialize
     struc_cnt = 0
-    children = {}
+    offspring_data = {}
     parents = {}
     operation = {}
 
@@ -93,8 +123,8 @@ def gen_crossover(
         pid_A, pid_B = sp.get_parents(n_parent=2)    # get IDs
         parent_A = struc_data[pid_A]
         parent_B = struc_data[pid_B]
-        # ------ generate child
-        child = gen_child(
+        # ------ generate offspring
+        offspring = gen_offspring(
             atype,
             nat,
             mindist,
@@ -115,21 +145,21 @@ def gen_crossover(
             rng,
         )
         # ------ success
-        if child is not None:
+        if offspring is not None:
             # -- Niggli reduction
             try:
-                child = child.get_reduced_structure(reduction_algo="niggli")
+                offspring = offspring.get_reduced_structure(reduction_algo="niggli")
             except Exception as e:
                 logger.warning(f'Niggli reduction failed: {e}')
-            children[cid] = child
+            offspring_data[cid] = offspring
             parents[cid] = (pid_A, pid_B)
             operation[cid] = 'crossover'
             try:
-                spg_sym, spg_num = child.get_space_group_info(symprec=symprec)
+                spg_sym, spg_num = offspring.get_space_group_info(symprec=symprec)
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            tmp_nat = get_nat(child, atype)
+            tmp_nat = get_nat(offspring, atype)
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} and {pid_B:>6} by crossover.'
                     f' Space group: {spg_num:>3} {spg_sym}')
@@ -137,10 +167,10 @@ def gen_crossover(
             struc_cnt += 1
 
     # ---------- return
-    return children, parents, operation
+    return offspring_data, parents, operation
 
 
-def gen_child(
+def gen_offspring(
         atype,
         nat,
         mindist,
@@ -185,7 +215,7 @@ def gen_child(
     rng (numpy.random.Generator): random number generator
 
     # ---------- return
-    (if success) child (Structure): pymatgen Structure object
+    (if success) offspring (Structure): pymatgen Structure object
     (if fail) None
     '''
 
@@ -207,20 +237,20 @@ def gen_child(
         logger.error('crs_lat must be equal or random')
     lattice = _lattice_crossover(parent_A, parent_B, w_lat)
 
-    # ---------- generate child
+    # ---------- generate offspring
     while True:
         count += 1
         # ------ coordinate crossover
         axis, slice_point, species, coords = _one_point_crossover(parent_A, parent_B, rng)
-        # ------ child structure
-        child = Structure(lattice, species, coords)
+        # ------ offspring structure
+        offspring = Structure(lattice, species, coords)
         # ------ check nat_diff
         # -- charge neutrality in sample mode
         if vc and cn_data is not None and cn_data['mode'] == 'sample':
-            # -- choose close target_nat by local search around child_nat
-            child_nat = get_nat(child, atype)
+            # -- choose close target_nat by local search around offspring_nat
+            offspring_nat = get_nat(offspring, atype)
             target_nat = _sample_close_cn_nat(
-                child_nat,
+                offspring_nat,
                 ll_nat,
                 ul_nat,
                 charge,
@@ -238,21 +268,21 @@ def gen_child(
                 continue    # slice again
 
             # -- check difference from target_nat
-            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff = _get_nat_diff(atype, target_nat, offspring, vc, ll_nat, ul_nat, use_target_nat)
             nat_diff_checked = False
 
         # -- charge neutrality in enumerate mode
         elif vc and cn_comb is not None:
             # -- choose closest target_nat from precomputed charge-neutral combinations
-            target_nat = _get_close_cn_comb(child, atype, cn_comb, rng)
+            target_nat = _get_close_cn_comb(offspring, atype, cn_comb, rng)
             use_target_nat = True
-            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff = _get_nat_diff(atype, target_nat, offspring, vc, ll_nat, ul_nat, use_target_nat)
             nat_diff_checked = False
 
         # -- composition constraints only
         elif vc and feasible_N is not None:
             # -- choose close target_nat from feasible total atom counts
-            target_nat, nat_diff = _get_close_feasible_nat(child, atype, feasible_N, nat_diff_tole, rng)
+            target_nat, nat_diff = _get_close_feasible_nat(offspring, atype, feasible_N, nat_diff_tole, rng)
             use_target_nat = True
             nat_diff_checked = True
 
@@ -265,7 +295,7 @@ def gen_child(
         else:
             target_nat = nat
             use_target_nat = False
-            nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+            nat_diff = _get_nat_diff(atype, target_nat, offspring, vc, ll_nat, ul_nat, use_target_nat)
             nat_diff_checked = False
         if (not nat_diff_checked) and any([abs(n) > nat_diff_tole for n in nat_diff]):
             logger.debug(f'nat_diff = {nat_diff}')
@@ -274,13 +304,13 @@ def gen_child(
             continue    # slice again
         # ------ check mindist
         # either tmp_atype or atype is OK in check_distance()
-        success, _, _ = check_distance(child, atype, mindist, check_all=False)
+        success, _, _ = check_distance(offspring, atype, mindist, check_all=False)
         # ------ something smaller than mindist
         if not success:
             # -- remove atoms within mindist
             if any([n > 0 for n in nat_diff]):
-                child = _remove_within_mindist(child, atype, mindist, nat_diff)
-                if child is None:    # fail --> slice again
+                offspring = _remove_within_mindist(offspring, atype, mindist, nat_diff)
+                if offspring is None:    # fail --> slice again
                     if count > maxcnt_ea:
                         return None
                     continue
@@ -290,17 +320,17 @@ def gen_child(
                 continue    # fail --> slice again
         # ------ recheck nat_diff
         # ------ excess of atoms
-        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)    # recheck
+        nat_diff = _get_nat_diff(atype, target_nat, offspring, vc, ll_nat, ul_nat, use_target_nat)    # recheck
         if any([n > 0 for n in nat_diff]):
-            child = _remove_border_line(child, atype, axis,
+            offspring = _remove_border_line(offspring, atype, axis,
                                         slice_point, nat_diff)
         # ------ lack of atoms
-        nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)    # recheck
+        nat_diff = _get_nat_diff(atype, target_nat, offspring, vc, ll_nat, ul_nat, use_target_nat)    # recheck
         if any([n < 0 for n in nat_diff]):
-            child = _add_border_line(child, atype, mindist, axis, slice_point,
-                                        nat_diff, maxcnt_ea)
+            offspring = _add_border_line(offspring, atype, mindist, axis, slice_point,
+                                        nat_diff, maxcnt_ea, rng)
         # ------ success --> break while loop
-        if child is not None:
+        if offspring is not None:
             break
         # ------ fail --> slice again
         else:
@@ -309,15 +339,137 @@ def gen_child(
             continue
 
     # ---------- final check for nat
-    nat_diff = _get_nat_diff(atype, target_nat, child, vc, ll_nat, ul_nat, use_target_nat)
+    nat_diff = _get_nat_diff(atype, target_nat, offspring, vc, ll_nat, ul_nat, use_target_nat)
     if not all([n == 0 for n in nat_diff]):
         return None    # failure
 
     # ---------- sort by atype
-    child = sort_by_atype(child, atype)
+    offspring = sort_by_atype(offspring, atype)
 
     # ---------- return
-    return child
+    return offspring
+
+
+class CrossoverOffspringGenerator:
+    """Generate one offspring by crossover."""
+
+    def __init__(
+        self,
+        parent_data: ParentData,
+        selection_context: SelectionContext,
+        context: CrossoverContext,
+        max_parent_attempts: int,
+    ) -> None:
+        # ---------- check input
+        if max_parent_attempts < 1:
+            raise ValueError(
+                'max_parent_attempts must be greater than zero'
+            )
+
+        # ---------- context
+        self.parent_data = parent_data
+        self.selection_context = selection_context
+        self.context = context
+        self.max_parent_attempts = max_parent_attempts
+
+    def generate(
+        self,
+        rng: np.random.Generator,
+    ) -> GenerationResult:
+        """Generate one offspring."""
+
+        # ---------- generate offspring
+        return generate_with_parent_attempts(
+            operation='crossover',
+            selection_context=self.selection_context,
+            n_parent=2,
+            max_parent_attempts=self.max_parent_attempts,
+            generate_attempt=self._generate_attempt,
+            rng=rng,
+        )
+
+    def _generate_attempt(
+        self,
+        parent_ids: tuple[int, ...],
+        rng: np.random.Generator,
+    ) -> Optional[Structure]:
+        """Attempt to generate one offspring."""
+
+        # ---------- parents
+        parent_A = self.parent_data.structures[parent_ids[0]]
+        parent_B = self.parent_data.structures[parent_ids[1]]
+
+        # ---------- generate offspring
+        return gen_offspring(
+            atype=self.context.atype,
+            nat=self.context.nat,
+            mindist=self.context.mindist,
+            parent_A=parent_A,
+            parent_B=parent_B,
+            crs_lat=self.context.crs_lat,
+            nat_diff_tole=self.context.nat_diff_tole,
+            maxcnt_ea=self.context.maxcnt_ea,
+            vc=self.context.vc,
+            ll_nat=self.context.ll_nat,
+            ul_nat=self.context.ul_nat,
+            cn_comb=self.context.cn_comb,
+            feasible_N=self.context.feasible_N,
+            charge=self.context.charge,
+            cn_data=self.context.cn_data,
+            min_comp=self.context.min_comp,
+            max_comp=self.context.max_comp,
+            rng=rng,
+        )
+
+
+def gen_crossover_batch(
+        generator,
+        n_crsov,
+        id_start,
+        symprec,
+        atype,
+        rng,
+    ):
+    """Generate crossover offspring batch."""
+
+    # ---------- initialize
+    offspring_data = {}
+    parents = {}
+    operation = {}
+
+    # ---------- generate offspring
+    for cid in range(id_start, id_start + n_crsov):
+        result = generator.generate(rng)
+        if not isinstance(result, OffspringResult):
+            logger.error(result.reason)
+            raise SystemExit(1)
+        offspring = result.structure
+
+        # -- Niggli reduction
+        try:
+            offspring = offspring.get_reduced_structure(
+                reduction_algo="niggli"
+            )
+        except Exception as e:
+            logger.warning(f'Niggli reduction failed: {e}')
+
+        offspring_data[cid] = offspring
+        parents[cid] = result.parent_ids
+        operation[cid] = 'crossover'
+        try:
+            spg_sym, spg_num = offspring.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+        tmp_nat = get_nat(offspring, atype)
+        logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
+                f' from {result.parent_ids[0]:>6} and {result.parent_ids[1]:>6} by crossover.'
+                f' Space group: {spg_num:>3} {spg_sym}')
+
+    # ---------- return
+    return offspring_data, parents, operation
 
 
 def _lattice_crossover(parent_A, parent_B, w_lat):

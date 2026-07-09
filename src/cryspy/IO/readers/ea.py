@@ -216,11 +216,15 @@ class EAReader(BaseReader):
             raise ValueError('n_crsov + n_perm + n_strain + n_rand'
                                 ' + n_add + n_elim + n_subs must be n_pop')
 
-        # ---------- end_point
-        self.rin.end_point = self.config.get('EA', 'end_point')
-        self.rin.end_point = tuple([float(x) for x in self.rin.end_point.split()])
-        if not len(self.rin.end_point) == len(self.rin.atype):
-            raise ValueError('len(end_point) == len(atype), check end_point')
+        # ---------- ref_energies
+        try:
+            self.rin.ref_energies = self.config.get('EA', 'ref_energies')
+        except configparser.NoOptionError:
+            # for backward compatibility
+            self.rin.ref_energies = self.config.get('EA', 'end_point')
+        self.rin.ref_energies = tuple([float(x) for x in self.rin.ref_energies.split()])
+        if not len(self.rin.ref_energies) == len(self.rin.atype):
+            raise ValueError('len(ref_energies) == len(atype), check ref_energies')
 
 
     def _read_ea_mol(self):

@@ -14,17 +14,60 @@ def initialize_db() -> None:
             CREATE TABLE IF NOT EXISTS records (
                 id                INTEGER PRIMARY KEY AUTOINCREMENT,
                 status            INTEGER NOT NULL,
-                atomic_numbers    BLOB NOT NULL,
-                nat               BLOB NOT NULL,
-                init_lattice      BLOB NOT NULL,
-                init_frac_coords  BLOB NOT NULL,
-                init_spg_num      INTEGER NOT NULL,
+                atomic_numbers    BLOB,
+                nat               BLOB,
+                init_lattice      BLOB,
+                init_frac_coords  BLOB,
+                init_spg_num      INTEGER,
                 init_spg_sym      TEXT,
                 opt_lattice       BLOB,
                 opt_frac_coords   BLOB,
-                opt_spg_num       INTEGER NOT NULL,
+                opt_spg_num       INTEGER,
                 opt_spg_sym       TEXT,
                 energy            REAL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ea_origin (
+                id                    INTEGER PRIMARY KEY,
+                generation            INTEGER NOT NULL,
+                operation             TEXT NOT NULL,
+                parent1_id            INTEGER,
+                parent2_id            INTEGER,
+                parent_attempt_count  INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (id) REFERENCES records(id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ea_info (
+                generation      INTEGER PRIMARY KEY,
+                population      INTEGER NOT NULL,
+                n_crossover     INTEGER NOT NULL,
+                n_permutation   INTEGER NOT NULL,
+                n_strain        INTEGER NOT NULL,
+                n_random        INTEGER NOT NULL,
+                n_elite         INTEGER NOT NULL,
+                crs_lat         TEXT NOT NULL,
+                slct_func       TEXT NOT NULL,
+                n_addition      INTEGER,
+                n_elimination   INTEGER,
+                n_substitution  INTEGER,
+                min_comp        BLOB,
+                max_comp        BLOB
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ea_elite (
+                generation  INTEGER NOT NULL,
+                id          INTEGER NOT NULL,
+                PRIMARY KEY (generation, id),
+                FOREIGN KEY (id) REFERENCES records(id)
             )
             """
         )

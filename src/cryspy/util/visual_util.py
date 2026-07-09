@@ -159,28 +159,48 @@ def draw_convex_hull_binary(
         max_comp=None,
         show_comp_window=True,
     ):
-    '''
-    # ---------- args
-    phase_diagram (PhaseDiagram): phase diagram object
-    hdist (dict): hull distance of all structures, {ID: distance, ...}
-    filtered_ids (array): ID array for filtering structures to be plotted
-    ymax (float): max value of y-axis
-    label_stable (bool): whether to show stable compositions
-    vmax (float): max value of colorbar for hull distance
-    bottom_margin (float): bottom margin of y-axis
-    markersize (int): size of markers
-    axis_order (str): order of axis for binary phase diagram, 'lr' or 'rl'
-    min_comp : tuple[float, float] or None
+    """
+    Draw a binary convex-hull plot.
+
+    Parameters
+    ----------
+    phase_diagram : PhaseDiagram
+        Phase diagram object.
+    hdist : dict
+        Hull distance of all structures, {ID: distance, ...}.
+    filtered_ids : array-like or None, optional
+        ID array for filtering structures to be plotted.
+    ymax : float, optional
+        Maximum value of y-axis.
+    label_stable : bool, optional
+        Whether to show stable compositions.
+    vmax : float, optional
+        Maximum value of colorbar for hull distance.
+    bottom_margin : float, optional
+        Bottom margin of y-axis.
+    markersize : int, optional
+        Size of markers.
+    axis_order : str, optional
+        Order of axis for binary phase diagram, 'lr' or 'rl'.
+    min_comp : tuple[float, float] or None, optional
         Minimum composition fractions for each component.
-    max_comp : tuple[float, float] or None
+    max_comp : tuple[float, float] or None, optional
         Maximum composition fractions for each component.
-    show_comp_window : bool
+    show_comp_window : bool, optional
         Whether to overlay the feasible composition range on the convex hull plot.
-    '''
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure object.
+    ax : matplotlib.axes.Axes
+        Axes object.
+    """
 
     # ---------- setting
     set_params()
     from pymatgen.analysis.phase_diagram import PDPlotter
+    from pymatgen.util.string import latexify
 
     # ---------- axis order
     flip_x = (axis_order == "rl")
@@ -244,7 +264,7 @@ def draw_convex_hull_binary(
         )
         if label_stable and entry.name:
             ax.annotate(
-                to_element_label(entry.name),
+                latexify(to_element_label(entry.name)),
                 xy=(x, y),
                 xytext=(0, -10),    # 10 points vertical offset
                 textcoords="offset points",
@@ -258,14 +278,15 @@ def draw_convex_hull_binary(
     scat_x, scat_y, scat_c = [], [], []
     s = markersize**2 / 2    # size for scatter
     for entry, coord in unstable_entries.items():
-        if entry.entry_id is None:
+        entry_id = get_entry_id(entry)
+        if entry_id is None:
             continue
         if filtered_ids is not None:
-            if entry.entry_id not in filtered_ids:
+            if entry_id not in filtered_ids:
                 continue
         scat_x.append(tx(coord[0]))
         scat_y.append(coord[1])
-        scat_c.append(hdist[entry.entry_id])
+        scat_c.append(hdist[entry_id])
     mappable = ax.scatter(
         scat_x,
         scat_y,
@@ -311,21 +332,45 @@ def draw_convex_hull_ternary(
         max_comp=None,
         show_comp_window=True,
     ):
-    '''
-    # ---------- args
-    atype (tuple[str, str, str]): element names in the original composition order
-    phase_diagram (PhaseDiagram): phase diagram object
-    hdist (dict): hull distance of all structures, {ID: distance, ...}
-    filtered_ids (array): ID array for filtering structures to be plotted
-    show_max (float): Maximum hull distance for entries to be shown in the plot.
-    label_stable (bool): whether to show stable compositions
-    vmax (float): max value of colorbar for hull distance
-    markersize (int): size of markers
-    axis_order (str): order of axis for ternary phase diagram, e.g. 'tlr'
-    min_comp (tuple[float, float, float] or None): minimum composition fractions
-    max_comp (tuple[float, float, float] or None): maximum composition fractions
-    show_comp_window (bool): whether to overlay feasible composition region
-    '''
+    """
+    Draw a ternary convex-hull plot.
+
+    Parameters
+    ----------
+    atype : tuple[str, str, str]
+        Component names in the original composition order.
+        For a normal PhaseDiagram, these are element names.
+        For a CompoundPhaseDiagram, these are terminal compositions.
+    phase_diagram : PhaseDiagram
+        Phase diagram object.
+    hdist : dict
+        Hull distance of all structures, {ID: distance, ...}.
+    filtered_ids : array-like or None, optional
+        ID array for filtering structures to be plotted.
+    show_max : float or None, optional
+        Maximum hull distance for entries to be shown in the plot.
+    label_stable : bool, optional
+        Whether to show stable compositions.
+    vmax : float, optional
+        Maximum value of colorbar for hull distance.
+    markersize : int, optional
+        Size of markers.
+    axis_order : str, optional
+        Order of axis for ternary phase diagram, e.g. 'tlr'.
+    min_comp : tuple[float, float, float] or None, optional
+        Minimum composition fractions.
+    max_comp : tuple[float, float, float] or None, optional
+        Maximum composition fractions.
+    show_comp_window : bool, optional
+        Whether to overlay feasible composition region.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure object.
+    ax : matplotlib.axes.Axes
+        Axes object.
+    """
 
     # ---------- setting
     set_params()
@@ -387,15 +432,16 @@ def draw_convex_hull_ternary(
     scat_x, scat_y, scat_c = [], [], []
     s = markersize**2 / 2    # size for scatter
     for entry, coord in ordered_unstable_entries.items():
-        if entry.entry_id is None:
+        entry_id = get_entry_id(entry)
+        if entry_id is None:
             continue
         if filtered_ids is not None:
-            if entry.entry_id not in filtered_ids:
+            if entry_id not in filtered_ids:
                 continue
-        if show_max is None or hdist[entry.entry_id] <= show_max:
+        if show_max is None or hdist[entry_id] <= show_max:
             scat_x.append(coord[0])
             scat_y.append(coord[1])
-            scat_c.append(hdist[entry.entry_id])
+            scat_c.append(hdist[entry_id])
     mappable = ax.scatter(
         scat_x,
         scat_y,
@@ -642,6 +688,13 @@ def build_ordering(atype, axis_order, use_special_formula=True):
     # ---------- higher components
     # ordering control is not supported for >3 components
     return None
+
+
+# --- get_entry_id utility
+def get_entry_id(entry):
+    if hasattr(entry, 'original_entry'):
+        return entry.original_entry.entry_id
+    return entry.entry_id
 
 
 def to_special_formula(sym: str) -> str:

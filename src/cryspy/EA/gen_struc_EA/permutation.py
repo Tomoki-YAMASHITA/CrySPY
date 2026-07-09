@@ -1,13 +1,31 @@
+from dataclasses import dataclass
 from logging import getLogger
+from typing import Optional
 
 import numpy as np
-from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 
-from ...util.struc_util import sort_by_atype, check_distance, get_nat, remove_zero
+from ..ea_offspring import (
+    GenerationResult,
+    OffspringResult,
+    ParentData,
+    SelectionContext,
+    generate_with_parent_attempts,
+)
+from ...util.struc_util import sort_by_atype, check_distance, get_nat
 
 
 logger = getLogger('cryspy')
+
+
+@dataclass(frozen=True)
+class PermutationContext:
+    """Parameters for permutation generation."""
+
+    atype: tuple[str, ...]
+    mindist: tuple[tuple[float, ...], ...]
+    ntimes: int
+    maxcnt_ea: int
 
 
 def gen_permutation(
@@ -37,14 +55,14 @@ def gen_permutation(
     maxcnt_ea (int): maximum number of trial in permutation
 
     # ---------- return
-    children (dict): {id: structure data}
+    offspring_data (dict): {id: structure data}
     parents (dict): {id: (id of parent_A, )}
     operation (dict): {id: 'permutation'}
     '''
 
     # ---------- initialize
     struc_cnt = 0
-    children = {}
+    offspring_data = {}
     parents = {}
     operation = {}
 
@@ -66,19 +84,26 @@ def gen_permutation(
         if len(parent_A.composition) == 1:
             logger.warning(f'Permutation: {pid_A} is composed of only single element')
             continue
-        # ------ generate child
-        child = gen_child(atype, mindist, parent_A, ntimes, maxcnt_ea, rng)
+        # ------ generate offspring
+        offspring = gen_offspring(
+            atype,
+            mindist,
+            parent_A,
+            ntimes,
+            maxcnt_ea,
+            rng,
+        )
         # ------ success
-        if child is not None:
-            children[cid] = child
+        if offspring is not None:
+            offspring_data[cid] = offspring
             parents[cid] = (pid_A, )    # tuple
             operation[cid] = 'permutation'
             try:
-                spg_sym, spg_num = child.get_space_group_info(symprec=symprec)
+                spg_sym, spg_num = offspring.get_space_group_info(symprec=symprec)
             except TypeError:
                 spg_num = 0
                 spg_sym = None
-            tmp_nat = get_nat(child, atype)
+            tmp_nat = get_nat(offspring, atype)
             logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
                     f' from {pid_A:>6} by permutation.'
                     f' Space group: {spg_num:>3} {spg_sym}')
@@ -86,10 +111,10 @@ def gen_permutation(
             struc_cnt += 1
 
     # ---------- return
-    return children, parents, operation
+    return offspring_data, parents, operation
 
 
-def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50, rng=None):
+def gen_offspring(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50, rng=None):
     '''
 
         tuple may be replaced by list
@@ -98,11 +123,11 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50, rng=None):
     mindist (tuple): minimum interatomic distance, e.g. ((1.5, 1.5), (1.5, 1.5))
     parent_A (Structure): pymatgen Structure object
     ntimes (int): number of swaps
-    maxcnt_ea (int): maximum number of trial in crossover
+    maxcnt_ea (int): maximum number of trial in permutation
     rng (np.random.Generator): random number generator
 
     # ---------- return
-    (if success) child (Structure): pymatgen Structure object
+    (if success) offspring (Structure): pymatgen Structure object
     (if fail) None
     '''
 
@@ -111,19 +136,19 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50, rng=None):
         rng = np.random.default_rng()
 
     # ---------- initialize
-    #smatcher = StructureMatcher()    # instantiate StructureMatcher
+    parent_species = tuple(site.species_string for site in parent_A)
     cnt = 0
 
     # ---------- ntimes permutation
     while True:
-        child = parent_A.copy()    # keep original structure
+        offspring = parent_A.copy()    # keep original structure
         n = ntimes
         while n > 0:
             # ------ prepare index for each atom type
             indx_each_type = []
             for a in atype:
                 indx_each_type.append(
-                    [i for i, site in enumerate(child)
+                    [i for i, site in enumerate(offspring)
                         if site.species_string == a])
             # ------ choose two atom type
             non_empty_indices = [i for i, sublist in enumerate(indx_each_type) if sublist]
@@ -133,30 +158,141 @@ def gen_child(atype, mindist, parent_A, ntimes=1, maxcnt_ea=50, rng=None):
             for tc in type_choice:
                 indx_choice.append(rng.choice(indx_each_type[tc]))
             # ------ replace each other
-            child.replace(indx_choice[0],
+            offspring.replace(indx_choice[0],
                                 species=atype[type_choice[1]])
-            child.replace(indx_choice[1],
+            offspring.replace(indx_choice[1],
                                 species=atype[type_choice[0]])
-            # ------ compare to original one
-            # if smatcher.fit(child, parent_A):
-            #     n = ntimes    # back to the start
-            #     continue
-            # else:
-            #     n -= 1
             n -= 1
 
+        # ------ compare to original one
+        offspring_species = tuple(site.species_string for site in offspring)
+        if offspring_species == parent_species:
+            cnt += 1
+            if cnt >= maxcnt_ea:
+                logger.warning('Permutation: could not change structure' +
+                        f' in {maxcnt_ea} times')
+                logger.warning('Change parent')
+                return None    # change parent
+            continue
+
         # ------ check distance
-        success, mindist_ij, dist = check_distance(child, atype, mindist)
+        success, mindist_ij, dist = check_distance(offspring, atype, mindist)
         if success:
-            child = sort_by_atype(child, atype)
-            return child
+            offspring = sort_by_atype(offspring, atype)
+            return offspring
         else:
             type0 = atype[mindist_ij[0]]
             type1 = atype[mindist_ij[1]]
             logger.warning(f'mindist in permutation: {type0} - {type1}, {dist}. retry.')
             cnt += 1
             if cnt >= maxcnt_ea:
-                logger.warning('Permutatin: could not satisfy min_dist' +
+                logger.warning('Permutation: could not satisfy min_dist' +
                         f' in {maxcnt_ea} times')
                 logger.warning('Change parent')
                 return None    # change parent
+
+
+class PermutationOffspringGenerator:
+    """Generate one offspring by permutation."""
+
+    def __init__(
+        self,
+        parent_data: ParentData,
+        selection_context: SelectionContext,
+        context: PermutationContext,
+        max_parent_attempts: int,
+    ) -> None:
+        # ---------- check input
+        if max_parent_attempts < 1:
+            raise ValueError(
+                'max_parent_attempts must be greater than zero'
+            )
+
+        # ---------- context
+        self.parent_data = parent_data
+        self.selection_context = selection_context
+        self.context = context
+        self.max_parent_attempts = max_parent_attempts
+
+    def generate(
+        self,
+        rng: np.random.Generator,
+    ) -> GenerationResult:
+        """Generate one offspring."""
+
+        # ---------- generate offspring
+        return generate_with_parent_attempts(
+            operation='permutation',
+            selection_context=self.selection_context,
+            n_parent=1,
+            max_parent_attempts=self.max_parent_attempts,
+            generate_attempt=self._generate_attempt,
+            rng=rng,
+        )
+
+    def _generate_attempt(
+        self,
+        parent_ids: tuple[int, ...],
+        rng: np.random.Generator,
+    ) -> Optional[Structure]:
+        """Attempt to generate one offspring."""
+
+        # ---------- parent
+        parent = self.parent_data.structures[parent_ids[0]]
+
+        # ---------- check nat for vc
+        if len(parent.composition) == 1:
+            logger.warning(
+                f'Permutation: {parent_ids[0]} is composed of only single element'
+            )
+            return None
+
+        # ---------- generate offspring
+        return gen_offspring(
+            atype=self.context.atype,
+            mindist=self.context.mindist,
+            parent_A=parent,
+            ntimes=self.context.ntimes,
+            maxcnt_ea=self.context.maxcnt_ea,
+            rng=rng,
+        )
+
+
+def gen_permutation_batch(
+        generator,
+        n_perm,
+        id_start,
+        symprec,
+        atype,
+        rng,
+    ):
+    """Generate permutation offspring batch."""
+
+    # ---------- initialize
+    offspring_data = {}
+    parents = {}
+    operation = {}
+
+    # ---------- generate offspring
+    for cid in range(id_start, id_start + n_perm):
+        result = generator.generate(rng)
+        if not isinstance(result, OffspringResult):
+            logger.error(result.reason)
+            raise SystemExit(1)
+        offspring_data[cid] = result.structure
+        parents[cid] = result.parent_ids
+        operation[cid] = 'permutation'
+        try:
+            spg_sym, spg_num = result.structure.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+        tmp_nat = get_nat(result.structure, atype)
+        logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
+                f' from {result.parent_ids[0]:>6} by permutation.'
+                f' Space group: {spg_num:>3} {spg_sym}')
+
+    # ---------- return
+    return offspring_data, parents, operation

@@ -61,9 +61,9 @@ class ReadInput:
     markersize: int = field(default=None)
     fig_format: str = field(default=None)
     # ------ for EA
-    ref_gen: int = field(default=None)
     plot_min_gen: int = field(default=None)
     plot_max_gen: int = field(default=None)
+    ref_gen: int = field(default=None)
     # ------ for EA-vc
     show_max: float = field(default=None)
     label_stable: bool = field(default=None)
@@ -135,7 +135,7 @@ class ReadInput:
     n_subs: int = field(default=None)
     subs_max: int = field(default=None)
     target: str = field(default=None)
-    end_point: tuple = field(default=None)
+    ref_energies: tuple = field(default=None)
     n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
     rot_max_angle: float = field(default=None)     # not implemented yet, for EA mol

@@ -67,11 +67,14 @@ def print_status(
     print(f'{"Total":<{label_width}} {total:>{value_width}}')
     for status in Status:
         ids = ids_by_status[status]
-        print(
-            f'{status.name:<{label_width}} '
-            f'{len(ids):>{value_width}}: '
-            f'{format_id_ranges(ids)}'
-        )
+        if status == Status.DONE:
+            print(f'{status.name:<{label_width}} {len(ids):>{value_width}}')
+        else:
+            print(
+                f'{status.name:<{label_width}} '
+                f'{len(ids):>{value_width}}: '
+                f'{format_id_ranges(ids)}'
+            )
 
 
 def main():

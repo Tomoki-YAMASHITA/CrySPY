@@ -68,7 +68,7 @@ def next_gen_EA(
             phase_diagram, hdist = calc_convex_hull(
                 atype=rin.atype,
                 gen=gen,
-                end_point=rin.end_point,
+                ref_energies=rin.ref_energies,
                 rslt_data=rslt_data,
                 nat_data=nat_data,
                 ymax=rin.ymax,

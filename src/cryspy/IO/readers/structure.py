@@ -37,13 +37,16 @@ class StructureReader(BaseReader):
                 raise ValueError('not len(nat) == len(atype), check atype and nat')
 
         # ---------- mindist
-        try:
+        if self.config.has_option('structure', 'mindist_1'):
             self.rin.mindist = []
             for i in range(len(self.rin.atype)):
-                tmp = self.config.get('structure', f'mindist_{i+1}')
+                key = f'mindist_{i+1}'
+                if not self.config.has_option('structure', key):
+                    raise ValueError(f'{key} is not found')
+                tmp = self.config.get('structure', key)
                 tmp = tuple([float(x) for x in tmp.split()])    # str --> float --> list --> tuple
                 if not len(tmp) == len(self.rin.atype):
-                    raise ValueError(f'not len(mindist_{i+1}) == len(atype)')
+                    raise ValueError(f'not len({key}) == len(atype)')
                 self.rin.mindist.append(tmp)
             self.rin.mindist = tuple(self.rin.mindist)    # list --> tuple
             # ------ check symmetric matrix
@@ -53,7 +56,7 @@ class StructureReader(BaseReader):
                         if not self.rin.mindist[i][j] == self.rin.mindist[j][i]:
                             raise ValueError(f'mindist is not symmetric. ({i}, {j}) -->'
                                             f' {self.rin.mindist[i][j]}, ({j}, {i}) --> {self.rin.mindist[j][i]}')
-        except (configparser.NoOptionError, configparser.NoSectionError):
+        else:
             self.rin.mindist = None
 
         # ---------- mindist_factor

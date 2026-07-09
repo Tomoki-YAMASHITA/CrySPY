@@ -15,7 +15,7 @@ logger = getLogger('cryspy')
 def calc_convex_hull(
         atype,
         gen,
-        end_point,
+        ref_energies,
         rslt_data,
         nat_data,
         ymax,
@@ -37,7 +37,7 @@ def calc_convex_hull(
     Input:
         atype (tuple): atom type, e.g. ('Na', 'Cl')
         gen (int): current generation
-        end_point (tuple): end points e.g. (0.0  0.0)
+        ref_energies (tuple): reference energies. e.g. (0.0  0.0)
         rslt_data (DataFrame): result data
         nat_data (dict): number of atoms of all structures, {ID: (nat1, nat2, ...), ...}
         ymax (float): Binary only. max value of y-axis
@@ -81,7 +81,7 @@ def calc_convex_hull(
         entries[cid] = ComputedEntry(composition, e*sum(nat_data[cid]), entry_id=cid)
 
     # ---------- end points
-    end_entry_values = [ComputedEntry(element, end_e) for element, end_e in zip(atype, end_point)]
+    end_entry_values = [ComputedEntry(element, end_e) for element, end_e in zip(atype, ref_energies)]
 
     # ---------- PhaseDiagram and hull distance
     phase_diagram = PhaseDiagram(end_entry_values + list(entries.values()))

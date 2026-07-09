@@ -3,11 +3,11 @@
 Energy plot script
 '''
 
+import argparse
 from logging import getLogger
 import os
 
-from cryspy.IO import pkl_data
-from cryspy.start import cryspy_restart
+from cryspy.IO import pkl_data, read_input
 from cryspy.util.utility import set_logger
 from cryspy.util.visual_util import (
     plot_energy_RS,
@@ -20,6 +20,17 @@ from cryspy.util.visual_util import (
 
 
 def main():
+
+    # ---------- args
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-c',
+        '--composition-window',
+        action='store_true',
+        help='Plot composition window from cryspy.in.',
+    )
+    args = parser.parse_args()
+
     # ---------- logger
     set_logger(
         noprint=False,
@@ -39,12 +50,17 @@ def main():
             pass    # create vacant file
 
     try:
-        # ---------- restart
-        if os.path.isfile('cryspy.stat'):
-            rin, init_struc_data, rng = cryspy_restart.restart()
+        # ---------- read input
+        if os.path.isfile('cryspy.in'):
+            rin = read_input.ReadInput('cryspy.in')
         else:
-            logger.error('cryspy.stat file does not exist.')
+            logger.error('cryspy.in file does not exist.')
             raise SystemExit(1)
+
+        # ---------- composition window
+        if args.composition_window:
+            plot_composition_window_input(rin)
+            return
 
         # ---------- algo check
         if rin.algo == 'RS':
@@ -231,6 +247,52 @@ def plot_EA_vc(rin):
     os.makedirs('data/convex_hull', exist_ok=True)
     fig.savefig(fname)
     logger.info(f'Convex hull plot saved as {fname}')
+
+
+#
+# ----------
+# ---------- composition window from cryspy.in
+# ----------
+def plot_composition_window_input(rin):
+    '''
+    Plot composition window from cryspy.in.
+    '''
+
+    # ---------- logger
+    logger = getLogger('cryspy')
+
+    # ---------- check
+    if rin.algo != 'EA-vc':
+        logger.error('Composition window plot is available only for EA-vc.')
+        raise SystemExit(1)
+
+    if rin.min_comp is None and rin.max_comp is None:
+        logger.error('min_comp and max_comp are not set in cryspy.in.')
+        raise SystemExit(1)
+
+    if len(rin.atype) not in (2, 3):
+        logger.error(
+            f'len(rin.atype) = {len(rin.atype)} is not supported '
+            'for composition window plot'
+        )
+        raise SystemExit(1)
+
+    # ---------- plot
+    from cryspy.util.visual_util import save_composition_window
+    save_composition_window(
+        atype=rin.atype,
+        gen='input',
+        min_comp=rin.min_comp,
+        max_comp=rin.max_comp,
+        fig_format=rin.fig_format,
+        axis_order=rin.axis_order,
+    )
+
+    # ---------- log
+    logger.info(
+        f'Composition window saved as '
+        f'./data/convex_hull/composition_window_input.{rin.fig_format}'
+    )
 
 
 # ----------

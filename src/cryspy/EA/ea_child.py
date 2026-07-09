@@ -1,9 +1,26 @@
 from logging import getLogger
 
+from .ea_offspring import (
+    ParentData,
+    TournamentSelectionContext,
+    build_roulette_selection_context,
+)
 from .gen_struc_EA.select_parents import SelectParents
-from .gen_struc_EA.crossover import gen_crossover
-from .gen_struc_EA.permutation import gen_permutation
-from .gen_struc_EA.strain import gen_strain
+from .gen_struc_EA.crossover import (
+    CrossoverContext,
+    CrossoverOffspringGenerator,
+    gen_crossover_batch,
+)
+from .gen_struc_EA.permutation import (
+    PermutationContext,
+    PermutationOffspringGenerator,
+    gen_permutation_batch,
+)
+from .gen_struc_EA.strain import (
+    StrainContext,
+    StrainOffspringGenerator,
+    gen_strain_batch,
+)
 from .gen_struc_EA.addition import gen_addition
 from .gen_struc_EA.elimination import gen_elimination
 from .gen_struc_EA.substitution import gen_substitution
@@ -49,7 +66,7 @@ def child_gen(
             mpi_rank=0,
         )
     # ---------- initialize
-    children = {}
+    offspring_data = {}
     parents = {}
     operation = {}
     pre_nstruc = len(init_struc_data)
@@ -98,6 +115,11 @@ def child_gen(
             logger.debug(f'cumulative fitness in roulette: {sp_local.cum_fit}')
         return sp_local
 
+    # ---------- parent data
+    parent_data = ParentData(
+        structures=struc_data,
+    )
+
     # ---------- parent selectors for each operation
     # ------ crossover and strain
     sp_co = _build_sp(ranking)
@@ -119,6 +141,40 @@ def child_gen(
         logger.info(f'eligible candidates for elimination: {len(sp_elim.ranking)}')
     if sp_subs is not None:
         logger.info(f'eligible candidates for substitution: {len(sp_subs.ranking)}')
+
+    # ---------- selection contexts
+    if rin.slct_func == 'TNM':
+        selection_context_co = TournamentSelectionContext(
+            parent_ids=tuple(ranking),
+            tournament_size=rin.t_size,
+        )
+        selection_context_pm = (
+            TournamentSelectionContext(
+                parent_ids=tuple(perm_pid_list if vc else ranking),
+                tournament_size=rin.t_size,
+            )
+            if rin.n_perm > 0
+            else None
+        )
+    else:
+        selection_context_co = build_roulette_selection_context(
+            parent_ids=tuple(ranking),
+            fitness=fittest,
+            a_rlt=rin.a_rlt,
+            b_rlt=rin.b_rlt,
+            fit_reverse=rin.fit_reverse,
+        )
+        selection_context_pm = (
+            build_roulette_selection_context(
+                parent_ids=tuple(perm_pid_list if vc else ranking),
+                fitness=fittest,
+                a_rlt=rin.a_rlt,
+                b_rlt=rin.b_rlt,
+                fit_reverse=rin.fit_reverse,
+            )
+            if rin.n_perm > 0
+            else None
+        )
 
     # ---------- vc: prepare composition data for crossover and random generation
     feasible_comp = None
@@ -146,33 +202,40 @@ def child_gen(
     # ---------- Crossover
     if rin.n_crsov > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
-            co_children, co_parents, co_operation = gen_crossover(
-                rin.atype,
-                rin.nat,
-                mindist,
-                struc_data,
-                sp_co,
-                rin.n_crsov,
-                id_start,
-                rin.symprec,
-                rin.crs_lat,
-                rin.nat_diff_tole,
-                rin.maxcnt_ea,
-                vc=vc,
-                ll_nat=rin.ll_nat,
-                ul_nat=rin.ul_nat,
-                cn_comb=cn_comb_for_crossover,
-                feasible_N=feasible_N,
-                charge=rin.charge,
-                cn_data=cn_data,
-                min_comp=rin.min_comp,
-                max_comp=rin.max_comp,
+            co_generator = CrossoverOffspringGenerator(
+                parent_data=parent_data,
+                selection_context=selection_context_co,
+                context=CrossoverContext(
+                    atype=rin.atype,
+                    nat=rin.nat,
+                    mindist=mindist,
+                    crs_lat=rin.crs_lat,
+                    nat_diff_tole=rin.nat_diff_tole,
+                    maxcnt_ea=rin.maxcnt_ea,
+                    vc=vc,
+                    ll_nat=rin.ll_nat,
+                    ul_nat=rin.ul_nat,
+                    cn_comb=cn_comb_for_crossover,
+                    feasible_N=feasible_N,
+                    charge=rin.charge,
+                    cn_data=cn_data,
+                    min_comp=rin.min_comp,
+                    max_comp=rin.max_comp,
+                ),
+                max_parent_attempts=rin.maxcnt_ea,
+            )
+            co_offspring_data, co_parents, co_operation = gen_crossover_batch(
+                generator=co_generator,
+                n_crsov=rin.n_crsov,
+                id_start=id_start,
+                symprec=rin.symprec,
+                atype=rin.atype,
                 rng=rng,
             )
         else:
             logger.error('Crossover is not implemented for mol or mol_bs')
         # ------ update
-        children.update(co_children)
+        offspring_data.update(co_offspring_data)
         parents.update(co_parents)
         operation.update(co_operation)
         id_start += rin.n_crsov
@@ -180,22 +243,29 @@ def child_gen(
     # ---------- Permutation
     if rin.n_perm > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
-            pm_children, pm_parents, pm_operation = gen_permutation(
-                rin.atype,
-                mindist,
-                struc_data,
-                sp_pm,
-                rin.n_perm,
-                id_start,
-                rin.symprec,
-                rin.ntimes,
-                rin.maxcnt_ea,
+            pm_generator = PermutationOffspringGenerator(
+                parent_data=parent_data,
+                selection_context=selection_context_pm,
+                context=PermutationContext(
+                    atype=rin.atype,
+                    mindist=mindist,
+                    ntimes=rin.ntimes,
+                    maxcnt_ea=rin.maxcnt_ea,
+                ),
+                max_parent_attempts=rin.maxcnt_ea,
+            )
+            pm_offspring_data, pm_parents, pm_operation = gen_permutation_batch(
+                generator=pm_generator,
+                n_perm=rin.n_perm,
+                id_start=id_start,
+                symprec=rin.symprec,
+                atype=rin.atype,
                 rng=rng,
             )
         else:
             logger.error('Permutation is not implemented for mol or mol_bs')
         # ------ update
-        children.update(pm_children)
+        offspring_data.update(pm_offspring_data)
         parents.update(pm_parents)
         operation.update(pm_operation)
         id_start += rin.n_perm
@@ -203,22 +273,29 @@ def child_gen(
     # ---------- Strain
     if rin.n_strain > 0:
         if rin.struc_mode not in ['mol', 'mol_bs']:
-            st_children, st_parents, st_operation = gen_strain(
-                rin.atype,
-                mindist,
-                struc_data,
-                sp_co,
-                rin.n_strain,
-                id_start,
-                rin.symprec,
-                rin.sigma_st,
-                rin.maxcnt_ea,
+            st_generator = StrainOffspringGenerator(
+                parent_data=parent_data,
+                selection_context=selection_context_co,
+                context=StrainContext(
+                    atype=rin.atype,
+                    mindist=mindist,
+                    sigma_st=rin.sigma_st,
+                    maxcnt_ea=rin.maxcnt_ea,
+                ),
+                max_parent_attempts=rin.maxcnt_ea,
+            )
+            st_offspring_data, st_parents, st_operation = gen_strain_batch(
+                generator=st_generator,
+                n_strain=rin.n_strain,
+                id_start=id_start,
+                symprec=rin.symprec,
+                atype=rin.atype,
                 rng=rng,
             )
         else:
             logger.error('Strain is not implemented for mol or mol_bs')
         # ------ update
-        children.update(st_children)
+        offspring_data.update(st_offspring_data)
         parents.update(st_parents)
         operation.update(st_operation)
         id_start += rin.n_strain
@@ -246,7 +323,7 @@ def child_gen(
                 logger.error('Addition is not implemented for mol or mol_bs')
                 raise SystemExit(1)
             # ------ update
-            children.update(ad_children)
+            offspring_data.update(ad_children)
             parents.update(ad_parents)
             operation.update(ad_operation)
             id_start += rin.n_add
@@ -269,7 +346,7 @@ def child_gen(
                 logger.error('Elimination is not implemented for mol or mol_bs')
                 raise SystemExit(1)
             # ------ update
-            children.update(el_children)
+            offspring_data.update(el_children)
             parents.update(el_parents)
             operation.update(el_operation)
             id_start += rin.n_elim
@@ -294,20 +371,20 @@ def child_gen(
                 logger.error('Substitution is not implemented for mol or mol_bs')
                 raise SystemExit(1)
             # ------ update
-            children.update(sb_children)
+            offspring_data.update(sb_children)
             parents.update(sb_parents)
             operation.update(sb_operation)
             id_start += rin.n_subs
 
     # ---------- write init_POSCARS
-    out_poscar(children, './data/init_POSCARS')
+    out_poscar(offspring_data, './data/init_POSCARS')
 
     # ---------- update init_struc_data
-    init_struc_data.update(children)
+    init_struc_data.update(offspring_data)
 
     # ---------- save nat_data for EA-vc
     if rin.algo == 'EA-vc':
-        for cid, struc in children.items():
+        for cid, struc in offspring_data.items():
             nat_data[cid] = get_nat(struc, rin.atype)
         pkl_data.save_nat_data(nat_data)
 

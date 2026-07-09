@@ -38,7 +38,11 @@ def set_mindist(atype, mindist_in, factor, struc_mode='crystal',
         for i, itype in enumerate(atype):
             tmp = []
             for j, jtype in enumerate(atype):
-                tmp.append(tolmat.get_tol(itype, jtype))
+                tol = tolmat.get_tol(itype, jtype)
+                if tol is None:
+                    logger.error(f'tolerance for {itype} - {jtype} is not defined')
+                    raise SystemExit(1)
+                tmp.append(tol)
             mindist.append(tmp)
     else:
         tmp_array = factor * np.array(mindist_in)
