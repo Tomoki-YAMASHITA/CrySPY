@@ -65,6 +65,7 @@ class ReadInput:
     plot_max_gen: int = field(default=None)
     ref_gen: int = field(default=None)
     # ------ for EA-vc
+    terminals: tuple = field(default=None)
     show_max: float = field(default=None)
     label_stable: bool = field(default=None)
     vmax: float = field(default=None)
@@ -79,6 +80,8 @@ class ReadInput:
     stop_chkpt: int = field(default=None)
     load_struc_flag: bool = field(default=None)
     stop_next_struc: bool = field(default=None)
+    backup_interval: int = field(default=None)
+    hull_output_interval: int = field(default=None)
     recalc: tuple = field(default=None)
     append_struc_ea: bool = field(default=None)
     energy_step_flag: bool = field(default=None)
@@ -125,6 +128,7 @@ class ReadInput:
     ntimes: int = field(default=None)
     sigma_st: float = field(default=None)
     maxcnt_ea: int = field(default=None)
+    max_parent_attempts: int = field(default=None)
     maxgen_ea: int = field(default=None)
     emin_ea: float = field(default=None)
     emax_ea: float = field(default=None)
@@ -207,7 +211,7 @@ class ReadInput:
         BasicReader(config, self).read(ht=ht)
         StructureReader(config, self).read()
         VisualReader(config, self).read()
-        OptionReader(config, self).read()    # do this prior to EA for append_struc_ea
+        OptionReader(config, self).read(ht=ht)    # do this prior to EA for append_struc_ea
         if self.algo == 'BO':
             BOReader(config, self).read()
         if self.algo == 'LAQA':

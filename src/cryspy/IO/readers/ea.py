@@ -129,6 +129,23 @@ class EAReader(BaseReader):
             self.rin.maxcnt_ea = self.config.getint('EA', 'maxcnt_ea')
         except configparser.NoOptionError:
             self.rin.maxcnt_ea = 50
+        if self.rin.maxcnt_ea < 1:
+            raise ValueError(
+                'maxcnt_ea must be positive int'
+            )
+
+        # ---------- max_parent_attempts
+        try:
+            self.rin.max_parent_attempts = self.config.getint(
+                'EA',
+                'max_parent_attempts',
+            )
+        except configparser.NoOptionError:
+            self.rin.max_parent_attempts = 50
+        if self.rin.max_parent_attempts < 1:
+            raise ValueError(
+                'max_parent_attempts must be positive int'
+            )
 
         # ---------- maxgen_ea
         try:

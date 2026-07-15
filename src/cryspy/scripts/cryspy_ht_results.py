@@ -15,6 +15,29 @@ from cryspy.high_throughput.db.sqlite import connect_db
 
 DEFAULT_DB_PATH = 'data/db_data/rslt_data.db'
 DEFAULT_MAX_ROWS = 100
+DEFAULT_OUTPUT_NAME = 'cryspy_rslt.csv'
+
+
+def resolve_output_path(
+    db_path: Path,
+    output: str | None,
+) -> str | None:
+    """Resolve CSV output path."""
+
+    # ---------- terminal output
+    if output is None:
+        return None
+
+    # ---------- specified output path
+    if output:
+        return output
+
+    # ---------- default database
+    if db_path.resolve() == Path(DEFAULT_DB_PATH).resolve():
+        return str(Path('data') / DEFAULT_OUTPUT_NAME)
+
+    # ---------- specified database
+    return DEFAULT_OUTPUT_NAME
 
 
 def print_results(
@@ -280,7 +303,13 @@ def main():
     parser.add_argument(
         '-o',
         '--output',
-        help='write results to a CSV file',
+        nargs='?',
+        const='',
+        metavar='FILE',
+        help=(
+            'write results to CSV '
+            '(default: cryspy_rslt.csv)'
+        ),
     )
     args = parser.parse_args()
 
@@ -312,8 +341,14 @@ def main():
     if not db_path.is_file():
         parser.error(f'{db_path} does not exist')
 
+    # ---------- output path
+    output = resolve_output_path(
+        db_path,
+        args.output,
+    )
+
     # ---------- print header
-    if args.output is None:
+    if output is None:
         print(f'Database: {db_path}')
 
     # ---------- print results
@@ -329,7 +364,7 @@ def main():
                 emin=args.emin,
                 emax=args.emax,
                 ewin=args.ewin,
-                output=args.output,
+                output=output,
             )
     except (OSError, sqlite3.Error) as e:
         parser.error(str(e))

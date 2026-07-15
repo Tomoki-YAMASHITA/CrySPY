@@ -5,6 +5,7 @@ from math import isfinite
 import multiprocessing as mp
 import os
 from pathlib import Path
+import signal
 from typing import Callable
 import warnings
 
@@ -239,6 +240,9 @@ def run_worker_opt(
     log_level=None,
 ) -> None:
     """Run structure optimizations without database access."""
+
+    # ---------- ignore SIGINT
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     # ---------- worker logger
     if log_queue is not None:

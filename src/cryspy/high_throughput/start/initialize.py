@@ -9,6 +9,7 @@ import os
 from ...IO import pkl_data, write_input
 from ...IO.read_input import ReadInput
 from ..db.sqlite import initialize_db
+from ..worker.controller_ea import initialize_ea
 from ..worker.controller_rs import generate_structures_rs
 from .check_input import check_input
 
@@ -54,10 +55,18 @@ def initialize():
 
     # ---------- generate and insert initial structures
     logger.info('# ---------- Initial structure generation')
-    generate_structures_rs(
-        rin,
-        range(1, rin.tot_struc + 1),
-    )
+    if rin.algo == 'RS':
+        cids = list(range(1, rin.tot_struc + 1))
+        generate_structures_rs(
+            rin,
+            cids,
+        )
+    elif rin.algo == 'EA':
+        cids = list(range(1, rin.n_pop + 1))
+        initialize_ea(
+            rin,
+            cids,
+        )
 
     # ---------- return
     return rin

@@ -12,6 +12,7 @@ from ..ea_offspring import (
     ParentData,
     SelectionContext,
     generate_with_parent_attempts,
+    make_task_rng,
 )
 from ...util.struc_util import sort_by_atype, get_nat
 from ...util.struc_util import check_distance
@@ -244,6 +245,7 @@ def gen_strain_batch(
         id_start,
         symprec,
         atype,
+        base_seed,
         rng,
     ):
     """Generate strain offspring batch."""
@@ -255,7 +257,8 @@ def gen_strain_batch(
 
     # ---------- generate offspring
     for cid in range(id_start, id_start + n_strain):
-        result = generator.generate(rng)
+        task_rng = make_task_rng(base_seed, cid, rng)
+        result = generator.generate(task_rng)
         if not isinstance(result, OffspringResult):
             logger.error(result.reason)
             raise SystemExit(1)

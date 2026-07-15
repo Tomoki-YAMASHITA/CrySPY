@@ -18,6 +18,7 @@ def set_params():
         'figure.facecolor': 'white',
         # ---------- axes
         'axes.grid': True,
+        'axes.axisbelow': True,
         'axes.linewidth': 1.5,
         'axes.labelsize': 20,
         # ---------- ticks
@@ -157,7 +158,7 @@ def draw_convex_hull_binary(
         axis_order='lr',
         min_comp=None,
         max_comp=None,
-        show_comp_window=True,
+        comp_window=None,
     ):
     """
     Draw a binary convex-hull plot.
@@ -186,8 +187,8 @@ def draw_convex_hull_binary(
         Minimum composition fractions for each component.
     max_comp : tuple[float, float] or None, optional
         Maximum composition fractions for each component.
-    show_comp_window : bool, optional
-        Whether to overlay the feasible composition range on the convex hull plot.
+    comp_window : tuple[float, float] or None, optional
+        Feasible composition interval in compound terminal coordinates.
 
     Returns
     -------
@@ -228,21 +229,26 @@ def draw_convex_hull_binary(
     ax.axhline(y=0, xmin=0, xmax=1, color='black', linestyle='--', zorder=1)
 
     # ---------- composition window overlay
-    if show_comp_window and (min_comp is not None or max_comp is not None):
+    comp_interval = comp_window
+    if comp_interval is None and (min_comp is not None or max_comp is not None):
         from .struc_util import get_feasible_composition
         feasible_comp = get_feasible_composition(min_comp, max_comp)
         if feasible_comp is not None:
             overlap_min, overlap_max = feasible_comp[0]
-            # In binary convex-hull plots, the x-axis is composition of atype[1],
-            # so convert the feasible range of atype[0] into x = 1 - c.
-            overlap_plot_min, overlap_plot_max = tx_interval(1.0 - overlap_max, 1.0 - overlap_min)
-            ax.axvspan(
-                overlap_plot_min,
-                overlap_plot_max,
-                color='C0',
-                alpha=0.2,
-                zorder=0,
+            comp_interval = (
+                1.0 - overlap_max,
+                1.0 - overlap_min,
             )
+
+    if comp_interval is not None:
+        overlap_plot_min, overlap_plot_max = tx_interval(*comp_interval)
+        ax.axvspan(
+            overlap_plot_min,
+            overlap_plot_max,
+            color='C0',
+            alpha=0.2,
+            zorder=0,
+        )
 
     # ---------- draw hull lines
     for xs, ys in lines:
@@ -330,7 +336,7 @@ def draw_convex_hull_ternary(
         axis_order='tlr',
         min_comp=None,
         max_comp=None,
-        show_comp_window=True,
+        comp_window=None,
     ):
     """
     Draw a ternary convex-hull plot.
@@ -361,8 +367,8 @@ def draw_convex_hull_ternary(
         Minimum composition fractions.
     max_comp : tuple[float, float, float] or None, optional
         Maximum composition fractions.
-    show_comp_window : bool, optional
-        Whether to overlay feasible composition region.
+    comp_window : tuple[np.ndarray, np.ndarray, np.ndarray] or None, optional
+        Feasible polygon in compound terminal coordinates.
 
     Returns
     -------
@@ -408,23 +414,43 @@ def draw_convex_hull_ternary(
     )
 
     # ---------- composition window overlay
-    if show_comp_window and (min_comp is not None or max_comp is not None):
+    poly = comp_window
+    if poly is None and (min_comp is not None or max_comp is not None):
         poly = _get_feasible_polygon_ternary(min_comp, max_comp)
-        if poly is not None:
-            idx_t = axis_order.index('t')
-            idx_l = axis_order.index('l')
-            idx_r = axis_order.index('r')
 
-            t = poly[idx_t]
-            l = poly[idx_l]
-            r = poly[idx_r]
-            x, y = _ternary_to_xy_tlr(t, l, r)
+    if poly is not None:
+        idx_t = axis_order.index('t')
+        idx_l = axis_order.index('l')
+        idx_r = axis_order.index('r')
+
+        t = poly[idx_t]
+        l = poly[idx_l]
+        r = poly[idx_r]
+        x, y = _ternary_to_xy_tlr(t, l, r)
+
+        if len(x) >= 3:
             ax.fill(
                 x,
                 y,
                 color='C0',
                 alpha=0.20,
                 edgecolor='none',
+                zorder=0,
+            )
+        elif len(x) == 2:
+            ax.plot(
+                x,
+                y,
+                color='C0',
+                linewidth=3.0,
+                zorder=0,
+            )
+        elif len(x) == 1:
+            ax.plot(
+                x,
+                y,
+                marker='o',
+                color='C0',
                 zorder=0,
             )
 
@@ -595,6 +621,224 @@ def prepare_hull_data(
 
     # ---------- return
     return phase_diagram, hdist, min_comp, max_comp, filtered_ids, g_ref, g_min, g_max
+
+
+def prepare_compound_hull_data(phase_diagram, terminals):
+    # ---------- import
+    from pymatgen.analysis.phase_diagram import CompoundPhaseDiagram
+    from pymatgen.core import Composition
+
+    # ---------- terminal compositions
+    if len(terminals) not in (2, 3):
+        raise ValueError('terminals must contain two or three compositions')
+
+    terminal_compositions = []
+    for terminal in terminals:
+        try:
+            composition = Composition(terminal)
+        except ValueError as e:
+            raise ValueError(f'Invalid terminal composition: {terminal}') from e
+        if any(
+            composition.reduced_composition == other.reduced_composition
+            for other in terminal_compositions
+        ):
+            raise ValueError(f'Duplicate terminal composition: {terminal}')
+        terminal_compositions.append(composition)
+
+    # ---------- check terminal entries
+    missing_terminals = []
+    for terminal in terminal_compositions:
+        if not any(
+            entry.composition.reduced_composition == terminal.reduced_composition
+            for entry in phase_diagram.all_entries
+        ):
+            missing_terminals.append(terminal.reduced_formula)
+    if missing_terminals:
+        raise ValueError(
+            f'No entry found for terminals: {", ".join(missing_terminals)}'
+        )
+
+    # ---------- CompoundPhaseDiagram
+    compound_phase_diagram = CompoundPhaseDiagram(
+        phase_diagram.all_entries,
+        terminal_compositions,
+    )
+
+    # ---------- hull distance
+    hdist = {}
+    for entry in compound_phase_diagram.all_entries:
+        entry_id = get_entry_id(entry)
+        if entry_id is not None:
+            hdist[entry_id] = compound_phase_diagram.get_e_above_hull(entry)
+
+    # ---------- return
+    terminal_labels = tuple(
+        to_element_label(composition.reduced_formula)
+        for composition in terminal_compositions
+    )
+    return compound_phase_diagram, hdist, terminal_labels
+
+
+def get_compound_comp_window(
+        atype,
+        compound_phase_diagram,
+        min_comp,
+        max_comp,
+        tol=1e-12,
+    ):
+    # ---------- no composition constraints
+    if min_comp is None or max_comp is None:
+        return None
+
+    # ---------- setting
+    min_comp = np.asarray(min_comp, dtype=float)
+    max_comp = np.asarray(max_comp, dtype=float)
+    if min_comp.shape != (len(atype),) or max_comp.shape != (len(atype),):
+        raise ValueError('min_comp and max_comp must match len(atype)')
+
+    terminal_compositions = [
+        composition.fractional_composition
+        for composition in compound_phase_diagram.terminal_compositions
+    ]
+    n_terminals = len(terminal_compositions)
+
+    # ---------- terminal matrix: elemental composition = T @ terminal fractions
+    terminal_matrix = np.array([
+        [
+            composition.get_atomic_fraction(element)
+            for composition in terminal_compositions
+        ]
+        for element in atype
+    ])
+
+    if not np.allclose(
+        terminal_matrix.sum(axis=0),
+        1.0,
+        atol=tol,
+        rtol=0.0,
+    ):
+        raise ValueError('Terminal compositions contain elements outside atype')
+
+    # ---------- binary interval
+    if n_terminals == 2:
+        xmin = 0.0
+        xmax = 1.0
+        for base, delta, lower, upper in zip(
+            terminal_matrix[:, 0],
+            terminal_matrix[:, 1] - terminal_matrix[:, 0],
+            min_comp,
+            max_comp,
+        ):
+            if abs(delta) <= tol:
+                if not lower - tol <= base <= upper + tol:
+                    return None
+                continue
+
+            bound_1 = (lower - base) / delta
+            bound_2 = (upper - base) / delta
+            xmin = max(xmin, min(bound_1, bound_2))
+            xmax = min(xmax, max(bound_1, bound_2))
+
+        if xmin > xmax + tol:
+            return None
+        if xmin > xmax:
+            xmin = xmax = 0.5 * (xmin + xmax)
+
+        return float(max(0.0, xmin)), float(min(1.0, xmax))
+
+    # ---------- ternary polygon
+    if n_terminals == 3:
+        polygon = np.eye(3)
+        for coefficients, lower, upper in zip(
+            terminal_matrix,
+            min_comp,
+            max_comp,
+        ):
+            polygon = _clip_compound_polygon(
+                polygon,
+                coefficients,
+                lower,
+                keep_above=True,
+                tol=tol,
+            )
+            if polygon is None:
+                return None
+
+            polygon = _clip_compound_polygon(
+                polygon,
+                coefficients,
+                upper,
+                keep_above=False,
+                tol=tol,
+            )
+            if polygon is None:
+                return None
+
+        return tuple(polygon[:, i] for i in range(3))
+
+    raise ValueError('Compound phase diagram must have two or three terminals')
+
+
+def _clip_compound_polygon(
+        polygon,
+        coefficients,
+        bound,
+        keep_above,
+        tol=1e-12,
+    ):
+    # ---------- judge vertices
+    values = polygon @ coefficients - bound
+    if keep_above:
+        inside = values >= -tol
+    else:
+        inside = values <= tol
+
+    # ---------- clip polygon
+    output = []
+    previous = polygon[-1]
+    previous_value = values[-1]
+    previous_inside = inside[-1]
+
+    for current, current_value, current_inside in zip(
+        polygon,
+        values,
+        inside,
+    ):
+        if current_inside != previous_inside:
+            fraction = previous_value / (previous_value - current_value)
+            intersection = previous + fraction * (current - previous)
+            output.append(intersection)
+
+        if current_inside:
+            output.append(current)
+
+        previous = current
+        previous_value = current_value
+        previous_inside = current_inside
+
+    if not output:
+        return None
+
+    # ---------- remove duplicate neighboring vertices
+    unique = []
+    for point in output:
+        if not unique or not np.allclose(
+            point,
+            unique[-1],
+            atol=tol,
+            rtol=0.0,
+        ):
+            unique.append(point)
+
+    if len(unique) > 1 and np.allclose(
+        unique[0],
+        unique[-1],
+        atol=tol,
+        rtol=0.0,
+    ):
+        unique.pop()
+
+    return np.asarray(unique)
 
 
 def get_generation_range(ref_gen, plot_min_gen, plot_max_gen, g_max_avail):

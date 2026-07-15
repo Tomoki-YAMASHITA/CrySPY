@@ -47,6 +47,26 @@ OperationGenerator = Callable[
 ]
 
 
+def make_task_rng(
+    base_seed: int | None,
+    cid: int,
+    rng: np.random.Generator | None,
+) -> np.random.Generator:
+    """Make RNG for one offspring task."""
+
+    # ---------- no seed
+    if base_seed is None:
+        if rng is None:
+            return np.random.default_rng()
+        return rng
+
+    # ---------- seed
+    seed_sequence = np.random.SeedSequence([base_seed, cid])
+
+    # ---------- return
+    return np.random.default_rng(seed_sequence)
+
+
 @dataclass(frozen=True)
 class ParentData:
     """Parent structures for offspring generation."""

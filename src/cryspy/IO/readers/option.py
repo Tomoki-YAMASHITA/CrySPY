@@ -6,7 +6,7 @@ class OptionReader(BaseReader):
     """
     Reader for [option] section
     """
-    def read(self):
+    def read(self, ht=False):
         # ---------- rslt_out
         try:
             self.rin.rslt_out = self.config.get('option', 'rslt_out')
@@ -38,6 +38,35 @@ class OptionReader(BaseReader):
             self.rin.stop_next_struc = self.config.getboolean('option', 'stop_next_struc')
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.rin.stop_next_struc = False
+
+        # ---------- backup_interval
+        try:
+            self.rin.backup_interval = self.config.getint(
+                'option',
+                'backup_interval',
+            )
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            if ht or self.rin.algo == 'RS':
+                self.rin.backup_interval = 0
+            else:
+                self.rin.backup_interval = 1
+        if self.rin.backup_interval < 0:
+            raise ValueError(
+                'backup_interval must be non-negative int'
+            )
+
+        # ---------- hull_output_interval
+        try:
+            self.rin.hull_output_interval = self.config.getint(
+                'option',
+                'hull_output_interval',
+            )
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.hull_output_interval = 1
+        if self.rin.hull_output_interval < 0:
+            raise ValueError(
+                'hull_output_interval must be non-negative int'
+            )
 
         # ---------- recalc
         try:

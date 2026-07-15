@@ -3,23 +3,27 @@ from logging.handlers import QueueHandler
 import multiprocessing as mp
 import signal
 
-from ...IO.read_input import ReadInput
-from ...RS.rs_gen import RandomStructureGenerator
+import numpy as np
+
+from ...EA.ea_offspring import (
+    OffspringResult,
+    make_task_rng,
+)
 
 
 logger = getLogger('cryspy')
 
 
-def run_worker_rs(
-    rin: ReadInput,
-    log_initialization: bool,
+def run_worker_ea(
+    offspring_generator,
+    base_seed,
     task_queue,
     result_queue,
     stop_event,
     log_queue=None,
     log_level=None,
 ) -> None:
-    """Generate random structures without database access."""
+    """Generate EA offspring without database access."""
 
     # ---------- ignore SIGINT
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -38,43 +42,59 @@ def run_worker_rs(
     )
 
     try:
-        # ---------- initialize structure generator
-        generator = RandomStructureGenerator(
-            rin=rin,
-            mpi_rank=0,
-            log_initialization=log_initialization,
+        # ---------- worker RNG for non-seeded runs
+        worker_rng = (
+            np.random.default_rng()
+            if base_seed is None
+            else None
         )
 
-        # ---------- generate structures
+        # ---------- generate offspring
         while True:
             # ------ stop worker
             if stop_event.is_set():
                 break
 
             # ------ get task
-            cid = task_queue.get()
-            if cid is None:
+            task = task_queue.get()
+            if task is None:
                 break
 
             logger.info(
                 f'{process.name}: '
-                f'Start structure generation: ID {cid}'
+                f'Start offspring generation: ID {task.cid}, '
+                f'operation = {task.operation}'
             )
 
             try:
-                # ------ generate structure
-                struc = generator.generate(cid)
+                # ------ generate offspring
+                rng = make_task_rng(base_seed, task.cid, worker_rng)
+                result = offspring_generator.generate_offspring(
+                    task,
+                    rng,
+                )
 
             except Exception as error:
                 # ------ generation error
                 logger.exception(
-                    f'Structure generation failed: ID {cid}'
+                    f'Offspring generation failed: ID {task.cid}'
                 )
                 result_queue.put(
                     (
-                        cid,
+                        task,
                         None,
                         f'{type(error).__name__}: {error}',
+                    )
+                )
+                continue
+
+            # ------ check generation result
+            if not isinstance(result, OffspringResult):
+                result_queue.put(
+                    (
+                        task,
+                        result,
+                        result.reason,
                     )
                 )
                 continue
@@ -82,8 +102,8 @@ def run_worker_rs(
             # ------ return result
             result_queue.put(
                 (
-                    cid,
-                    struc,
+                    task,
+                    result,
                     None,
                 )
             )

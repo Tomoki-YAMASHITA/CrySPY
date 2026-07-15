@@ -3,6 +3,7 @@ import argparse
 from dataclasses import fields
 import gzip
 from logging import getLogger
+from math import gcd
 from pathlib import Path
 import pickle
 from pprint import pprint
@@ -126,18 +127,41 @@ def out_input(rin):
             print(f'{key} = {getattr(rin, key)}')
 
 
-def print_rslt_data(rslt_data, no_sort=False, head=None, tail=None, all_rows=False):
+def _reduced_composition(composition):
+    divisor = gcd(*composition)
+    return tuple(value // divisor for value in composition)
+
+
+def print_rslt_data(
+        rslt_data,
+        no_sort=False,
+        head=None,
+        tail=None,
+        all_rows=False,
+        composition=None):
     # ---------- constant
     DEFAULT_MAX_ROWS = 100
 
+    # ---------- composition filter
+    if composition is None or rslt_data.empty:
+        df = rslt_data
+    else:
+        target = _reduced_composition(composition)
+        comp_filter = rslt_data['Num_atom'].apply(
+            lambda nat: _reduced_composition(nat) == target
+        )
+        df = rslt_data[comp_filter]
+
     # ---------- options
     if no_sort:
-        df = rslt_data
         sort_msg = 'Not sorted'
     else:
-        order = 'Ef_eV_atom' if 'Ef_eV_atom' in rslt_data.columns else 'E_eV_atom'
-        df = rslt_data.sort_values(by=[order], ascending=True)
+        order = 'Ef_eV_atom' if 'Ef_eV_atom' in df.columns else 'E_eV_atom'
+        df = df.sort_values(by=[order], ascending=True)
         sort_msg = f'Sorted by: {order}'
+    if composition is not None and df.empty:
+        print(f'No results found for composition: {tuple(composition)}')
+        return
     if head is not None:
         print(df.head(head).to_string())
         return
@@ -172,6 +196,12 @@ def main():
                                help='show last N rows of rslt_data.pkl')
     row_selection.add_argument('--all', action='store_true',
                                help='show all rows of rslt_data.pkl')
+    parser.add_argument(
+        '-c', '--composition',
+        type=int,
+        nargs='+',
+        help='composition ratio in atype order for EA-vc results, e.g. -c 1 2',
+    )
     parser.add_argument('--write', action='store_true',
                         help='write cryspy_rslt files from rslt_data.pkl')
     args = parser.parse_args()
@@ -184,8 +214,14 @@ def main():
             args.no_sort,
             args.head is not None,
             args.tail is not None,
-            args.all]):
+            args.all,
+            args.composition is not None]):
         parser.error('--write cannot be used with display options')
+    if args.composition is not None:
+        if any(value < 0 for value in args.composition):
+            parser.error('--composition values must be non-negative integers')
+        if not any(args.composition):
+            parser.error('--composition must contain at least one positive integer')
     if args.write and not Path('cryspy.in').is_file():
         parser.error(
             '--write must be run in a directory containing cryspy.in'
@@ -216,6 +252,8 @@ def main():
     else:
         with open(args.infile, 'rb') as f:
             pkl_data = pickle.load(f)
+    if args.composition is not None and pkl_name not in RESULT_FILES:
+        parser.error('--composition can be used only with rslt_data.pkl')
 
     # ---------- print pkl data
     if pkl_name in PPRINT_FILES:
@@ -228,6 +266,16 @@ def main():
         out_input(pkl_data)
 
     elif pkl_name in RESULT_FILES:
+        if args.composition is not None:
+            if 'Num_atom' not in pkl_data.columns:
+                parser.error('--composition is available only for EA-vc results')
+            num_atom_data = pkl_data['Num_atom'].dropna()
+            if (
+                    not num_atom_data.empty
+                    and len(args.composition) != len(num_atom_data.iloc[0])):
+                parser.error(
+                    '--composition must have the same number of values as atype'
+                )
         if args.write:
             out_rslt(pkl_data)
             logger.info('Generated ./data/cryspy_rslt')
@@ -238,7 +286,8 @@ def main():
                 no_sort=args.no_sort,
                 head=args.head,
                 tail=args.tail,
-                all_rows=args.all)
+                all_rows=args.all,
+                composition=args.composition)
 
     elif pkl_name in HDIST_FILES:
         if pkl_data:

@@ -7,11 +7,11 @@ import argparse
 from logging import getLogger
 import os
 
+from cryspy import __version__
 from cryspy.start import cryspy_init, cryspy_restart
 from cryspy.util.utility import (
     backup_cryspy,
     clean_cryspy,
-    get_version,
     set_logger,
 )
 
@@ -79,12 +79,12 @@ def main():
 
         # ---------- banner
         if mpi_rank == 0:
-            logger.info(f'\n\n\nCrySPY {get_version()}\n\n')
+            logger.info(f'\n\n\nCrySPY {__version__}\n\n')
 
         # ---------- backup option
         if args.backup:
             if mpi_rank == 0:
-                backup_cryspy()
+                backup_cryspy(manual=True)
             raise SystemExit()
 
         # ---------- clean option

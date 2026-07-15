@@ -11,8 +11,8 @@ Questions and comments: https://github.com/Tomoki-YAMASHITA/CrySPY/discussions
 
 ## System requirements
 ### Python
-- Python >= 3.8
-- [PyXtal >= 0.5.3](https://pyxtal.readthedocs.io/en/latest "PyXtal")
+- Python >= 3.10
+- [PyXtal >= 1.0.7](https://pyxtal.readthedocs.io/en/latest "PyXtal")
 
 (optional)
 - [PHYSBO](https://www.pasums.issp.u-tokyo.ac.jp/physbo/en/about "PHYSBO") (required if algo is BO)

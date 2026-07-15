@@ -108,9 +108,8 @@ def calc_convex_hull(
                 bottom_margin=bottom_margin,
                 markersize=markersize,
                 axis_order=axis_order,
-                min_comp=min_comp,
-                max_comp=max_comp,
-                show_comp_window=show_comp_window,
+                min_comp=min_comp if show_comp_window else None,
+                max_comp=max_comp if show_comp_window else None,
             )
             fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
         elif len(atype) == 3:
@@ -124,9 +123,8 @@ def calc_convex_hull(
                 vmax=vmax,
                 markersize=markersize,
                 axis_order=axis_order,
-                min_comp=min_comp,
-                max_comp=max_comp,
-                show_comp_window=show_comp_window,
+                min_comp=min_comp if show_comp_window else None,
+                max_comp=max_comp if show_comp_window else None,
             )
             fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
 

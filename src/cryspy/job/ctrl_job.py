@@ -665,8 +665,11 @@ class Ctrl_job:
         if 0 < self.rin.max_select_bo <= self.n_selection:
             logger.info(f'\nReached max_select_bo: {self.rin.max_select_bo}')
             raise SystemExit()
+        # ---------- backup
+        if 0 < self.rin.backup_interval and self.n_selection % self.rin.backup_interval == 0:
+            backup_cryspy()
+
         # ---------- BO
-        backup_cryspy()
         bo_data = (self.init_dscrpt_data, self.opt_dscrpt_data,
                    self.bo_mean, self.bo_var, self.bo_score)
         bo_id_data = (self.n_selection, self.id_queueing,
@@ -697,8 +700,12 @@ class Ctrl_job:
         if self.rin.stop_chkpt == 3:
             logger.info('\nStop at check point 3: LAQA is ready')
             raise SystemExit()
+        # ---------- backup
+        n_selection = len(self.id_select_hist) + 1
+        if 0 < self.rin.backup_interval and n_selection % self.rin.backup_interval == 0:
+            backup_cryspy()
+
         # ---------- selection of LAQA
-        backup_cryspy()
         laqa_id_data = (self.id_queueing, self.id_running,
                         self.id_select_hist)
         laqa_data = (self.tot_step_select, self.laqa_step, self.laqa_struc,

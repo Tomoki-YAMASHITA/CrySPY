@@ -2,11 +2,11 @@ from logging import getLogger
 import os
 from typing import Callable
 
+from .. import __version__
 from ..start import cryspy_init
 from ..util.utility import (
     backup_cryspy,
     clean_cryspy,
-    get_version,
     set_logger,
 )
 from .restart_interact import restart_interact
@@ -21,7 +21,7 @@ logger = getLogger('cryspy')
 
 
 def _log_banner():
-    logger.info(f'\n\n\nCrySPY {get_version()}\n\n')
+    logger.info(f'\n\n\nCrySPY {__version__}\n\n')
 
 
 def initialize():
@@ -85,7 +85,7 @@ def backup():
         _log_banner()
 
         # ---------- backup
-        backup_cryspy()
+        backup_cryspy(manual=True)
 
     finally:
         # ---------- unlock

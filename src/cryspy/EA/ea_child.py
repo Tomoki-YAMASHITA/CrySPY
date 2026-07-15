@@ -222,7 +222,7 @@ def child_gen(
                     min_comp=rin.min_comp,
                     max_comp=rin.max_comp,
                 ),
-                max_parent_attempts=rin.maxcnt_ea,
+                max_parent_attempts=rin.max_parent_attempts,
             )
             co_offspring_data, co_parents, co_operation = gen_crossover_batch(
                 generator=co_generator,
@@ -230,6 +230,7 @@ def child_gen(
                 id_start=id_start,
                 symprec=rin.symprec,
                 atype=rin.atype,
+                base_seed=rin.seed,
                 rng=rng,
             )
         else:
@@ -252,7 +253,7 @@ def child_gen(
                     ntimes=rin.ntimes,
                     maxcnt_ea=rin.maxcnt_ea,
                 ),
-                max_parent_attempts=rin.maxcnt_ea,
+                max_parent_attempts=rin.max_parent_attempts,
             )
             pm_offspring_data, pm_parents, pm_operation = gen_permutation_batch(
                 generator=pm_generator,
@@ -260,6 +261,7 @@ def child_gen(
                 id_start=id_start,
                 symprec=rin.symprec,
                 atype=rin.atype,
+                base_seed=rin.seed,
                 rng=rng,
             )
         else:
@@ -282,7 +284,7 @@ def child_gen(
                     sigma_st=rin.sigma_st,
                     maxcnt_ea=rin.maxcnt_ea,
                 ),
-                max_parent_attempts=rin.maxcnt_ea,
+                max_parent_attempts=rin.max_parent_attempts,
             )
             st_offspring_data, st_parents, st_operation = gen_strain_batch(
                 generator=st_generator,
@@ -290,6 +292,7 @@ def child_gen(
                 id_start=id_start,
                 symprec=rin.symprec,
                 atype=rin.atype,
+                base_seed=rin.seed,
                 rng=rng,
             )
         else:

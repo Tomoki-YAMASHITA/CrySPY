@@ -13,6 +13,7 @@ def initialize_db() -> None:
             """
             CREATE TABLE IF NOT EXISTS records (
                 id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                generation        INTEGER,
                 status            INTEGER NOT NULL,
                 atomic_numbers    BLOB,
                 nat               BLOB,
@@ -69,6 +70,12 @@ def initialize_db() -> None:
                 PRIMARY KEY (generation, id),
                 FOREIGN KEY (id) REFERENCES records(id)
             )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_records_generation_id
+            ON records(generation, id)
             """
         )
         conn.execute(

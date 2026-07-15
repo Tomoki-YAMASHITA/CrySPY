@@ -107,6 +107,16 @@ class VisualReader(BaseReader):
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.rin.bottom_margin = 0.04
 
+        # ---------- terminals
+        try:
+            terminals = self.config.get('visual', 'terminals')
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.terminals = None
+        else:
+            self.rin.terminals = tuple(terminals.split())
+            if len(self.rin.terminals) not in (2, 3):
+                raise ValueError('terminals must contain two or three compositions')
+
         # ---------- axis_order
         try:
             self.rin.axis_order = self.config.get('visual', 'axis_order')
@@ -115,8 +125,15 @@ class VisualReader(BaseReader):
         if self.rin.axis_order is not None:
             axis_order = self.rin.axis_order.lower()
             axis_order = "".join(axis_order.split())
-            if len(axis_order) != len(self.rin.atype):
-                raise ValueError('len(axis_order) must be equal to len(atype)')
+            n_components = (
+                len(self.rin.terminals)
+                if self.rin.terminals is not None
+                else len(self.rin.atype)
+            )
+            if len(axis_order) != n_components:
+                raise ValueError(
+                    'len(axis_order) must be equal to the number of plot components'
+                )
             if len(axis_order) == 2:
                 if axis_order not in ("lr", "rl"):
                     raise ValueError(
@@ -145,4 +162,3 @@ class VisualReader(BaseReader):
         if self.rin.ref_gen_comp is not None:
             if self.rin.ref_gen_comp < 0:
                 raise ValueError('ref_gen_comp must be non-negative int')
-

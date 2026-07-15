@@ -9,11 +9,14 @@ import shutil
 import subprocess
 import sys
 
+# ---------- import later
+#from ..IO import pkl_data
+#from ..high_throughput.db.ea import select_latest_ea_generation
+#from ..high_throughput.db.record import count_results
+#from ..high_throughput.db.sqlite import connect_db
+
 
 logger = getLogger('cryspy')
-
-def get_version():
-    return '1.5.0b13'
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -80,13 +83,70 @@ def check_fwpath(fwpath):
     return fwpath
 
 
-def backup_cryspy(ht=False):
+def _backup_suffix(ht=False):
+    # ---------- load input
+    from ..IO import pkl_data
+    try:
+        rin = pkl_data.load_input()
+    except FileNotFoundError:
+        return None
+
+    # ---------- high-throughput mode
+    if ht:
+        if not os.path.isfile('data/db_data/rslt_data.db'):
+            return None
+        from ..high_throughput.db.sqlite import connect_db
+        if rin.algo == 'RS':
+            from ..high_throughput.db.record import count_results
+            with connect_db() as conn:
+                progress = count_results(conn)
+            unit = 'struc'
+        elif rin.algo == 'EA':
+            from ..high_throughput.db.ea import select_latest_ea_generation
+            with connect_db() as conn:
+                progress = select_latest_ea_generation(conn)
+            unit = 'gen'
+        else:
+            return None
+
+    # ---------- normal mode
+    else:
+        try:
+            if rin.algo == 'RS':
+                progress = len(pkl_data.load_rslt())
+                unit = 'struc'
+            elif rin.algo in ['EA', 'EA-vc']:
+                progress = pkl_data.load_gen()
+                unit = 'gen'
+            elif rin.algo == 'BO':
+                progress = pkl_data.load_n_selection()
+                unit = 'select'
+            elif rin.algo == 'LAQA':
+                progress = len(pkl_data.load_id_select_hist())
+                unit = 'select'
+            else:
+                return None
+        except FileNotFoundError:
+            return None
+
+    # ---------- suffix
+    if progress is None:
+        return None
+    return f'{progress}_{unit}'
+
+
+def backup_cryspy(ht=False, manual=False):
 
     # ---------- print
     logger.info('Backup data')
 
     # ---------- make directory
     dname = datetime.now().strftime("%Y%m%d_%H%M%S")
+    suffix = _backup_suffix(ht)
+    if manual:
+        dname += '_manual'
+    if suffix is not None:
+        dname += f'_{suffix}'
     dst = 'backup/' + dname + '/'
     os.makedirs(dst, exist_ok=True)
 

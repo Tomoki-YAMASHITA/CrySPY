@@ -5,12 +5,44 @@ import multiprocessing as mp
 from queue import Empty
 
 from ...IO.read_input import ReadInput
-from ..db.record import Status, initialize_record, update_init_struc
+from ..db.record import (
+    Status,
+    initialize_record,
+    select_status,
+    update_init_struc,
+)
 from ..db.sqlite import connect_db
 from .worker_rs import run_worker_rs
 
 
 logger = getLogger('cryspy')
+
+
+def prepare_generation_record(
+    conn,
+    cid: int,
+) -> None:
+    """Prepare a record for random structure generation."""
+
+    # ---------- record status
+    status = select_status(conn, cid)
+
+    # ---------- initialize missing record
+    if status is None:
+        initialize_record(
+            conn,
+            cid,
+            Status.GENERATING,
+        )
+        conn.commit()
+        return
+
+    # ---------- resume generating record
+    if status != Status.GENERATING:
+        raise RuntimeError(
+            f'Cannot generate existing record: '
+            f'ID {cid}, status = {status.name}'
+        )
 
 
 def run_controller_rs(
@@ -39,8 +71,10 @@ def run_controller_rs(
                 cid = next(cid_iter)
             except StopIteration:
                 break
-            initialize_record(conn, cid, Status.GENERATING)
-            conn.commit()
+            prepare_generation_record(
+                conn,
+                cid,
+            )
             task_queue.put(cid)
             num_active += 1
 
@@ -122,8 +156,10 @@ def run_controller_rs(
             except StopIteration:
                 continue
 
-            initialize_record(conn, next_cid, Status.GENERATING)
-            conn.commit()
+            prepare_generation_record(
+                conn,
+                next_cid,
+            )
             task_queue.put(next_cid)
             num_active += 1
 

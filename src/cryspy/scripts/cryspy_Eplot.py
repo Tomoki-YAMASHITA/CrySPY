@@ -16,6 +16,8 @@ from cryspy.util.visual_util import (
     draw_convex_hull_ternary,
     prepare_EA_data,
     prepare_hull_data,
+    prepare_compound_hull_data,
+    get_compound_comp_window,
 )
 
 
@@ -184,22 +186,50 @@ def plot_EA_vc(rin):
                 plot_max_gen=rin.plot_max_gen,
                 ref_gen_comp=rin.ref_gen_comp,
             )
+
+        # ------ CompoundPhaseDiagram
+        plot_components = rin.atype
+        comp_window = None
+        if rin.terminals is not None:
+            (
+                phase_diagram,
+                hdist,
+                plot_components,
+            ) = prepare_compound_hull_data(
+                phase_diagram,
+                rin.terminals,
+            )
+            logger.info(
+                f'Compound phase diagram terminals: {", ".join(plot_components)}'
+            )
+            if rin.show_comp_window:
+                comp_window = get_compound_comp_window(
+                    atype=rin.atype,
+                    compound_phase_diagram=phase_diagram,
+                    min_comp=min_comp,
+                    max_comp=max_comp,
+                )
+            min_comp = None
+            max_comp = None
+        elif not rin.show_comp_window:
+            min_comp = None
+            max_comp = None
+
     except ValueError as e:
         logger.error(str(e))
         raise SystemExit(1)
 
     # ---------- axis order
-    atype = rin.atype
     axis_order = rin.axis_order
-    if len(atype) == 2:
+    if len(plot_components) == 2:
         if axis_order is None:
             axis_order = 'lr'
-    if len(atype) == 3:
+    elif len(plot_components) == 3:
         if axis_order is None:
-            axis_order ='tlr'
+            axis_order = 'tlr'
 
     # ---------- plot
-    if len(rin.atype) == 2:
+    if len(plot_components) == 2:
         fig, ax = draw_convex_hull_binary(
             phase_diagram=phase_diagram,
             hdist=hdist,
@@ -212,11 +242,11 @@ def plot_EA_vc(rin):
             axis_order=axis_order,
             min_comp=min_comp,
             max_comp=max_comp,
-            show_comp_window=rin.show_comp_window,
+            comp_window=comp_window,
         )
-    elif len(rin.atype) == 3:
+    elif len(plot_components) == 3:
         fig, ax = draw_convex_hull_ternary(
-            atype=atype,
+            atype=plot_components,
             phase_diagram=phase_diagram,
             hdist=hdist,
             filtered_ids=filtered_ids,
@@ -227,21 +257,32 @@ def plot_EA_vc(rin):
             axis_order=axis_order,
             min_comp=min_comp,
             max_comp=max_comp,
-            show_comp_window=rin.show_comp_window,
+            comp_window=comp_window,
         )
     else:
-        logger.error(f'len(rin.atype) = {len(rin.atype)} is not supported in cryspy-Eplot')
+        logger.error(
+            f'Number of plot components = {len(plot_components)} '
+            'is not supported in cryspy-Eplot'
+        )
         raise SystemExit(1)
 
     # ---------- save figure (use effective generation values)
+    terminal_suffix = (
+        f'_terminals_{"-".join(plot_components)}'
+        if rin.terminals is not None
+        else ''
+    )
     if g_min == 1 and g_max == g_ref:
         # ------ normal plot as of generation g_ref
-        fname = f'./data/convex_hull/conv_hull_gen_{g_ref}.{rin.fig_format}'
+        fname = (
+            f'./data/convex_hull/conv_hull_gen_{g_ref}'
+            f'{terminal_suffix}.{rin.fig_format}'
+        )
     else:
         # ------ range control
         fname = (
             f'./data/convex_hull/conv_hull_gen_{g_min}-{g_max}'
-            f'_ref_{g_ref}.{rin.fig_format}'
+            f'_ref_{g_ref}{terminal_suffix}.{rin.fig_format}'
         )
     # ------ save
     os.makedirs('data/convex_hull', exist_ok=True)

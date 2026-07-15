@@ -30,6 +30,7 @@ def initialize_record(
     conn: sqlite3.Connection,
     record_id: int,
     status: Status = Status.GENERATING,
+    generation: int | None = None,
 ) -> int:
     """Initialize a record before structure generation."""
 
@@ -38,18 +39,44 @@ def initialize_record(
         """
         INSERT INTO records (
             id,
+            generation,
             status
         )
-        VALUES (?, ?)
+        VALUES (?, ?, ?)
         """,
         (
             record_id,
+            generation,
             status,
         ),
     )
 
     # ---------- return
     return cursor.lastrowid
+
+
+def update_generation(
+    conn: sqlite3.Connection,
+    record_ids: list[int],
+    generation: int,
+) -> None:
+    """Update generation in the records table."""
+
+    # ---------- update records table
+    conn.executemany(
+        """
+        UPDATE records
+        SET generation = ?
+        WHERE id = ?
+        """,
+        [
+            (
+                generation,
+                record_id,
+            )
+            for record_id in record_ids
+        ],
+    )
 
 
 def update_init_struc(
@@ -169,6 +196,81 @@ def select_ids_by_status(
 
     # ---------- return
     return ids_by_status
+
+
+def select_ids_by_generation(
+    conn: sqlite3.Connection,
+    generation: int,
+) -> list[int]:
+    """Select record IDs by generation."""
+
+    # ---------- select IDs
+    cursor = conn.execute(
+        """
+        SELECT id
+        FROM records
+        WHERE generation = ?
+        ORDER BY id ASC
+        """,
+        (generation,),
+    )
+
+    # ---------- return
+    return [record_id for (record_id,) in cursor]
+
+
+def select_ids_after_generation(
+    conn: sqlite3.Connection,
+    generation: int,
+) -> list[int]:
+    """Select record IDs after generation."""
+
+    # ---------- select IDs
+    cursor = conn.execute(
+        """
+        SELECT id
+        FROM records
+        WHERE generation > ?
+        ORDER BY id ASC
+        """,
+        (generation,),
+    )
+
+    # ---------- return
+    return [record_id for (record_id,) in cursor]
+
+
+def delete_records_after_generation(
+    conn: sqlite3.Connection,
+    generation: int,
+) -> None:
+    """Delete records after generation."""
+
+    # ---------- delete records
+    conn.execute(
+        """
+        DELETE FROM records
+        WHERE generation > ?
+        """,
+        (generation,),
+    )
+
+
+def get_next_record_id(
+    conn: sqlite3.Connection,
+) -> int:
+    """Get next record ID."""
+
+    # ---------- next ID
+    cursor = conn.execute(
+        """
+        SELECT COALESCE(MAX(id) + 1, 0)
+        FROM records
+        """
+    )
+
+    # ---------- return
+    return cursor.fetchone()[0]
 
 
 def get_min_energy(

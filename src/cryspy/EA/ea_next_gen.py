@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 from .ea_child import child_gen
-from .survival import survival_fittest
+from .natural_selection import natural_selection
 from ..IO import io_stat, pkl_data
 from ..IO.out_results import out_rslt, out_ea_info, out_ea_origin, out_hdist
 from ..util.utility import backup_cryspy
@@ -58,6 +58,8 @@ def next_gen_EA(
         hdist_data = pkl_data.load_hdist_data()
         pd_data = pkl_data.load_pd_data()
         if gen not in hdist_data:
+            interval = rin.hull_output_interval
+            hull_output = 0 < interval and gen % interval == 0
             logger.info(f'Calculate convex hull for generation {gen}')
             from ..EA.calc_hull import calc_convex_hull
             # ------ load ea_info for min_comp and max_comp
@@ -80,12 +82,14 @@ def next_gen_EA(
                 fig_format=rin.fig_format,
                 emax_ea=rin.emax_ea,
                 emin_ea=rin.emin_ea,
+                mpl_draw=hull_output,
                 axis_order=rin.axis_order,
                 min_comp=min_comp,
                 max_comp=max_comp,
                 show_comp_window=rin.show_comp_window,
             )
-            out_hdist(gen, hdist, nat_data)
+            if hull_output:
+                out_hdist(gen, hdist, nat_data)
             hdist_data[gen] = hdist
             pd_data[gen] = phase_diagram
             pkl_data.save_hdist_data(hdist_data)
@@ -106,8 +110,11 @@ def next_gen_EA(
         logger.info(f'\nReached maxgen_ea: {rin.maxgen_ea}')
         raise SystemExit()
 
+    # ---------- backup
+    if 0 < rin.backup_interval and gen % rin.backup_interval == 0:
+        backup_cryspy()
+
     # ---------- EA
-    backup_cryspy()
     _next_gen(
         rin,
         gen,
@@ -183,13 +190,13 @@ def _next_gen(
     # ---------- natural selection
     logger.info('# ------ natural selection')
     if rin.algo == 'EA-vc':
-        # emax_ea and emin_ea are used in hdist, not in survival_fittest
+        # emax_ea and emin_ea are used in hdist, not in natural_selection
         emax_ea = None
         emin_ea = None
     else:
         emax_ea = rin.emax_ea
         emin_ea = rin.emin_ea
-    ranking, fit_with_elite, struc_with_elite = survival_fittest(
+    ranking, fit_with_elite, struc_with_elite = natural_selection(
         fitness=c_fitness,
         struc_data=c_struc_data,
         elite_struc=elite_struc,
@@ -247,7 +254,7 @@ def _next_gen(
             logger.info(f'Elite candidates after constraint filter: {len(elite_pool_struc)}')
 
         # ------ ranking for all data
-        ranking, _, _ = survival_fittest(
+        ranking, _, _ = natural_selection(
             fitness=elite_pool_fitness,
             struc_data=elite_pool_struc,
             elite_struc=None,

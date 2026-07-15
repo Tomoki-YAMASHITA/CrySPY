@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,14 +12,15 @@ maintainers = [
 ]
 description = "CrySPY is a crystal structure prediction tool written in Python."
 readme = "README.md"
-requires-python = ">=3.9"
-license = {file = "LICENSE"}
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["CSP"]
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "pyxtal>=0.5.3",
+    "pyxtal>=1.0.7",
 ]
 dynamic = ["version"]
 
@@ -33,6 +34,7 @@ changelog = "https://github.com/Tomoki-YAMASHITA/CrySPY/blob/master/CHANGELOG.md
 "cryspy-ht" = "cryspy.scripts.cryspy_ht:main"
 "cryspy-ht-status" = "cryspy.scripts.cryspy_ht_status:main"
 "cryspy-ht-results" = "cryspy.scripts.cryspy_ht_results:main"
+"cryspy-ht-ea-data" = "cryspy.scripts.cryspy_ht_ea_data:main"
 "cryspy-ht-reset" = "cryspy.scripts.cryspy_ht_reset:main"
 "cryspy-ht-extract-struc" = "cryspy.scripts.cryspy_ht_extract_struc:main"
 "cryspy-Eplot" = "cryspy.scripts.cryspy_Eplot:main"

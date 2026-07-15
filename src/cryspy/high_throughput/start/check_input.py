@@ -9,9 +9,9 @@ def check_input(rin):
     """Check input for high-throughput mode."""
 
     # ---------- algorithm
-    if rin.algo != 'RS':
+    if rin.algo not in ('RS', 'EA'):
         logger.error(
-            'High-throughput mode currently supports only RS'
+            'High-throughput mode currently supports only RS and EA'
         )
         raise SystemExit(1)
 

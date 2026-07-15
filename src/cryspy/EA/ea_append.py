@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 from .ea_child import child_gen
-from .survival import survival_fittest
+from .natural_selection import natural_selection
 from ..IO import change_input, out_results, pkl_data
 
 
@@ -28,7 +28,7 @@ def append_struc(rin, init_struc_data, rng=None):
 
     # ---------- natural selection
     logger.info('# ------ natural selection')
-    ranking, _, _ = survival_fittest(
+    ranking, _, _ = natural_selection(
         fitness=fitness,
         struc_data=opt_struc_data,
         elite_struc=None,

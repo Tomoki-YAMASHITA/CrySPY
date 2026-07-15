@@ -108,9 +108,8 @@ def plot_convex_hull_binary(
         bottom_margin=bottom_margin,
         markersize=markersize,
         axis_order=axis_order,
-        min_comp=min_comp,
-        max_comp=max_comp,
-        show_comp_window=show_comp_window,
+        min_comp=min_comp if show_comp_window else None,
+        max_comp=max_comp if show_comp_window else None,
     )
 
     # ---------- return
@@ -183,9 +182,8 @@ def plot_convex_hull_ternary(
         vmax=vmax,
         markersize=markersize,
         axis_order=axis_order,
-        min_comp=min_comp,
-        max_comp=max_comp,
-        show_comp_window=show_comp_window,
+        min_comp=min_comp if show_comp_window else None,
+        max_comp=max_comp if show_comp_window else None,
     )
 
     # ---------- return

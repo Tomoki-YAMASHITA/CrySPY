@@ -7,7 +7,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 logger = getLogger('cryspy')
 
 
-def survival_fittest(
+def natural_selection(
         fitness,
         struc_data,
         elite_struc=None,

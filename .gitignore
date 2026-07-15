@@ -90,3 +90,9 @@ ENV/
 
 # Mac
 .DS_Store
+
+# Mac
+.DS_Store
+
+# Codex
+/AGENTS.md
