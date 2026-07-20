@@ -189,7 +189,7 @@ class EAReader(BaseReader):
             if self.rin.add_max <= 0:
                 raise ValueError('add_max must be non-negative int')
         except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.add_max = 3
+            self.rin.add_max = 5
 
         # ---------- n_elim
         self.rin.n_elim = self.config.getint('EA', 'n_elim')
@@ -202,7 +202,7 @@ class EAReader(BaseReader):
             if self.rin.elim_max <= 0:
                 raise ValueError('elim_max must be non-negative int')
         except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.elim_max = 3
+            self.rin.elim_max = 5
 
         # ---------- n_subs
         self.rin.n_subs = self.config.getint('EA', 'n_subs')
