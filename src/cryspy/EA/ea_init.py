@@ -64,6 +64,8 @@ def initialize(rin, init_struc_data, rslt_data):
             'Elite',
             'crs_lat',
             'slct_func',
+            'll_nat',
+            'ul_nat',
             'min_comp',
             'max_comp',
         ])
@@ -80,7 +82,9 @@ def initialize(rin, init_struc_data, rslt_data):
             'Random':       rin.n_pop,
             'Elite':        0,
             'crs_lat':      rin.crs_lat,
-            'slct_func':    rin.slct_func,
+            'slct_func':   rin.slct_func,
+            'll_nat':      rin.ll_nat,
+            'ul_nat':      rin.ul_nat,
             'min_comp':    rin.min_comp,
             'max_comp':    rin.max_comp,
         }

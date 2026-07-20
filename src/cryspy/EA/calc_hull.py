@@ -111,7 +111,9 @@ def calc_convex_hull(
                 min_comp=min_comp if show_comp_window else None,
                 max_comp=max_comp if show_comp_window else None,
             )
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
+            fname = f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}'
+            fig.savefig(fname)
+            logger.info(f'Convex hull plot saved as {fname}')
         elif len(atype) == 3:
             fig, _ = draw_convex_hull_ternary(
                 atype=atype,
@@ -126,7 +128,9 @@ def calc_convex_hull(
                 min_comp=min_comp if show_comp_window else None,
                 max_comp=max_comp if show_comp_window else None,
             )
-            fig.savefig(f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}')
+            fname = f'./data/convex_hull/conv_hull_gen_{gen}.{fig_format}'
+            fig.savefig(fname)
+            logger.info(f'Convex hull plot saved as {fname}')
 
     # ---------- return
     return phase_diagram, hdist

@@ -177,14 +177,18 @@ def restart(
 
         # ---------- restart
         if os.path.isfile('cryspy.stat'):
-            restart_interact(
-                njob,
-                calculator,
-                optimizer,
-                symmetry,
-                fmax,
-                steps,
-            )
+            try:
+                restart_interact(
+                    njob,
+                    calculator,
+                    optimizer,
+                    symmetry,
+                    fmax,
+                    steps,
+                )
+            except SystemExit as e:
+                if e.code not in (None, 0):
+                    raise
         else:
             logger.error('cryspy.stat file does not exist.')
 

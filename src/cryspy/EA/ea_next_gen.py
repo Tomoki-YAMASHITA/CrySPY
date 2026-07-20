@@ -149,6 +149,44 @@ def _next_gen(
     if rin.algo == 'EA-vc':
         hdist_data = pkl_data.load_hdist_data()
 
+    # ---------- check EA-vc constraint changes
+    reselect_elite_early = False
+    if rin.algo == 'EA-vc':
+        constraint_keys = (
+            'll_nat',
+            'ul_nat',
+            'min_comp',
+            'max_comp',
+        )
+        constraint_history_missing = any(
+            key not in ea_info.columns for key in constraint_keys
+        )
+        for key in constraint_keys:
+            if key not in ea_info.columns:
+                ea_info[key] = None
+
+        previous_info = ea_info[ea_info['Gen'] == gen]
+        if constraint_history_missing or previous_info.empty:
+            reselect_elite_early = True
+        else:
+            previous_info = previous_info.iloc[-1]
+            reselect_elite_early = (
+                any(
+                    getattr(rin, key) != previous_info[key]
+                    for key in constraint_keys
+                )
+                or rin.n_elite != previous_info['Elite']
+            )
+
+        if rin.n_elite > 0 and not elite_fitness:
+            reselect_elite_early = True
+
+        if reselect_elite_early and rin.n_elite > 0:
+            logger.info(
+                'EA-vc constraints or n_elite changed: '
+                'reselect elites from past results'
+            )
+
     # ---------- current generation
     c_rslt = rslt_data[rslt_data['Gen'] == gen]
     cgen_ids = c_rslt.index.values    # current IDs [array]
@@ -162,16 +200,61 @@ def _next_gen(
         hdist = hdist_data[gen]
         c_fitness = {cid: hdist.get(cid, None) for cid in cgen_ids}
         logger.debug(f'c_fitness: {c_fitness}')
-        # ------ update elite_fitness
-        #        need to update elite_fitness every time hull distance is updated
-        if elite_fitness is not None:
+        # ------ prepare elites for parent selection
+        if rin.n_elite == 0:
+            elite_struc = None
+            elite_fitness = None
+        elif reselect_elite_early:
+            logger.info('# ------ Reselect elites from past results')
+            past_rslt = rslt_data[rslt_data['Gen'] < gen]
+            past_ids = [
+                cid for cid in past_rslt.index.values
+                if cid in opt_struc_data and cid in hdist
+            ]
+            elite_pool_struc = {
+                cid: opt_struc_data[cid] for cid in past_ids
+            }
+            elite_pool_fitness = {
+                cid: hdist[cid] for cid in past_ids
+            }
+            elite_pool_struc, elite_pool_fitness = _constraint_filter(
+                rin, elite_pool_struc, elite_pool_fitness, nat_data
+            )
+            logger.info(
+                f'Past elite candidates after constraint filter: '
+                f'{len(elite_pool_struc)}'
+            )
+
+            if elite_pool_fitness:
+                elite_ranking, _, _ = natural_selection(
+                    fitness=elite_pool_fitness,
+                    struc_data=elite_pool_struc,
+                    elite_struc=None,
+                    elite_fitness=None,
+                    n_fittest=rin.n_elite,
+                    fit_reverse=rin.fit_reverse,
+                    emax_ea=None,
+                    emin_ea=None,
+                    rng=rng,
+                )
+            else:
+                elite_ranking = []
+
+            elite_struc = {}
+            elite_fitness = {}
+            for cid in elite_ranking:
+                logger.info(f'Structure ID {cid:>6} keeps as the elite')
+                elite_struc[cid] = elite_pool_struc[cid]
+                elite_fitness[cid] = elite_pool_fitness[cid]
+        elif elite_fitness is not None:
+            # -- update elite fitness with the latest hull distance
             for cid in list(elite_fitness):
                 if cid not in hdist:
                     del elite_struc[cid]
                     del elite_fitness[cid]
                     continue
                 elite_fitness[cid] = hdist[cid]
-            logger.debug(f'elite_fitness in EA-vc: {elite_fitness}')
+        logger.debug(f'elite_fitness in EA-vc: {elite_fitness}')
 
     # ---------- filter candidates for natural selection (EA-vc only)
     if rin.algo == 'EA-vc':
@@ -186,6 +269,17 @@ def _next_gen(
         logger.info(f'Current candidates after constraint filter: {len(c_struc_data)}')
         if elite_struc is not None:
             logger.info(f'Elite structures after constraint filter: {len(elite_struc)}')
+
+        # ------ check parent candidates after constraint filter
+        n_current = len(c_struc_data)
+        n_elite = 0 if elite_struc is None else len(elite_struc)
+        if n_current + n_elite == 0:
+            logger.error(
+                'No parent candidates remain after applying nat/composition constraints: '
+                f'll_nat={rin.ll_nat}, ul_nat={rin.ul_nat}, '
+                f'min_comp={rin.min_comp}, max_comp={rin.max_comp}'
+            )
+            raise SystemExit(1)
 
     # ---------- natural selection
     logger.info('# ------ natural selection')
@@ -298,6 +392,8 @@ def _next_gen(
             'Addition':     rin.n_add,
             'Elimination':  rin.n_elim,
             'Substitution': rin.n_subs,
+            'll_nat':       rin.ll_nat,
+            'ul_nat':       rin.ul_nat,
             'min_comp':     rin.min_comp,
             'max_comp':     rin.max_comp,
         })
