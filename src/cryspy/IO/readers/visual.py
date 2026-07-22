@@ -123,30 +123,27 @@ class VisualReader(BaseReader):
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.rin.axis_order = None
         if self.rin.axis_order is not None:
-            axis_order = self.rin.axis_order.lower()
-            axis_order = "".join(axis_order.split())
-            n_components = (
-                len(self.rin.terminals)
-                if self.rin.terminals is not None
-                else len(self.rin.atype)
+            self.rin.axis_order = _validate_axis_order(
+                axis_order=self.rin.axis_order,
+                n_components=len(self.rin.atype),
+                option='axis_order',
             )
-            if len(axis_order) != n_components:
-                raise ValueError(
-                    'len(axis_order) must be equal to the number of plot components'
+
+        # ---------- terminal_axis_order
+        try:
+            self.rin.terminal_axis_order = self.config.get(
+                'visual',
+                'terminal_axis_order',
+            )
+        except (configparser.NoOptionError, configparser.NoSectionError):
+            self.rin.terminal_axis_order = None
+        if self.rin.terminal_axis_order is not None:
+            if self.rin.terminals is not None:
+                self.rin.terminal_axis_order = _validate_axis_order(
+                    axis_order=self.rin.terminal_axis_order,
+                    n_components=len(self.rin.terminals),
+                    option='terminal_axis_order',
                 )
-            if len(axis_order) == 2:
-                if axis_order not in ("lr", "rl"):
-                    raise ValueError(
-                        "axis_order must be 'lr' or 'rl' for binary systems")
-            elif len(axis_order) == 3:
-                if sorted(axis_order) != ['l', 'r', 't']:    # sorted() returns a list
-                    raise ValueError(
-                        "axis_order must be a permutation of 'tlr' "
-                        "(allowed: tlr, trl, ltr, lrt, rtl, rlt)"
-                    )
-            else:
-                raise ValueError('axis_order must contain 2 or 3 unique characters')
-            self.rin.axis_order = axis_order  # save the processed axis_order
 
         # ---------- show_comp_window
         try:
@@ -162,3 +159,30 @@ class VisualReader(BaseReader):
         if self.rin.ref_gen_comp is not None:
             if self.rin.ref_gen_comp < 0:
                 raise ValueError('ref_gen_comp must be non-negative int')
+
+
+def _validate_axis_order(axis_order, n_components, option):
+    axis_order = "".join(axis_order.lower().split())
+
+    if len(axis_order) != n_components:
+        raise ValueError(
+            f'len({option}) must be equal to the number of plot components'
+        )
+
+    if n_components == 2:
+        if axis_order not in ('lr', 'rl'):
+            raise ValueError(
+                f"{option} must be 'lr' or 'rl' for binary systems"
+            )
+    elif n_components == 3:
+        if sorted(axis_order) != ['l', 'r', 't']:
+            raise ValueError(
+                f"{option} must be a permutation of 'tlr' "
+                '(allowed: tlr, trl, ltr, lrt, rtl, rlt)'
+            )
+    else:
+        raise ValueError(
+            f'{option} is supported only for binary or ternary systems'
+        )
+
+    return axis_order

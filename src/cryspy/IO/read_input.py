@@ -71,6 +71,7 @@ class ReadInput:
     vmax: float = field(default=None)
     bottom_margin: float = field(default=None)
     axis_order: str = field(default=None)
+    terminal_axis_order: str = field(default=None)
     show_comp_window: bool = field(default=None)
     ref_gen_comp: int = field(default=None)
 

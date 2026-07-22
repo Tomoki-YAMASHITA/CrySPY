@@ -7,6 +7,7 @@ from ..IO import pkl_data
 # ---------- import later
 #from matplotlib.ticker import MaxNLocator
 #from pymatgen.analysis.phase_diagram import PDPlotter
+#from pymatgen.util.string import latexify
 #from .struc_util import get_feasible_composition
 
 
@@ -201,7 +202,6 @@ def draw_convex_hull_binary(
     # ---------- setting
     set_params()
     from pymatgen.analysis.phase_diagram import PDPlotter
-    from pymatgen.util.string import latexify
 
     # ---------- axis order
     flip_x = (axis_order == "rl")
@@ -270,7 +270,7 @@ def draw_convex_hull_binary(
         )
         if label_stable and entry.name:
             ax.annotate(
-                latexify(to_element_label(entry.name)),
+                to_mathregular_formula(entry.name),
                 xy=(x, y),
                 xytext=(0, -10),    # 10 points vertical offset
                 textcoords="offset points",
@@ -403,7 +403,7 @@ def draw_convex_hull_ternary(
 
     # ---------- texts
     for text in ax.texts:
-        text.set_text(to_element_label(text.get_text()))
+        text.set_text(to_mathregular_formula(text.get_text()))
         text.set_fontsize(14)
         text.set_fontweight('normal')    # bold --> normal
 
@@ -686,6 +686,67 @@ def get_compound_comp_window(
         max_comp,
         tol=1e-12,
     ):
+    return _get_compound_comp_window(
+        atype=atype,
+        terminal_compositions=compound_phase_diagram.terminal_compositions,
+        min_comp=min_comp,
+        max_comp=max_comp,
+        tol=tol,
+    )
+
+
+def prepare_compound_comp_window(
+        atype,
+        terminals,
+        min_comp,
+        max_comp,
+        tol=1e-12,
+    ):
+    # ---------- import
+    from pymatgen.core import Composition
+
+    # ---------- terminal compositions
+    if len(terminals) not in (2, 3):
+        raise ValueError('terminals must contain two or three compositions')
+
+    terminal_compositions = []
+    for terminal in terminals:
+        try:
+            composition = Composition(terminal)
+        except ValueError as e:
+            raise ValueError(f'Invalid terminal composition: {terminal}') from e
+        if any(
+            composition.reduced_composition == other.reduced_composition
+            for other in terminal_compositions
+        ):
+            raise ValueError(f'Duplicate terminal composition: {terminal}')
+        terminal_compositions.append(composition)
+
+    # ---------- composition window
+    comp_window = _get_compound_comp_window(
+        atype=atype,
+        terminal_compositions=terminal_compositions,
+        min_comp=min_comp,
+        max_comp=max_comp,
+        tol=tol,
+    )
+
+    # ---------- terminal labels
+    terminal_labels = tuple(
+        to_element_label(composition.reduced_formula)
+        for composition in terminal_compositions
+    )
+
+    return terminal_labels, comp_window
+
+
+def _get_compound_comp_window(
+        atype,
+        terminal_compositions,
+        min_comp,
+        max_comp,
+        tol=1e-12,
+    ):
     # ---------- no composition constraints
     if min_comp is None or max_comp is None:
         return None
@@ -698,7 +759,7 @@ def get_compound_comp_window(
 
     terminal_compositions = [
         composition.fractional_composition
-        for composition in compound_phase_diagram.terminal_compositions
+        for composition in terminal_compositions
     ]
     n_terminals = len(terminal_compositions)
 
@@ -968,6 +1029,13 @@ def to_element_label(formula: str) -> str:
     return element_labels.get(formula, formula)
 
 
+def to_mathregular_formula(formula: str) -> str:
+    from pymatgen.util.string import latexify
+
+    formula = latexify(to_element_label(formula)).replace('$', '')
+    return rf'$\mathregular{{{formula}}}$'
+
+
 def save_composition_window(
         atype,
         gen,
@@ -1002,6 +1070,185 @@ def save_composition_window(
 
     os.makedirs('./data/convex_hull', exist_ok=True)
     fig.savefig(f'./data/convex_hull/composition_window_{gen}.{fig_format}')
+
+
+def save_compound_composition_window(
+        terminal_labels,
+        gen,
+        comp_window,
+        fig_format,
+        axis_order=None,
+    ):
+    # ---------- setting
+    set_params()
+
+    # ---------- display labels
+    display_labels = tuple(
+        to_mathregular_formula(label)
+        for label in terminal_labels
+    )
+
+    # ---------- binary
+    if len(terminal_labels) == 2:
+        if axis_order is None:
+            axis_order = 'lr'
+
+        flip_x = (axis_order == 'rl')
+
+        def tx(x):
+            return 1.0 - x if flip_x else x
+
+        fig, ax = plt.subplots(figsize=(8, 1.5))
+
+        # ------ composition window
+        if comp_window is None:
+            ax.text(0.5, 0.55, 'Infeasible', ha='center', va='bottom')
+        else:
+            xmin, xmax = sorted((tx(comp_window[0]), tx(comp_window[1])))
+            ax.fill_between(
+                [xmin, xmax],
+                -0.5,
+                0.5,
+                color='C0',
+                alpha=0.6,
+            )
+            ax.axvline(xmin, color='k', linestyle='--', linewidth=1)
+            ax.axvline(xmax, color='k', linestyle='--', linewidth=1)
+            ax.text(xmin, 0.55, f'{xmin:.2f}', ha='center', va='bottom')
+            ax.text(xmax, 0.55, f'{xmax:.2f}', ha='center', va='bottom')
+
+        # ------ terminal labels
+        if flip_x:
+            left_label = display_labels[1]
+            right_label = display_labels[0]
+        else:
+            left_label = display_labels[0]
+            right_label = display_labels[1]
+
+        ax.text(
+            0.0,
+            -0.25,
+            left_label,
+            transform=ax.get_xaxis_transform(),
+            ha='center',
+            va='top',
+            clip_on=False,
+        )
+        ax.text(
+            1.0,
+            -0.25,
+            right_label,
+            transform=ax.get_xaxis_transform(),
+            ha='center',
+            va='top',
+            clip_on=False,
+        )
+
+        # ------ axis settings
+        ax.set_xlim(0.0, 1.0)
+        ax.set_ylim(-0.5, 0.5)
+        ax.set_yticks([])
+        ax.set_xlabel('Composition')
+
+    # ---------- ternary
+    elif len(terminal_labels) == 3:
+        if axis_order is None:
+            axis_order = 'tlr'
+
+        idx_t = axis_order.index('t')
+        idx_l = axis_order.index('l')
+        idx_r = axis_order.index('r')
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        _draw_triangle_plain(ax)
+
+        # ------ composition window
+        if comp_window is None:
+            x, y = _ternary_to_xy_tlr(
+                np.array([1.0 / 3.0]),
+                np.array([1.0 / 3.0]),
+                np.array([1.0 / 3.0]),
+            )
+            ax.text(x[0], y[0], 'Infeasible', ha='center', va='center')
+        else:
+            t = comp_window[idx_t]
+            l = comp_window[idx_l]
+            r = comp_window[idx_r]
+            x, y = _ternary_to_xy_tlr(t, l, r)
+
+            if len(x) >= 3:
+                ax.fill(
+                    x,
+                    y,
+                    color='C0',
+                    alpha=0.6,
+                    edgecolor='k',
+                )
+            elif len(x) == 2:
+                ax.plot(
+                    x,
+                    y,
+                    color='C0',
+                    linewidth=3.0,
+                )
+            elif len(x) == 1:
+                ax.plot(
+                    x,
+                    y,
+                    marker='o',
+                    markersize=8,
+                    color='C0',
+                    markeredgecolor='k',
+                )
+
+        # ------ terminal labels
+        ax.text(
+            0.5,
+            np.sqrt(3.0) / 2.0 + 0.02,
+            display_labels[idx_t],
+            ha='center',
+            va='bottom',
+            fontsize=14,
+        )
+        ax.text(
+            -0.01,
+            -0.01,
+            display_labels[idx_l],
+            ha='right',
+            va='top',
+            fontsize=14,
+        )
+        ax.text(
+            1.01,
+            -0.01,
+            display_labels[idx_r],
+            ha='left',
+            va='top',
+            fontsize=14,
+        )
+
+        # ------ axis settings
+        ax.set_aspect('equal')
+        ax.set_xlim(-0.08, 1.08)
+        ax.set_ylim(-0.08, np.sqrt(3.0) / 2.0 + 0.1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+    else:
+        raise ValueError('terminals must contain two or three compositions')
+
+    # ---------- save
+    plt.close(fig)
+    os.makedirs('./data/convex_hull', exist_ok=True)
+    terminal_suffix = f'_terminals_{"-".join(terminal_labels)}'
+    fname = (
+        f'./data/convex_hull/composition_window_{gen}'
+        f'{terminal_suffix}.{fig_format}'
+    )
+    fig.savefig(fname)
+    return fname
 
 
 def plot_composition_window_2d(
@@ -1161,6 +1408,7 @@ def plot_composition_window_3d(
     _draw_triangle_plain(ax)
 
     # ---------- draw constraint lines for each component
+    label_offset = 0.065
     for i in range(3):
         for c in set((min_comp[i], max_comp[i])):
             line = _get_feasible_segment(i, c, tol=tol)
@@ -1175,18 +1423,21 @@ def plot_composition_window_3d(
             # to each component role (top / left / right)
             if i == idx_t:
                 # top-axis values: outside the right edge, horizontal
-                x_text = 1.0 - 0.5 * c + 0.05
+                x_text = 1.0 - 0.5 * c + label_offset
                 y_text = (np.sqrt(3.0) / 2.0) * c
                 angle = 0.0
             elif i == idx_l:
                 # left-axis values: outside the left edge; larger toward the bottom
-                x_text = 0.5 * (1.0 - c) - 0.05
-                y_text = (np.sqrt(3.0) / 2.0) * (1.0 - c)
+                x_text = 0.5 * (1.0 - c) - 0.5 * label_offset
+                y_text = (
+                    (np.sqrt(3.0) / 2.0) * (1.0 - c)
+                    + (np.sqrt(3.0) / 2.0) * label_offset
+                )
                 angle = -60.0
             elif i == idx_r:
                 # right-axis values: outside the bottom edge; larger toward the right
-                x_text = c
-                y_text = -0.055
+                x_text = c - 0.5 * label_offset
+                y_text = -(np.sqrt(3.0) / 2.0) * label_offset
                 angle = 60.0
             else:
                 x_text = 0.0

@@ -17,7 +17,10 @@ from cryspy.util.visual_util import (
     prepare_EA_data,
     prepare_hull_data,
     prepare_compound_hull_data,
+    prepare_compound_comp_window,
     get_compound_comp_window,
+    save_composition_window,
+    save_compound_composition_window,
 )
 
 
@@ -220,7 +223,11 @@ def plot_EA_vc(rin):
         raise SystemExit(1)
 
     # ---------- axis order
-    axis_order = rin.axis_order
+    axis_order = (
+        rin.terminal_axis_order
+        if rin.terminals is not None
+        else rin.axis_order
+    )
     if len(plot_components) == 2:
         if axis_order is None:
             axis_order = 'lr'
@@ -311,29 +318,49 @@ def plot_composition_window_input(rin):
         logger.error('min_comp and max_comp are not set in cryspy.in.')
         raise SystemExit(1)
 
-    if len(rin.atype) not in (2, 3):
-        logger.error(
-            f'len(rin.atype) = {len(rin.atype)} is not supported '
-            'for composition window plot'
-        )
+    # ---------- plot
+    try:
+        if rin.terminals is None:
+            if len(rin.atype) not in (2, 3):
+                raise ValueError(
+                    f'len(rin.atype) = {len(rin.atype)} is not supported '
+                    'for composition window plot'
+                )
+            save_composition_window(
+                atype=rin.atype,
+                gen='input',
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+                fig_format=rin.fig_format,
+                axis_order=rin.axis_order,
+            )
+            fname = (
+                f'./data/convex_hull/composition_window_input.'
+                f'{rin.fig_format}'
+            )
+        else:
+            terminal_labels, comp_window = prepare_compound_comp_window(
+                atype=rin.atype,
+                terminals=rin.terminals,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+            )
+            fname = save_compound_composition_window(
+                terminal_labels=terminal_labels,
+                gen='input',
+                comp_window=comp_window,
+                fig_format=rin.fig_format,
+                axis_order=rin.terminal_axis_order,
+            )
+            logger.info(
+                f'Composition window terminals: {", ".join(terminal_labels)}'
+            )
+    except ValueError as e:
+        logger.error(str(e))
         raise SystemExit(1)
 
-    # ---------- plot
-    from cryspy.util.visual_util import save_composition_window
-    save_composition_window(
-        atype=rin.atype,
-        gen='input',
-        min_comp=rin.min_comp,
-        max_comp=rin.max_comp,
-        fig_format=rin.fig_format,
-        axis_order=rin.axis_order,
-    )
-
     # ---------- log
-    logger.info(
-        f'Composition window saved as '
-        f'./data/convex_hull/composition_window_input.{rin.fig_format}'
-    )
+    logger.info(f'Composition window saved as {fname}')
 
 
 # ----------
