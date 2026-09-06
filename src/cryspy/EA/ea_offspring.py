@@ -87,7 +87,7 @@ class RouletteSelectionContext:
     """Parameters for roulette selection."""
 
     parent_ids: tuple[int, ...]
-    cumulative_probabilities: tuple[float, ...]
+    weights: tuple[float, ...]
 
 
 SelectionContext = Union[
@@ -110,6 +110,8 @@ def build_roulette_selection_context(
         [fitness[parent_id] for parent_id in parent_ids],
         dtype=float,
     )
+    if scaled_fitness.size == 0 or not np.all(np.isfinite(scaled_fitness)):
+        raise ValueError('Roulette requires non-empty, finite fitness')
 
     # ------ reverse
     if not fit_reverse:
@@ -120,24 +122,19 @@ def build_roulette_selection_context(
     b = float(b_rlt)
     fmax = float(scaled_fitness.max())
     fmin = float(scaled_fitness.min())
-    if fmax != fmin:
-        scaled_fitness = (
-            (a - b) / (fmax - fmin) * scaled_fitness
-            + (b * fmax - a * fmin) / (fmax - fmin)
+    if fmax == fmin:
+        weights = np.ones_like(scaled_fitness)
+    else:
+        weights = b + (a - b) * (
+            (scaled_fitness - fmin) / (fmax - fmin)
         )
-
-    # ---------- cumulative probabilities
-    cumulative_probabilities = np.cumsum(
-        scaled_fitness / scaled_fitness.sum()
-    )
+    if not np.all(np.isfinite(weights)) or np.any(weights <= 0):
+        raise ValueError('Roulette weights must be finite and positive')
 
     # ---------- return
     return RouletteSelectionContext(
         parent_ids=parent_ids,
-        cumulative_probabilities=tuple(
-            float(value)
-            for value in cumulative_probabilities
-        ),
+        weights=tuple(float(value) for value in weights),
     )
 
 
@@ -160,12 +157,17 @@ def select_parent_ids(
 
         # ------ tournament
         if isinstance(context, TournamentSelectionContext):
+            available_indices = [
+                index
+                for index, candidate_id in enumerate(context.parent_ids)
+                if candidate_id not in parent_ids
+            ]
             tournament_size = min(
                 context.tournament_size,
-                len(context.parent_ids),
+                len(available_indices),
             )
             indices = rng.choice(
-                len(context.parent_ids),
+                available_indices,
                 tournament_size,
                 replace=False,
             )
@@ -173,20 +175,21 @@ def select_parent_ids(
 
         # ------ roulette
         else:
-            cumulative = np.asarray(
-                context.cumulative_probabilities,
-            )
-            indices = np.where(cumulative < rng.random())[0]
-            selected_index = (
-                indices[-1] + 1
-                if indices.size != 0
-                else 0
+            available_indices = [
+                index
+                for index, candidate_id in enumerate(context.parent_ids)
+                if candidate_id not in parent_ids
+            ]
+            available_weights = np.asarray(
+                context.weights,
+                dtype=float,
+            )[available_indices]
+            available_weights /= available_weights.max()
+            selected_index = rng.choice(
+                available_indices,
+                p=available_weights / available_weights.sum(),
             )
             parent_id = context.parent_ids[selected_index]
-
-        # ------ avoid duplicate parents
-        if parent_ids and parent_id == parent_ids[0]:
-            continue
 
         parent_ids.append(parent_id)
 

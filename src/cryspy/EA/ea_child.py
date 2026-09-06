@@ -112,7 +112,7 @@ def child_gen(
             # roulette needs fitness for IDs in parent_ids
             fit_local = {pid: fittest[pid] for pid in parent_ids}
             sp_local.set_roulette(fit_local, rin.a_rlt, rin.b_rlt, rin.fit_reverse)
-            logger.debug(f'cumulative fitness in roulette: {sp_local.cum_fit}')
+            logger.debug(f'roulette weights: {sp_local.weights}')
         return sp_local
 
     # ---------- parent data

@@ -53,8 +53,9 @@ def natural_selection(
 
     # ---------- None, np.nan, emax_ea, emin_ea
     for cid, value in fit_with_elite.items():
-        if value is None or np.isnan(value):
+        if value is None or not np.isfinite(value):
             fit_with_elite[cid] = -np.inf if fit_reverse else np.inf
+            continue
         # ------ emax_ea
         if emax_ea is not None:
             if value > emax_ea:
@@ -67,7 +68,13 @@ def natural_selection(
                 logger.info(f'Eliminate ID {cid}: {value} < emin_ea')
 
     # ---------- sort fit_with_elite
-    sorted_ids = sorted(fit_with_elite, key=fit_with_elite.get, reverse=fit_reverse)
+    sorted_ids = sorted(
+        [cid for cid, value in fit_with_elite.items() if np.isfinite(value)],
+        key=fit_with_elite.get,
+        reverse=fit_reverse,
+    )
+    if not sorted_ids:
+        return ranking, fit_with_elite, struc_with_elite
 
     # ---------- shuffle within 0.001 from min_val
     min_val = fit_with_elite[sorted_ids[0]]
