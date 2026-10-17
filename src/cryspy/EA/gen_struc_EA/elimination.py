@@ -20,7 +20,6 @@ def gen_elimination(
         elim_dnat_map,
         id_start=None,
         symprec=0.01,
-        target='random',
         rng=None,
     ):
     '''
@@ -34,7 +33,6 @@ def gen_elimination(
     elim_dnat_map (dict): {id: list of delta nat combinations for elimination}
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
-    target (str): only 'random' for now
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -70,9 +68,8 @@ def gen_elimination(
         # ------ delta nat conbinations
         dnat_comb = elim_dnat_map[pid_A]
         # ------ elim_element_list, e.g. ['Li', 'Li', 'O']
-        if target == 'random':
-            dnat = dnat_comb[rng.integers(len(dnat_comb))] 
-            elim_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
+        dnat = dnat_comb[rng.integers(len(dnat_comb))] 
+        elim_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
         child = gen_child(parent_A, elim_element_list, rng=rng)
         # ------ success
@@ -100,7 +97,6 @@ def gen_child(parent_A, elim_element_list, rng=None):
     '''
     parent_A (Structure): pymatgen Structure object
     elim_element_list (list): list of atom types to eliminate, e.g. ['Li', 'Li', 'O']
-    target (str): only 'random' for now
     rng (np.random.Generator): random number generator
 
     # ---------- return

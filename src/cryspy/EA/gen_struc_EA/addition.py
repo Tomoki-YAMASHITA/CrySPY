@@ -22,7 +22,6 @@ def gen_addition(
         id_start=None,
         symprec=0.01,
         maxcnt_ea=50,
-        target='random',
         rng=None,
     ):
     '''
@@ -36,7 +35,6 @@ def gen_addition(
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in addition
-    target (str): target for addition, only 'random' for now
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -72,9 +70,8 @@ def gen_addition(
         # ------ delta nat combinations
         dnat_comb = add_dnat_map[pid_A]
         # ------ add_element_list, e.g. ['Li', 'Li', 'O']
-        if target == 'random':
-            dnat = dnat_comb[rng.integers(len(dnat_comb))]
-            add_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
+        dnat = dnat_comb[rng.integers(len(dnat_comb))]
+        add_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
         # ------ generate child
         child = gen_child(
             atype,
@@ -121,7 +118,6 @@ def gen_child(
     parent_A (Structure): pymatgen Structure object
     add_element_list (list): list of atom types to add, e.g. ['Li', 'Li', 'O']
     maxcnt_ea (int): maximum number of trial in crossover
-    target (str): only 'random' for now
     rng (np.random.Generator): random number generator
 
     # ---------- return

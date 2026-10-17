@@ -55,17 +55,17 @@ class OptionReader(BaseReader):
                 'backup_interval must be non-negative int'
             )
 
-        # ---------- hull_output_interval
+        # ---------- energy_output_interval
         try:
-            self.rin.hull_output_interval = self.config.getint(
+            self.rin.energy_output_interval = self.config.getint(
                 'option',
-                'hull_output_interval',
+                'energy_output_interval',
             )
         except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.hull_output_interval = 1
-        if self.rin.hull_output_interval < 0:
+            self.rin.energy_output_interval = 1
+        if self.rin.energy_output_interval < 0:
             raise ValueError(
-                'hull_output_interval must be non-negative int'
+                'energy_output_interval must be non-negative int'
             )
 
         # ---------- recalc

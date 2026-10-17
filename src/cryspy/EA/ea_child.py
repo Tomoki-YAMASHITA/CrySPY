@@ -319,7 +319,6 @@ def child_gen(
                     id_start,
                     rin.symprec,
                     rin.maxcnt_ea,
-                    rin.target,
                     rng=rng,
                 )
             else:
@@ -342,7 +341,6 @@ def child_gen(
                     elim_dnat_map,
                     id_start,
                     rin.symprec,
-                    rin.target,
                     rng=rng,
                 )
             else:
@@ -367,7 +365,6 @@ def child_gen(
                     id_start,
                     rin.symprec,
                     rin.maxcnt_ea,
-                    rin.target,
                     rng=rng,
                 )
             else:

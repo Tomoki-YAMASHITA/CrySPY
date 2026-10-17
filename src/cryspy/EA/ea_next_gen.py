@@ -41,8 +41,12 @@ def next_gen_EA(
             './data/cryspy_rslt_energy_asc'
         )
 
+    # ---------- energy output interval
+    interval = rin.energy_output_interval
+    energy_output = 0 < interval and gen % interval == 0
+
     # ---------- EA: plot
-    if rin.algo == 'EA':
+    if rin.algo == 'EA' and energy_output:
         from ..util.visual_util import plot_energy_EA
         # ------ plot
         fig, ax = plot_energy_EA(rslt_data, rin.ymax, rin.markersize)
@@ -58,8 +62,6 @@ def next_gen_EA(
         hdist_data = pkl_data.load_hdist_data()
         pd_data = pkl_data.load_pd_data()
         if gen not in hdist_data:
-            interval = rin.hull_output_interval
-            hull_output = 0 < interval and gen % interval == 0
             logger.info(f'Calculate convex hull for generation {gen}')
             from ..EA.calc_hull import calc_convex_hull
             # ------ load ea_info for min_comp and max_comp
@@ -82,13 +84,13 @@ def next_gen_EA(
                 fig_format=rin.fig_format,
                 emax_ea=rin.emax_ea,
                 emin_ea=rin.emin_ea,
-                mpl_draw=hull_output,
+                mpl_draw=energy_output,
                 axis_order=rin.axis_order,
                 min_comp=min_comp,
                 max_comp=max_comp,
                 show_comp_window=rin.show_comp_window,
             )
-            if hull_output:
+            if energy_output:
                 out_hdist(gen, hdist, nat_data)
             hdist_data[gen] = hdist
             pd_data[gen] = phase_diagram

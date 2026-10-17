@@ -222,11 +222,6 @@ class EAReader(BaseReader):
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.rin.subs_max = 3
 
-        # ---------- target
-        self.rin.target = self.config.get('EA', 'target')
-        if self.rin.target not in ['random']:
-            raise ValueError('target must be random for now')
-
         # ---------- check n_pop for EA-vc
         if self.rin.n_crsov + self.rin.n_perm + self.rin.n_strain + self.rin.n_rand \
             + self.rin.n_add + self.rin.n_elim + self.rin.n_subs != self.rin.n_pop:

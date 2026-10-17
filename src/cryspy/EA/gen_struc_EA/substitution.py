@@ -19,7 +19,6 @@ def gen_substitution(
         id_start=None,
         symprec=0.01,
         maxcnt_ea=50,
-        target='random',
         rng=None
     ):
     '''
@@ -35,7 +34,6 @@ def gen_substitution(
     id_start (int): start ID for new structures
     symprec (float): tolerance for symmetry
     maxcnt_ea (int): maximum number of trial in substitution
-    target (str): only 'random' for now
     rng (np.random.Generator): random number generator
 
     # ---------- return
@@ -71,10 +69,9 @@ def gen_substitution(
         # ------ substitution combinations
         subs_comb = subs_comb_map[pid_A]
         # ------ subs_element_list, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
-        if target == 'random':
-            subs_element_list = subs_comb[int(rng.integers(len(subs_comb)))]
+        subs_element_list = subs_comb[int(rng.integers(len(subs_comb)))]
         # ------ generate child
-        child = gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea, target, rng=rng)
+        child = gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea, rng=rng)
         # ------ success
         if child is not None:
             children[cid] = child
@@ -96,7 +93,7 @@ def gen_substitution(
     return children, parents, operation
 
 
-def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target='random', rng=None):
+def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, rng=None):
     '''
         tuple may be replaced by list
 
@@ -105,7 +102,6 @@ def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, target=
     parent_A (Structure): pymatgen Structure object
     subs_element_list (list): list of tuples, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
     maxcnt_ea (int): maximum number of trial in crossover
-    target (str): only 'random' for now
     rng (np.random.Generator): random number generator
 
     # ---------- return

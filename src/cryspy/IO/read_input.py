@@ -82,7 +82,7 @@ class ReadInput:
     load_struc_flag: bool = field(default=None)
     stop_next_struc: bool = field(default=None)
     backup_interval: int = field(default=None)
-    hull_output_interval: int = field(default=None)
+    energy_output_interval: int = field(default=None)
     recalc: tuple = field(default=None)
     append_struc_ea: bool = field(default=None)
     energy_step_flag: bool = field(default=None)
@@ -139,7 +139,6 @@ class ReadInput:
     elim_max: int = field(default=None)
     n_subs: int = field(default=None)
     subs_max: int = field(default=None)
-    target: str = field(default=None)
     ref_energies: tuple = field(default=None)
     n_rotation: int = field(default=None)          # not implemented yet, for EA mol
     mindist_mol_ea: tuple = field(default=None)    # not implemented yet, for EA mol
