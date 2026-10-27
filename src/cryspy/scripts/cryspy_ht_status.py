@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import argparse
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 
-from cryspy.high_throughput.db.record import (
+from cryspy.high_throughput.db.record_db import (
     Status,
     select_ids_by_status,
 )
-from cryspy.high_throughput.db.sqlite import connect_db
+from cryspy.high_throughput.db.sqlite_db import connect_db
 
 
 DEFAULT_DB_PATH = 'data/db_data/rslt_data.db'
@@ -102,7 +103,7 @@ def main():
 
     # ---------- print status
     try:
-        with connect_db(str(db_path)) as conn:
+        with closing(connect_db(str(db_path))) as conn, conn:
             print_status(conn)
     except sqlite3.Error as e:
         parser.error(str(e))

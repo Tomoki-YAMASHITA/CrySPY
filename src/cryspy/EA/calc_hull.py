@@ -16,7 +16,7 @@ def calc_convex_hull(
         atype,
         gen,
         ref_energies,
-        rslt_data,
+        energy_data,
         nat_data,
         ymax,
         show_max,
@@ -38,7 +38,7 @@ def calc_convex_hull(
         atype (tuple): atom type, e.g. ('Na', 'Cl')
         gen (int): current generation
         ref_energies (tuple): reference energies. e.g. (0.0  0.0)
-        rslt_data (DataFrame): result data
+        energy_data (dict): {ID: energy in eV/atom, ...}, filtered up to gen
         nat_data (dict): number of atoms of all structures, {ID: (nat1, nat2, ...), ...}
         ymax (float): Binary only. max value of y-axis
         show_max (float): Ternary only. If not None, plots structures with hull distance ≤ show_max
@@ -59,10 +59,9 @@ def calc_convex_hull(
         hdist [dict]: hull distance of all structures, {ID: distance, ...}
     '''
 
-    # ---------- rslt --> entries
-    e_all = rslt_data[rslt_data['Gen'] <= gen]['E_eV_atom'].to_dict()    # energy data under gen
+    # ---------- energy --> entries
     entries = {}
-    for cid, e in e_all.items():
+    for cid, e in energy_data.items():
         # ------ np.nan
         if np.isnan(e):
             continue

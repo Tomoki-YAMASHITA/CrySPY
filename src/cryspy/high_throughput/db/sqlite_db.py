@@ -1,10 +1,11 @@
+from contextlib import closing
 import sqlite3
 
 
-def initialize_db() -> None:
+def initialize_db(algo: str) -> None:
     """Initialize SQLite database."""
 
-    with sqlite3.connect("data/db_data/rslt_data.db") as conn:
+    with closing(sqlite3.connect("data/db_data/rslt_data.db")) as conn, conn:
 
         conn.execute('PRAGMA journal_mode = DELETE')
         conn.execute("PRAGMA foreign_keys = ON")
@@ -52,16 +53,30 @@ def initialize_db() -> None:
                 n_strain        INTEGER NOT NULL,
                 n_random        INTEGER NOT NULL,
                 n_elite         INTEGER NOT NULL,
-                crs_lat         TEXT NOT NULL,
+                crs_lat         TEXT,
                 slct_func       TEXT NOT NULL,
                 n_addition      INTEGER,
                 n_elimination   INTEGER,
                 n_substitution  INTEGER,
                 min_comp        BLOB,
-                max_comp        BLOB
+                max_comp        BLOB,
+                ll_nat          BLOB,
+                ul_nat          BLOB
             )
             """
         )
+
+        # ---------- atom-count bounds
+        columns = {
+            row[1]
+            for row in conn.execute('PRAGMA table_info(ea_info)')
+        }
+        for column in ('ll_nat', 'ul_nat'):
+            if column not in columns:
+                conn.execute(
+                    f'ALTER TABLE ea_info ADD COLUMN {column} BLOB'
+                )
+
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS ea_elite (
@@ -72,6 +87,26 @@ def initialize_db() -> None:
             )
             """
         )
+        if algo == 'EA-vc':
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ea_hdist (
+                    generation  INTEGER NOT NULL,
+                    id          INTEGER NOT NULL,
+                    hdist       REAL NOT NULL,
+                    PRIMARY KEY (generation, id),
+                    FOREIGN KEY (id) REFERENCES records(id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ea_phase_diagram (
+                    generation     INTEGER PRIMARY KEY,
+                    phase_diagram  TEXT NOT NULL
+                )
+                """
+            )
         conn.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_records_generation_id

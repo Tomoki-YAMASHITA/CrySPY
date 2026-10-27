@@ -1,6 +1,8 @@
 from io import BytesIO
+import json
 
 from ase import Atoms
+from monty.json import MontyEncoder
 import numpy as np
 from pymatgen.core import Lattice, Structure
 
@@ -16,6 +18,18 @@ def blob_to_array(blob: bytes) -> np.ndarray:
     """Convert a SQLite BLOB (.npy binary) to a NumPy array."""
     bio = BytesIO(blob)
     return np.load(bio, allow_pickle=False)
+
+
+def phase_diagram_to_json(phase_diagram) -> str:
+    """Convert a phase diagram to a JSON string."""
+    return json.dumps(phase_diagram.as_dict(), cls=MontyEncoder)
+
+
+def json_to_phase_diagram(json_data: str):
+    """Convert a JSON string to a phase diagram."""
+    from pymatgen.analysis.phase_diagram import PhaseDiagram
+
+    return PhaseDiagram.from_dict(json.loads(json_data))
 
 
 def raw_to_struc(

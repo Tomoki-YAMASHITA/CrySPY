@@ -1,96 +1,33 @@
+from dataclasses import dataclass
 from itertools import product
 from logging import getLogger
+from typing import Optional
 
 import numpy as np
+from pymatgen.core import Structure
 
+from ..ea_offspring import (
+    GenerationResult,
+    OffspringResult,
+    ParentData,
+    SelectionContext,
+    generate_with_parent_attempts,
+    make_task_rng,
+)
 from ...util.struc_util import check_distance, sort_by_atype, get_nat
 
 
 logger = getLogger('cryspy')
 
 
-def gen_substitution(
-        atype,
-        mindist,
-        struc_data,
-        sp,
-        n_subs,
-        subs_comb_map,
-        id_start=None,
-        symprec=0.01,
-        maxcnt_ea=50,
-        rng=None
-    ):
-    '''
+@dataclass(frozen=True)
+class SubstitutionContext:
+    """Parameters for substitution generation."""
 
-        tuple may be replaced by list
-
-    atype (tuple): e.g. ('Na', 'Cl')
-    mindist (tuple): minimum interatomic distance, e.g. ((1.5, 1.5), (1.5, 1.5))
-    struc_data (dict): {id: structure data}
-    sp (instance): instance of SelectParents class
-    n_subs (int): number of structures to generate by substitution
-    subs_comb_map (dict): {id: list of substitution patterns}
-    id_start (int): start ID for new structures
-    symprec (float): tolerance for symmetry
-    maxcnt_ea (int): maximum number of trial in substitution
-    rng (np.random.Generator): random number generator
-
-    # ---------- return
-    children (dict): {id: structure data}
-    parents (dict): {id: (id of parent_A, )}
-    operation (dict): {id: 'substitution'}
-    '''
-
-    # ---------- initialize rng
-    if rng is None:
-        rng = np.random.default_rng()
-
-    # ---------- initialize
-    struc_cnt = 0
-    children = {}
-    parents = {}
-    operation = {}
-
-    # ---------- id_offset
-    if id_start is None:
-        cid = max(struc_data.keys()) + 1
-    else:
-        if id_start < (max(struc_data.keys()) + 1):
-            logger.error('id_start is already included in structure ID of the data')
-        else:
-            cid = id_start
-
-    # ---------- generate structures by substitution
-    while struc_cnt < n_subs:
-        # ------ select parents
-        pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
-        parent_A = struc_data[pid_A]
-        # ------ substitution combinations
-        subs_comb = subs_comb_map[pid_A]
-        # ------ subs_element_list, e.g. [('Li', 'Ca'), ('Ca', 'Cl')]
-        subs_element_list = subs_comb[int(rng.integers(len(subs_comb)))]
-        # ------ generate child
-        child = gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea, rng=rng)
-        # ------ success
-        if child is not None:
-            children[cid] = child
-            parents[cid] = (pid_A, )
-            operation[cid] = 'substitution'
-            try:
-                spg_sym, spg_num = child.get_space_group_info(symprec=symprec)
-            except TypeError:
-                spg_num = 0
-                spg_sym = None
-            tmp_nat = get_nat(child, atype)
-            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
-                f' from {pid_A:>6} by substitution.'
-                f' Space group: {spg_num:>3} {spg_sym}')
-            cid += 1
-            struc_cnt += 1
-
-    # ---------- return
-    return children, parents, operation
+    atype: tuple[str, ...]
+    mindist: tuple[tuple[float, ...], ...]
+    subs_comb_map: dict[int, list[list[tuple[str, str]]]]
+    maxcnt_ea: int
 
 
 def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, rng=None):
@@ -150,6 +87,112 @@ def gen_child(atype, mindist, parent_A, subs_element_list, maxcnt_ea=50, rng=Non
             if cnt >= maxcnt_ea:
                 logger.warning('Substitution: cnt >= maxcnt_ea. Change parent.')
                 return None    # change parent
+
+
+class SubstitutionOffspringGenerator:
+    """Generate one offspring by substitution."""
+
+    def __init__(
+        self,
+        parent_data: ParentData,
+        selection_context: SelectionContext,
+        context: SubstitutionContext,
+        max_parent_attempts: int,
+    ) -> None:
+        # ---------- check input
+        if max_parent_attempts < 1:
+            raise ValueError(
+                'max_parent_attempts must be greater than zero'
+            )
+
+        # ---------- context
+        self.parent_data = parent_data
+        self.selection_context = selection_context
+        self.context = context
+        self.max_parent_attempts = max_parent_attempts
+
+    def generate(
+        self,
+        rng: np.random.Generator,
+    ) -> GenerationResult:
+        """Generate one offspring."""
+
+        # ---------- generate offspring
+        return generate_with_parent_attempts(
+            operation='substitution',
+            selection_context=self.selection_context,
+            n_parent=1,
+            max_parent_attempts=self.max_parent_attempts,
+            generate_attempt=self._generate_attempt,
+            rng=rng,
+        )
+
+    def _generate_attempt(
+        self,
+        parent_ids: tuple[int, ...],
+        rng: np.random.Generator,
+    ) -> Optional[Structure]:
+        """Attempt to generate one offspring."""
+
+        # ---------- parent
+        parent_id = parent_ids[0]
+        parent = self.parent_data.structures[parent_id]
+
+        # ---------- substitution combinations
+        subs_comb = self.context.subs_comb_map[parent_id]
+        subs_element_list = subs_comb[int(rng.integers(len(subs_comb)))]
+
+        # ---------- generate offspring
+        return gen_child(
+            atype=self.context.atype,
+            mindist=self.context.mindist,
+            parent_A=parent,
+            subs_element_list=subs_element_list,
+            maxcnt_ea=self.context.maxcnt_ea,
+            rng=rng,
+        )
+
+
+def gen_substitution_batch(
+        generator,
+        n_subs,
+        id_start,
+        symprec,
+        atype,
+        base_seed,
+        rng,
+    ):
+    """Generate substitution offspring batch."""
+
+    # ---------- initialize
+    offspring_data = {}
+    parents = {}
+    operation = {}
+
+    # ---------- generate offspring
+    for cid in range(id_start, id_start + n_subs):
+        task_rng = make_task_rng(base_seed, cid, rng)
+        result = generator.generate(task_rng)
+        if not isinstance(result, OffspringResult):
+            logger.error(result.reason)
+            raise SystemExit(1)
+        offspring_data[cid] = result.structure
+        parents[cid] = result.parent_ids
+        operation[cid] = 'substitution'
+        try:
+            spg_sym, spg_num = result.structure.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+        tmp_nat = get_nat(result.structure, atype)
+        logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
+                f' from {result.parent_ids[0]:>6} by substitution.'
+                f' Space group: {spg_num:>3} {spg_sym}')
+
+    # ---------- return
+    return offspring_data, parents, operation
 
 
 def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set=None, charge=None):

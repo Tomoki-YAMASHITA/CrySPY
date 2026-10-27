@@ -17,6 +17,7 @@ def natural_selection(
         emax_ea=None,
         emin_ea=None,
         rng=None,
+        struc_loader=None,
     ):
     '''
     # ---------- args
@@ -29,6 +30,7 @@ def natural_selection(
     emax_ea (float): maximum energy for cutoff
     emin_ea (float): minimum energy for cutoff
     rng (np.random.Generator): random number generator
+    struc_loader (callable): optional function returning structure data for an ID
 
     # ---------- return
     ranking (list): [ID, ...]
@@ -89,6 +91,12 @@ def natural_selection(
     for cid in sorted_ids:
         # ------ init dupl_flag
         dupl_flag = False
+        # ------ load structure
+        # Load missing structures on demand for duplication checks.
+        loaded_here = False
+        if cid not in struc_with_elite and struc_loader is not None:
+            struc_with_elite[cid] = struc_loader(cid)
+            loaded_here = True
         # ------ for structure is None
         if struc_with_elite[cid] is None:
             continue    # next cid
@@ -99,6 +107,9 @@ def natural_selection(
                 break
         # ------ register or skip
         if dupl_flag:
+            # Discard newly loaded duplicates; later comparisons use ranking only.
+            if loaded_here:
+                del struc_with_elite[cid]
             continue    # next cid
         else:
             ranking.append(cid)

@@ -5,13 +5,13 @@ from pathlib import Path
 logger = getLogger('cryspy')
 
 
-def check_input(rin):
+def check_input_ht(rin):
     """Check input for high-throughput mode."""
 
     # ---------- algorithm
-    if rin.algo not in ('RS', 'EA'):
+    if rin.algo not in ('RS', 'EA', 'EA-vc'):
         logger.error(
-            'High-throughput mode currently supports only RS and EA'
+            'High-throughput mode currently supports only RS, EA, and EA-vc'
         )
         raise SystemExit(1)
 
@@ -35,7 +35,7 @@ def check_input(rin):
         raise SystemExit()
 
 
-def check_calc_file(rin):
+def check_calc_file_ht(rin):
     """Check calculation file for high-throughput mode."""
 
     # ---------- calculation file

@@ -2,33 +2,34 @@
 Restart evolutionary algorithm in CrySPY high-throughput mode
 '''
 
+from contextlib import closing
 from logging import getLogger
 
 from ...IO.read_input import ReadInput
-from ..db.ea import (
+from ..db.ea_db import (
     delete_ea_elites_after_generation,
     delete_ea_origins_after_generation,
     select_latest_ea_generation,
 )
-from ..db.record import (
+from ..db.record_db import (
     delete_records_after_generation,
     select_ids_after_generation,
     select_record_ids,
 )
-from ..db.sqlite import connect_db
+from ..db.sqlite_db import connect_db
 from ..worker.controller_ea import initialize_ea
 
 
 logger = getLogger('cryspy')
 
 
-def restart_ea(
+def restart_ea_ht(
     rin: ReadInput,
 ) -> None:
     """Restart evolutionary algorithm."""
 
     # ---------- EA generation information
-    with connect_db() as conn:
+    with closing(connect_db()) as conn, conn:
         generation = select_latest_ea_generation(conn)
 
         # ------ initial generation

@@ -2,29 +2,30 @@
 Restart random search in CrySPY high-throughput mode
 '''
 
+from contextlib import closing
 from logging import getLogger
 
 from ...IO.read_input import ReadInput
-from ..db.record import (
+from ..db.record_db import (
     Status,
     select_ids_by_status,
     select_record_ids,
 )
-from ..db.sqlite import connect_db
+from ..db.sqlite_db import connect_db
 from ..worker.controller_rs import generate_structures_rs
 
 
 logger = getLogger('cryspy')
 
 
-def restart_rs(
+def restart_rs_ht(
     rin: ReadInput,
     previous_tot_struc: int,
 ) -> None:
     """Restart random search."""
 
     # ---------- select record IDs
-    with connect_db() as conn:
+    with closing(connect_db()) as conn, conn:
         existing_ids = set(select_record_ids(conn))
         ids_by_status = select_ids_by_status(conn)
         generating_ids = set(

@@ -1,8 +1,19 @@
+from dataclasses import dataclass
 from itertools import product
 from logging import getLogger
+from typing import Optional
 
 import numpy as np
+from pymatgen.core import Structure
 
+from ..ea_offspring import (
+    GenerationResult,
+    OffspringResult,
+    ParentData,
+    SelectionContext,
+    generate_with_parent_attempts,
+    make_task_rng,
+)
 from ...util.struc_util import get_nat
 
 # ---------- import later
@@ -12,85 +23,12 @@ from ...util.struc_util import get_nat
 logger = getLogger('cryspy')
 
 
-def gen_elimination(
-        atype,
-        struc_data,
-        sp,
-        n_elim,
-        elim_dnat_map,
-        id_start=None,
-        symprec=0.01,
-        rng=None,
-    ):
-    '''
+@dataclass(frozen=True)
+class EliminationContext:
+    """Parameters for elimination generation."""
 
-        tuple may be replaced by list
-
-    atype (tuple): e.g. ('Na', 'Cl')
-    struc_data (dict): {id: structure data}
-    sp (instance): instance of SelectParents class
-    n_elim (int): number of structures to generate by elimination
-    elim_dnat_map (dict): {id: list of delta nat combinations for elimination}
-    id_start (int): start ID for new structures
-    symprec (float): tolerance for symmetry
-    rng (np.random.Generator): random number generator
-
-    # ---------- return
-    children (dict): {id: structure data}
-    parents (dict): {id: (id of parent_A, )}
-    operation (dict): {id: 'strain'}
-    '''
-
-    # ---------- initialize rng
-    if rng is None:
-        rng = np.random.default_rng()
-
-    # ---------- initialize
-    struc_cnt = 0
-    children = {}
-    parents = {}
-    operation = {}
-
-    # ---------- id_offset
-    if id_start is None:
-        cid = max(struc_data.keys()) + 1
-    else:
-        if id_start < (max(struc_data.keys()) + 1):
-            logger.error('id_start is already included in structure ID of the data')
-        else:
-            cid = id_start
-
-    # ---------- generate structures by elimination
-    while struc_cnt < n_elim:
-        # ------ select parents
-        pid_A, = sp.get_parents(n_parent=1)    # comma for list[0]
-        parent_A = struc_data[pid_A]
-        # ------ delta nat conbinations
-        dnat_comb = elim_dnat_map[pid_A]
-        # ------ elim_element_list, e.g. ['Li', 'Li', 'O']
-        dnat = dnat_comb[rng.integers(len(dnat_comb))] 
-        elim_element_list = [a for a, n in zip(atype, dnat) for _ in range(n)]
-        # ------ generate child
-        child = gen_child(parent_A, elim_element_list, rng=rng)
-        # ------ success
-        if child is not None:
-            children[cid] = child
-            parents[cid] = (pid_A, )
-            operation[cid] = 'elimination'
-            try:
-                spg_sym, spg_num = child.get_space_group_info(symprec=symprec)
-            except TypeError:
-                spg_num = 0
-                spg_sym = None
-            tmp_nat = get_nat(child, atype)
-            logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
-                f' from {pid_A:>6} by elimination.'
-                f' Space group: {spg_num:>3} {spg_sym}')
-            cid += 1
-            struc_cnt += 1
-
-    # ---------- return
-    return children, parents, operation
+    atype: tuple[str, ...]
+    elim_dnat_map: dict[int, list[tuple[int, ...]]]
 
 
 def gen_child(parent_A, elim_element_list, rng=None):
@@ -127,6 +65,113 @@ def gen_child(parent_A, elim_element_list, rng=None):
     # ---------- return
     #            no need to check distance in elimination
     return child
+
+
+class EliminationOffspringGenerator:
+    """Generate one offspring by elimination."""
+
+    def __init__(
+        self,
+        parent_data: ParentData,
+        selection_context: SelectionContext,
+        context: EliminationContext,
+        max_parent_attempts: int,
+    ) -> None:
+        # ---------- check input
+        if max_parent_attempts < 1:
+            raise ValueError(
+                'max_parent_attempts must be greater than zero'
+            )
+
+        # ---------- context
+        self.parent_data = parent_data
+        self.selection_context = selection_context
+        self.context = context
+        self.max_parent_attempts = max_parent_attempts
+
+    def generate(
+        self,
+        rng: np.random.Generator,
+    ) -> GenerationResult:
+        """Generate one offspring."""
+
+        # ---------- generate offspring
+        return generate_with_parent_attempts(
+            operation='elimination',
+            selection_context=self.selection_context,
+            n_parent=1,
+            max_parent_attempts=self.max_parent_attempts,
+            generate_attempt=self._generate_attempt,
+            rng=rng,
+        )
+
+    def _generate_attempt(
+        self,
+        parent_ids: tuple[int, ...],
+        rng: np.random.Generator,
+    ) -> Optional[Structure]:
+        """Attempt to generate one offspring."""
+
+        # ---------- parent
+        parent_id = parent_ids[0]
+        parent = self.parent_data.structures[parent_id]
+
+        # ---------- delta nat combinations
+        dnat_comb = self.context.elim_dnat_map[parent_id]
+        dnat = dnat_comb[rng.integers(len(dnat_comb))]
+        elim_element_list = [
+            a for a, n in zip(self.context.atype, dnat)
+            for _ in range(n)
+        ]
+
+        # ---------- generate offspring
+        return gen_child(
+            parent_A=parent,
+            elim_element_list=elim_element_list,
+            rng=rng,
+        )
+
+
+def gen_elimination_batch(
+        generator,
+        n_elim,
+        id_start,
+        symprec,
+        atype,
+        base_seed,
+        rng,
+    ):
+    """Generate elimination offspring batch."""
+
+    # ---------- initialize
+    offspring_data = {}
+    parents = {}
+    operation = {}
+
+    # ---------- generate offspring
+    for cid in range(id_start, id_start + n_elim):
+        task_rng = make_task_rng(base_seed, cid, rng)
+        result = generator.generate(task_rng)
+        if not isinstance(result, OffspringResult):
+            logger.error(result.reason)
+            raise SystemExit(1)
+        offspring_data[cid] = result.structure
+        parents[cid] = result.parent_ids
+        operation[cid] = 'elimination'
+        try:
+            spg_sym, spg_num = result.structure.get_space_group_info(
+                symprec=symprec
+            )
+        except TypeError:
+            spg_num = 0
+            spg_sym = None
+        tmp_nat = get_nat(result.structure, atype)
+        logger.info(f'Structure ID {cid:>6} {tmp_nat} was generated'
+                f' from {result.parent_ids[0]:>6} by elimination.'
+                f' Space group: {spg_num:>3} {spg_sym}')
+
+    # ---------- return
+    return offspring_data, parents, operation
 
 
 def get_elim_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb=None, charge=None):

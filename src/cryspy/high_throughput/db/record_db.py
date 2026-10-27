@@ -6,7 +6,7 @@ from ase import Atoms
 from pymatgen.core import Structure
 
 from ...util.struc_util import get_nat
-from .convert import (
+from .convert_db import (
     array_to_blob,
     atoms_to_raw,
     blob_to_array,
@@ -86,6 +86,7 @@ def update_init_struc(
     atype: tuple[str, ...],
     symprec: float,
     status: Status = Status.WAITING,
+    vc: bool = False,
 ) -> None:
     """Update an initial structure in the records table."""
 
@@ -103,10 +104,12 @@ def update_init_struc(
     atomic_numbers = raw_struc_dict["atomic_numbers"]
     lattice = raw_struc_dict["lattice"]
     frac_coords = raw_struc_dict["frac_coords"]
-    nat = np.asarray(
-        get_nat(struc, atype),
-        dtype=np.uint16,
-    )
+    nat = None
+    if vc:
+        nat = np.asarray(
+            get_nat(struc, atype),
+            dtype=np.uint16,
+        )
 
     # ---------- update records table
     conn.execute(
@@ -125,7 +128,7 @@ def update_init_struc(
         (
             status,
             array_to_blob(atomic_numbers),
-            array_to_blob(nat),
+            array_to_blob(nat) if vc else None,
             array_to_blob(lattice),
             array_to_blob(frac_coords),
             init_spg_num,
@@ -153,6 +156,23 @@ def select_record_ids(
     return [record_id for record_id, in cursor]
 
 
+def has_records(conn: sqlite3.Connection) -> bool:
+    """Return whether any records exist."""
+
+    # ---------- check existence
+    cursor = conn.execute(
+        """
+        SELECT EXISTS (
+            SELECT 1
+            FROM records
+        )
+        """
+    )
+
+    # ---------- return
+    return bool(cursor.fetchone()[0])
+
+
 def has_record_with_status(
     conn: sqlite3.Connection,
     status: Status,
@@ -173,6 +193,26 @@ def has_record_with_status(
 
     # ---------- return
     return bool(cursor.fetchone()[0])
+
+
+def count_records_with_status(
+    conn: sqlite3.Connection,
+    status: Status,
+) -> int:
+    """Count records with the given status."""
+
+    # ---------- count records
+    cursor = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM records
+        WHERE status = ?
+        """,
+        (status,),
+    )
+
+    # ---------- return
+    return cursor.fetchone()[0]
 
 
 def select_ids_by_status(
@@ -213,6 +253,28 @@ def select_ids_by_generation(
         ORDER BY id ASC
         """,
         (generation,),
+    )
+
+    # ---------- return
+    return [record_id for (record_id,) in cursor]
+
+
+def select_ids_in_generation_range(
+    conn: sqlite3.Connection,
+    min_generation: int,
+    max_generation: int,
+) -> list[int]:
+    """Select record IDs within an inclusive generation range."""
+
+    # ---------- select IDs
+    cursor = conn.execute(
+        """
+        SELECT id
+        FROM records
+        WHERE generation BETWEEN ? AND ?
+        ORDER BY id ASC
+        """,
+        (min_generation, max_generation),
     )
 
     # ---------- return
@@ -301,6 +363,7 @@ def count_results(
     ids: list[int] = None,
     emin: float = None,
     emax: float = None,
+    pending: bool = False,
 ) -> int:
     """Count calculated results."""
 
@@ -308,8 +371,11 @@ def count_results(
     query = """
         SELECT COUNT(*)
         FROM records
-        WHERE status NOT IN (?, ?)
     """
+    if pending:
+        query += ' WHERE status IN (?, ?)'
+    else:
+        query += ' WHERE status NOT IN (?, ?)'
     params = [
         Status.WAITING,
         Status.RUNNING,
@@ -342,6 +408,8 @@ def select_results(
     sort_by: str = 'energy',
     limit: int = None,
     tail: bool = False,
+    pending: bool = False,
+    vc: bool = False,
 ) -> list[tuple]:
     """Select calculated results."""
 
@@ -355,10 +423,16 @@ def select_results(
             init_spg_sym,
             opt_spg_num,
             opt_spg_sym,
-            nat
-        FROM records
-        WHERE status NOT IN (?, ?)
     """
+    query += ' nat,' if vc else ' NULL,'
+    query += """
+            generation
+        FROM records
+    """
+    if pending:
+        query += ' WHERE status IN (?, ?)'
+    else:
+        query += ' WHERE status NOT IN (?, ?)'
     params = [
         Status.WAITING,
         Status.RUNNING,
@@ -428,7 +502,8 @@ def select_results(
             init_spg_sym,
             opt_spg_num,
             opt_spg_sym,
-            tuple(blob_to_array(nat).tolist()),
+            tuple(blob_to_array(nat).tolist()) if nat is not None else None,
+            generation,
         )
         for (
             record_id,
@@ -439,7 +514,172 @@ def select_results(
             opt_spg_num,
             opt_spg_sym,
             nat,
+            generation,
         ) in rows
+    ]
+
+
+def select_parent_results(
+    conn: sqlite3.Connection,
+    record_ids: list[int],
+    vc: bool = False,
+) -> list[tuple]:
+    """Select parent energies and optional EA-vc atom counts."""
+
+    # ---------- no IDs
+    if not record_ids:
+        return []
+
+    # ---------- variable limit
+    variable_limit = 30000
+    if hasattr(conn, 'getlimit'):
+        variable_limit = conn.getlimit(
+            sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER
+        )
+    else:
+        for option, in conn.execute('PRAGMA compile_options'):
+            if option.startswith('MAX_VARIABLE_NUMBER='):
+                variable_limit = int(option.split('=', 1)[1])
+                break
+
+    # ---------- batch size
+    # Reserve two parameters for the status filters.
+    batch_size = variable_limit - 2
+    if batch_size <= 0:
+        raise ValueError(
+            'SQLite variable limit is too small to select parent results'
+        )
+
+    # ---------- prepare IDs
+    if len(record_ids) > batch_size:
+        # Preserve IN semantics and global ID order across batches.
+        record_ids = sorted(set(record_ids))
+
+    # ---------- select results
+    results = []
+    for start in range(0, len(record_ids), batch_size):
+        batch_ids = record_ids[start:start + batch_size]
+
+        # ------ query
+        query = """
+            SELECT id, energy,
+        """
+        query += ' nat' if vc else ' NULL'
+        placeholders = ', '.join('?' for _ in batch_ids)
+        query += f"""
+            FROM records
+            WHERE status IN (?, ?)
+              AND energy IS NOT NULL
+              AND id IN ({placeholders})
+            ORDER BY id ASC
+        """
+
+        # ------ select
+        cursor = conn.execute(
+            query,
+            (
+                Status.DONE,
+                Status.NOT_CONVERGED,
+                *batch_ids,
+            ),
+        )
+        for record_id, energy, nat in cursor:
+            nat = tuple(blob_to_array(nat).tolist()) if vc else None
+            results.append((record_id, energy, nat))
+
+    # ---------- return
+    return results
+
+
+def select_energy_results(
+    conn: sqlite3.Connection,
+) -> list[tuple]:
+    """Select completed results for energy plots."""
+
+    # ---------- select results
+    cursor = conn.execute(
+        """
+        SELECT id, generation, energy
+        FROM records
+        WHERE status IN (?, ?, ?, ?, ?)
+        ORDER BY id ASC
+        """,
+        (
+            Status.DONE,
+            Status.ERROR,
+            Status.NOT_CONVERGED,
+            Status.MINDIST,
+            Status.OMIT,
+        ),
+    )
+
+    # ---------- return
+    return cursor.fetchall()
+
+
+def select_evaluated_ids(
+    conn: sqlite3.Connection,
+    generation: int,
+) -> list[int]:
+    """Select evaluated record IDs up to the given generation."""
+
+    # ---------- select IDs
+    cursor = conn.execute(
+        """
+        SELECT id
+        FROM records
+        WHERE generation <= ?
+          AND status IN (?, ?)
+          AND energy IS NOT NULL
+        ORDER BY id ASC
+        """,
+        (
+            generation,
+            Status.DONE,
+            Status.NOT_CONVERGED,
+        ),
+    )
+
+    # ---------- return
+    return [record_id for (record_id,) in cursor]
+
+
+def select_hull_results(
+    conn: sqlite3.Connection,
+    generation: int,
+) -> list[tuple]:
+    """Select results for convex hull calculation."""
+
+    # ---------- select results
+    cursor = conn.execute(
+        """
+        SELECT
+            id,
+            generation,
+            energy,
+            nat
+        FROM records
+        WHERE generation <= ?
+          AND status IN (?, ?)
+          AND energy IS NOT NULL
+        ORDER BY id ASC
+        """,
+        (
+            generation,
+            Status.DONE,
+            Status.NOT_CONVERGED,
+        ),
+    )
+
+    # ---------- return
+    return [
+        (
+            record_id,
+            record_generation,
+            energy,
+            tuple(blob_to_array(nat).tolist()),
+        )
+        for record_id, record_generation, energy, nat in cursor
     ]
 
 
@@ -450,15 +690,16 @@ def select_struc(
 ) -> dict | None:
     """Select structure data by ID."""
 
+    # ---------- select initial or optimized columns
+    prefix = 'init' if initial else 'opt'
+
     # ---------- select structure
     cursor = conn.execute(
-        """
+        f"""
         SELECT
             atomic_numbers,
-            init_lattice,
-            init_frac_coords,
-            opt_lattice,
-            opt_frac_coords
+            {prefix}_lattice,
+            {prefix}_frac_coords
         FROM records
         WHERE id = ?
         """,
@@ -470,17 +711,17 @@ def select_struc(
     if row is None:
         return None
 
-    # ---------- select initial or optimized structure
-    if initial:
-        lattice_blob = row[1]
-        frac_coords_blob = row[2]
-    else:
-        lattice_blob = row[3]
-        frac_coords_blob = row[4]
+    # ---------- selected structure blobs
+    lattice_blob = row[1]
+    frac_coords_blob = row[2]
 
     # ---------- return
     return {
-        'atomic_numbers': blob_to_array(row[0]),
+        'atomic_numbers': (
+            None
+            if row[0] is None
+            else blob_to_array(row[0])
+        ),
         'lattice': (
             None
             if lattice_blob is None
@@ -558,7 +799,6 @@ def claim_next_struc(
             SELECT
                 id,
                 atomic_numbers,
-                nat,
                 init_lattice,
                 init_frac_coords
             FROM records
@@ -592,9 +832,8 @@ def claim_next_struc(
         # ---------- structure data
         raw_struc_dict = {
             "atomic_numbers": blob_to_array(row[1]),
-            "nat": blob_to_array(row[2]),
-            "lattice": blob_to_array(row[3]),
-            "frac_coords": blob_to_array(row[4]),
+            "lattice": blob_to_array(row[2]),
+            "frac_coords": blob_to_array(row[3]),
         }
 
         # ---------- commit

@@ -3,17 +3,25 @@
 High-throughput mode.
 '''
 import argparse
+from contextlib import closing
 from logging import getLogger
 import os
 
 from cryspy import __version__
-from cryspy.high_throughput.db.ea import select_latest_ea_generation
-from cryspy.high_throughput.db.sqlite import connect_db
-from cryspy.high_throughput.start.check_input import check_calc_file
-from cryspy.high_throughput.start.initialize import initialize
-from cryspy.high_throughput.start.restart import restart
+from cryspy.high_throughput.db.ea_db import (
+    has_ea_phase_diagram,
+    save_ea_hdist,
+    save_ea_phase_diagram,
+    select_latest_ea_generation,
+)
+from cryspy.high_throughput.db.sqlite_db import connect_db
+from cryspy.high_throughput.start_ht.check_input_ht import check_calc_file_ht
+from cryspy.high_throughput.start_ht.initialize_ht import initialize_ht
+from cryspy.high_throughput.start_ht.restart_ht import restart_ht
 from cryspy.high_throughput.worker.controller_ea import (
+    calculate_hull_ea,
     generate_next_generation_ea,
+    plot_energy_ea,
 )
 from cryspy.high_throughput.worker.controller_opt import (
     RunStatus,
@@ -28,7 +36,22 @@ from cryspy.util.utility import (
 
 def main():
     # ---------- argparse
-    parser = argparse.ArgumentParser(description='CrySPY high-throughput mode')
+    parser = argparse.ArgumentParser(
+        description='CrySPY high-throughput mode',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            'Related commands:\n'
+            '  cryspy-ht-status            Show calculation status\n'
+            '  cryspy-ht-results           Show optimization results\n'
+            '  cryspy-ht-ea-data           Show EA info, origins, elites, and hull distances\n'
+            '  cryspy-ht-Eplot             Plot energies and convex hulls\n'
+            '  cryspy-ht-calc-convex-hull  Recalculate convex hulls\n'
+            '  cryspy-ht-reset             Reset calculation results\n'
+            '  cryspy-ht-extract-struc     Extract structures\n'
+            '\n'
+            'Use COMMAND -h for detailed options.'
+        ),
+    )
     parser.add_argument('-b', '--backup', help='backup data', action='store_true')
     parser.add_argument('-c', '--clean', help='clean data', action='store_true')
     parser.add_argument('-g', '--debug', help='debug', action='store_true')
@@ -74,11 +97,16 @@ def main():
             clean_cryspy(ht=True)
             raise SystemExit()
 
+        # ---------- check stop file
+        if os.path.isfile('STOP_CRYSPY_HT'):
+            logger.info('Stop file detected: STOP_CRYSPY_HT')
+            raise SystemExit()
+
         # ---------- initialize or restart
         if not os.path.isfile('data/db_data/rslt_data.db'):
-            rin = initialize()
+            rin = initialize_ht()
         else:
-            rin = restart()
+            rin = restart_ht()
 
         # ---------- check point 2
         if rin.stop_chkpt == 2:
@@ -86,7 +114,7 @@ def main():
             raise SystemExit()
 
         # ---------- check calculation file
-        check_calc_file(rin)
+        check_calc_file_ht(rin)
 
         # ---------- main execution loop
         while True:
@@ -97,18 +125,48 @@ def main():
             if run_status == RunStatus.STOPPED:
                 break
 
+            # ------ check stop file
+            if os.path.isfile('STOP_CRYSPY_HT'):
+                logger.info('Stop file detected: STOP_CRYSPY_HT')
+                break
+
             # ------ random search
             if rin.algo == 'RS':
                 logger.info('\nDone all structures!')
                 break
 
             # ------ current generation
-            with connect_db() as conn:
+            with closing(connect_db()) as conn, conn:
                 generation = select_latest_ea_generation(conn)
             if generation is None:
                 logger.error('EA generation information was not found')
                 raise SystemExit(1)
             logger.info(f'Done generation {generation}')
+
+            # ------ EA: plot
+            if rin.algo == 'EA':
+                plot_energy_ea(rin, generation)
+
+            # ------ convex hull
+            if rin.algo == 'EA-vc':
+                with closing(connect_db()) as conn, conn:
+                    if not has_ea_phase_diagram(conn, generation):
+                        phase_diagram, hdist = calculate_hull_ea(
+                            conn,
+                            rin,
+                            generation,
+                        )
+                        save_ea_hdist(conn, generation, hdist)
+                        save_ea_phase_diagram(conn, generation, phase_diagram)
+                    else:
+                        logger.info(
+                            f'Use saved convex hull for generation {generation}'
+                        )
+
+            # ------ check stop file
+            if os.path.isfile('STOP_CRYSPY_HT'):
+                logger.info('Stop file detected: STOP_CRYSPY_HT')
+                break
 
             # ------ check point 3
             if rin.stop_chkpt == 3:
@@ -127,6 +185,11 @@ def main():
             # ------ backup
             if 0 < rin.backup_interval and generation % rin.backup_interval == 0:
                 backup_cryspy(ht=True)
+
+            # ------ check stop file
+            if os.path.isfile('STOP_CRYSPY_HT'):
+                logger.info('Stop file detected: STOP_CRYSPY_HT')
+                break
 
             # ------ next generation
             generate_next_generation_ea(

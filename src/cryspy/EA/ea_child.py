@@ -5,7 +5,6 @@ from .ea_offspring import (
     TournamentSelectionContext,
     build_roulette_selection_context,
 )
-from .gen_struc_EA.select_parents import SelectParents
 from .gen_struc_EA.crossover import (
     CrossoverContext,
     CrossoverOffspringGenerator,
@@ -21,9 +20,21 @@ from .gen_struc_EA.strain import (
     StrainOffspringGenerator,
     gen_strain_batch,
 )
-from .gen_struc_EA.addition import gen_addition
-from .gen_struc_EA.elimination import gen_elimination
-from .gen_struc_EA.substitution import gen_substitution
+from .gen_struc_EA.addition import (
+    AdditionContext,
+    AdditionOffspringGenerator,
+    gen_addition_batch,
+)
+from .gen_struc_EA.elimination import (
+    EliminationContext,
+    EliminationOffspringGenerator,
+    gen_elimination_batch,
+)
+from .gen_struc_EA.substitution import (
+    SubstitutionContext,
+    SubstitutionOffspringGenerator,
+    gen_substitution_batch,
+)
 #from .gen_struc_EA.rotation import gen_rotation
 from ..IO import pkl_data
 from ..IO.out_results import out_nat_data
@@ -103,45 +114,18 @@ def child_gen(
             rin, ranking, nat_data, cn_comb=cn_comb
         )
 
-    # ---------- helper: build SelectParents with common selector settings
-    def _build_sp(parent_ids):
-        sp_local = SelectParents(parent_ids, rng)
-        if rin.slct_func == 'TNM':
-            sp_local.set_tournament(rin.t_size)
-        else:
-            # roulette needs fitness for IDs in parent_ids
-            fit_local = {pid: fittest[pid] for pid in parent_ids}
-            sp_local.set_roulette(fit_local, rin.a_rlt, rin.b_rlt, rin.fit_reverse)
-            logger.debug(f'roulette weights: {sp_local.weights}')
-        return sp_local
-
     # ---------- parent data
     parent_data = ParentData(
         structures=struc_data,
     )
 
-    # ---------- parent selectors for each operation
+    # ---------- log eligible candidates for each operation
     # ------ crossover and strain
-    sp_co = _build_sp(ranking)
-    logger.info(f'eligible candidates for crossover and strain: {len(sp_co.ranking)}')
+    logger.info(f'eligible candidates for crossover and strain: {len(ranking)}')
     # ------ permutation
-    if vc:
-        sp_pm = _build_sp(perm_pid_list) if rin.n_perm > 0 else None
-    else:
-        sp_pm = _build_sp(ranking) if rin.n_perm > 0 else None
-    if sp_pm is not None:
-        logger.info(f'eligible candidates for permutation: {len(sp_pm.ranking)}')
-    # ------ EA-vc only operation-specific parent pools
-    sp_add = _build_sp(list(add_dnat_map.keys())) if (vc and rin.n_add > 0) else None
-    sp_elim = _build_sp(list(elim_dnat_map.keys())) if (vc and rin.n_elim > 0) else None
-    sp_subs = _build_sp(list(subs_comb_map.keys())) if (vc and rin.n_subs > 0) else None
-    if sp_add is not None:
-        logger.info(f'eligible candidates for addition: {len(sp_add.ranking)}')
-    if sp_elim is not None:
-        logger.info(f'eligible candidates for elimination: {len(sp_elim.ranking)}')
-    if sp_subs is not None:
-        logger.info(f'eligible candidates for substitution: {len(sp_subs.ranking)}')
-
+    if rin.n_perm > 0:
+        perm_parent_ids = perm_pid_list if vc else ranking
+        logger.info(f'eligible candidates for permutation: {len(perm_parent_ids)}')
     # ---------- selection contexts
     if rin.slct_func == 'TNM':
         selection_context_co = TournamentSelectionContext(
@@ -175,6 +159,64 @@ def child_gen(
             if rin.n_perm > 0
             else None
         )
+
+    # ---------- selection contexts for EA-vc
+    # ------ selection context for addition
+    selection_context_ad = None
+    if vc and rin.n_add > 0:
+        add_parent_ids = tuple(add_dnat_map)
+        logger.info(f'eligible candidates for addition: {len(add_parent_ids)}')
+        if rin.slct_func == 'TNM':
+            selection_context_ad = TournamentSelectionContext(
+                parent_ids=add_parent_ids,
+                tournament_size=rin.t_size,
+            )
+        else:
+            selection_context_ad = build_roulette_selection_context(
+                parent_ids=add_parent_ids,
+                fitness=fittest,
+                a_rlt=rin.a_rlt,
+                b_rlt=rin.b_rlt,
+                fit_reverse=rin.fit_reverse,
+            )
+
+    # ------ selection context for elimination
+    selection_context_el = None
+    if vc and rin.n_elim > 0:
+        elim_parent_ids = tuple(elim_dnat_map)
+        logger.info(f'eligible candidates for elimination: {len(elim_parent_ids)}')
+        if rin.slct_func == 'TNM':
+            selection_context_el = TournamentSelectionContext(
+                parent_ids=elim_parent_ids,
+                tournament_size=rin.t_size,
+            )
+        else:
+            selection_context_el = build_roulette_selection_context(
+                parent_ids=elim_parent_ids,
+                fitness=fittest,
+                a_rlt=rin.a_rlt,
+                b_rlt=rin.b_rlt,
+                fit_reverse=rin.fit_reverse,
+            )
+
+    # ------ selection context for substitution
+    selection_context_sb = None
+    if vc and rin.n_subs > 0:
+        subs_parent_ids = tuple(subs_comb_map)
+        logger.info(f'eligible candidates for substitution: {len(subs_parent_ids)}')
+        if rin.slct_func == 'TNM':
+            selection_context_sb = TournamentSelectionContext(
+                parent_ids=subs_parent_ids,
+                tournament_size=rin.t_size,
+            )
+        else:
+            selection_context_sb = build_roulette_selection_context(
+                parent_ids=subs_parent_ids,
+                fitness=fittest,
+                a_rlt=rin.a_rlt,
+                b_rlt=rin.b_rlt,
+                fit_reverse=rin.fit_reverse,
+            )
 
     # ---------- vc: prepare composition data for crossover and random generation
     feasible_comp = None
@@ -309,16 +351,25 @@ def child_gen(
         # ------ Addition
         if rin.n_add > 0:
             if rin.struc_mode not in ['mol', 'mol_bs']:
-                ad_children, ad_parents, ad_operation = gen_addition(
-                    rin.atype,
-                    mindist,
-                    struc_data,
-                    sp_add,
-                    rin.n_add,
-                    add_dnat_map,
-                    id_start,
-                    rin.symprec,
-                    rin.maxcnt_ea,
+                addition_context = AdditionContext(
+                    atype=rin.atype,
+                    mindist=mindist,
+                    add_dnat_map=add_dnat_map,
+                    maxcnt_ea=rin.maxcnt_ea,
+                )
+                ad_generator = AdditionOffspringGenerator(
+                    parent_data=parent_data,
+                    selection_context=selection_context_ad,
+                    context=addition_context,
+                    max_parent_attempts=rin.max_parent_attempts,
+                )
+                ad_children, ad_parents, ad_operation = gen_addition_batch(
+                    generator=ad_generator,
+                    n_add=rin.n_add,
+                    id_start=id_start,
+                    symprec=rin.symprec,
+                    atype=rin.atype,
+                    base_seed=rin.seed,
                     rng=rng,
                 )
             else:
@@ -333,14 +384,23 @@ def child_gen(
         # ------ Elimination
         if rin.n_elim > 0:
             if rin.struc_mode not in ['mol', 'mol_bs']:
-                el_children, el_parents, el_operation = gen_elimination(
-                    rin.atype,
-                    struc_data,
-                    sp_elim,
-                    rin.n_elim,
-                    elim_dnat_map,
-                    id_start,
-                    rin.symprec,
+                elimination_context = EliminationContext(
+                    atype=rin.atype,
+                    elim_dnat_map=elim_dnat_map,
+                )
+                el_generator = EliminationOffspringGenerator(
+                    parent_data=parent_data,
+                    selection_context=selection_context_el,
+                    context=elimination_context,
+                    max_parent_attempts=rin.max_parent_attempts,
+                )
+                el_children, el_parents, el_operation = gen_elimination_batch(
+                    generator=el_generator,
+                    n_elim=rin.n_elim,
+                    id_start=id_start,
+                    symprec=rin.symprec,
+                    atype=rin.atype,
+                    base_seed=rin.seed,
                     rng=rng,
                 )
             else:
@@ -355,16 +415,25 @@ def child_gen(
         # ------ Substitution
         if rin.n_subs > 0:
             if rin.struc_mode not in ['mol', 'mol_bs']:
-                sb_children, sb_parents, sb_operation = gen_substitution(
-                    rin.atype,
-                    mindist,
-                    struc_data,
-                    sp_subs,
-                    rin.n_subs,
-                    subs_comb_map,
-                    id_start,
-                    rin.symprec,
-                    rin.maxcnt_ea,
+                substitution_context = SubstitutionContext(
+                    atype=rin.atype,
+                    mindist=mindist,
+                    subs_comb_map=subs_comb_map,
+                    maxcnt_ea=rin.maxcnt_ea,
+                )
+                sb_generator = SubstitutionOffspringGenerator(
+                    parent_data=parent_data,
+                    selection_context=selection_context_sb,
+                    context=substitution_context,
+                    max_parent_attempts=rin.max_parent_attempts,
+                )
+                sb_children, sb_parents, sb_operation = gen_substitution_batch(
+                    generator=sb_generator,
+                    n_subs=rin.n_subs,
+                    id_start=id_start,
+                    symprec=rin.symprec,
+                    atype=rin.atype,
+                    base_seed=rin.seed,
                     rng=rng,
                 )
             else:

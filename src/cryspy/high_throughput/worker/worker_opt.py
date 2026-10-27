@@ -13,8 +13,8 @@ from ase import Atoms
 
 from ...IO.read_input import ReadInput
 from ...util.struc_util import check_distance, set_mindist
-from ..db.convert import atoms_to_raw, raw_to_atoms, raw_to_struc
-from ..db.record import Status
+from ..db.convert_db import atoms_to_raw, raw_to_atoms, raw_to_struc
+from ..db.record_db import Status
 
 
 logger = getLogger('cryspy')
@@ -177,7 +177,7 @@ def process_structure(
     optimize_func: Callable[[Atoms], tuple[Atoms, float, bool]],
     record_id: int,
     raw_struc_dict: dict,
-) -> tuple[Atoms, float, Status]:
+) -> tuple[Atoms | None, float, Status]:
     """Process one structure without database access."""
 
     # ---------- optimize structure
@@ -221,6 +221,8 @@ def process_structure(
 
     # ---------- status
     if not mindist_ok:
+        opt_atoms = None
+        energy = float('nan')
         status = Status.MINDIST
     elif not converged:
         status = Status.NOT_CONVERGED

@@ -69,11 +69,12 @@ def next_gen_EA(
             min_comp = ea_info.loc[ea_info['Gen'] == gen, 'min_comp'].iloc[-1]
             max_comp = ea_info.loc[ea_info['Gen'] == gen, 'max_comp'].iloc[-1]
             # ------ calc convex hull and hull distance
+            energy_data = rslt_data[rslt_data['Gen'] <= gen]['E_eV_atom'].to_dict()
             phase_diagram, hdist = calc_convex_hull(
                 atype=rin.atype,
                 gen=gen,
                 ref_energies=rin.ref_energies,
-                rslt_data=rslt_data,
+                energy_data=energy_data,
                 nat_data=nat_data,
                 ymax=rin.ymax,
                 show_max=rin.show_max,

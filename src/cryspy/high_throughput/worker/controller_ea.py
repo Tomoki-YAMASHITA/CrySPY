@@ -1,7 +1,12 @@
+from contextlib import closing
+from copy import deepcopy
+from datetime import timedelta
 from logging import getLogger
 from logging.handlers import QueueListener
 import multiprocessing as mp
+import os
 from queue import Empty
+from time import perf_counter
 
 import numpy as np
 from pymatgen.core import Structure
@@ -25,32 +30,137 @@ from ...EA.gen_struc_EA.strain import (
     StrainContext,
     StrainOffspringGenerator,
 )
+from ...EA.gen_struc_EA.addition import (
+    AdditionContext,
+    AdditionOffspringGenerator,
+    get_add_dnat_comb,
+)
+from ...EA.gen_struc_EA.elimination import (
+    EliminationContext,
+    EliminationOffspringGenerator,
+    get_elim_dnat_comb,
+)
+from ...EA.gen_struc_EA.substitution import (
+    SubstitutionContext,
+    SubstitutionOffspringGenerator,
+    get_subs_comb,
+)
 from ...EA.natural_selection import natural_selection
 from ...util.struc_util import set_mindist
 from .controller_rs import generate_structures_rs
 from .worker_ea import run_worker_ea
-from ..db.convert import raw_to_struc
-from ..db.ea import (
+from ..db.convert_db import raw_to_struc
+from ..db.ea_db import (
+    delete_ea_elites,
     insert_ea_elites,
     insert_ea_info,
     insert_ea_origin,
     select_ea_elite_ids,
+    select_ea_hdist,
+    select_ea_parent_settings,
 )
-from ..db.record import (
+from ..db.record_db import (
     Status,
     get_next_record_id,
     initialize_record,
+    select_energy_results,
+    select_evaluated_ids,
+    select_hull_results,
     select_ids_by_generation,
-    select_results,
+    select_parent_results,
     select_status,
     select_struc,
     update_generation,
     update_init_struc,
 )
-from ..db.sqlite import connect_db
+from ..db.sqlite_db import connect_db
 
 
 logger = getLogger('cryspy')
+
+
+def plot_energy_ea(rin, generation: int):
+    """Automatically plot EA energies at the specified generation interval."""
+
+    # ---------- energy output interval
+    if not (
+        0 < rin.energy_output_interval
+        and generation % rin.energy_output_interval == 0
+    ):
+        return
+
+    import pandas as pd
+
+    from ...util.visual_util import plot_energy_EA
+
+    # ---------- load results
+    with closing(connect_db()) as conn, conn:
+        rslt_data = pd.DataFrame(
+            select_energy_results(conn),
+            columns=['ID', 'Gen', 'E_eV_atom'],
+        ).set_index('ID')
+    rslt_data['E_eV_atom'] = pd.to_numeric(rslt_data['E_eV_atom'])
+    rslt_data['E_eV_atom'] = rslt_data['E_eV_atom'].replace(
+        [float('inf'), -float('inf')],
+        float('nan'),
+    )
+
+    # ---------- plot
+    fig, ax = plot_energy_EA(rslt_data, rin.ymax, rin.markersize)
+
+    # ---------- save figure
+    os.makedirs('data/energy_plot', exist_ok=True)
+    fname = f'data/energy_plot/energy_EA_gen_{generation}.{rin.fig_format}'
+    fig.savefig(fname)
+    logger.info(f'Energy plot for EA saved as {fname}')
+
+
+def calculate_hull_ea(
+    conn,
+    rin,
+    generation: int,
+    mpl_draw: bool | None = None,
+):
+    """Calculate convex hull and hull distances for EA-vc."""
+
+    from ...EA.calc_hull import calc_convex_hull
+
+    # ---------- plot option
+    if mpl_draw is None:
+        mpl_draw = (
+            0 < rin.energy_output_interval
+            and generation % rin.energy_output_interval == 0
+        )
+
+    # ---------- output directory
+    if mpl_draw:
+        os.makedirs('data/convex_hull', exist_ok=True)
+
+    # ---------- load results
+    results = select_hull_results(conn, generation)
+    energy_data = {cid: energy for cid, _gen, energy, _nat in results}
+    nat_data = {cid: nat for cid, _gen, _energy, nat in results}
+
+    # ---------- calculate convex hull
+    logger.info(f'Calculate convex hull for generation {generation}')
+    return calc_convex_hull(
+        atype=rin.atype,
+        gen=generation,
+        ref_energies=rin.ref_energies,
+        energy_data=energy_data,
+        nat_data=nat_data,
+        ymax=rin.ymax,
+        show_max=rin.show_max,
+        label_stable=rin.label_stable,
+        vmax=rin.vmax,
+        bottom_margin=rin.bottom_margin,
+        markersize=rin.markersize,
+        fig_format=rin.fig_format,
+        emax_ea=rin.emax_ea,
+        emin_ea=rin.emin_ea,
+        mpl_draw=mpl_draw,
+        axis_order=rin.axis_order,
+    )
 
 
 def load_current_generation_ids(
@@ -77,51 +187,57 @@ def load_current_generation_ids(
 def load_generation_results(
     conn,
     record_ids: list[int],
-) -> tuple[dict[int, Structure], dict[int, float]]:
-    """Load optimized structures and fitness values."""
+    hdist: dict[int, float] | None = None,
+    vc: bool = False,
+    struc_cache: dict[int, Structure] | None = None,
+) -> tuple[
+    dict[int, Structure],
+    dict[int, float],
+    dict[int, tuple[int, ...]] | None,
+]:
+    """Load optimized structures and fitness, with atom counts for EA-vc."""
 
     # ---------- load generation results
-    results = select_results(
+    results = select_parent_results(
         conn,
-        ids=record_ids,
-        sort_by='id',
+        record_ids,
+        vc=vc,
     )
     struc_data = {}
     fitness = {}
+    nat_data = {} if vc else None
 
     # ---------- load optimized structures
-    for (
-        cid,
-        status,
-        energy,
-        _init_spg_num,
-        _init_spg_sym,
-        _opt_spg_num,
-        _opt_spg_sym,
-        _nat,
-    ) in results:
-        if status not in (Status.DONE, Status.NOT_CONVERGED):
-            continue
-        if energy is None:
-            continue
+    for cid, energy, nat in results:
+        # ------ reuse structures loaded during elite selection
+        if struc_cache is not None and cid in struc_cache:
+            struc_data[cid] = struc_cache[cid]
+        else:
+            # ------ load optimized structure
+            raw_struc = select_struc(conn, cid, initial=False)
+            if raw_struc is None:
+                continue
+            if raw_struc['lattice'] is None:
+                continue
+            if raw_struc['frac_coords'] is None:
+                continue
 
-        raw_struc = select_struc(conn, cid, initial=False)
-        if raw_struc is None:
-            continue
-        if raw_struc['lattice'] is None:
-            continue
-        if raw_struc['frac_coords'] is None:
-            continue
-
-        struc_data[cid] = raw_to_struc(raw_struc)
-        fitness[cid] = energy
+            struc_data[cid] = raw_to_struc(raw_struc)
+        fitness[cid] = energy if hdist is None else hdist.get(cid, np.nan)
+        if nat_data is not None:
+            nat_data[cid] = nat
 
     # ---------- check generation results
-    if not struc_data:
-        logger.error('No generation results were found for EA generation')
-        raise SystemExit(1)
-    if set(struc_data) != set(record_ids):
-        missing_ids = sorted(set(record_ids) - set(struc_data))
+    missing_ids = [
+        cid
+        for cid in sorted(set(record_ids) - set(struc_data))
+        if select_status(conn, cid) not in (
+            Status.ERROR,
+            Status.MINDIST,
+            Status.OMIT,
+        )
+    ]
+    if missing_ids:
         logger.error(
             'Failed to load generation results: '
             f'missing IDs = {missing_ids}'
@@ -129,7 +245,41 @@ def load_generation_results(
         raise SystemExit(1)
 
     # ---------- return
-    return struc_data, fitness
+    return struc_data, fitness, nat_data
+
+
+def filter_parent_pool_by_nat(
+    rin,
+    struc_data: dict[int, Structure],
+    fitness: dict[int, float],
+    nat_data: dict[int, tuple[int, ...]],
+):
+    """Filter parent candidates by atom-count bounds."""
+
+    # ---------- initialize
+    filtered_struc = {}
+    filtered_fitness = {}
+
+    # ---------- filter candidates
+    for cid, struc in struc_data.items():
+        nat = nat_data.get(cid)
+        if nat is None or sum(nat) <= 0:
+            continue
+        if not all(
+            ll <= n_i <= ul
+            for n_i, ll, ul in zip(nat, rin.ll_nat, rin.ul_nat)
+        ):
+            continue
+        # ------ valid fitness
+        value = fitness.get(cid)
+        if value is None or not np.isfinite(value):
+            continue
+
+        filtered_struc[cid] = struc
+        filtered_fitness[cid] = value
+
+    # ---------- return
+    return filtered_struc, filtered_fitness
 
 
 def prepare_parent_pool(
@@ -138,35 +288,151 @@ def prepare_parent_pool(
     generation: int,
     rng: np.random.Generator,
 ):
-    """Prepare parent pool for fixed-composition EA."""
+    """Prepare parent pool for EA and EA-vc."""
+
+    # ---------- hull distance
+    hdist = select_ea_hdist(conn, generation) if rin.algo == 'EA-vc' else None
 
     # ---------- current generation
     current_ids = load_current_generation_ids(conn, generation)
-    struc_data, fitness = load_generation_results(conn, current_ids)
+    struc_data, fitness, nat_data = load_generation_results(
+        conn,
+        current_ids,
+        hdist=hdist,
+        vc=rin.algo == 'EA-vc',
+    )
+    if rin.algo == 'EA-vc':
+        filtered_struc_data, filtered_fitness = filter_parent_pool_by_nat(
+            rin,
+            struc_data,
+            fitness,
+            nat_data,
+        )
+    else:
+        filtered_struc_data = struc_data
+        filtered_fitness = fitness
 
     # ---------- elite
     elite_ids = select_ea_elite_ids(conn, generation)
+    reselect_reasons = []
+    if any(
+        select_status(conn, cid) == Status.OMIT
+        for cid in elite_ids
+    ):
+        reselect_reasons.append('saved elite was omitted')
+
+    if rin.algo == 'EA-vc':
+        if rin.n_elite == 0:
+            elite_ids = []
+            reselect_reasons.clear()
+            save_ea_elite_ids(conn, generation, elite_ids)
+        elif generation > 1:
+            previous_settings = select_ea_parent_settings(conn, generation)
+            current_settings = (rin.ll_nat, rin.ul_nat, rin.n_elite)
+            if previous_settings != current_settings:
+                reselect_reasons.append('atom-count bounds or n_elite changed')
+            if not elite_ids:
+                reselect_reasons.append('no saved elites')
+            elif any(
+                not np.isfinite(hdist.get(cid, np.nan))
+                for cid in elite_ids
+            ):
+                reselect_reasons.append('saved elite has no valid hull distance')
+
+    # Structures are cached only when elites are reselected.
+    elite_struc_cache = None
+    if reselect_reasons:
+        # ------ reselect elites from past generations
+        logger.info(
+            f'Reselect elites from generations <= {generation - 1}: '
+            + ', '.join(reselect_reasons)
+        )
+        past_ids = select_evaluated_ids(conn, generation - 1)
+        # Use past candidates with hull distances from the current generation.
+        past_struc, past_fitness = prepare_elite_pool(
+            conn,
+            rin,
+            generation,
+            record_ids=past_ids,
+        )
+
+        # ------ structure loader
+        struc_loader = prepare_struc_loader(conn)
+
+        # ------ elite RNG
+        # Reselection must not advance the parent-selection RNG on restart.
+        elite_rng = deepcopy(rng)
+
+        # ------ select elite
+        elite_ids, elite_struc_cache = select_elite_ids(
+            rin,
+            past_struc,
+            past_fitness,
+            elite_rng,
+            struc_loader=struc_loader,
+        )
+
+        # ------ update latest elite record
+        save_ea_elite_ids(conn, generation, elite_ids)
+
     if elite_ids:
-        elite_struc, elite_fitness = load_generation_results(
+        elite_struc, elite_fitness, elite_nat_data = load_generation_results(
             conn,
             elite_ids,
+            hdist=hdist,
+            vc=rin.algo == 'EA-vc',
+            struc_cache=elite_struc_cache,
         )
+        if rin.algo == 'EA-vc':
+            filtered_elite_struc, filtered_elite_fitness = filter_parent_pool_by_nat(
+                rin,
+                elite_struc,
+                elite_fitness,
+                elite_nat_data,
+            )
+            nat_data.update({
+                cid: elite_nat_data[cid]
+                for cid in filtered_elite_struc
+            })
+        else:
+            filtered_elite_struc = elite_struc
+            filtered_elite_fitness = elite_fitness
     else:
-        elite_struc = None
-        elite_fitness = None
+        filtered_elite_struc = None
+        filtered_elite_fitness = None
+
+    # ---------- log valid parent candidates
+    if rin.algo == 'EA-vc':
+        n_elite_candidates = (
+            0 if filtered_elite_struc is None else len(filtered_elite_struc)
+        )
+        logger.info(
+            f'Current parent candidates: {len(filtered_struc_data)}'
+        )
+        logger.info(
+            f'Elite parent candidates: {n_elite_candidates}'
+        )
 
     # ---------- natural selection
+    logger.info('# ------ natural selection')
     ranking, fit_with_elite, struc_with_elite = natural_selection(
-        fitness=fitness,
-        struc_data=struc_data,
-        elite_struc=elite_struc,
-        elite_fitness=elite_fitness,
+        fitness=filtered_fitness,
+        struc_data=filtered_struc_data,
+        elite_struc=filtered_elite_struc,
+        elite_fitness=filtered_elite_fitness,
         n_fittest=rin.n_fittest,
         fit_reverse=rin.fit_reverse,
-        emax_ea=rin.emax_ea,
-        emin_ea=rin.emin_ea,
+        emax_ea=None if rin.algo == 'EA-vc' else rin.emax_ea,
+        emin_ea=None if rin.algo == 'EA-vc' else rin.emin_ea,
         rng=rng,
     )
+
+    # ---------- log parent ranking
+    logger.info('ranking without duplication (including elite):')
+    for cid in ranking:
+        logger.info(
+            f'Structure ID {cid:>6}, fitness: {fit_with_elite[cid]:>10.5f}'
+        )
 
     # ---------- check parent pool
     min_required = 2 if rin.n_crsov > 0 else 1
@@ -178,7 +444,11 @@ def prepare_parent_pool(
         raise SystemExit(1)
 
     # ---------- return
-    return ranking, fit_with_elite, struc_with_elite
+    selected_struc_data = {cid: struc_with_elite[cid] for cid in ranking}
+    selected_nat_data = None
+    if nat_data is not None:
+        selected_nat_data = {cid: nat_data[cid] for cid in ranking}
+    return ranking, fit_with_elite, selected_struc_data, selected_nat_data
 
 
 def prepare_parent_data(
@@ -229,9 +499,9 @@ def prepare_crossover_context(
         crs_lat=rin.crs_lat,
         nat_diff_tole=rin.nat_diff_tole,
         maxcnt_ea=rin.maxcnt_ea,
-        vc=False,
-        ll_nat=None,
-        ul_nat=None,
+        vc=rin.algo == 'EA-vc',
+        ll_nat=rin.ll_nat,
+        ul_nat=rin.ul_nat,
         cn_comb=None,
         feasible_N=None,
         charge=None,
@@ -239,6 +509,28 @@ def prepare_crossover_context(
         min_comp=None,
         max_comp=None,
     )
+
+
+def prepare_permutation_parent_ids(
+    ranking: list[int],
+    nat_data: dict[int, tuple[int, ...]],
+) -> list[int]:
+    """Prepare EA-vc parent candidates for permutation."""
+
+    # ---------- permutation candidates
+    parent_ids = []
+    for pid in ranking:
+        nat = nat_data[pid]
+        if sum(n > 0 for n in nat) >= 2:
+            parent_ids.append(pid)
+
+    # ---------- check candidates
+    if not parent_ids:
+        logger.error('No feasible parent candidates for permutation')
+        raise SystemExit(1)
+
+    # ---------- return
+    return parent_ids
 
 
 def prepare_permutation_context(
@@ -271,6 +563,104 @@ def prepare_strain_context(
     )
 
 
+def prepare_addition_context(
+    rin,
+    mindist,
+    ranking: list[int],
+    nat_data: dict[int, tuple[int, ...]],
+) -> AdditionContext:
+    """Prepare addition context under atom-count bounds."""
+
+    # ---------- addition candidates
+    add_dnat_map = {}
+    for pid in ranking:
+        dnat_comb = get_add_dnat_comb(
+            rin.ul_nat,
+            rin.add_max,
+            nat_data[pid],
+        )
+        if dnat_comb:
+            add_dnat_map[pid] = dnat_comb
+
+    # ---------- check candidates
+    if not add_dnat_map:
+        logger.error('No feasible parent candidates for addition')
+        raise SystemExit(1)
+
+    # ---------- addition context
+    return AdditionContext(
+        atype=rin.atype,
+        mindist=mindist,
+        add_dnat_map=add_dnat_map,
+        maxcnt_ea=rin.maxcnt_ea,
+    )
+
+
+def prepare_elimination_context(
+    rin,
+    ranking: list[int],
+    nat_data: dict[int, tuple[int, ...]],
+) -> EliminationContext:
+    """Prepare elimination context under atom-count bounds."""
+
+    # ---------- elimination candidates
+    elim_dnat_map = {}
+    for pid in ranking:
+        dnat_comb = get_elim_dnat_comb(
+            rin.ll_nat,
+            rin.elim_max,
+            nat_data[pid],
+        )
+        if dnat_comb:
+            elim_dnat_map[pid] = dnat_comb
+
+    # ---------- check candidates
+    if not elim_dnat_map:
+        logger.error('No feasible parent candidates for elimination')
+        raise SystemExit(1)
+
+    # ---------- elimination context
+    return EliminationContext(
+        atype=rin.atype,
+        elim_dnat_map=elim_dnat_map,
+    )
+
+
+def prepare_substitution_context(
+    rin,
+    mindist,
+    ranking: list[int],
+    nat_data: dict[int, tuple[int, ...]],
+) -> SubstitutionContext:
+    """Prepare substitution context under atom-count bounds."""
+
+    # ---------- substitution candidates
+    subs_comb_map = {}
+    for pid in ranking:
+        subs_comb = get_subs_comb(
+            rin.atype,
+            rin.ll_nat,
+            rin.ul_nat,
+            rin.subs_max,
+            nat_data[pid],
+        )
+        if subs_comb:
+            subs_comb_map[pid] = subs_comb
+
+    # ---------- check candidates
+    if not subs_comb_map:
+        logger.error('No feasible parent candidates for substitution')
+        raise SystemExit(1)
+
+    # ---------- substitution context
+    return SubstitutionContext(
+        atype=rin.atype,
+        mindist=mindist,
+        subs_comb_map=subs_comb_map,
+        maxcnt_ea=rin.maxcnt_ea,
+    )
+
+
 def create_offspring_tasks(
     conn,
     rin,
@@ -282,12 +672,21 @@ def create_offspring_tasks(
     tasks = []
     cid = get_next_record_id(conn)
 
-    # ---------- create tasks
-    for operation, count in (
+    # ---------- operation counts
+    operation_counts = (
         ('crossover', rin.n_crsov),
         ('permutation', rin.n_perm),
         ('strain', rin.n_strain),
-    ):
+    )
+    if rin.algo == 'EA-vc':
+        operation_counts += (
+            ('addition', rin.n_add),
+            ('elimination', rin.n_elim),
+            ('substitution', rin.n_subs),
+        )
+
+    # ---------- create tasks
+    for operation, count in operation_counts:
         for _ in range(count):
             initialize_record(
                 conn,
@@ -345,34 +744,71 @@ def prepare_offspring_generator(
     rin,
     parent_data: ParentData,
     selection_context,
+    selection_context_pm,
     crossover_context: CrossoverContext,
     permutation_context: PermutationContext,
     strain_context: StrainContext,
+    selection_context_ad,
+    addition_context: AdditionContext | None,
+    selection_context_el,
+    elimination_context: EliminationContext | None,
+    selection_context_sb,
+    substitution_context: SubstitutionContext | None,
 ) -> EAOffspringGenerator:
     """Prepare EA offspring generator."""
 
     # ---------- operation generators
+    operation_generators = {
+        'crossover': CrossoverOffspringGenerator(
+            parent_data=parent_data,
+            selection_context=selection_context,
+            context=crossover_context,
+            max_parent_attempts=rin.max_parent_attempts,
+        ).generate,
+        'permutation': PermutationOffspringGenerator(
+            parent_data=parent_data,
+            selection_context=selection_context_pm,
+            context=permutation_context,
+            max_parent_attempts=rin.max_parent_attempts,
+        ).generate,
+        'strain': StrainOffspringGenerator(
+            parent_data=parent_data,
+            selection_context=selection_context,
+            context=strain_context,
+            max_parent_attempts=rin.max_parent_attempts,
+        ).generate,
+    }
+
+    # ---------- addition
+    if addition_context is not None:
+        operation_generators['addition'] = AdditionOffspringGenerator(
+            parent_data=parent_data,
+            selection_context=selection_context_ad,
+            context=addition_context,
+            max_parent_attempts=rin.max_parent_attempts,
+        ).generate
+
+    # ---------- elimination
+    if elimination_context is not None:
+        operation_generators['elimination'] = EliminationOffspringGenerator(
+            parent_data=parent_data,
+            selection_context=selection_context_el,
+            context=elimination_context,
+            max_parent_attempts=rin.max_parent_attempts,
+        ).generate
+
+    # ---------- substitution
+    if substitution_context is not None:
+        operation_generators['substitution'] = SubstitutionOffspringGenerator(
+            parent_data=parent_data,
+            selection_context=selection_context_sb,
+            context=substitution_context,
+            max_parent_attempts=rin.max_parent_attempts,
+        ).generate
+
+    # ---------- offspring generator
     return EAOffspringGenerator(
-        operation_generators={
-            'crossover': CrossoverOffspringGenerator(
-                parent_data=parent_data,
-                selection_context=selection_context,
-                context=crossover_context,
-                max_parent_attempts=rin.max_parent_attempts,
-            ).generate,
-            'permutation': PermutationOffspringGenerator(
-                parent_data=parent_data,
-                selection_context=selection_context,
-                context=permutation_context,
-                max_parent_attempts=rin.max_parent_attempts,
-            ).generate,
-            'strain': StrainOffspringGenerator(
-                parent_data=parent_data,
-                selection_context=selection_context,
-                context=strain_context,
-                max_parent_attempts=rin.max_parent_attempts,
-            ).generate,
-        },
+        operation_generators=operation_generators,
     )
 
 
@@ -386,12 +822,23 @@ def run_controller_ea(
     """Control EA offspring generation."""
 
     # ---------- initialize
+    task_iter = iter(tasks)
     num_active = 0
     worker_failed = False
+    stop_requested = False
     results = []
 
-    # ---------- queue tasks
-    for task in tasks:
+    # ---------- initial tasks
+    for _ in processes:
+        if os.path.isfile('STOP_CRYSPY_HT'):
+            stop_requested = True
+            logger.info('Stop file detected: STOP_CRYSPY_HT')
+            break
+
+        try:
+            task = next(task_iter)
+        except StopIteration:
+            break
         task_queue.put(task)
         num_active += 1
 
@@ -449,6 +896,25 @@ def run_controller_ea(
         # ------ store result
         results.append((task, offspring_result))
 
+        # ------ stop assigning tasks
+        if worker_failed:
+            continue
+
+        # ------ check stop file
+        if not stop_requested and os.path.isfile('STOP_CRYSPY_HT'):
+            stop_requested = True
+            logger.info('Stop file detected: STOP_CRYSPY_HT')
+        if stop_requested:
+            continue
+
+        # ------ queue next task
+        try:
+            task = next(task_iter)
+        except StopIteration:
+            continue
+        task_queue.put(task)
+        num_active += 1
+
     # ---------- worker failure
     if worker_failed:
         raise RuntimeError(
@@ -456,7 +922,7 @@ def run_controller_ea(
         ) from None
 
     # ---------- return
-    return results
+    return results, stop_requested
 
 
 def save_offspring_results(
@@ -479,6 +945,7 @@ def save_offspring_results(
             rin.atype,
             rin.symprec,
             Status.WAITING,
+            vc=rin.algo == 'EA-vc',
         )
         insert_ea_origin(
             conn,
@@ -510,6 +977,11 @@ def save_ea_generation_info(
         rin.n_elite,
         rin.crs_lat,
         rin.slct_func,
+        n_addition=rin.n_add if rin.algo == 'EA-vc' else None,
+        n_elimination=rin.n_elim if rin.algo == 'EA-vc' else None,
+        n_substitution=rin.n_subs if rin.algo == 'EA-vc' else None,
+        ll_nat=rin.ll_nat if rin.algo == 'EA-vc' else None,
+        ul_nat=rin.ul_nat if rin.algo == 'EA-vc' else None,
     )
 
 
@@ -520,11 +992,9 @@ def save_ea_elite_ids(
 ) -> None:
     """Save EA elite IDs."""
 
-    # ---------- no elite
-    if not elite_ids:
-        return
-
-    # ---------- save elite IDs
+    # ---------- replace elite IDs
+    # An empty list clears the elite record for this generation.
+    delete_ea_elites(conn, generation)
     insert_ea_elites(
         conn,
         generation,
@@ -532,29 +1002,131 @@ def save_ea_elite_ids(
     )
 
 
+def prepare_elite_pool(
+    conn,
+    rin,
+    generation: int,
+    record_ids: list[int] | None = None,
+):
+    """Prepare elite candidates without loading structures."""
+
+    # ---------- hull distances
+    hdist = select_ea_hdist(conn, generation) if rin.algo == 'EA-vc' else None
+
+    # ---------- load candidates
+    # Use all evaluated candidates unless candidate IDs are explicitly supplied.
+    if record_ids is None:
+        if rin.algo == 'EA-vc':
+            record_ids = sorted(hdist)
+        else:
+            record_ids = select_evaluated_ids(conn, generation)
+
+    results = select_parent_results(
+        conn,
+        record_ids,
+        vc=rin.algo == 'EA-vc',
+    )
+
+    # ---------- check candidate results
+    result_ids = {cid for cid, _energy, _nat in results}
+    missing_ids = [
+        cid
+        for cid in sorted(set(record_ids) - result_ids)
+        if select_status(conn, cid) not in (
+            Status.ERROR,
+            Status.MINDIST,
+            Status.OMIT,
+        )
+    ]
+    if missing_ids:
+        logger.error(
+            'Failed to load generation results: '
+            f'missing IDs = {missing_ids}'
+        )
+        raise SystemExit(1)
+
+    # ---------- filter candidates
+    fitness = {}
+    for cid, energy, nat in results:
+        if rin.algo == 'EA-vc':
+            if nat is None or sum(nat) <= 0:
+                continue
+            if not all(
+                ll <= n_i <= ul
+                for n_i, ll, ul in zip(nat, rin.ll_nat, rin.ul_nat)
+            ):
+                continue
+
+        value = energy if hdist is None else hdist.get(cid, np.nan)
+        if value is None or not np.isfinite(value):
+            continue
+        fitness[cid] = value
+
+    # ---------- log valid elite candidates
+    if rin.algo == 'EA-vc':
+        logger.info(
+            f'Elite selection candidates: {len(fitness)}'
+        )
+
+    # ---------- return
+    # Keep the structure pool empty to avoid loading all candidate structures.
+    # natural_selection loads only the structures needed via struc_loader.
+    return {}, fitness
+
+
+def prepare_struc_loader(conn):
+    """Prepare a loader for optimized structures."""
+
+    # ---------- structure loader
+    def struc_loader(cid: int) -> Structure:
+        # ------ load optimized structure
+        raw_struc = select_struc(conn, cid, initial=False)
+
+        # ------ check optimized structure
+        if (
+            raw_struc is None
+            or raw_struc['lattice'] is None
+            or raw_struc['frac_coords'] is None
+        ):
+            logger.error(
+                f'Failed to load optimized structure: ID = {cid}'
+            )
+            raise SystemExit(1)
+
+        # ------ convert structure
+        return raw_to_struc(raw_struc)
+
+    # ---------- return
+    # Return the function bound to conn; no structures are loaded yet.
+    return struc_loader
+
+
 def select_elite_ids(
     rin,
     struc_data: dict[int, Structure],
     fitness: dict[int, float],
     rng: np.random.Generator,
-) -> list[int]:
-    """Select elite IDs for next generation."""
+    struc_loader=None,
+) -> tuple[list[int], dict[int, Structure]]:
+    """Select elite IDs and structures."""
 
     # ---------- no elite
     if rin.n_elite <= 0:
-        return []
+        return [], {}
 
     # ---------- select elite
-    ranking, _, _ = natural_selection(
+    logger.info('# ------ Select elites')
+    ranking, _, struc_with_elite = natural_selection(
         fitness=fitness,
         struc_data=struc_data,
         elite_struc=None,
         elite_fitness=None,
         n_fittest=rin.n_elite,
         fit_reverse=rin.fit_reverse,
-        emax_ea=rin.emax_ea,
-        emin_ea=rin.emin_ea,
+        emax_ea=None if rin.algo == 'EA-vc' else rin.emax_ea,
+        emin_ea=None if rin.algo == 'EA-vc' else rin.emin_ea,
         rng=rng,
+        struc_loader=struc_loader,
     )
 
     # ---------- log elite
@@ -562,7 +1134,9 @@ def select_elite_ids(
         logger.info(f'Structure ID {cid:>6} keeps as the elite')
 
     # ---------- return
-    return ranking
+    # Keep selected structures for reuse when loading elite results.
+    elite_struc = {cid: struc_with_elite[cid] for cid in ranking}
+    return ranking, elite_struc
 
 
 def generate_offspring_ea(
@@ -574,7 +1148,15 @@ def generate_offspring_ea(
 
     # ---------- nothing to generate
     if not tasks:
-        return []
+        return [], False
+
+    # ---------- check stop file
+    if os.path.isfile('STOP_CRYSPY_HT'):
+        logger.info('Stop file detected: STOP_CRYSPY_HT')
+        return [], True
+
+    # ---------- log
+    logger.info('# ------ Generate children')
 
     # ---------- number of workers
     num_workers = min(rin.njob, len(tasks))
@@ -624,7 +1206,7 @@ def generate_offspring_ea(
         listener_started = True
 
         # ---------- run controller
-        results = run_controller_ea(
+        results, stop_requested = run_controller_ea(
             tasks,
             task_queue,
             result_queue,
@@ -641,6 +1223,9 @@ def generate_offspring_ea(
             process.join()
 
     except BaseException as error:
+        # ---------- cancel task queue join
+        task_queue.cancel_join_thread()
+
         # ---------- terminate workers
         for process in processes:
             if process.is_alive():
@@ -684,7 +1269,7 @@ def generate_offspring_ea(
         raise SystemExit(1)
 
     # ---------- return
-    return results
+    return results, stop_requested
 
 
 def generate_and_save_offspring_ea(
@@ -692,26 +1277,31 @@ def generate_and_save_offspring_ea(
     rin,
     tasks: list[OffspringTask],
     offspring_generator: EAOffspringGenerator,
-    current_struc_data: dict[int, Structure],
-    current_fitness: dict[int, float],
+    elite_pool_struc: dict[int, Structure],
+    elite_pool_fitness: dict[int, float],
     rng: np.random.Generator,
 ) -> list[int]:
     """Generate and save EA offspring."""
 
     # ---------- generate offspring
-    results = generate_offspring_ea(
+    results, stop_requested = generate_offspring_ea(
         rin,
         tasks,
         offspring_generator,
     )
 
     # ---------- select elite
-    elite_ids = select_elite_ids(
-        rin,
-        current_struc_data,
-        current_fitness,
-        rng,
-    )
+    elite_ids = []
+    if not stop_requested:
+        # ------ structure loader
+        struc_loader = prepare_struc_loader(conn)
+        elite_ids, _ = select_elite_ids(
+            rin,
+            elite_pool_struc,
+            elite_pool_fitness,
+            rng,
+            struc_loader=struc_loader,
+        )
 
     try:
         # ---------- save results
@@ -728,6 +1318,11 @@ def generate_and_save_offspring_ea(
         conn.rollback()
         raise
 
+    # ---------- stop
+    if stop_requested:
+        # Leave this generation incomplete for the existing restart recovery.
+        raise SystemExit()
+
     # ---------- return
     return elite_ids
 
@@ -740,6 +1335,11 @@ def initialize_ea(
 
     # ---------- generation
     generation = 1
+    logger.info('# ---------- Initialize evolutionary algorithm')
+    logger.info(f'# ------ Generation {generation}')
+
+    # ---------- time
+    time_start = perf_counter()
 
     # ---------- initialize database connection
     conn = None
@@ -808,6 +1408,11 @@ def initialize_ea(
             0,
             rin.crs_lat,
             rin.slct_func,
+            n_addition=0 if rin.algo == 'EA-vc' else None,
+            n_elimination=0 if rin.algo == 'EA-vc' else None,
+            n_substitution=0 if rin.algo == 'EA-vc' else None,
+            ll_nat=rin.ll_nat if rin.algo == 'EA-vc' else None,
+            ul_nat=rin.ul_nat if rin.algo == 'EA-vc' else None,
         )
 
         conn.commit()
@@ -819,6 +1424,12 @@ def initialize_ea(
         if conn is not None:
             conn.close()
 
+    # ---------- time
+    etime = timedelta(seconds=perf_counter() - time_start)
+    logger.info(
+        f'Elapsed time for generation {generation} structure generation: {etime}'
+    )
+
 
 def generate_next_generation_ea(
     rin,
@@ -829,7 +1440,10 @@ def generate_next_generation_ea(
     # ---------- generation
     next_generation = current_generation + 1
     logger.info('# ---------- Evolutionary algorithm')
-    logger.info(f'Generation {next_generation}')
+    logger.info(f'# ------ Generation {next_generation}')
+
+    # ---------- time
+    time_start = perf_counter()
 
     # ---------- initialize database connection
     conn = None
@@ -851,7 +1465,8 @@ def generate_next_generation_ea(
             rng = np.random.default_rng(seed_sequence)
 
         # ---------- parent pool
-        ranking, fitness, struc_data = prepare_parent_pool(
+        # selected_nat_data is used only for EA-vc; None for EA.
+        ranking, fitness, selected_struc_data, selected_nat_data = prepare_parent_pool(
             conn,
             rin,
             current_generation,
@@ -867,8 +1482,13 @@ def generate_next_generation_ea(
             rin.struc_mode,
         )
 
+        # ---------- log eligible candidates
+        logger.info(
+            f'eligible candidates for crossover and strain: {len(ranking)}'
+        )
+
         # ---------- generation contexts
-        parent_data = prepare_parent_data(struc_data)
+        parent_data = prepare_parent_data(selected_struc_data)
         selection_context = prepare_selection_context(
             rin,
             ranking,
@@ -886,6 +1506,83 @@ def generate_next_generation_ea(
             rin,
             mindist,
         )
+
+        # ---------- selection context for permutation
+        selection_context_pm = selection_context
+        if rin.algo == 'EA-vc' and rin.n_perm > 0:
+            perm_parent_ids = prepare_permutation_parent_ids(
+                ranking,
+                selected_nat_data,
+            )
+            selection_context_pm = prepare_selection_context(
+                rin,
+                perm_parent_ids,
+                fitness,
+            )
+        if rin.n_perm > 0:
+            logger.info(
+                'eligible candidates for permutation: '
+                f'{len(selection_context_pm.parent_ids)}'
+            )
+
+        # ---------- addition contexts for EA-vc
+        addition_context = None
+        selection_context_ad = None
+        if rin.algo == 'EA-vc' and rin.n_add > 0:
+            addition_context = prepare_addition_context(
+                rin,
+                mindist,
+                ranking,
+                selected_nat_data,
+            )
+            add_parent_ids = list(addition_context.add_dnat_map)
+            logger.info(
+                f'eligible candidates for addition: {len(add_parent_ids)}'
+            )
+            selection_context_ad = prepare_selection_context(
+                rin,
+                add_parent_ids,
+                fitness,
+            )
+
+        # ---------- elimination contexts for EA-vc
+        elimination_context = None
+        selection_context_el = None
+        if rin.algo == 'EA-vc' and rin.n_elim > 0:
+            elimination_context = prepare_elimination_context(
+                rin,
+                ranking,
+                selected_nat_data,
+            )
+            elim_parent_ids = list(elimination_context.elim_dnat_map)
+            logger.info(
+                f'eligible candidates for elimination: {len(elim_parent_ids)}'
+            )
+            selection_context_el = prepare_selection_context(
+                rin,
+                elim_parent_ids,
+                fitness,
+            )
+
+        # ---------- substitution contexts for EA-vc
+        substitution_context = None
+        selection_context_sb = None
+        if rin.algo == 'EA-vc' and rin.n_subs > 0:
+            substitution_context = prepare_substitution_context(
+                rin,
+                mindist,
+                ranking,
+                selected_nat_data,
+            )
+            subs_parent_ids = list(substitution_context.subs_comb_map)
+            logger.info(
+                f'eligible candidates for substitution: {len(subs_parent_ids)}'
+            )
+            selection_context_sb = prepare_selection_context(
+                rin,
+                subs_parent_ids,
+                fitness,
+            )
 
         # ---------- offspring tasks
         tasks = create_offspring_tasks(
@@ -918,10 +1615,27 @@ def generate_next_generation_ea(
             rin,
             parent_data,
             selection_context,
+            selection_context_pm,
             crossover_context,
             permutation_context,
             strain_context,
+            selection_context_ad,
+            addition_context,
+            selection_context_el,
+            elimination_context,
+            selection_context_sb,
+            substitution_context,
         )
+
+        # ---------- elite candidates
+        elite_pool_struc = selected_struc_data
+        elite_pool_fitness = fitness
+        if rin.n_elite > 0:
+            elite_pool_struc, elite_pool_fitness = prepare_elite_pool(
+                conn,
+                rin,
+                current_generation,
+            )
 
         # ---------- generate and save offspring
         elite_ids = generate_and_save_offspring_ea(
@@ -929,8 +1643,8 @@ def generate_next_generation_ea(
             rin,
             tasks,
             offspring_generator,
-            struc_data,
-            fitness,
+            elite_pool_struc,
+            elite_pool_fitness,
             rng,
         )
 
@@ -990,3 +1704,10 @@ def generate_next_generation_ea(
         # ---------- close database
         if conn is not None:
             conn.close()
+
+    # ---------- time
+    etime = timedelta(seconds=perf_counter() - time_start)
+    logger.info(
+        'Elapsed time for generation '
+        f'{next_generation} structure generation: {etime}'
+    )

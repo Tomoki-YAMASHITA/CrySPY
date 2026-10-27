@@ -7,14 +7,15 @@ from queue import Empty
 import sqlite3
 
 from ...IO.read_input import ReadInput
-from ..db.record import (
+from ..db.record_db import (
     Status,
     claim_next_struc,
-    has_record_with_status,
+    count_records_with_status,
+    reset_result,
     update_opt_struc,
     update_status,
 )
-from ..db.sqlite import connect_db
+from ..db.sqlite_db import connect_db
 from .worker_opt import run_worker_opt
 
 
@@ -73,7 +74,7 @@ def run_controller_opt(
         no_waiting = False
         stop_requested = False
         worker_failed = False
-        for _ in range(rin.njob):
+        for _ in processes:
             if Path('STOP_CRYSPY_HT').is_file():
                 stop_requested = True
                 logger.info(
@@ -145,6 +146,12 @@ def run_controller_opt(
                 # ------ register result
                 if status == Status.ERROR:
                     update_status(
+                        conn,
+                        record_id,
+                        status,
+                    )
+                elif status == Status.MINDIST:
+                    reset_result(
                         conn,
                         record_id,
                         status,
@@ -234,20 +241,23 @@ def launch_workers_opt(
     # ---------- check waiting structures
     conn = connect_db()
     try:
-        has_waiting = has_record_with_status(
+        num_waiting = count_records_with_status(
             conn,
             Status.WAITING,
         )
     finally:
         conn.close()
 
-    if not has_waiting:
+    if num_waiting == 0:
         logger.info('No waiting structures')
         return RunStatus.COMPLETED
 
+    # ---------- number of workers
+    num_workers = min(rin.njob, num_waiting)
+
     # ---------- structure optimization
     logger.info('# ---------- Start structure optimizations')
-    logger.info(f'Number of workers: {rin.njob}')
+    logger.info(f'Number of workers: {num_workers}')
     logger.info(
         f'Minimum interatomic distance check: '
         f'{rin.check_mindist_opt}'
@@ -272,7 +282,7 @@ def launch_workers_opt(
 
     try:
         # ---------- start workers
-        for worker_id in range(rin.njob):
+        for worker_id in range(num_workers):
             process = mp.Process(
                 target=run_worker_opt,
                 args=(
@@ -313,6 +323,9 @@ def launch_workers_opt(
             process.join()
 
     except BaseException as error:
+        # ---------- cancel task queue join
+        task_queue.cancel_join_thread()
+
         # ---------- terminate workers
         for process in processes:
             if process.is_alive():

@@ -1,17 +1,20 @@
 from collections.abc import Sequence
+from datetime import timedelta
 from logging import getLogger
 from logging.handlers import QueueListener
 import multiprocessing as mp
+from pathlib import Path
 from queue import Empty
+from time import perf_counter
 
 from ...IO.read_input import ReadInput
-from ..db.record import (
+from ..db.record_db import (
     Status,
     initialize_record,
     select_status,
     update_init_struc,
 )
-from ..db.sqlite import connect_db
+from ..db.sqlite_db import connect_db
 from .worker_rs import run_worker_rs
 
 
@@ -52,7 +55,7 @@ def run_controller_rs(
     result_queue,
     stop_event,
     processes: list[mp.Process],
-) -> None:
+) -> bool:
     """Control database access and random structure generation."""
 
     # ---------- initialize database connection
@@ -66,7 +69,13 @@ def run_controller_rs(
         cid_iter = iter(cids)
         num_active = 0
         worker_failed = False
+        stop_requested = False
         for _ in processes:
+            if Path('STOP_CRYSPY_HT').is_file():
+                stop_requested = True
+                logger.info('Stop file detected: STOP_CRYSPY_HT')
+                break
+
             try:
                 cid = next(cid_iter)
             except StopIteration:
@@ -138,6 +147,7 @@ def run_controller_rs(
                     rin.atype,
                     rin.symprec,
                     Status.WAITING,
+                    vc=rin.algo == 'EA-vc',
                 )
                 conn.commit()
 
@@ -148,6 +158,13 @@ def run_controller_rs(
 
             # ------ stop assigning tasks
             if worker_failed:
+                continue
+
+            # ------ check stop file
+            if not stop_requested and Path('STOP_CRYSPY_HT').is_file():
+                stop_requested = True
+                logger.info('Stop file detected: STOP_CRYSPY_HT')
+            if stop_requested:
                 continue
 
             # ------ queue next task
@@ -169,6 +186,9 @@ def run_controller_rs(
                 'Worker stopped before returning all structures'
             ) from None
 
+        # ---------- return
+        return stop_requested
+
     finally:
         # ---------- close database
         if conn is not None:
@@ -184,6 +204,18 @@ def generate_structures_rs(
     # ---------- nothing to generate
     if not cids:
         return
+
+    # ---------- check stop file
+    if Path('STOP_CRYSPY_HT').is_file():
+        logger.info('Stop file detected: STOP_CRYSPY_HT')
+        raise SystemExit()
+
+    # ---------- log
+    logger.info('# ------ Random structure generation')
+
+    # ---------- time
+    if rin.algo == 'RS':
+        time_start = perf_counter()
 
     # ---------- number of workers
     num_workers = min(rin.njob, len(cids))
@@ -233,7 +265,7 @@ def generate_structures_rs(
         listener_started = True
 
         # ---------- run controller
-        run_controller_rs(
+        stop_requested = run_controller_rs(
             rin,
             cids,
             task_queue,
@@ -251,6 +283,9 @@ def generate_structures_rs(
             process.join()
 
     except BaseException as error:
+        # ---------- cancel task queue join
+        task_queue.cancel_join_thread()
+
         # ---------- terminate workers
         for process in processes:
             if process.is_alive():
@@ -292,3 +327,12 @@ def generate_structures_rs(
                 f'exitcode = {process.exitcode}'
             )
         raise SystemExit(1)
+
+    # ---------- stop
+    if stop_requested:
+        raise SystemExit()
+
+    # ---------- time
+    if rin.algo == 'RS':
+        etime = timedelta(seconds=perf_counter() - time_start)
+        logger.info(f'Elapsed time for structure generation: {etime}')

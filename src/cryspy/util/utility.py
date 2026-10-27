@@ -2,6 +2,7 @@
 Utility for CrySPY
 '''
 
+from contextlib import closing
 from datetime import datetime
 from logging import getLogger, StreamHandler, FileHandler, Formatter, DEBUG, INFO, WARNING
 import os
@@ -11,12 +12,35 @@ import sys
 
 # ---------- import later
 #from ..IO import pkl_data
-#from ..high_throughput.db.ea import select_latest_ea_generation
-#from ..high_throughput.db.record import count_results
-#from ..high_throughput.db.sqlite import connect_db
+#from ..high_throughput.db.ea_db import select_latest_ea_generation
+#from ..high_throughput.db.record_db import count_results
+#from ..high_throughput.db.sqlite_db import connect_db
 
 
 logger = getLogger('cryspy')
+
+
+def print_option_box(options: list[tuple[str, str]]) -> None:
+    """Print option names and descriptions in an ASCII box."""
+
+    # ---------- no options
+    if not options:
+        return
+
+    # ---------- format options
+    option_width = max(len(option) for option, _description in options)
+    lines = [
+        f'{option:<{option_width}} : {description}'
+        for option, description in options
+    ]
+    width = max(len(line) for line in lines)
+
+    # ---------- print box
+    print('')
+    print('+' + '-- Options '.ljust(width + 2, '-') + '+')
+    for line in lines:
+        print(f'| {line:<{width}} |')
+    print('+' + '-' * (width + 2) + '+')
 
 
 def set_logger(noprint=False, debug=False, logfile=None, errfile=None, debugfile=None):
@@ -95,15 +119,15 @@ def _backup_suffix(ht=False):
     if ht:
         if not os.path.isfile('data/db_data/rslt_data.db'):
             return None
-        from ..high_throughput.db.sqlite import connect_db
+        from ..high_throughput.db.sqlite_db import connect_db
         if rin.algo == 'RS':
-            from ..high_throughput.db.record import count_results
-            with connect_db() as conn:
+            from ..high_throughput.db.record_db import count_results
+            with closing(connect_db()) as conn, conn:
                 progress = count_results(conn)
             unit = 'struc'
-        elif rin.algo == 'EA':
-            from ..high_throughput.db.ea import select_latest_ea_generation
-            with connect_db() as conn:
+        elif rin.algo in ['EA', 'EA-vc']:
+            from ..high_throughput.db.ea_db import select_latest_ea_generation
+            with closing(connect_db()) as conn, conn:
                 progress = select_latest_ea_generation(conn)
             unit = 'gen'
         else:

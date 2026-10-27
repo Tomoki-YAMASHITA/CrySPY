@@ -1,21 +1,47 @@
 #!/usr/bin/env python3
 import argparse
+from contextlib import closing
 import csv
 from math import isfinite
 from pathlib import Path
 import sqlite3
 
-from cryspy.high_throughput.db.record import (
+from cryspy.high_throughput.db.ea_db import select_ea_algorithm
+from cryspy.high_throughput.db.record_db import (
     count_results,
     get_min_energy,
     select_results,
 )
-from cryspy.high_throughput.db.sqlite import connect_db
+from cryspy.high_throughput.db.sqlite_db import connect_db
+from cryspy.util.utility import print_option_box
 
 
 DEFAULT_DB_PATH = 'data/db_data/rslt_data.db'
 DEFAULT_MAX_ROWS = 100
 DEFAULT_OUTPUT_NAME = 'cryspy_rslt.csv'
+
+
+def print_options() -> None:
+    """Print available result options."""
+
+    # ---------- options
+    options = [
+        (
+            '--head N / --tail N',
+            f'first / last N results (default: {DEFAULT_MAX_ROWS})',
+        ),
+        ('-a / --all', 'all matching results'),
+        ('-i / --id ID [ID ...]', 'select structure IDs'),
+        ('--pending', 'WAITING and RUNNING only'),
+        ('-n / --no-sort', 'sort by ID (default: energy)'),
+        ('--emin E / --emax E', 'energy range (eV/atom)'),
+        ('--ewin E', 'within E eV/atom above minimum'),
+        ('-o / --output [FILE]', 'write CSV'),
+        ('-h / --help', 'command help'),
+    ]
+
+    # ---------- print box
+    print_option_box(options)
 
 
 def resolve_output_path(
@@ -51,6 +77,7 @@ def print_results(
     emax: float = None,
     ewin: float = None,
     output: str = None,
+    pending: bool = False,
 ) -> None:
     """Print or write results."""
 
@@ -84,6 +111,9 @@ def print_results(
         emin = min_energy
         emax = min_energy + ewin
 
+    # ---------- algorithm
+    algo = select_ea_algorithm(conn)
+
     # ---------- select results
     rows = select_results(
         conn,
@@ -93,6 +123,8 @@ def print_results(
         sort_by=sort_by,
         limit=limit,
         tail=tail is not None,
+        pending=pending,
+        vc=algo == 'EA-vc',
     )
 
     # ---------- no results
@@ -111,11 +143,12 @@ def print_results(
             writer = csv.writer(f)
             writer.writerow([
                 'id',
+                *(['Gen'] if algo in ('EA', 'EA-vc') else []),
                 'Spg_num',
                 'Spg_sym',
                 'Spg_num_opt',
                 'Spg_sym_opt',
-                'Num_atom',
+                *(['Num_atom'] if algo == 'EA-vc' else []),
                 'E_eV_atom',
                 'status',
             ])
@@ -128,14 +161,16 @@ def print_results(
                 opt_spg_num,
                 opt_spg_sym,
                 nat,
+                generation,
             ) in rows:
                 writer.writerow([
                     record_id,
+                    *([generation] if algo in ('EA', 'EA-vc') else []),
                     init_spg_num,
                     init_spg_sym,
                     opt_spg_num,
                     opt_spg_sym,
-                    nat,
+                    *([nat] if algo == 'EA-vc' else []),
                     '' if energy is None else energy,
                     status.name,
                 ])
@@ -150,6 +185,7 @@ def print_results(
         ids=ids,
         emin=emin,
         emax=emax,
+        pending=pending,
     )
 
     # ---------- format
@@ -161,6 +197,11 @@ def print_results(
         len('ID'),
         max(len(str(row[0])) for row in rows),
     )
+    if algo in ('EA', 'EA-vc'):
+        gen_width = max(
+            len('Gen'),
+            max(len(str(row[8])) for row in rows),
+        )
     init_spg_num_width = max(
         len('Spg_num'),
         max(len(str(row[3])) for row in rows),
@@ -177,10 +218,11 @@ def print_results(
         len('Spg_sym_opt'),
         max(len(str(row[6])) for row in rows),
     )
-    nat_width = max(
-        len('Num_atom'),
-        max(len(str(row[7])) for row in rows),
-    )
+    if algo == 'EA-vc':
+        nat_width = max(
+            len('Num_atom'),
+            max(len(str(row[7])) for row in rows),
+        )
     energy_width = max(
         len('E_eV_atom'),
         max(len(value) for value in energy_values),
@@ -208,13 +250,14 @@ def print_results(
     # ---------- header
     print(
         f'{"ID":>{id_width}}  '
-        f'{"Spg_num":>{init_spg_num_width}}  '
+        + (f'{"Gen":>{gen_width}}  ' if algo in ('EA', 'EA-vc') else '')
+        + f'{"Spg_num":>{init_spg_num_width}}  '
         f'{"Spg_sym":<{init_spg_sym_width}}  '
         f'{"Spg_num_opt":>{opt_spg_num_width}}  '
         f'{"Spg_sym_opt":<{opt_spg_sym_width}}  '
-        f'{"Num_atom":<{nat_width}}  '
-        f'{"E_eV_atom":>{energy_width}}  '
-        f'{"Status":<{status_width}}'
+        + (f'{"Num_atom":<{nat_width}}  ' if algo == 'EA-vc' else '')
+        + f'{"E_eV_atom":>{energy_width}}  '
+        + f'{"Status":<{status_width}}'
     )
 
     # ---------- results
@@ -228,16 +271,18 @@ def print_results(
             opt_spg_num,
             opt_spg_sym,
             nat,
+            generation,
         ) = row
         print(
             f'{record_id:>{id_width}}  '
-            f'{init_spg_num:>{init_spg_num_width}}  '
+            + (f'{str(generation):>{gen_width}}  ' if algo in ('EA', 'EA-vc') else '')
+            + f'{str(init_spg_num):>{init_spg_num_width}}  '
             f'{str(init_spg_sym):<{init_spg_sym_width}}  '
-            f'{opt_spg_num:>{opt_spg_num_width}}  '
+            f'{str(opt_spg_num):>{opt_spg_num_width}}  '
             f'{str(opt_spg_sym):<{opt_spg_sym_width}}  '
-            f'{str(nat):<{nat_width}}  '
-            f'{energy_value:>{energy_width}}  '
-            f'{status.name:<{status_width}}'
+            + (f'{str(nat):<{nat_width}}  ' if algo == 'EA-vc' else '')
+            + f'{energy_value:>{energy_width}}  '
+            + f'{status.name:<{status_width}}'
         )
 
 
@@ -278,6 +323,11 @@ def main():
         type=int,
         nargs='+',
         help='show specified structure IDs',
+    )
+    parser.add_argument(
+        '--pending',
+        action='store_true',
+        help='show only waiting and running structures',
     )
     parser.add_argument(
         '-n',
@@ -350,10 +400,12 @@ def main():
     # ---------- print header
     if output is None:
         print(f'Database: {db_path}')
+        print_options()
+        print('')
 
     # ---------- print results
     try:
-        with connect_db(str(db_path)) as conn:
+        with closing(connect_db(str(db_path))) as conn, conn:
             print_results(
                 conn,
                 ids=args.id,
@@ -365,6 +417,7 @@ def main():
                 emax=args.emax,
                 ewin=args.ewin,
                 output=output,
+                pending=args.pending,
             )
     except (OSError, sqlite3.Error) as e:
         parser.error(str(e))

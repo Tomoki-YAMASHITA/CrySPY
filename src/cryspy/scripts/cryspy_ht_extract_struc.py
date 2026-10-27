@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import argparse
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import sys
 
-from cryspy.high_throughput.db.convert import raw_to_struc
-from cryspy.high_throughput.db.record import select_struc
-from cryspy.high_throughput.db.sqlite import connect_db
+from cryspy.high_throughput.db.convert_db import raw_to_struc
+from cryspy.high_throughput.db.record_db import select_status, select_struc
+from cryspy.high_throughput.db.sqlite_db import connect_db
 
 
 DEFAULT_DB_PATH = 'data/db_data/rslt_data.db'
@@ -76,7 +77,7 @@ def main():
 
     # ---------- extract structures
     try:
-        with connect_db(str(db_path)) as conn:
+        with closing(connect_db(str(db_path))) as conn, conn:
             for record_id in args.ids:
                 raw_struc_dict = select_struc(
                     conn,
@@ -92,14 +93,18 @@ def main():
                     )
                     continue
 
-                # ------ optimized structure not registered
+                # ------ structure not registered
                 if (
-                    raw_struc_dict['lattice'] is None
+                    raw_struc_dict['atomic_numbers'] is None
+                    or raw_struc_dict['lattice'] is None
                     or raw_struc_dict['frac_coords'] is None
                 ):
+                    status = select_status(conn, record_id)
+                    structure_type = 'Initial' if args.initial else 'Optimized'
                     print(
-                        f'Warning: Optimized structure for '
-                        f'ID {record_id} is not registered. Skipped.',
+                        f'Warning: {structure_type} structure for '
+                        f'ID {record_id} is not registered '
+                        f'(status: {status.name}). Skipped.',
                         file=sys.stderr,
                     )
                     continue

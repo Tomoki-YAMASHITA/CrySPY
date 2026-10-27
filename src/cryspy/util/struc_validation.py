@@ -4,7 +4,7 @@ from .charge_neutral import is_charge_neutral_nat
 from .struc_util import get_nat
 
 
-def validate_loaded_structures(rin, init_struc_data):
+def validate_loaded_structures(rin, init_struc_data, id_start=0):
     """
     Validate manually loaded initial structures.
 
@@ -13,6 +13,8 @@ def validate_loaded_structures(rin, init_struc_data):
     rin : ReadInput
     init_struc_data : dict
         {cid: structure}
+    id_start : int
+        First structure ID (default: 0).
     """
 
     # ---------- data type
@@ -37,7 +39,7 @@ def validate_loaded_structures(rin, init_struc_data):
             )
 
     # ---------- structure IDs
-    expected_ids = set(range(n_loaded))
+    expected_ids = set(range(id_start, id_start + n_loaded))
     actual_ids = set(init_struc_data)
     if actual_ids != expected_ids:
         missing_ids = sorted(expected_ids - actual_ids, key=str)
@@ -49,7 +51,7 @@ def validate_loaded_structures(rin, init_struc_data):
         )
 
     # ---------- structure data
-    for cid in range(n_loaded):
+    for cid in range(id_start, id_start + n_loaded):
         struc = init_struc_data[cid]
 
         # ------ structure type

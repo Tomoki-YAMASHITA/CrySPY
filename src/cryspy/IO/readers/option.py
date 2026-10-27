@@ -62,7 +62,7 @@ class OptionReader(BaseReader):
                 'energy_output_interval',
             )
         except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.energy_output_interval = 1
+            self.rin.energy_output_interval = 0 if ht else 1
         if self.rin.energy_output_interval < 0:
             raise ValueError(
                 'energy_output_interval must be non-negative int'

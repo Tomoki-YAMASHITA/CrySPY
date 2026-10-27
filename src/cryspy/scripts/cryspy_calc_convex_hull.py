@@ -80,11 +80,12 @@ def main():
 
         # ---------- calc convex hull
         logger.info('# ------ Calculate convex hull')
+        energy_data = rslt_data[rslt_data['Gen'] <= gen]['E_eV_atom'].to_dict()
         phase_diagram, hdist = calc_convex_hull(
             atype=rin.atype,
             gen=gen,
             ref_energies=rin.ref_energies,
-            rslt_data=rslt_data,
+            energy_data=energy_data,
             nat_data=nat_data,
             ymax=rin.ymax,
             show_max=rin.show_max,
