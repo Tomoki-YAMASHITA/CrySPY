@@ -33,6 +33,7 @@ PPRINT_FILES = {
     'bo_mean.pkl',
     'bo_var.pkl',
     'bo_score.pkl',
+    'bo_selected_score.pkl',
     # ------ LAQA
     'tot_step_select.pkl',
     'laqa_energy.pkl',

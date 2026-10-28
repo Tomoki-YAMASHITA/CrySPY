@@ -30,6 +30,7 @@ def initialize(rin, init_struc_data, rslt_data, rng=None):
     bo_mean = {}
     bo_var = {}
     bo_score = {}
+    bo_selected_score = {}
 
     # ---------- rslt_data, add and sort
     rslt_data['Select'] = pd.Series(dtype=int)
@@ -82,6 +83,7 @@ def initialize(rin, init_struc_data, rslt_data, rng=None):
     pkl_data.save_bo_mean(bo_mean)
     pkl_data.save_bo_var(bo_var)
     pkl_data.save_bo_score(bo_score)
+    pkl_data.save_bo_selected_score(bo_selected_score)
 
     # ---------- status
     stat = io_stat.stat_read()

@@ -30,6 +30,7 @@ def out_kpts(kpt_data):
 def out_bo_status(bo_mean, bo_var, bo_score, n_selection):
     with open('./data/bo_status', 'w') as f:
         # ------ label
+        f.write('# Score: used to select the first structure in this round.\n\n')
         f.write(f'{"Struc_ID":>10}{"Score":>14}{"Mean":>14}{"Variance":>14}\n')
         # ------ sorted by score
         for cid, value in sorted(bo_score[n_selection].items(),
@@ -68,6 +69,16 @@ def out_bo_id_hist(id_select_hist):
             for x in j:
                 f.write(f'  {x:5d}')
             f.write('\n')
+
+
+def out_bo_selected_score(bo_selected_score):
+    with open('./data/bo_selected_score', 'w') as f:
+        # ------ label
+        f.write(f'{"Selection":>10}{"Order":>8}{"Struc_ID":>10}{"Score":>14}\n')
+        # ------ values in selection order
+        for selection, selected_scores in sorted(bo_selected_score.items()):
+            for order, (cid, value) in enumerate(selected_scores, start=1):
+                f.write(f'{selection:>10d}{order:>8d}{cid:>10d}{value:>14.8f}\n')
 
 
 # ---------- LAQA

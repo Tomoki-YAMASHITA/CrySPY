@@ -4,8 +4,8 @@ from logging import getLogger
 import os
 
 import numpy as np
-import physbo
 
+from .score_policy import ScoreRecordingPolicy
 from ..IO import io_stat, out_results, pkl_data
 
 
@@ -19,6 +19,7 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
     # ---------- bo_id_data and bo_data
     n_selection, id_running, id_queueing, id_select_hist = bo_id_data
     init_dscrpt_data, opt_dscrpt_data, bo_mean, bo_var, bo_score = bo_data
+    bo_selected_score = pkl_data.load_bo_selected_score()
 
     # ---------- n_selection
     n_selection += 1
@@ -98,7 +99,9 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
             seed_bo = None
         else:
             seed_bo = int(rng.integers(0, 2**32, dtype=np.uint32))
-        actions, cryspy_mean, cryspy_var, cryspy_score = _bayes_opt(
+        (
+            actions, cryspy_mean, cryspy_var, cryspy_score, selected_scores,
+        ) = _bayes_opt(
             s_act, descriptors, targets, nselect,
             rin.score, rin.cdev, rin.num_rand_basis, noprint, seed_bo)
         # t_act, t_mean, t_var, t_score = _bayes_opt2(
@@ -111,6 +114,11 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
         # ------ actions --> id_queueing
         for i in actions:
             id_queueing.append(non_error_id[i])
+        # ------ selection scores: internal indexes --> structure IDs
+        selected_scores = [
+            (non_error_id[i], value) for i, value in selected_scores
+        ]
+        bo_selected_score[n_selection] = selected_scores
         # ------ bo_mean, bo_var, bo_score
         done_set = set(done_id)
         # Select prediction rows corresponding to uncalculated structure IDs.
@@ -128,12 +136,14 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
         out_results.out_bo_common('bo_score', bo_score, rin.tot_struc)
         out_results.out_bo_status(bo_mean, bo_var, bo_score,
                                   n_selection)
+        out_results.out_bo_selected_score(bo_selected_score)
         # ------ save bo_data
         pkl_data.save_init_dscrpt_data(init_dscrpt_data)
         pkl_data.save_opt_dscrpt_data(opt_dscrpt_data)
         pkl_data.save_bo_mean(bo_mean)
         pkl_data.save_bo_var(bo_var)
         pkl_data.save_bo_score(bo_score)
+        pkl_data.save_bo_selected_score(bo_selected_score)
 
     # ---------- id_select_hist
     id_select_hist.append(id_queueing[:])    # append shallow copy
@@ -189,7 +199,8 @@ def _bayes_opt(
     actions (ndarray): indexes of selected structures
     p_mean (ndarray): mean of predicted energies
     p_var (ndarray): variance of predicted energies
-    p_score (ndarray): value of acquisition function
+    p_score (ndarray): candidate scores used for the first selection
+    selected_scores (list): (index, selection score) pairs in selection order
     '''
 
     # ---------- standardization
@@ -199,7 +210,7 @@ def _bayes_opt(
         descriptors[:, nonzero_indx], axis=0)) / dev[nonzero_indx]
 
     # ---------- Declaring the policy by
-    policy = physbo.search.discrete.policy(test_X=X, initial_data=[s_act, -targets])
+    policy = ScoreRecordingPolicy(test_X=X, initial_data=[s_act, -targets])
     if seed is not None:
         policy.set_seed(int(seed))
 
@@ -227,7 +238,10 @@ def _bayes_opt(
     # ---------- mean, var, score
     p_mean = policy.get_post_fmean(X)
     p_var = policy.get_post_fcov(X)
-    p_score = policy.get_score(mode=score, xs=X)
+    # Scores are available only for candidates considered for selection.
+    p_score = np.full(len(X), np.nan)
+    score_indexes, score_values = policy.first_scores
+    p_score[score_indexes] = score_values
 
     # ------ return
-    return actions, p_mean, p_var, p_score
+    return actions, p_mean, p_var, p_score, policy.selected_scores

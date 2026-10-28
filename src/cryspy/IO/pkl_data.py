@@ -187,6 +187,16 @@ def save_bo_score(bo_score):
         pickle.dump(bo_score, f)
 
 
+def load_bo_selected_score():
+    with open('./data/pkl_data/bo_selected_score.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
+def save_bo_selected_score(bo_selected_score):
+    with open('./data/pkl_data/bo_selected_score.pkl', 'wb') as f:
+        pickle.dump(bo_selected_score, f)
+
+
 # ---------- BO and LAQA
 def load_id_select_hist():
     with open('./data/pkl_data/id_select_hist.pkl', 'rb') as f:
