@@ -169,7 +169,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         tmp_struc_data = gen_random_batch(
             rin=rin,
             nstruc=nstruc,
-            id_offset=n_loaded,
+            id_offset=n_loaded + 1,
             comm=comm,
             mpi_rank=mpi_rank,
             mpi_size=mpi_size,

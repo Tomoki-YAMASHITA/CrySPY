@@ -50,7 +50,7 @@ def out_bo_common(bo_str, bo_dict, tot_struc):
             f.write(f'    Select {i+1:<3d}')
         f.write('\n')
         # ------ values
-        for cid in range(tot_struc):
+        for cid in range(1, tot_struc + 1):
             f.write(f'{cid:>10d}')
             for i in range(2, len_select + 2):    # start from 2
                 if cid in bo_dict[i]:

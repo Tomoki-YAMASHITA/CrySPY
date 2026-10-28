@@ -45,6 +45,7 @@ def append_struc(rin, init_struc_data, rng=None):
 
     # ---------- generate children by EA
     logger.info('# ------ Generate children')
+    id_start = len(init_struc_data) + 1
     # init_struc_data will be updated and saved in child_gen function
     init_struc_data, parents, operation = child_gen(
         rin=rin,
@@ -103,7 +104,7 @@ def append_struc(rin, init_struc_data, rng=None):
     # ---------- ea_origin
     # ------ EA operation part
     rows = []
-    for cid in range(rin.tot_struc, rin.tot_struc + rin.n_pop - rin.n_rand):
+    for cid in range(id_start, id_start + rin.n_pop - rin.n_rand):
         rows.append([
             rin.tot_struc,
             cid,
@@ -114,8 +115,8 @@ def append_struc(rin, init_struc_data, rng=None):
     ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------ random part
     rows = []
-    for cid in range(rin.tot_struc + rin.n_pop - rin.n_rand,
-                     rin.tot_struc + rin.n_pop):
+    for cid in range(id_start + rin.n_pop - rin.n_rand,
+                     id_start + rin.n_pop):
         rows.append([
             rin.tot_struc,
             cid,

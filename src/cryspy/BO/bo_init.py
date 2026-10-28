@@ -46,7 +46,7 @@ def initialize(rin, init_struc_data, rslt_data, rng=None):
     pkl_data.save_rslt(rslt_data)
 
     # ---------- random select
-    all_id = [i for i in range(len(init_struc_data))]
+    all_id = sorted(init_struc_data)
     if rin.manual_select_bo:
         # ------ manual select bo
         x = ' '.join(str(i) for i in rin.manual_select_bo)

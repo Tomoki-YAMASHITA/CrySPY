@@ -28,7 +28,7 @@ def gen_wo_spg_batch(
         dangle,
         symprec=0.01,
         maxcnt=50,
-        id_offset=0,
+        id_offset=1,
         vol_mu=None,
         vol_sigma=None,
         vc=False,
@@ -56,7 +56,7 @@ def gen_wo_spg_batch(
     dangle (float): maximum deviation of lattice angle
     symprec (float): tolerance to find space group
     maxcnt (int): maximum trial to generate a structure
-    id_offset (int): structure ID starts from id_offset
+    id_offset (int): structure ID starts from id_offset (default: 1)
                         e.g. nstruc = 3, id_offset = 10
                             you obtain ID 10, ID 11, ID 12
     vol_mu (float): mean of volume scaling
@@ -92,9 +92,9 @@ def gen_wo_spg_batch(
             minlen=minlen,
             maxlen=maxlen,
             dangle=dangle,
+            cid=cid,
             symprec=symprec,
             maxcnt=maxcnt,
-            cid=cid,
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
             vc=vc,
@@ -120,9 +120,9 @@ def gen_wo_spg(
         minlen,
         maxlen,
         dangle,
+        cid,
         symprec=0.01,
         maxcnt=50,
-        cid=0,
         vol_mu=None,
         vol_sigma=None,
         vc=False,
@@ -284,7 +284,7 @@ def gen_with_find_wy_batch(
         dangle,
         symprec=0.01,
         maxcnt=50,
-        id_offset=0,
+        id_offset=1,
         vol_mu=None,
         vol_sigma=None,
         fwpath='find_wy',
@@ -315,7 +315,7 @@ def gen_with_find_wy_batch(
     dangle (float): maximum deviation of lattice angle
     symprec (float): tolerance to find space group
     maxcnt (int): maximum trial to generate a structure
-    id_offset (int): structure ID starts from id_offset
+    id_offset (int): structure ID starts from id_offset (default: 1)
                         e.g. nstruc = 3, id_offset = 10
                             you obtain ID 10, ID 11, ID 12
     vol_mu (float): mean of volume scaling
@@ -353,9 +353,9 @@ def gen_with_find_wy_batch(
             minlen=minlen,
             maxlen=maxlen,
             dangle=dangle,
+            cid=cid,
             symprec=symprec,
             maxcnt=maxcnt,
-            cid=cid,
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
             fwpath=fwpath,
@@ -383,9 +383,9 @@ def gen_with_find_wy(
         minlen,
         maxlen,
         dangle,
+        cid,
         symprec=0.01,
         maxcnt=50,
-        cid=0,
         vol_mu=None,
         vol_sigma=None,
         fwpath='find_wy',

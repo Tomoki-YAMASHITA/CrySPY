@@ -12,7 +12,7 @@ def restart(rin, init_struc_data, prev_nstruc):
 
     # ---------- get additional struc data
     tmp_struc_data = {cid: init_struc_data[cid] for cid in range(
-        prev_nstruc, len(init_struc_data))}
+        prev_nstruc + 1, len(init_struc_data) + 1)}
 
     # ---------- calc descriptor
     tmp_dscrpt = select_descriptor(rin, tmp_struc_data)

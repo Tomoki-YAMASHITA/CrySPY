@@ -54,8 +54,10 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
         descriptors = []
         s_act = []
         done_id = []    # finished and non_error
-        non_error_id = [i for i in range(len(init_dscrpt_data))]
-        for i in range(len(init_dscrpt_data)):
+        all_id = sorted(init_dscrpt_data)
+        # Map zero-based descriptor row indices to structure IDs.
+        non_error_id = all_id.copy()
+        for i in all_id:
             if i in opt_dscrpt_data:
                 # -- already done
                 if opt_dscrpt_data[i] is None:    # find error
@@ -111,10 +113,15 @@ def next_select(rin, rslt_data, bo_id_data, bo_data, noprint=False, rng=None):
             id_queueing.append(non_error_id[i])
         # ------ bo_mean, bo_var, bo_score
         done_set = set(done_id)
-        remaining_id = [i for i in non_error_id if i not in done_set]
-        bo_mean[n_selection] = dict(zip(remaining_id, cryspy_mean))
-        bo_var[n_selection] = dict(zip(remaining_id, cryspy_var))
-        bo_score[n_selection] = dict(zip(remaining_id, cryspy_score))
+        # Select prediction rows corresponding to uncalculated structure IDs.
+        remaining_index = [
+            i for i, cid in enumerate(non_error_id)
+            if cid not in done_set
+        ]
+        remaining_id = [non_error_id[i] for i in remaining_index]
+        bo_mean[n_selection] = dict(zip(remaining_id, cryspy_mean[remaining_index]))
+        bo_var[n_selection] = dict(zip(remaining_id, cryspy_var[remaining_index]))
+        bo_score[n_selection] = dict(zip(remaining_id, cryspy_score[remaining_index]))
         # ------ out
         out_results.out_bo_common('bo_mean', bo_mean, rin.tot_struc)
         out_results.out_bo_common('bo_var', bo_var, rin.tot_struc)

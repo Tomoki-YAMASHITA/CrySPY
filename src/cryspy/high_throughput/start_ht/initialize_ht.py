@@ -99,11 +99,7 @@ def load_initial_structures_ht(rin):
     logger.info('Load ./data/pkl_data/init_struc_data.pkl')
     try:
         init_struc_data = pkl_data.load_init_struc()
-        validate_loaded_structures(
-            rin,
-            init_struc_data,
-            id_start=1,
-        )
+        validate_loaded_structures(rin, init_struc_data)
     except Exception as e:
         logger.error(e)
         raise SystemExit(1)

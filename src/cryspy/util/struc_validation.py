@@ -4,7 +4,7 @@ from .charge_neutral import is_charge_neutral_nat
 from .struc_util import get_nat
 
 
-def validate_loaded_structures(rin, init_struc_data, id_start=0):
+def validate_loaded_structures(rin, init_struc_data, id_start=1):
     """
     Validate manually loaded initial structures.
 
@@ -14,7 +14,7 @@ def validate_loaded_structures(rin, init_struc_data, id_start=0):
     init_struc_data : dict
         {cid: structure}
     id_start : int
-        First structure ID (default: 0).
+        First structure ID (default: 1).
     """
 
     # ---------- data type

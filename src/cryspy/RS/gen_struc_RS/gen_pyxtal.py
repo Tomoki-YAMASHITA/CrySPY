@@ -27,7 +27,7 @@ def gen_struc_batch(
         mindist,
         spgnum,
         symprec=0.01,
-        id_offset=0,
+        id_offset=1,
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
@@ -53,7 +53,7 @@ def gen_struc_batch(
     mindist (): minimum interatomic distance (e.g. ((2.0, 1.5), (1.5, 2.0)))
     spgnum (str, int, or tuple): space group number 'all', 0, or tuple of space group numbers
     symprec (float): symmetry tolerance
-    id_offset (int): structure ID starts from id_offset
+    id_offset (int): structure ID starts from id_offset (default: 1)
                         e.g. nstruc = 3, id_offset = 10
                              you obtain ID 10, ID 11, ID 12
     vol_factor (float): volume factor for structure generation
@@ -91,8 +91,8 @@ def gen_struc_batch(
             nat=nat,
             mindist=mindist,
             spgnum=spgnum,
-            symprec=symprec,
             cid=cid,
+            symprec=symprec,
             vol_factor=vol_factor,
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
@@ -118,8 +118,8 @@ def gen_struc(
         nat,
         mindist,
         spgnum,
+        cid,
         symprec=0.01,
-        cid=0,
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
@@ -290,7 +290,7 @@ def gen_struc_mol_batch(
         mol_data,
         nmol,
         symprec=0.01,
-        id_offset=0,
+        id_offset=1,
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
@@ -308,7 +308,7 @@ def gen_struc_mol_batch(
     mol_data (tuple or list): pymatgen Molecule data
     nmol (tuple): number of molecules (e.g. (4, 4))
     symprec (float): symmetry tolerance
-    id_offset (int): structure ID starts from id_offset
+    id_offset (int): structure ID starts from id_offset (default: 1)
                         e.g. nstruc = 3, id_offset = 10
                             you obtain ID 10, ID 11, ID 12
     vol_factor (float): volume factor for structure generation
@@ -339,8 +339,8 @@ def gen_struc_mol_batch(
             spgnum=spgnum,
             mol_data=mol_data,
             nmol=nmol,
-            symprec=symprec,
             cid=cid,
+            symprec=symprec,
             vol_factor=vol_factor,
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
@@ -359,8 +359,8 @@ def gen_struc_mol(
         spgnum,
         mol_data,
         nmol,
+        cid,
         symprec=0.01,
-        cid=0,
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
@@ -502,7 +502,7 @@ def gen_struc_mol_break_sym_batch(
         mol_data,
         nmol,
         symprec=0.01,
-        id_offset=0,
+        id_offset=1,
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,
@@ -524,7 +524,7 @@ def gen_struc_mol_break_sym_batch(
     mol_data (tuple or list): pymatgen Molecule data
     nmol (tuple): number of molecules (e.g. (4, 4))
     symprec (float): symmetry tolerance
-    id_offset (int): structure ID starts from id_offset
+    id_offset (int): structure ID starts from id_offset (default: 1)
                         e.g. nstruc = 3, id_offset = 10
                             you obtain ID 10, ID 11, ID 12
     vol_factor (float): volume factor for structure generation
@@ -561,8 +561,8 @@ def gen_struc_mol_break_sym_batch(
             spgnum=spgnum,
             mol_data=mol_data,
             nmol=nmol,
-            symprec=symprec,
             cid=cid,
+            symprec=symprec,
             vol_factor=vol_factor,
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
@@ -585,8 +585,8 @@ def gen_struc_mol_break_sym(
         spgnum,
         mol_data,
         nmol,
+        cid,
         symprec=0.01,
-        cid=0,
         vol_factor=1.1,
         vol_mu=None,
         vol_sigma=None,

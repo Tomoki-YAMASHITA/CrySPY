@@ -3,7 +3,7 @@ from ..IO import io_stat, pkl_data
 
 def initialize(rin):
     # ---------- initialize
-    id_queueing = [i for i in range(rin.tot_struc)]
+    id_queueing = [i for i in range(1, rin.tot_struc + 1)]
     id_running = []
 
     # ---------- status

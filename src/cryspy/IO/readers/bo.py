@@ -93,8 +93,10 @@ class BOReader(BaseReader):
             self.rin.manual_select_bo = None
         if self.rin.manual_select_bo is not None:
             for cid in self.rin.manual_select_bo:
-                if not 0 <= cid < self.rin.tot_struc:
-                    raise ValueError('manual_select_bo must be non-negative int and less than tot_struc')
+                if not 1 <= cid <= self.rin.tot_struc:
+                    raise ValueError(
+                        'manual_select_bo must be positive int and less than or equal to tot_struc'
+                    )
 
         # ---------- emin_bo, emax_bo
         try:

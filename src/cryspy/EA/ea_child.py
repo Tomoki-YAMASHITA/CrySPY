@@ -80,8 +80,7 @@ def child_gen(
     offspring_data = {}
     parents = {}
     operation = {}
-    pre_nstruc = len(init_struc_data)
-    id_start = pre_nstruc
+    id_start = len(init_struc_data) + 1
     vc = True if rin.algo == 'EA-vc' else False
     use_comp_window = (rin.min_comp is not None or rin.max_comp is not None)
     use_charge_neutral = (rin.charge is not None)

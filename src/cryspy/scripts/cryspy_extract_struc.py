@@ -55,9 +55,9 @@ def main():
     - write cif of top k structures (k = 3) with the rank in the filename and symmetry information
       cryspy-extract-struc opt_struc_data.pkl -t 3 -rs
 
-    - write all (output 0.cif, 1.cif, 2.cif ....)
+    - write all (output 1.cif, 2.cif, 3.cif ....)
       cryspy-extract-struc opt_struc_data.pkl -a
-    - write all (output 0.cif, 1.cif, 2.cif ....) with symmetry information
+    - write all (output 1.cif, 2.cif, 3.cif ....) with symmetry information
       cryspy-extract-struc opt_struc_data.pkl -as
     '''
     # ---------- argparse
@@ -98,7 +98,7 @@ def main():
         '--tolerance',
         help=(
             'tolerance for symmetrization (default 0.01), '
-            'e.g., cryspy-extract-struc opt_struc_data.pkl -i 0 1 -s --tolerance 0.01'
+            'e.g., cryspy-extract-struc opt_struc_data.pkl -i 1 2 -s --tolerance 0.01'
         ),
         type=float,
         default=0.01,

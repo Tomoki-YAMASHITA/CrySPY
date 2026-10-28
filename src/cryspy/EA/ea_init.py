@@ -19,7 +19,7 @@ def initialize(rin, init_struc_data, rslt_data):
 
     # ---------- initialize
     gen = 1
-    id_queueing = [i for i in range(rin.n_pop)]
+    id_queueing = [i for i in range(1, rin.n_pop + 1)]
     id_running = []
     # ------ ea_info
     if rin.algo == 'EA':
@@ -97,7 +97,10 @@ def initialize(rin, init_struc_data, rslt_data):
         'Parent',
     ])
     ea_origin.iloc[:, 0:2] = ea_origin.iloc[:, 0:2].astype(int)
-    rows = [[1, cid, 'random', None] for cid in range(rin.n_pop)]
+    rows = [
+        [1, cid, 'random', None]
+        for cid in range(1, rin.n_pop + 1)
+    ]
     ea_origin = pd.concat(
         [ea_origin, pd.DataFrame(rows, columns=ea_origin.columns)],
         ignore_index=True

@@ -15,13 +15,13 @@ def initialize(rin):
     laqa_energy = {}
     laqa_bias = {}
     laqa_score = {}
-    for i in range(rin.tot_struc):
+    for i in range(1, rin.tot_struc + 1):
         laqa_step[i] = []
         laqa_struc[i] = []
         laqa_energy[i] = []
         laqa_bias[i] = []
         laqa_score[i] = [float('inf')]
-    id_queueing = [i for i in range(rin.tot_struc)]
+    id_queueing = [i for i in range(1, rin.tot_struc + 1)]
     id_select_hist = []
     id_running = []
 

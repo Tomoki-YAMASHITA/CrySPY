@@ -15,7 +15,7 @@ def restart(rin, prev_nstruc):
     laqa_score = pkl_data.load_laqa_score()
 
     # ---------- initialize for appended ID
-    for i in range(prev_nstruc, rin.tot_struc):
+    for i in range(prev_nstruc + 1, rin.tot_struc + 1):
         laqa_step[i] = []
         laqa_struc[i] = []
         laqa_energy[i] = []

@@ -77,8 +77,10 @@ class OptionReader(BaseReader):
         if self.rin.recalc is not None:
             if self.rin.algo not in ['EA', 'EA-vc']:
                 for cid in self.rin.recalc:
-                    if not 0 <= cid < self.rin.tot_struc:
-                        raise ValueError('recalc must be non-negative int and less than tot_struc')
+                    if not 1 <= cid <= self.rin.tot_struc:
+                        raise ValueError(
+                            'recalc must be positive int and less than or equal to tot_struc'
+                        )
 
         # ---------- append_struc_ea
         try:

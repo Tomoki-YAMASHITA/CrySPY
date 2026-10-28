@@ -6,7 +6,7 @@ def restart(rin, prev_nstruc):
     id_queueing = pkl_data.load_id_queueing()
 
     # ---------- append id_queueing
-    id_queueing.extend([i for i in range(prev_nstruc, rin.tot_struc)])
+    id_queueing.extend([i for i in range(prev_nstruc + 1, rin.tot_struc + 1)])
 
     # ---------- status
     stat = io_stat.stat_read()

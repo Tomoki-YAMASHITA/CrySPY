@@ -93,6 +93,17 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
     # ---------- append structures
     if rin.algo not in ['EA', 'EA-vc']:
         if len(init_struc_data) < rin.tot_struc:
+            if rin.append_struc_ea:
+                if mpi_rank == 0:
+                    logger.error(
+                        'Increasing tot_struc and append_struc_ea '
+                        'cannot be used together'
+                    )
+                if mpi_size > 1:
+                    if mpi_rank == 0:
+                        os.remove('lock_cryspy')
+                    comm.Abort(1)      # stop for MPI
+                raise SystemExit(1)
             # ------ append_flag
             append_flag = True
             # ------ backup
@@ -229,7 +240,7 @@ def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
     tmp_struc_data = gen_random_batch(
         rin=rin,
         nstruc=nstruc,
-        id_offset=len(init_struc_data),
+        id_offset=len(init_struc_data) + 1,
         comm=comm,
         mpi_rank=mpi_rank,
         mpi_size=mpi_size,

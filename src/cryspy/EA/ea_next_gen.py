@@ -318,7 +318,7 @@ def _next_gen(
 
     # ---------- generate children by EA
     logger.info('# ------ Generate children')
-    pre_nstruc = len(init_struc_data)
+    id_start = len(init_struc_data) + 1
     # init_struc_data will be updated and  saved in child_gen function
     init_struc_data, parents, operation = child_gen(
         rin=rin,
@@ -375,7 +375,7 @@ def _next_gen(
     gen += 1
 
     # ---------- id_queueing
-    id_queueing = [i for i in range(pre_nstruc, pre_nstruc + rin.n_pop)]
+    id_queueing = [i for i in range(id_start, id_start + rin.n_pop)]
 
     # ---------- ea_info
     row = {
@@ -407,7 +407,7 @@ def _next_gen(
     # ---------- ea_origin
     # ------ EA operation part
     rows = []
-    for cid in range(pre_nstruc, pre_nstruc + rin.n_pop - rin.n_rand):
+    for cid in range(id_start, id_start + rin.n_pop - rin.n_rand):
         rows.append([
             gen,
             cid,
@@ -418,8 +418,8 @@ def _next_gen(
     ea_origin = pd.concat([ea_origin, tmp_origin], axis=0, ignore_index=True)
     # ------ random part
     rows = []
-    for cid in range(pre_nstruc + rin.n_pop - rin.n_rand,
-                     pre_nstruc + rin.n_pop):
+    for cid in range(id_start + rin.n_pop - rin.n_rand,
+                     id_start + rin.n_pop):
         rows.append([
             gen,
             cid,
