@@ -11,10 +11,10 @@ import numpy as np
 import pandas as pd
 
 from ..IO import pkl_data, io_stat, write_input
+from ..IO.load_struc import load_structures, move_loaded_files
 from ..IO.read_input import ReadInput
 from ..RS.rs_gen import gen_random_batch
 from ..util.struc_util import out_poscar
-from ..util.struc_validation import validate_loaded_structures
 
 # ---------- import later
 #from ..RS import rs_init
@@ -127,27 +127,21 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         n_target = rin.tot_struc
 
     # ------ load initial structures
-    if rin.load_struc_flag:
-        if mpi_rank == 0:
-            logger.info('# ---------- Load initial structure data')
-            logger.info('Load ./data/pkl_data/init_struc_data.pkl')
-            try:
-                init_struc_data = pkl_data.load_init_struc()
-                validate_loaded_structures(rin, init_struc_data)
-            except ValueError as e:
-                logger.error(e)
-                if mpi_size > 1:
-                    os.remove('lock_cryspy')
-                    comm.Abort(1)      # stop for MPI
-                raise SystemExit(1)
-            n_loaded = len(init_struc_data)
-        else:
-            n_loaded = None
-        # -- share number of loaded structures ########## MPI
-        if mpi_size > 1:
-            n_loaded = comm.bcast(n_loaded, root=0)
+    if mpi_rank == 0:
+        try:
+            init_struc_data, loaded_files = load_structures(rin)
+        except Exception as e:
+            logger.error(e)
+            if mpi_size > 1:
+                os.remove('lock_cryspy')
+                comm.Abort(1)      # stop for MPI
+            raise SystemExit(1)
+        n_loaded = len(init_struc_data)
     else:
-        n_loaded = 0
+        n_loaded = None
+    # -- share number of loaded structures ########## MPI
+    if mpi_size > 1:
+        n_loaded = comm.bcast(n_loaded, root=0)
 
     # ------ number of structures to generate
     nstruc = n_target - n_loaded
@@ -248,3 +242,7 @@ def initialize(comm=None, mpi_rank=0, mpi_size=1):
         if rng is not None:
             rng_state_data = (rng.bit_generator.state, rin.seed)
             pkl_data.save_rng_state(rng_state_data)
+
+        # ---------- move loaded files
+        if loaded_files:
+            move_loaded_files(loaded_files)

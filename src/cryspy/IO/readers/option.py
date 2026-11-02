@@ -27,12 +27,6 @@ class OptionReader(BaseReader):
         except (configparser.NoOptionError, configparser.NoSectionError):
             self.rin.stop_chkpt = 0
 
-        # ---------- load_struc_flag
-        try:
-            self.rin.load_struc_flag = self.config.getboolean('option', 'load_struc_flag')
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            self.rin.load_struc_flag = False
-
         # ---------- stop_next_struc
         try:
             self.rin.stop_next_struc = self.config.getboolean('option', 'stop_next_struc')

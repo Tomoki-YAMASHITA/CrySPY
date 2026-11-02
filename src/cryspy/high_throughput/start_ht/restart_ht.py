@@ -6,6 +6,7 @@ from contextlib import closing
 from logging import getLogger
 
 from ...IO import diff_input, pkl_data
+from ...IO.load_struc import move_loaded_files
 from ...IO.read_input import ReadInput
 from ..db.ea_db import (
     delete_ea_hull_data,
@@ -76,8 +77,12 @@ def restart_ht():
     # ---------- recover loaded initial structures
     # An empty database may remain if initialization stopped before saving.
     if not records_exist:
-        init_struc_data = load_initial_structures_ht(rin)
+        init_struc_data, loaded_files = load_initial_structures_ht(rin)
         save_initial_structures_ht(rin, init_struc_data)
+
+        # ------ move loaded files
+        if loaded_files:
+            move_loaded_files(loaded_files)
 
     # ---------- algorithm-specific restart
     if rin.algo == 'RS':

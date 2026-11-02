@@ -79,7 +79,6 @@ class ReadInput:
     rslt_out: str = field(default=None)
     check_mindist_opt: bool = field(default=None)
     stop_chkpt: int = field(default=None)
-    load_struc_flag: bool = field(default=None)
     stop_next_struc: bool = field(default=None)
     backup_interval: int = field(default=None)
     energy_output_interval: int = field(default=None)

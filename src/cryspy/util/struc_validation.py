@@ -61,6 +61,19 @@ def validate_loaded_structures(rin, init_struc_data, id_start=1):
                 f'structure data must be pymatgen Structure'
             )
 
+        # ------ empty structure
+        if len(struc) == 0:
+            raise ValueError(
+                f'Structure ID {cid}: structure must contain at least one atom'
+            )
+
+        # ------ site occupancies
+        if not struc.is_ordered:
+            raise ValueError(
+                f'Structure ID {cid}: '
+                f'partial occupancies or disordered sites are not supported'
+            )
+
         # ------ composition
         if rin.algo == 'EA-vc':
             _validate_variable_composition_structure(rin, cid, struc)

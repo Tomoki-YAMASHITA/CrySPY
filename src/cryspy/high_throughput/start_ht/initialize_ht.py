@@ -8,8 +8,8 @@ from logging import getLogger
 import os
 
 from ...IO import pkl_data, write_input
+from ...IO.load_struc import load_structures, move_loaded_files
 from ...IO.read_input import ReadInput
-from ...util.struc_validation import validate_loaded_structures
 from ..db.record_db import (
     Status,
     initialize_record,
@@ -43,7 +43,7 @@ def initialize_ht():
     check_input_ht(rin)
 
     # ---------- load initial structures
-    init_struc_data = load_initial_structures_ht(rin)
+    init_struc_data, loaded_files = load_initial_structures_ht(rin)
     n_loaded = len(init_struc_data)
 
     # ---------- make data directories
@@ -67,6 +67,10 @@ def initialize_ht():
     # ---------- save loaded initial structures
     save_initial_structures_ht(rin, init_struc_data)
 
+    # ---------- move loaded files
+    if loaded_files:
+        move_loaded_files(loaded_files)
+
     # ---------- generate and insert initial structures
     logger.info('# ---------- Initial structure generation')
     if rin.algo == 'RS':
@@ -89,23 +93,15 @@ def initialize_ht():
 def load_initial_structures_ht(rin):
     """Load and validate initial structures for high-throughput mode."""
 
-    # ---------- load flag
-    if not rin.load_struc_flag:
-        # An empty pool leaves all initial structures for random generation.
-        return {}
-
     # ---------- load initial structures
-    logger.info('# ---------- Load initial structure data')
-    logger.info('Load ./data/pkl_data/init_struc_data.pkl')
     try:
-        init_struc_data = pkl_data.load_init_struc()
-        validate_loaded_structures(rin, init_struc_data)
+        init_struc_data, loaded_files = load_structures(rin)
     except Exception as e:
         logger.error(e)
         raise SystemExit(1)
 
     # ---------- return
-    return init_struc_data
+    return init_struc_data, loaded_files
 
 
 def save_initial_structures_ht(rin, init_struc_data):
