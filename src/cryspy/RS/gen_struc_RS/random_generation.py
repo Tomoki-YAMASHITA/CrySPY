@@ -288,7 +288,6 @@ def gen_with_find_wy_batch(
         vol_mu=None,
         vol_sigma=None,
         fwpath='find_wy',
-        mpi_rank=0,
         vc=False,
         ll_nat=None,
         ul_nat=None,
@@ -321,7 +320,6 @@ def gen_with_find_wy_batch(
     vol_mu (float): mean of volume scaling
     vol_sigma (float): standard deviation of volume scaling
     fwpath (str): specify a path for a executable file of find_wy program
-    mpi_rank (int): rank of MPI process
     vc (bool): variable composition. it needs ll_nat and ul_nat
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
@@ -359,7 +357,6 @@ def gen_with_find_wy_batch(
             vol_mu=vol_mu,
             vol_sigma=vol_sigma,
             fwpath=fwpath,
-            mpi_rank=mpi_rank,
             vc=vc,
             ll_nat=ll_nat,
             ul_nat=ul_nat,
@@ -389,7 +386,6 @@ def gen_with_find_wy(
         vol_mu=None,
         vol_sigma=None,
         fwpath='find_wy',
-        mpi_rank=0,
         vc=False,
         ll_nat=None,
         ul_nat=None,
@@ -418,7 +414,6 @@ def gen_with_find_wy(
     vol_mu (float): mean of volume scaling
     vol_sigma (float): standard deviation of volume scaling
     fwpath (str): specify a path for a executable file of find_wy program
-    mpi_rank (int): rank of MPI process
     vc (bool): variable composition. it needs ll_nat and ul_nat
     ll_nat (tuple): lower limit of number of atoms, e.g. (0, 0)
     ul_nat (tuple): upper limit of number of atoms, e.g. (8, 8)
@@ -445,11 +440,7 @@ def gen_with_find_wy(
 
     # ---------- cd tmp_gen_struc
     current_dir = os.getcwd()
-    work_dir = os.path.join(
-        current_dir,
-        'tmp_gen_struc',
-        f'rank_{mpi_rank}',
-    )
+    work_dir = os.path.join(current_dir, 'tmp_gen_struc')
     os.makedirs(work_dir, exist_ok=True)
     os.chdir(work_dir)
 

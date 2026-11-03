@@ -1,5 +1,4 @@
 from logging import getLogger
-import os
 
 import numpy as np
 
@@ -25,7 +24,6 @@ class RandomStructureGenerator:
     def __init__(
             self,
             rin,
-            mpi_rank=0,
             cn_data=None,
             feasible_N=None,
             rng=None,
@@ -33,12 +31,8 @@ class RandomStructureGenerator:
         ):
         # ---------- initialize
         self.rin = rin
-        self.mpi_rank = mpi_rank
         self.seed = rin.seed
-        show_initialization_log = (
-            mpi_rank == 0
-            and log_initialization
-        )
+        show_initialization_log = log_initialization
         if rng is None and self.seed is None:
             rng = np.random.default_rng()
         self.rng = rng
@@ -53,7 +47,6 @@ class RandomStructureGenerator:
             rin.struc_mode,
             dummy=False,
             mol_file=None,
-            mpi_rank=mpi_rank,
             no_print=not show_initialization_log,
         )
 
@@ -67,7 +60,6 @@ class RandomStructureGenerator:
                 rin.struc_mode,
                 dummy=True,
                 mol_file=rin.mol_file,
-                mpi_rank=mpi_rank,
                 no_print=not show_initialization_log,
             )
 
@@ -235,8 +227,6 @@ class RandomStructureGenerator:
             # ------ findwy
             else:
                 fwpath = check_fwpath(rin.fwpath)
-                if mpi_rank == 0:
-                    os.makedirs('tmp_gen_struc', exist_ok=True)
                 self._generate = random_generation.gen_with_find_wy
                 self._kwargs = {
                     'atype': rin.atype,
@@ -251,7 +241,6 @@ class RandomStructureGenerator:
                     'vol_mu': rin.vol_mu,
                     'vol_sigma': rin.vol_sigma,
                     'fwpath': fwpath,
-                    'mpi_rank': mpi_rank,
                     'vc': vc,
                     'll_nat': rin.ll_nat,
                     'ul_nat': rin.ul_nat,
@@ -302,126 +291,23 @@ def gen_random_batch(
         rin,
         nstruc,
         id_offset,
-        comm,
-        mpi_rank,
-        mpi_size,
         cn_data=None,
         feasible_N=None,
         rng=None,
     ):
-    # ---------- log: num of MPI processes
-    if mpi_size > 1 and mpi_rank == 0:
-        logger.info(f'Number of MPI processes: {mpi_size}')
-
-    # ---------- synchronize MPI processes
-    if mpi_size > 1:
-        comm.barrier()
-
     # ---------- initialize structure generator
     generator = RandomStructureGenerator(
         rin=rin,
-        mpi_rank=mpi_rank,
         cn_data=cn_data,
         feasible_N=feasible_N,
         rng=rng,
     )
 
-    # ---------- synchronize find_wy directories
-    if mpi_size > 1 and rin.use_find_wy:
-        comm.barrier()
-
-    # ---------- nstruc, offset for MPI
-    nstruc_list, offset_list = _divide_task(
-        nstruc,
-        mpi_size,
-        id_offset,
-    )
-
     # ---------- generate structures
     init_struc_data = generator.generate_batch(
-        nstruc=nstruc_list[mpi_rank],
-        id_offset=offset_list[mpi_rank],
+        nstruc=nstruc,
+        id_offset=id_offset,
     )
 
-    # ------ gather init_struc_data for MPI
-    if mpi_size > 1:
-        # -- parallel
-        # only init_struc_data in rank0 is important
-        init_struc_data = _gather_struc(
-            init_struc_data,
-            comm,
-            mpi_rank,
-        )
-
     # ---------- return
-    # only init_struc_data in rank0 is important
     return init_struc_data
-
-
-def _divide_task(ntask, size, offset=0):
-    '''
-    # ---------- args
-    ntask: int, total number of tasks
-    size: int, number of processes
-    offset: int, offset of task number
-
-    # ---------- return
-    ntask_list: list, number of tasks for each process
-    offset_list: list, offset of task number for each process
-
-    # ---------- description
-    For example, ntask = 10, size = 4,
-    we would like to divide the task as follows:
-        rank0 = [0, 1, 2] <-- 3
-        rank1 = [3, 4, 5] <-- 3
-        rank2 = [6, 7]    <-- 2
-        rank3 = [8, 9]    <-- 2
-
-    ntask_list = [3, 3, 2, 2]
-    offset_list = [0, 3, 6, 8]
-
-    ntask = 4, size = 1, offset = 5
-        rank0 = [5, 6, 7, 8] <-- 4
-        ntask_list = [4]
-        offset_list = [5]
-
-    case: ntask = 20, size = 4, init_n = 10
-        rank0 = [10, 11, 12, 13, 14] <-- 5
-        rank1 = [15, 16, 17, 18, 19] <-- 5
-        rank2 = [20, 21, 22, 23, 24] <-- 5
-        rank3 = [25, 26, 27, 28, 29] <-- 5
-
-    ntask_list = [5, 5, 5, 5]
-    offset_list = [10, 15, 20, 25]
-    '''
-    q = (ntask)//size
-    r = (ntask)%size
-    ntask_list = []
-    offset_list = []
-    for i in range(size):
-        offset_list.append(offset)
-        if r > 0:
-            ntask_list.append(q + 1)
-            offset += q + 1
-            r = r -1
-        else:
-            ntask_list.append(q)
-            offset += q
-    return ntask_list, offset_list
-
-
-def _gather_struc(struc_dict, comm, mpi_rank):
-    '''
-    only if mpi_size > 1
-    '''
-    # ---------- struc_data
-    data = struc_dict
-    data = comm.gather(data, root=0)
-    if mpi_rank == 0:
-        for d in data:
-            struc_dict.update(d)
-    else:
-        assert data is None
-
-    # ---------- return
-    return struc_dict

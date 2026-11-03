@@ -41,7 +41,6 @@ def run_worker_rs(
         # ---------- initialize structure generator
         generator = RandomStructureGenerator(
             rin=rin,
-            mpi_rank=0,
             log_initialization=log_initialization,
         )
 

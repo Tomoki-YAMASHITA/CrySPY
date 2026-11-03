@@ -74,7 +74,6 @@ def child_gen(
             rin.struc_mode,
             dummy=True,
             mol_file=rin.mol_file,
-            mpi_rank=0,
         )
     # ---------- initialize
     offspring_data = {}
@@ -463,9 +462,6 @@ def child_gen(
                                         rin=rin,
                                         nstruc=rin.n_rand,
                                         id_offset=id_start,
-                                        comm=None,
-                                        mpi_rank=0,
-                                        mpi_size=1,
                                         cn_data=cn_data,
                                         feasible_N=feasible_N,
                                         rng=rng,

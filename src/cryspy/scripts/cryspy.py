@@ -16,7 +16,6 @@ from cryspy.util.utility import (
 )
 
 # ---------- import later
-# from mpi4py import MPI
 # from cryspy.job.ctrl_job import Ctrl_job
 # from cryspy.interface import select_code
 
@@ -27,21 +26,7 @@ def main():
     parser.add_argument('-c', '--clean', help='clean data', action='store_true')
     parser.add_argument('-g', '--debug', help='debug', action='store_true')
     parser.add_argument('-n', '--noprint', help='not printing to the console', action='store_true')
-    parser.add_argument('-p', '--parallel', help='with MPI', action='store_true')
     args = parser.parse_args()
-
-    # ########## MPI start
-    # ---------- MPI
-    if args.parallel:
-        from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        mpi_rank = comm.Get_rank()
-        mpi_size = comm.Get_size()
-    else:
-        # ------ normal run
-        comm = None
-        mpi_rank = 0
-        mpi_size = 1
 
     # ---------- logger
     set_logger(
@@ -55,109 +40,87 @@ def main():
 
     # ---------- lock
     if os.path.isfile('lock_cryspy'):
-        if mpi_rank == 0:
-            logger.error('lock_cryspy file exists')
+        logger.error('lock_cryspy file exists')
         raise SystemExit(1)
     else:
-        if mpi_size > 1:
-            comm.barrier()
-        if mpi_rank == 0:
-            with open('lock_cryspy', 'w'):
-                pass    # create vacant file
-        else:
-            pass
+        with open('lock_cryspy', 'w'):
+            pass    # create vacant file
 
     try:
         # ---------- check mode
         if os.path.isfile('data/db_data/rslt_data.db'):
-            if mpi_rank == 0:
-                logger.error(
-                    'data/db_data/rslt_data.db exists for '
-                    'high-throughput mode'
-                )
+            logger.error(
+                'data/db_data/rslt_data.db exists for '
+                'high-throughput mode'
+            )
             raise SystemExit(1)
 
         # ---------- banner
-        if mpi_rank == 0:
-            logger.info(f'\n\n\nCrySPY {__version__}\n\n')
+        logger.info(f'\n\n\nCrySPY {__version__}\n\n')
 
         # ---------- backup option
         if args.backup:
-            if mpi_rank == 0:
-                backup_cryspy(manual=True)
+            backup_cryspy(manual=True)
             raise SystemExit()
 
         # ---------- clean option
         if args.clean:
-            if mpi_rank == 0:
-                clean_cryspy()
+            clean_cryspy()
             raise SystemExit()
 
         # ---------- initialize
         if not os.path.isfile('cryspy.stat'):
-            cryspy_init.initialize(
-                comm=comm,
-                mpi_rank=mpi_rank,
-                mpi_size=mpi_size,
-            )
+            cryspy_init.initialize()
             raise SystemExit()
 
         # ---------- restart
         else:
-            # only stat and init_struc_data in rank0 are important
-            rin, init_struc_data, rng = cryspy_restart.restart(
-                comm=comm,
-                mpi_rank=mpi_rank,
-                mpi_size=mpi_size,
-            )
-        # ########## MPI end
+            rin, init_struc_data, rng = cryspy_restart.restart()
 
-        if mpi_rank == 0:
-            # ---------- check calc files in ./calc_in
-            from cryspy.interface import select_code
-            select_code.check_calc_files(rin)
+        # ---------- check calc files in ./calc_in
+        from cryspy.interface import select_code
+        select_code.check_calc_files(rin)
 
-            # ---------- check point 1
-            if rin.stop_chkpt == 1:
-                logger.info('Stop at check point 1')
-                raise SystemExit()
+        # ---------- check point 1
+        if rin.stop_chkpt == 1:
+            logger.info('Stop at check point 1')
+            raise SystemExit()
 
-            # ---------- mkdir work/fin
-            os.makedirs('work/fin', exist_ok=True)
+        # ---------- mkdir work/fin
+        os.makedirs('work/fin', exist_ok=True)
 
-            # ---------- instantiate Ctrl_job class
-            from cryspy.job.ctrl_job import Ctrl_job
-            jobs = Ctrl_job(rin, init_struc_data, rng)
+        # ---------- instantiate Ctrl_job class
+        from cryspy.job.ctrl_job import Ctrl_job
+        jobs = Ctrl_job(rin, init_struc_data, rng)
 
-            # ---------- check job status
-            jobs.check_job()
+        # ---------- check job status
+        jobs.check_job()
 
-            # ---------- handle job
-            jobs.handle_job()
+        # ---------- handle job
+        jobs.handle_job()
 
-            # ---------- recheck for skip and done
-            if jobs.id_queueing:
-                cnt_recheck = 0
-                while jobs.recheck:
-                    cnt_recheck += 1
-                    jobs.recheck = False    # True --> False
-                    logger.info(f'\n\nrecheck {cnt_recheck}\n')
-                    jobs.check_job()
-                    jobs.handle_job()
+        # ---------- recheck for skip and done
+        if jobs.id_queueing:
+            cnt_recheck = 0
+            while jobs.recheck:
+                cnt_recheck += 1
+                jobs.recheck = False    # True --> False
+                logger.info(f'\n\nrecheck {cnt_recheck}\n')
+                jobs.check_job()
+                jobs.handle_job()
 
+        # ---------- next selection or generation
+        if not (jobs.id_queueing or jobs.id_running):
             # ---------- next selection or generation
-            if not (jobs.id_queueing or jobs.id_running):
-                # ---------- next selection or generation
-                if rin.algo in ['BO', 'LAQA', 'EA', 'EA-vc']:
-                    jobs.next_sg(args.noprint)
-                # ---------- for RS
-                else:
-                    logger.info('\nDone all structures!')
+            if rin.algo in ['BO', 'LAQA', 'EA', 'EA-vc']:
+                jobs.next_sg(args.noprint)
+            # ---------- for RS
+            else:
+                logger.info('\nDone all structures!')
 
     finally:
         # ---------- unlock
-        if mpi_rank == 0:
-            os.remove('lock_cryspy')
+        os.remove('lock_cryspy')
 
 
 if __name__ == '__main__':

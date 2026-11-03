@@ -4,7 +4,6 @@ Restart CrySPY
 
 from datetime import datetime
 from logging import getLogger
-import os
 
 import numpy as np
 
@@ -26,40 +25,25 @@ from ..util.struc_util import out_poscar
 logger = getLogger('cryspy')
 
 
-def restart(comm=None, mpi_rank=0, mpi_size=1):
+def restart():
     # ---------- read input and check the change
-    # ########## MPI start
-    if mpi_size > 1:
-        comm.barrier()
-    if mpi_rank == 0:
-        logger.info('# ---------- Read input file, cryspy.in')
+    logger.info('# ---------- Read input file, cryspy.in')
     try:
-        # all processes read input data
         rin = ReadInput()    # read input data, cryspy,in
     except Exception as e:
-        if mpi_rank == 0:
-            logger.error(e)
-        if mpi_size > 1:
-            if mpi_rank == 0:
-                os.remove('lock_cryspy')
-            comm.Abort(1)      # stop for MPI
+        logger.error(e)
         raise SystemExit(1)
-    if mpi_rank == 0:
-        try:
-            # only rank0 compares current and previous input
-            pin = pkl_data.load_input()    # load previous input data from input_data.pkl
-            diff_input.diff_in(rin, pin)           # compare current and previous input
-            pkl_data.save_input(rin)       # save input data to input_data.pkl
-        except Exception as e:
-            logger.error(e)
-            if mpi_size > 1:
-                os.remove('lock_cryspy')
-                comm.Abort(1)      # stop for MPI
-            raise SystemExit(1)    # stop for serial
+    try:
+        pin = pkl_data.load_input()    # load previous input data from input_data.pkl
+        diff_input.diff_in(rin, pin)           # compare current and previous input
+        pkl_data.save_input(rin)       # save input data to input_data.pkl
+    except Exception as e:
+        logger.error(e)
+        raise SystemExit(1)
 
     # ---------- RNG
     rng = None
-    if mpi_rank == 0 and rin.seed is not None:
+    if rin.seed is not None:
         # ------ restore RNG state
         restored = False
         if rin.seed == pin.seed:
@@ -94,172 +78,139 @@ def restart(comm=None, mpi_rank=0, mpi_size=1):
     if rin.algo not in ['EA', 'EA-vc']:
         if len(init_struc_data) < rin.tot_struc:
             if rin.append_struc_ea:
-                if mpi_rank == 0:
-                    logger.error(
-                        'Increasing tot_struc and append_struc_ea '
-                        'cannot be used together'
-                    )
-                if mpi_size > 1:
-                    if mpi_rank == 0:
-                        os.remove('lock_cryspy')
-                    comm.Abort(1)      # stop for MPI
+                logger.error(
+                    'Increasing tot_struc and append_struc_ea '
+                    'cannot be used together'
+                )
                 raise SystemExit(1)
             # ------ append_flag
             append_flag = True
             # ------ backup
-            if mpi_rank == 0:
-                backup_cryspy()
-            # ------ barrier for MPI
-            if mpi_size > 1:
-                comm.barrier()
+            backup_cryspy()
             # ------ append struc.
-            if mpi_rank == 0:
-                prev_nstruc = len(init_struc_data)
+            prev_nstruc = len(init_struc_data)
             #        init_struc_data is saved in _append_struc
-            init_struc_data = _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng)
+            init_struc_data = _append_struc(rin, init_struc_data, rng=rng)
         elif rin.tot_struc < len(init_struc_data):
-            if mpi_rank == 0:
-                logger.error('tot_struc < len(init_struc_data)')
-            if mpi_size > 1:
-                if mpi_rank == 0:
-                    os.remove('lock_cryspy')
-                comm.Abort(1)      # stop for MPI
+            logger.error('tot_struc < len(init_struc_data)')
             raise SystemExit(1)
 
     # ---------- append structures by EA (option)
-    # not support MPI
     if rin.algo not in ['EA', 'EA-vc']:
         if rin.append_struc_ea:
             # ------ append_flag
             append_flag = True
-            if mpi_rank == 0:
-                # ------ backup
-                backup_cryspy()
-                # ------ append struc
-                from ..EA import ea_append
-                prev_nstruc = len(init_struc_data)
-                # init_struc_data is saved in ea_append.append_struc()
-                init_struc_data = ea_append.append_struc(rin, init_struc_data, rng)
+            # ------ backup
+            backup_cryspy()
+            # ------ append struc
+            from ..EA import ea_append
+            prev_nstruc = len(init_struc_data)
+            # init_struc_data is saved in ea_append.append_struc()
+            init_struc_data = ea_append.append_struc(rin, init_struc_data, rng)
 
     # ---------- post append
     if append_flag:
-        if mpi_rank == 0:
-            # ------ RS
-            if rin.algo == 'RS':
-                from ..RS import rs_restart
-                rs_restart.restart(rin, prev_nstruc)
-            # ------ BO
-            if rin.algo == 'BO':
-                from ..BO import bo_restart
-                bo_restart.restart(rin, init_struc_data, prev_nstruc)
-            # ------ LAQA
-            if rin.algo == 'LAQA':
-                from ..LAQA import laqa_restart
-                laqa_restart.restart(rin, prev_nstruc)
-            # ------ save RNG state
-            if rng is not None:
-                rng_state_data = (rng.bit_generator.state, rin.seed)
-                pkl_data.save_rng_state(rng_state_data)
+        # ------ RS
+        if rin.algo == 'RS':
+            from ..RS import rs_restart
+            rs_restart.restart(rin, prev_nstruc)
+        # ------ BO
+        if rin.algo == 'BO':
+            from ..BO import bo_restart
+            bo_restart.restart(rin, init_struc_data, prev_nstruc)
+        # ------ LAQA
+        if rin.algo == 'LAQA':
+            from ..LAQA import laqa_restart
+            laqa_restart.restart(rin, prev_nstruc)
+        # ------ save RNG state
+        if rng is not None:
+            rng_state_data = (rng.bit_generator.state, rin.seed)
+            pkl_data.save_rng_state(rng_state_data)
         raise SystemExit()
 
     # ---------- vc: prepare charge-neutral data
-    if mpi_rank == 0:
-        if rin.algo == 'EA-vc' and rin.charge is not None:
-            try:
-                from ..util.charge_neutral import prepare_cn_data
-                cn_data = prepare_cn_data(
-                    rin.ll_nat,
-                    rin.ul_nat,
-                    rin.charge,
-                    cn_mode=rin.cn_mode,
-                    max_cn_grid_points=rin.max_cn_grid_points,
-                )
-                if cn_data['mode'] == 'enumerate' and len(cn_data['cn_comb']) == 0:
-                    raise ValueError('No charge neutral combinations found.')
-            except Exception as e:
-                logger.error(e)
-                if mpi_size > 1:
-                    os.remove('lock_cryspy')
-                    comm.Abort(1)      # stop for MPI
-                raise SystemExit(1)    # stop for serial
+    if rin.algo == 'EA-vc' and rin.charge is not None:
+        try:
+            from ..util.charge_neutral import prepare_cn_data
+            cn_data = prepare_cn_data(
+                rin.ll_nat,
+                rin.ul_nat,
+                rin.charge,
+                cn_mode=rin.cn_mode,
+                max_cn_grid_points=rin.max_cn_grid_points,
+            )
+            if cn_data['mode'] == 'enumerate' and len(cn_data['cn_comb']) == 0:
+                raise ValueError('No charge neutral combinations found.')
+        except Exception as e:
+            logger.error(e)
+            raise SystemExit(1)
 
     # ---------- vc: plot composition window
-    if mpi_rank == 0:
-        if (
-                rin.algo == 'EA-vc'
-                and (rin.min_comp is not None or rin.max_comp is not None)
-                and len(rin.atype) in (2, 3)
-            ):
-            gen = pkl_data.load_gen()
-            comp_changed = (
-                rin.min_comp != pin.min_comp
-                or rin.max_comp != pin.max_comp
-                or rin.axis_order != pin.axis_order
-                or rin.fig_format != pin.fig_format
+    if (
+            rin.algo == 'EA-vc'
+            and (rin.min_comp is not None or rin.max_comp is not None)
+            and len(rin.atype) in (2, 3)
+        ):
+        gen = pkl_data.load_gen()
+        comp_changed = (
+            rin.min_comp != pin.min_comp
+            or rin.max_comp != pin.max_comp
+            or rin.axis_order != pin.axis_order
+            or rin.fig_format != pin.fig_format
+        )
+        if comp_changed:
+            logger.info('# ---------- Composition constraints')
+            from ..util.struc_util import get_feasible_composition
+            from ..util.visual_util import save_composition_window
+            next_gen = gen + 1
+            save_composition_window(
+                atype=rin.atype,
+                gen=next_gen,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+                fig_format=rin.fig_format,
+                axis_order=rin.axis_order,
             )
-            if comp_changed:
-                logger.info('# ---------- Composition constraints')
-                from ..util.struc_util import get_feasible_composition
-                from ..util.visual_util import save_composition_window
-                next_gen = gen + 1
-                save_composition_window(
-                    atype=rin.atype,
-                    gen=next_gen,
-                    min_comp=rin.min_comp,
-                    max_comp=rin.max_comp,
-                    fig_format=rin.fig_format,
-                    axis_order=rin.axis_order,
-                )
-                feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
-                logger.info('Feasible composition range:')
-                for symbol, (lower, upper) in zip(rin.atype, feasible_comp):
-                    logger.info(f'    {symbol}: {lower:.3f} - {upper:.3f}')
-                logger.info(
-                    f'Composition window saved as '
-                    f'    ./data/convex_hull/composition_window_{next_gen}.{rin.fig_format}'
-                )
+            feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+            logger.info('Feasible composition range:')
+            for symbol, (lower, upper) in zip(rin.atype, feasible_comp):
+                logger.info(f'    {symbol}: {lower:.3f} - {upper:.3f}')
+            logger.info(
+                f'Composition window saved as '
+                f'    ./data/convex_hull/composition_window_{next_gen}.{rin.fig_format}'
+            )
 
     # ---------- return
     return rin, init_struc_data, rng
 
 
-def _append_struc(rin, init_struc_data, comm, mpi_rank, mpi_size, rng=None):
+def _append_struc(rin, init_struc_data, rng=None):
     # ---------- log
-    if mpi_rank == 0:
-        logger.info('# ---------- Append structures')
-    if mpi_size > 1:
-        comm.barrier()
+    logger.info('# ---------- Append structures')
 
     # ---------- time
-    if mpi_rank == 0:
-        time_start = datetime.today()
+    time_start = datetime.today()
 
     # ---------- generate structures
-    # only init_struc_data in rank0 is important
     nstruc = rin.tot_struc - len(init_struc_data)
     tmp_struc_data = gen_random_batch(
         rin=rin,
         nstruc=nstruc,
         id_offset=len(init_struc_data) + 1,
-        comm=comm,
-        mpi_rank=mpi_rank,
-        mpi_size=mpi_size,
-        cn_data=None,    # let gen_random_batch load cn_comb_data.pkl on each MPI rank
+        cn_data=None,
         feasible_N=None,
         rng=rng,
     )
 
-    if mpi_rank == 0:
-        out_poscar(tmp_struc_data, './data/init_POSCARS')
-        # ---------- update and save
-        init_struc_data.update(tmp_struc_data)
-        pkl_data.save_init_struc(init_struc_data)
+    out_poscar(tmp_struc_data, './data/init_POSCARS')
+    # ---------- update and save
+    init_struc_data.update(tmp_struc_data)
+    pkl_data.save_init_struc(init_struc_data)
 
-        # ---------- time
-        time_end = datetime.today()
-        etime = time_end - time_start
-        logger.info(f'Elapsed time for structure generation: {etime}')
+    # ---------- time
+    time_end = datetime.today()
+    etime = time_end - time_start
+    logger.info(f'Elapsed time for structure generation: {etime}')
 
     # ---------- return
-    # only init_struc_data in rank0 is important
     return init_struc_data
