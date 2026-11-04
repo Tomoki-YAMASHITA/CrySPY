@@ -12,6 +12,7 @@ import sqlite3
 from cryspy.IO.read_input import ReadInput
 from cryspy.high_throughput.db.ea_db import (
     select_ea_hdist,
+    select_ea_composition_bounds,
     select_ea_phase_diagram,
     select_latest_ea_phase_diagram_generation,
 )
@@ -23,11 +24,15 @@ from cryspy.high_throughput.db.sqlite_db import connect_db
 from cryspy.util.visual_util import (
     draw_convex_hull_binary,
     draw_convex_hull_ternary,
+    get_compound_comp_window,
     get_generation_range,
     plot_energy_EA,
     plot_energy_RS,
+    prepare_compound_comp_window,
     prepare_compound_hull_data,
     prepare_EA_data,
+    save_composition_window,
+    save_compound_composition_window,
 )
 
 
@@ -99,8 +104,23 @@ def load_hull_data(conn: sqlite3.Connection, rin):
     else:
         filtered_ids = None
 
+    # ---------- composition window
+    g_ref_comp = rin.ref_gen_comp if rin.ref_gen_comp is not None else g_ref
+    if g_ref_comp > latest_generation:
+        raise ValueError(
+            f'ref_gen_comp = {g_ref_comp} is larger than the latest generation '
+            f'(latest = {latest_generation})'
+        )
+    comp_bounds = select_ea_composition_bounds(conn, g_ref_comp)
+    if comp_bounds is None:
+        raise ValueError(f'Generation {g_ref_comp} was not found in ea_info')
+    min_comp, max_comp = comp_bounds
+
     # ---------- return
-    return phase_diagram, hdist, filtered_ids, g_ref, g_min, g_max
+    return (
+        phase_diagram, hdist, min_comp, max_comp,
+        filtered_ids, g_ref, g_min, g_max,
+    )
 
 
 def plot_RS(rin, rslt_data) -> Path:
@@ -160,15 +180,37 @@ def plot_EA(rin, rslt_data) -> Path:
 
 
 def plot_EA_vc(rin, hull_data) -> Path:
-    """Plot a saved binary or ternary convex hull without composition windows."""
+    """Plot a saved binary or ternary convex hull with optional composition windows."""
     # ---------- prepare data
-    phase_diagram, hdist, filtered_ids, g_ref, g_min, g_max = hull_data
+    (
+        phase_diagram,
+        hdist,
+        min_comp,
+        max_comp,
+        filtered_ids,
+        g_ref,
+        g_min,
+        g_max,
+    ) = hull_data
     plot_components = rin.atype
+    comp_window = None
     if rin.terminals is not None:
         phase_diagram, hdist, plot_components = prepare_compound_hull_data(
             phase_diagram,
             rin.terminals,
         )
+        if rin.show_comp_window:
+            comp_window = get_compound_comp_window(
+                atype=rin.atype,
+                compound_phase_diagram=phase_diagram,
+                min_comp=min_comp,
+                max_comp=max_comp,
+            )
+        min_comp = None
+        max_comp = None
+    elif not rin.show_comp_window:
+        min_comp = None
+        max_comp = None
 
     # ---------- axis order
     axis_order = (
@@ -191,6 +233,9 @@ def plot_EA_vc(rin, hull_data) -> Path:
             bottom_margin=rin.bottom_margin,
             markersize=rin.markersize,
             axis_order=axis_order,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            comp_window=comp_window,
         )
     elif len(plot_components) == 3:
         fig, ax = draw_convex_hull_ternary(
@@ -203,6 +248,9 @@ def plot_EA_vc(rin, hull_data) -> Path:
             vmax=rin.vmax,
             markersize=rin.markersize,
             axis_order=axis_order,
+            min_comp=min_comp,
+            max_comp=max_comp,
+            comp_window=comp_window,
         )
     else:
         raise ValueError('Convex hull plots require two or three plot components')
@@ -226,6 +274,48 @@ def plot_EA_vc(rin, hull_data) -> Path:
     return output_path
 
 
+def plot_composition_window_input(rin) -> Path:
+    """Plot the composition window from cryspy.in."""
+
+    # ---------- check input
+    if rin.algo != 'EA-vc':
+        raise ValueError('Composition window plot is available only for EA-vc.')
+    if rin.min_comp is None and rin.max_comp is None:
+        raise ValueError('min_comp and max_comp are not set in cryspy.in.')
+
+    # ---------- elemental composition window
+    if rin.terminals is None:
+        if len(rin.atype) not in (2, 3):
+            raise ValueError(
+                f'len(rin.atype) = {len(rin.atype)} is not supported '
+                'for composition window plot'
+            )
+        save_composition_window(
+            atype=rin.atype,
+            gen='input',
+            min_comp=rin.min_comp,
+            max_comp=rin.max_comp,
+            fig_format=rin.fig_format,
+            axis_order=rin.axis_order,
+        )
+        return Path(f'data/convex_hull/composition_window_input.{rin.fig_format}')
+
+    # ---------- compound composition window
+    terminal_labels, comp_window = prepare_compound_comp_window(
+        atype=rin.atype,
+        terminals=rin.terminals,
+        min_comp=rin.min_comp,
+        max_comp=rin.max_comp,
+    )
+    return Path(save_compound_composition_window(
+        terminal_labels=terminal_labels,
+        gen='input',
+        comp_window=comp_window,
+        fig_format=rin.fig_format,
+        axis_order=rin.terminal_axis_order,
+    ))
+
+
 def main():
     """Plot CrySPY high-throughput results from SQLite."""
 
@@ -244,26 +334,26 @@ def main():
         '-c',
         '--composition-window',
         action='store_true',
-        help='plot composition window (not supported yet in HT mode)',
+        help='plot composition window from cryspy.in',
     )
     args = parser.parse_args()
-
-    # ---------- composition window
-    if args.composition_window:
-        parser.error('Composition-window plotting is not supported yet in HT mode')
-
-    # ---------- check database
-    db_path = Path(args.dbfile)
-    if not db_path.is_file():
-        parser.error(f'{db_path} does not exist')
 
     try:
         # ---------- read input
         rin = ReadInput(ht=True)
         if rin.algo not in ('RS', 'EA', 'EA-vc'):
             raise ValueError('cryspy-ht-Eplot supports RS, EA, and EA-vc')
-        if rin.algo == 'EA-vc' and rin.ref_gen_comp is not None:
-            raise ValueError('ref_gen_comp is not supported yet in HT mode')
+
+        # ---------- composition window
+        if args.composition_window:
+            output_path = plot_composition_window_input(rin)
+            print(f'Output: {output_path}')
+            return
+
+        # ---------- check database
+        db_path = Path(args.dbfile)
+        if not db_path.is_file():
+            raise ValueError(f'{db_path} does not exist')
 
         # ---------- database snapshot
         with closing(connect_db(str(db_path))) as conn:
@@ -279,8 +369,6 @@ def main():
         elif rin.algo == 'EA':
             output_path = plot_EA(rin, rslt_data)
         else:
-            if rin.min_comp is not None or rin.max_comp is not None:
-                print('Composition-window overlay is not supported yet in HT mode')
             output_path = plot_EA_vc(rin, hull_data)
 
         # ---------- output

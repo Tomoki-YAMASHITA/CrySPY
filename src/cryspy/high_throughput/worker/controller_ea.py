@@ -44,9 +44,15 @@ from ...EA.gen_struc_EA.substitution import (
     SubstitutionContext,
     SubstitutionOffspringGenerator,
     get_subs_comb,
+    apply_subs_to_nat,
 )
 from ...EA.natural_selection import natural_selection
-from ...util.struc_util import set_mindist
+from ...util.struc_util import (
+    set_mindist,
+    is_comp_in_range,
+    get_feasible_composition,
+    precompute_feasible_N,
+)
 from .controller_rs import generate_structures_rs
 from .worker_ea import run_worker_ea
 from ..db.convert_db import raw_to_struc
@@ -57,6 +63,7 @@ from ..db.ea_db import (
     insert_ea_origin,
     select_ea_elite_ids,
     select_ea_hdist,
+    select_ea_composition_bounds,
     select_ea_parent_settings,
 )
 from ..db.record_db import (
@@ -136,6 +143,12 @@ def calculate_hull_ea(
     if mpl_draw:
         os.makedirs('data/convex_hull', exist_ok=True)
 
+    # ---------- composition constraints
+    comp_bounds = select_ea_composition_bounds(conn, generation)
+    if comp_bounds is None:
+        raise ValueError(f'Generation {generation} was not found in ea_info')
+    min_comp, max_comp = comp_bounds
+
     # ---------- load results
     results = select_hull_results(conn, generation)
     energy_data = {cid: energy for cid, _gen, energy, _nat in results}
@@ -160,6 +173,9 @@ def calculate_hull_ea(
         emin_ea=rin.emin_ea,
         mpl_draw=mpl_draw,
         axis_order=rin.axis_order,
+        min_comp=min_comp,
+        max_comp=max_comp,
+        show_comp_window=rin.show_comp_window,
     )
 
 
@@ -254,7 +270,7 @@ def filter_parent_pool_by_nat(
     fitness: dict[int, float],
     nat_data: dict[int, tuple[int, ...]],
 ):
-    """Filter parent candidates by atom-count bounds."""
+    """Filter parent candidates by atom-count and composition bounds."""
 
     # ---------- initialize
     filtered_struc = {}
@@ -270,6 +286,10 @@ def filter_parent_pool_by_nat(
             for n_i, ll, ul in zip(nat, rin.ll_nat, rin.ul_nat)
         ):
             continue
+        # ------ composition constraints
+        if not is_comp_in_range(nat, rin.min_comp, rin.max_comp):
+            continue
+
         # ------ valid fitness
         value = fitness.get(cid)
         if value is None or not np.isfinite(value):
@@ -328,9 +348,17 @@ def prepare_parent_pool(
             save_ea_elite_ids(conn, generation, elite_ids)
         elif generation > 1:
             previous_settings = select_ea_parent_settings(conn, generation)
-            current_settings = (rin.ll_nat, rin.ul_nat, rin.n_elite)
+            current_settings = (
+                rin.ll_nat,
+                rin.ul_nat,
+                rin.n_elite,
+                rin.min_comp,
+                rin.max_comp,
+            )
             if previous_settings != current_settings:
-                reselect_reasons.append('atom-count bounds or n_elite changed')
+                reselect_reasons.append(
+                    'atom-count bounds, composition bounds or n_elite changed'
+                )
             if not elite_ids:
                 reselect_reasons.append('no saved elites')
             elif any(
@@ -441,6 +469,13 @@ def prepare_parent_pool(
             'Not enough parent candidates after natural selection: '
             f'required {min_required}, got {len(ranking)}'
         )
+        if rin.algo == 'EA-vc':
+            logger.error(
+                'Parent candidates after nat/composition filtering: '
+                f'current={len(filtered_struc_data)}, elite={n_elite_candidates}; '
+                f'll_nat={rin.ll_nat}, ul_nat={rin.ul_nat}; '
+                f'min_comp={rin.min_comp}, max_comp={rin.max_comp}'
+            )
         raise SystemExit(1)
 
     # ---------- return
@@ -488,6 +523,7 @@ def prepare_selection_context(
 def prepare_crossover_context(
     rin,
     mindist,
+    feasible_N: list | None = None,
 ) -> CrossoverContext:
     """Prepare crossover context."""
 
@@ -503,11 +539,11 @@ def prepare_crossover_context(
         ll_nat=rin.ll_nat,
         ul_nat=rin.ul_nat,
         cn_comb=None,
-        feasible_N=None,
+        feasible_N=feasible_N,
         charge=None,
         cn_data=None,
-        min_comp=None,
-        max_comp=None,
+        min_comp=rin.min_comp if rin.algo == 'EA-vc' else None,
+        max_comp=rin.max_comp if rin.algo == 'EA-vc' else None,
     )
 
 
@@ -569,22 +605,34 @@ def prepare_addition_context(
     ranking: list[int],
     nat_data: dict[int, tuple[int, ...]],
 ) -> AdditionContext:
-    """Prepare addition context under atom-count bounds."""
+    """Prepare addition context under atom-count and composition bounds."""
 
     # ---------- addition candidates
     add_dnat_map = {}
     for pid in ranking:
+        parent_nat = nat_data[pid]
         dnat_comb = get_add_dnat_comb(
             rin.ul_nat,
             rin.add_max,
-            nat_data[pid],
+            parent_nat,
         )
-        if dnat_comb:
-            add_dnat_map[pid] = dnat_comb
+        # ------ composition constraints
+        dnat_ok = []
+        for dnat in dnat_comb:
+            new_nat = tuple(a + b for a, b in zip(parent_nat, dnat))
+            if is_comp_in_range(new_nat, rin.min_comp, rin.max_comp):
+                dnat_ok.append(dnat)
+        if dnat_ok:
+            add_dnat_map[pid] = dnat_ok
 
     # ---------- check candidates
     if not add_dnat_map:
-        logger.error('No feasible parent candidates for addition')
+        logger.error(
+            'No feasible parent candidates for addition under current '
+            'nat/composition constraints: '
+            f'ul_nat={rin.ul_nat}, add_max={rin.add_max}, '
+            f'min_comp={rin.min_comp}, max_comp={rin.max_comp}'
+        )
         raise SystemExit(1)
 
     # ---------- addition context
@@ -601,22 +649,36 @@ def prepare_elimination_context(
     ranking: list[int],
     nat_data: dict[int, tuple[int, ...]],
 ) -> EliminationContext:
-    """Prepare elimination context under atom-count bounds."""
+    """Prepare elimination context under atom-count and composition bounds."""
 
     # ---------- elimination candidates
     elim_dnat_map = {}
     for pid in ranking:
+        parent_nat = nat_data[pid]
         dnat_comb = get_elim_dnat_comb(
             rin.ll_nat,
             rin.elim_max,
-            nat_data[pid],
+            parent_nat,
         )
-        if dnat_comb:
-            elim_dnat_map[pid] = dnat_comb
+        # ------ composition constraints
+        dnat_ok = []
+        for dnat in dnat_comb:
+            new_nat = tuple(a - b for a, b in zip(parent_nat, dnat))
+            if sum(new_nat) > 0 and is_comp_in_range(
+                new_nat, rin.min_comp, rin.max_comp
+            ):
+                dnat_ok.append(dnat)
+        if dnat_ok:
+            elim_dnat_map[pid] = dnat_ok
 
     # ---------- check candidates
     if not elim_dnat_map:
-        logger.error('No feasible parent candidates for elimination')
+        logger.error(
+            'No feasible parent candidates for elimination under current '
+            'nat/composition constraints: '
+            f'll_nat={rin.ll_nat}, elim_max={rin.elim_max}, '
+            f'min_comp={rin.min_comp}, max_comp={rin.max_comp}'
+        )
         raise SystemExit(1)
 
     # ---------- elimination context
@@ -632,24 +694,39 @@ def prepare_substitution_context(
     ranking: list[int],
     nat_data: dict[int, tuple[int, ...]],
 ) -> SubstitutionContext:
-    """Prepare substitution context under atom-count bounds."""
+    """Prepare substitution context under atom-count and composition bounds."""
 
     # ---------- substitution candidates
     subs_comb_map = {}
     for pid in ranking:
+        parent_nat = nat_data[pid]
         subs_comb = get_subs_comb(
             rin.atype,
             rin.ll_nat,
             rin.ul_nat,
             rin.subs_max,
-            nat_data[pid],
+            parent_nat,
         )
-        if subs_comb:
-            subs_comb_map[pid] = subs_comb
+        # ------ composition constraints
+        subs_ok = []
+        for subs_list in subs_comb:
+            new_nat = apply_subs_to_nat(parent_nat, subs_list, rin.atype)
+            if new_nat is not None and is_comp_in_range(
+                new_nat, rin.min_comp, rin.max_comp
+            ):
+                subs_ok.append(subs_list)
+        if subs_ok:
+            subs_comb_map[pid] = subs_ok
 
     # ---------- check candidates
     if not subs_comb_map:
-        logger.error('No feasible parent candidates for substitution')
+        logger.error(
+            'No feasible parent candidates for substitution under current '
+            'nat/composition constraints: '
+            f'll_nat={rin.ll_nat}, ul_nat={rin.ul_nat}, '
+            f'subs_max={rin.subs_max}, '
+            f'min_comp={rin.min_comp}, max_comp={rin.max_comp}'
+        )
         raise SystemExit(1)
 
     # ---------- substitution context
@@ -980,6 +1057,8 @@ def save_ea_generation_info(
         n_addition=rin.n_add if rin.algo == 'EA-vc' else None,
         n_elimination=rin.n_elim if rin.algo == 'EA-vc' else None,
         n_substitution=rin.n_subs if rin.algo == 'EA-vc' else None,
+        min_comp=rin.min_comp if rin.algo == 'EA-vc' else None,
+        max_comp=rin.max_comp if rin.algo == 'EA-vc' else None,
         ll_nat=rin.ll_nat if rin.algo == 'EA-vc' else None,
         ul_nat=rin.ul_nat if rin.algo == 'EA-vc' else None,
     )
@@ -1055,6 +1134,9 @@ def prepare_elite_pool(
                 ll <= n_i <= ul
                 for n_i, ll, ul in zip(nat, rin.ll_nat, rin.ul_nat)
             ):
+                continue
+            # ------ composition constraints
+            if not is_comp_in_range(nat, rin.min_comp, rin.max_comp):
                 continue
 
         value = energy if hdist is None else hdist.get(cid, np.nan)
@@ -1411,6 +1493,8 @@ def initialize_ea(
             n_addition=0 if rin.algo == 'EA-vc' else None,
             n_elimination=0 if rin.algo == 'EA-vc' else None,
             n_substitution=0 if rin.algo == 'EA-vc' else None,
+            min_comp=rin.min_comp if rin.algo == 'EA-vc' else None,
+            max_comp=rin.max_comp if rin.algo == 'EA-vc' else None,
             ll_nat=rin.ll_nat if rin.algo == 'EA-vc' else None,
             ul_nat=rin.ul_nat if rin.algo == 'EA-vc' else None,
         )
@@ -1487,6 +1571,18 @@ def generate_next_generation_ea(
             f'eligible candidates for crossover and strain: {len(ranking)}'
         )
 
+        # ---------- composition constraints
+        feasible_N = None
+        if rin.algo == 'EA-vc' and (
+            rin.min_comp is not None or rin.max_comp is not None
+        ):
+            feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+            feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
+            logger.info(
+                'Feasible total atom counts for composition constraints: '
+                f'{len(feasible_N)}'
+            )
+
         # ---------- generation contexts
         parent_data = prepare_parent_data(selected_struc_data)
         selection_context = prepare_selection_context(
@@ -1497,6 +1593,7 @@ def generate_next_generation_ea(
         crossover_context = prepare_crossover_context(
             rin,
             mindist,
+            feasible_N=feasible_N,
         )
         permutation_context = prepare_permutation_context(
             rin,
@@ -1660,6 +1757,7 @@ def generate_next_generation_ea(
         generate_structures_rs(
             rin,
             generate_ids,
+            feasible_N=feasible_N,
         )
 
         try:

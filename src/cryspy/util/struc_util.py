@@ -506,6 +506,37 @@ def choose_vc_nat(
 #
 # ---------- composition constraints
 #
+def is_comp_in_range(nat, min_comp=None, max_comp=None, tol=1e-12):
+    """Return whether nat satisfies the composition bounds."""
+    # ---------- no composition constraints
+    if min_comp is None and max_comp is None:
+        return True
+
+    # ---------- total number of atoms
+    n_tot = sum(nat)
+    if n_tot <= 0:
+        return False
+
+    # ---------- lower composition bounds
+    if min_comp is not None:
+        if not all(
+            (cmin - tol) <= (n_i / n_tot)
+            for n_i, cmin in zip(nat, min_comp)
+        ):
+            return False
+
+    # ---------- upper composition bounds
+    if max_comp is not None:
+        if not all(
+            (n_i / n_tot) <= (cmax + tol)
+            for n_i, cmax in zip(nat, max_comp)
+        ):
+            return False
+
+    # ---------- return
+    return True
+
+
 def get_feasible_composition(min_comp, max_comp, tol=1e-12):
     # ---------- convert to numpy array
     min_comp = np.array(min_comp, float)

@@ -5,6 +5,7 @@ Generational change in evolutionary algorithm
 from logging import getLogger
 import os
 
+import numpy as np
 import pandas as pd
 
 from .ea_child import child_gen
@@ -12,6 +13,7 @@ from .natural_selection import natural_selection
 from ..IO import io_stat, pkl_data
 from ..IO.out_results import out_rslt, out_ea_info, out_ea_origin, out_hdist
 from ..util.utility import backup_cryspy
+from ..util.struc_util import is_comp_in_range
 
 # ---------- import later
 #from ..EA.calc_hull import calc_convex_hull
@@ -278,7 +280,8 @@ def _next_gen(
         n_elite = 0 if elite_struc is None else len(elite_struc)
         if n_current + n_elite == 0:
             logger.error(
-                'No parent candidates remain after applying nat/composition constraints: '
+                'No parent candidates remain after applying nat/composition constraints '
+                'and filtering invalid fitness: '
                 f'll_nat={rin.ll_nat}, ul_nat={rin.ul_nat}, '
                 f'min_comp={rin.min_comp}, max_comp={rin.max_comp}'
             )
@@ -507,18 +510,14 @@ def _constraint_filter(rin, struc_data, fitness, nat_data, tol=1e-12):
             continue
 
         # ------ min_comp, max_comp
-        if min_comp is not None and max_comp is not None:
-            comp_ok = all(
-                (cmin - tol) <= (n_i / n_tot) <= (cmax + tol)
-                for n_i, cmin, cmax in zip(nat, min_comp, max_comp)
-            )
-            if not comp_ok:
-                continue
+        if not is_comp_in_range(nat, min_comp, max_comp, tol=tol):
+            continue
 
-        # ------ fitness
-        if cid not in fitness:
+        # ------ valid fitness
+        value = fitness.get(cid)
+        if value is None or not np.isfinite(value):
             continue
         f_struc_data[cid] = struc
-        f_fitness[cid] = fitness[cid]
+        f_fitness[cid] = value
 
     return f_struc_data, f_fitness

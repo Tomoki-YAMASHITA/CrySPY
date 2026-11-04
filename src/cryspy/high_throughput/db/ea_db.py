@@ -59,8 +59,8 @@ def insert_ea_info(
     n_addition: int | None = None,
     n_elimination: int | None = None,
     n_substitution: int | None = None,
-    min_comp: bytes | None = None,
-    max_comp: bytes | None = None,
+    min_comp: tuple[float, ...] | None = None,
+    max_comp: tuple[float, ...] | None = None,
     ll_nat: tuple[int, ...] | None = None,
     ul_nat: tuple[int, ...] | None = None,
 ) -> None:
@@ -102,8 +102,10 @@ def insert_ea_info(
             n_addition,
             n_elimination,
             n_substitution,
-            min_comp,
-            max_comp,
+            array_to_blob(np.asarray(min_comp, dtype=float))
+            if min_comp is not None else None,
+            array_to_blob(np.asarray(max_comp, dtype=float))
+            if max_comp is not None else None,
             array_to_blob(np.asarray(ll_nat, dtype=int))
             if ll_nat is not None else None,
             array_to_blob(np.asarray(ul_nat, dtype=int))
@@ -500,16 +502,16 @@ def select_ea_info(
     return cursor.fetchone()
 
 
-def select_ea_parent_settings(
+def select_ea_composition_bounds(
     conn: sqlite3.Connection,
     generation: int,
 ) -> tuple | None:
-    """Select atom-count bounds and elite count for parent selection."""
+    """Select composition bounds for the given generation."""
 
-    # ---------- select parent settings
+    # ---------- select composition bounds
     row = conn.execute(
         """
-        SELECT ll_nat, ul_nat, n_elite
+        SELECT min_comp, max_comp
         FROM ea_info
         WHERE generation = ?
         """,
@@ -519,11 +521,39 @@ def select_ea_parent_settings(
         return None
 
     # ---------- return
-    ll_nat, ul_nat, n_elite = row
+    min_comp, max_comp = row
+    return (
+        tuple(blob_to_array(min_comp).tolist()) if min_comp is not None else None,
+        tuple(blob_to_array(max_comp).tolist()) if max_comp is not None else None,
+    )
+
+
+def select_ea_parent_settings(
+    conn: sqlite3.Connection,
+    generation: int,
+) -> tuple | None:
+    """Select constraints and elite count for parent selection."""
+
+    # ---------- select parent settings
+    row = conn.execute(
+        """
+        SELECT ll_nat, ul_nat, n_elite, min_comp, max_comp
+        FROM ea_info
+        WHERE generation = ?
+        """,
+        (generation,),
+    ).fetchone()
+    if row is None:
+        return None
+
+    # ---------- return
+    ll_nat, ul_nat, n_elite, min_comp, max_comp = row
     return (
         tuple(blob_to_array(ll_nat).tolist()) if ll_nat is not None else None,
         tuple(blob_to_array(ul_nat).tolist()) if ul_nat is not None else None,
         n_elite,
+        tuple(blob_to_array(min_comp).tolist()) if min_comp is not None else None,
+        tuple(blob_to_array(max_comp).tolist()) if max_comp is not None else None,
     )
 
 

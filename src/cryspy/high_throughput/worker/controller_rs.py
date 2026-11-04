@@ -8,6 +8,7 @@ from queue import Empty
 from time import perf_counter
 
 from ...IO.read_input import ReadInput
+from ...util.struc_util import get_feasible_composition, precompute_feasible_N
 from ..db.record_db import (
     Status,
     initialize_record,
@@ -198,6 +199,7 @@ def run_controller_rs(
 def generate_structures_rs(
     rin: ReadInput,
     cids: Sequence[int],
+    feasible_N: list | None = None,
 ) -> None:
     """Generate and insert random structures."""
 
@@ -216,6 +218,13 @@ def generate_structures_rs(
     # ---------- time
     if rin.algo == 'RS':
         time_start = perf_counter()
+
+    # ---------- composition constraints
+    if feasible_N is None and rin.algo == 'EA-vc' and (
+        rin.min_comp is not None or rin.max_comp is not None
+    ):
+        feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+        feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
 
     # ---------- number of workers
     num_workers = min(rin.njob, len(cids))
@@ -251,6 +260,7 @@ def generate_structures_rs(
                     stop_event,
                     log_queue,
                     logger.level,
+                    feasible_N,
                 ),
                 name=f'worker-rs-{worker_id + 1}',
             )

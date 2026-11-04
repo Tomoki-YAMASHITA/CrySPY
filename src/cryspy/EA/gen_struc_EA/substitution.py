@@ -195,6 +195,20 @@ def gen_substitution_batch(
     return offspring_data, parents, operation
 
 
+def apply_subs_to_nat(parent_nat, subs_list, atype):
+    """Return atom counts after substitutions, or None for negative counts."""
+    idx = {a: i for i, a in enumerate(atype)}
+    new_nat = list(parent_nat)
+    for from_elem, to_elem in subs_list:
+        i = idx[from_elem]
+        j = idx[to_elem]
+        new_nat[i] -= 1
+        new_nat[j] += 1
+        if new_nat[i] < 0:
+            return None
+    return tuple(new_nat)
+
+
 def get_subs_comb(atype, ll_nat, ul_nat, subs_max, parent_nat, cn_set=None, charge=None):
     """
     Generate candidate substitution patterns.

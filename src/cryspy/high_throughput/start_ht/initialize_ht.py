@@ -64,6 +64,9 @@ def initialize_ht():
     initialize_db(rin.algo)
     logger.info('Database: data/db_data/rslt_data.db')
 
+    # ---------- composition constraints
+    output_composition_constraints_ht(rin, generation=1)
+
     # ---------- save loaded initial structures
     save_initial_structures_ht(rin, init_struc_data)
 
@@ -88,6 +91,40 @@ def initialize_ht():
 
     # ---------- return
     return rin
+
+
+def output_composition_constraints_ht(rin, generation: int) -> None:
+    """Log composition constraints and save the composition window."""
+    if rin.algo != 'EA-vc':
+        return
+
+    logger.info('# ---------- Composition constraints')
+    if rin.min_comp is None and rin.max_comp is None:
+        logger.info('Composition constraints are not set.')
+        return
+
+    from ...util.struc_util import get_feasible_composition
+    feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
+    logger.info('Feasible composition range:')
+    for symbol, (lower, upper) in zip(rin.atype, feasible_comp):
+        logger.info(f'    {symbol}: {lower:.3f} - {upper:.3f}')
+
+    if len(rin.atype) not in (2, 3):
+        return
+
+    from ...util.visual_util import save_composition_window
+    save_composition_window(
+        atype=rin.atype,
+        gen=generation,
+        min_comp=rin.min_comp,
+        max_comp=rin.max_comp,
+        fig_format=rin.fig_format,
+        axis_order=rin.axis_order,
+    )
+    logger.info(
+        'Composition window saved as '
+        f'    ./data/convex_hull/composition_window_{generation}.{rin.fig_format}'
+    )
 
 
 def load_initial_structures_ht(rin):

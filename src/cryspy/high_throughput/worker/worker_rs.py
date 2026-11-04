@@ -18,6 +18,7 @@ def run_worker_rs(
     stop_event,
     log_queue=None,
     log_level=None,
+    feasible_N: list | None = None,
 ) -> None:
     """Generate random structures without database access."""
 
@@ -41,6 +42,7 @@ def run_worker_rs(
         # ---------- initialize structure generator
         generator = RandomStructureGenerator(
             rin=rin,
+            feasible_N=feasible_N,
             log_initialization=log_initialization,
         )
 

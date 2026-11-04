@@ -20,6 +20,7 @@ from ..db.sqlite_db import connect_db, initialize_db
 from .check_input_ht import check_input_ht
 from .initialize_ht import (
     load_initial_structures_ht,
+    output_composition_constraints_ht,
     save_initial_structures_ht,
 )
 from .restart_ea_ht import restart_ea_ht
@@ -56,13 +57,15 @@ def restart_ht():
         # ------ reset running structures
         records_exist = has_records(conn)
         nreset = reset_running_struc(conn)
+        generation = (
+            select_latest_ea_generation(conn) if rin.algo == 'EA-vc' else None
+        )
 
         # ------ invalidate convex hull after energy cutoff changes
         if rin.algo == 'EA-vc' and (
             rin.emin_ea != pin.emin_ea
             or rin.emax_ea != pin.emax_ea
         ):
-            generation = select_latest_ea_generation(conn)
             if generation is not None:
                 delete_ea_hull_data(conn, generation)
                 logger.info(
@@ -83,6 +86,20 @@ def restart_ht():
         # ------ move loaded files
         if loaded_files:
             move_loaded_files(loaded_files)
+
+    # ---------- composition constraints
+    if rin.algo == 'EA-vc':
+        comp_changed = (
+            rin.min_comp != pin.min_comp
+            or rin.max_comp != pin.max_comp
+            or rin.axis_order != pin.axis_order
+            or rin.fig_format != pin.fig_format
+        )
+        if generation is None or comp_changed:
+            output_composition_constraints_ht(
+                rin,
+                generation=1 if generation is None else generation + 1,
+            )
 
     # ---------- algorithm-specific restart
     if rin.algo == 'RS':

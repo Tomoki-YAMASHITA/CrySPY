@@ -39,7 +39,7 @@ from .gen_struc_EA.substitution import (
 from ..IO import pkl_data
 from ..IO.out_results import out_nat_data
 from ..RS.rs_gen import gen_random_batch
-from ..util.struc_util import set_mindist, out_poscar, get_nat
+from ..util.struc_util import set_mindist, out_poscar, get_nat, is_comp_in_range
 #from ..util.struc_util import get_mol_data
 
 # ---------- import later
@@ -508,31 +508,11 @@ def _check_parent_feasibility(rin, ranking, nat_data, cn_comb=None, tol=1e-12):
         raise SystemExit(1)
 
     def in_comp_range(nat):
-        if rin.min_comp is None or rin.max_comp is None:
-            return True
-        ntot = sum(nat)
-        if ntot <= 0:
-            return False
-        return all(
-            (cmin - tol) <= (n_i / ntot) <= (cmax + tol)
-            for n_i, cmin, cmax in zip(nat, rin.min_comp, rin.max_comp)
-        )
-
-    def apply_subs_to_nat(parent_nat, subs_list, atype):
-        idx = {a: i for i, a in enumerate(atype)}
-        new_nat = list(parent_nat)
-        for from_elem, to_elem in subs_list:
-            i = idx[from_elem]
-            j = idx[to_elem]
-            new_nat[i] -= 1
-            new_nat[j] += 1
-            if new_nat[i] < 0:
-                return None
-        return tuple(new_nat)
+        return is_comp_in_range(nat, rin.min_comp, rin.max_comp, tol=tol)
 
     from .gen_struc_EA.addition import get_add_dnat_comb
     from .gen_struc_EA.elimination import get_elim_dnat_comb
-    from .gen_struc_EA.substitution import get_subs_comb
+    from .gen_struc_EA.substitution import get_subs_comb, apply_subs_to_nat
 
     # ---------- valid parent IDs from ranking
     ranked_pids = []
