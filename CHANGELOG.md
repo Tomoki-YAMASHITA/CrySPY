@@ -1,4 +1,12 @@
 # CHANGELOG
+## [1.5.1] - 2026-11-05
+### Fixed
+#### EA-vc
+- Fixed missing valid addition and elimination candidates in charge-neutral enumeration mode caused by applying atom-count lower bounds to atom-count changes.
+- Fixed missing valid addition and elimination candidates involving changes in valence assignments in charge-neutral enumeration mode.
+- Fixed elimination candidates that could leave a non-neutral composition for multivalent species in charge-neutral enumeration mode.
+
+
 ## [1.5.0] - 2026-10-17
 ### Important change
 #### EA-vc
