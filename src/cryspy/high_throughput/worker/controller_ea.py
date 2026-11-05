@@ -1241,7 +1241,8 @@ def generate_offspring_ea(
     logger.info('# ------ Generate children')
 
     # ---------- number of workers
-    num_workers = min(rin.njob, len(tasks))
+    njob_struc = rin.njob if rin.njob_struc is None else rin.njob_struc
+    num_workers = min(njob_struc, len(tasks))
     logger.info(f'Number of EA generation workers: {num_workers}')
 
     # ---------- queues and event

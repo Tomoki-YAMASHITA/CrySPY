@@ -38,6 +38,14 @@ class BasicReader(BaseReader):
         if self.rin.njob < 1:
             raise ValueError('njob < 1, check njob')
 
+        # ---------- njob_struc
+        if ht:
+            self.rin.njob_struc = self.config.getint(
+                'basic', 'njob_struc', fallback=None
+            )
+            if self.rin.njob_struc is not None and self.rin.njob_struc < 1:
+                raise ValueError('njob_struc < 1, check njob_struc')
+
         if not ht:
             # ---------- jobcmd
             self.rin.jobcmd = self.config.get('basic', 'jobcmd')

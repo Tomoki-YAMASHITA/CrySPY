@@ -19,6 +19,7 @@ class ReadInput:
     tot_struc: int = field(default=None)
     nstage: int = field(default=None)
     njob: int = field(default=None)
+    njob_struc: int = field(default=None)
     jobcmd: str = field(default=None)
     jobfile: str = field(default=None)
 

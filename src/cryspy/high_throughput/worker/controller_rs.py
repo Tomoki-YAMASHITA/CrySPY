@@ -227,7 +227,8 @@ def generate_structures_rs(
         feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
 
     # ---------- number of workers
-    num_workers = min(rin.njob, len(cids))
+    njob_struc = rin.njob if rin.njob_struc is None else rin.njob_struc
+    num_workers = min(njob_struc, len(cids))
     logger.info(f'Number of generation workers: {num_workers}')
 
     # ---------- queues and event
