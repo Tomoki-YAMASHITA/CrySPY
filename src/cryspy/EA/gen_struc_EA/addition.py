@@ -200,7 +200,7 @@ def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb=None, charge=None):
         Each candidate satisfies:
         - 0 < sum(dnat) <= add_max
         - parent_nat + dnat <= ul_nat (element-wise)
-        - parent_nat + dnat is charge-neutral if charge is given and cn_comb is None
+        - parent_nat + dnat is charge-neutral if cn_comb or charge is given
 
     Examples
     --------
@@ -219,8 +219,8 @@ def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb=None, charge=None):
     - dnat = (0, 2, 0) -> new_nat = (2, 6, 3)
 
     Case 2: `cn_comb` is given
-    Only `dnat` rows from `cn_comb` with sum(dnat) <= add_max and
-    parent_nat + dnat <= ul_nat are kept.
+    All dnat candidates are locally enumerated, and only candidates where
+    parent_nat + dnat is in cn_comb are kept.
 
     Case 3: `cn_comb is None` and `charge` is given
     All dnat candidates are locally enumerated, and only candidates where
@@ -232,30 +232,26 @@ def get_add_dnat_comb(ul_nat, add_max, parent_nat, cn_comb=None, charge=None):
 
     # ---------- initialize
     dnat_comb = []
+    cn_set = {tuple(row) for row in cn_comb} if cn_comb is not None else None
 
-    # ---------- without precomputed charge-neutral combinations
-    if cn_comb is None:
-        max_add_per_element = [
-            min(ul - current, add_max)
-            for ul, current in zip(ul_nat, parent_nat)
-        ]
-        for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
-            if 0 < sum(dnat) <= add_max:
-                # ------ charge-neutral check
-                if charge is not None:
-                    new_nat = tuple(a + b for a, b in zip(parent_nat, dnat))
-                    if not is_charge_neutral_nat(new_nat, charge):
-                        continue
-                dnat_comb.append(dnat)
+    # ---------- enumerate addition candidates
+    max_add_per_element = [
+        min(ul - current, add_max)
+        for ul, current in zip(ul_nat, parent_nat)
+    ]
+    for dnat in product(*[range(max_add + 1) for max_add in max_add_per_element]):
+        if 0 < sum(dnat) <= add_max:
+            new_nat = tuple(a + b for a, b in zip(parent_nat, dnat))
 
-    # ---------- with precomputed charge-neutral combinations
-    else:
-        mask = cn_comb.sum(axis=1) <= add_max
-        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
-        for dnat in cn_comb_delta:
-            new_nat = np.array(parent_nat) + dnat
-            if np.all(new_nat <= ul_nat):
-                dnat_comb.append(tuple(dnat))
+            # ------ charge-neutral check
+            if cn_set is not None:
+                if new_nat not in cn_set:
+                    continue
+            elif charge is not None:
+                if not is_charge_neutral_nat(new_nat, charge):
+                    continue
+
+            dnat_comb.append(dnat)
 
     # ---------- return
     return dnat_comb

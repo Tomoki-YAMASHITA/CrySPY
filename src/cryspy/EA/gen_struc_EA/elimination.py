@@ -154,14 +154,14 @@ def get_elim_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb=None, charge=None):
         - 0 < sum(dnat) <= elim_max
         - parent_nat - dnat >= ll_nat (element-wise)
         - sum(parent_nat - dnat) > 0
-        - parent_nat - dnat is charge-neutral if charge is given and cn_comb is None
+        - parent_nat - dnat is charge-neutral if cn_comb or charge is given
 
     Case 1: `cn_comb is None`
     All dnat candidates are locally enumerated under elim_max and ll_nat.
 
     Case 2: `cn_comb` is given
-    Only `dnat` rows from `cn_comb` with sum(dnat) <= elim_max and
-    parent_nat - dnat >= ll_nat are kept.
+    All dnat candidates are locally enumerated, and only candidates where
+    parent_nat - dnat is in cn_comb are kept.
 
     Case 3: `cn_comb is None` and `charge` is given
     All dnat candidates are locally enumerated, and only candidates where
@@ -173,33 +173,28 @@ def get_elim_dnat_comb(ll_nat, elim_max, parent_nat, cn_comb=None, charge=None):
 
     # ---------- initialize
     dnat_comb = []
+    cn_set = {tuple(row) for row in cn_comb} if cn_comb is not None else None
 
-    # ---------- without precomputed charge-neutral combinations
-    if cn_comb is None:
-        max_del_per_element = [
-            min(current - ll, elim_max)
-            for current, ll in zip(parent_nat, ll_nat)
-        ]
+    # ---------- enumerate elimination candidates
+    max_del_per_element = [
+        min(current - ll, elim_max)
+        for current, ll in zip(parent_nat, ll_nat)
+    ]
+    for dnat in product(*[range(max_del + 1) for max_del in max_del_per_element]):
+        if 0 < sum(dnat) <= elim_max:
+            new_nat = tuple(a - b for a, b in zip(parent_nat, dnat))
+            if sum(new_nat) <= 0:
+                continue
 
-        for dnat in product(*[range(max_del + 1) for max_del in max_del_per_element]):
-            new_nat = np.array(parent_nat) - np.array(dnat)
-            if 0 < sum(dnat) <= elim_max and np.sum(new_nat) > 0 and np.all(new_nat >= ll_nat):
-                # ------ charge-neutral check
-                if charge is not None:
-                    if not is_charge_neutral_nat(new_nat, charge):
-                        continue
+            # ------ charge-neutral check
+            if cn_set is not None:
+                if new_nat not in cn_set:
+                    continue
+            elif charge is not None:
+                if not is_charge_neutral_nat(new_nat, charge):
+                    continue
 
-                dnat_comb.append(dnat)
-
-    # ---------- with precomputed charge-neutral combinations
-    else:
-        mask = cn_comb.sum(axis=1) <= elim_max
-        cn_comb_delta = cn_comb[mask].copy()    # delta combinations
-
-        for dnat in cn_comb_delta:
-            new_nat = np.array(parent_nat) - dnat
-            if np.all(new_nat >= ll_nat) and np.sum(new_nat) > 0:
-                dnat_comb.append(tuple(dnat))
+            dnat_comb.append(dnat)
 
     # ---------- return
     return dnat_comb
