@@ -8,6 +8,7 @@ from queue import Empty
 from time import perf_counter
 
 from ...IO.read_input import ReadInput
+from ...util.charge_neutral import prepare_cn_data
 from ...util.struc_util import get_feasible_composition, precompute_feasible_N
 from ..db.record_db import (
     Status,
@@ -200,6 +201,7 @@ def generate_structures_rs(
     rin: ReadInput,
     cids: Sequence[int],
     feasible_N: list | None = None,
+    cn_data: dict | None = None,
 ) -> None:
     """Generate and insert random structures."""
 
@@ -218,6 +220,21 @@ def generate_structures_rs(
     # ---------- time
     if rin.algo == 'RS':
         time_start = perf_counter()
+
+    # ---------- charge neutrality
+    if rin.algo == 'EA-vc' and rin.charge is not None:
+        if cn_data is None:
+            cn_data = prepare_cn_data(
+                rin.ll_nat,
+                rin.ul_nat,
+                rin.charge,
+                cn_mode=rin.cn_mode,
+                max_cn_grid_points=rin.max_cn_grid_points,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+            )
+    else:
+        cn_data = None
 
     # ---------- composition constraints
     if feasible_N is None and rin.algo == 'EA-vc' and (
@@ -262,6 +279,7 @@ def generate_structures_rs(
                     log_queue,
                     logger.level,
                     feasible_N,
+                    cn_data,
                 ),
                 name=f'worker-rs-{worker_id + 1}',
             )

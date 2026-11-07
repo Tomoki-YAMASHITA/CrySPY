@@ -47,7 +47,7 @@ from ..util.struc_util import set_mindist, out_poscar, get_nat, is_comp_in_range
 #from .gen_struc_EA.elimination import get_elim_dnat_comb
 #from .gen_struc_EA.substitution import get_subs_comb
 #from ..util.struc_util import get_feasible_composition, precompute_feasible_N
-#from ..util.charge_neutral import filter_cn_comb_comp
+#from ..util.charge_neutral import prepare_cn_data
 
 
 logger = getLogger('cryspy')
@@ -84,12 +84,21 @@ def child_gen(
     use_comp_window = (rin.min_comp is not None or rin.max_comp is not None)
     use_charge_neutral = (rin.charge is not None)
     # ------ vc: charge neutrality
-    # cn_data keeps the charge-neutral metadata loaded from cn_comb_data.pkl.
+    # cn_data contains prepared charge-neutral data for structure generation.
     # cn_comb is used only in enumerate mode; sample mode keeps cn_comb as None.
     cn_data = None
     cn_comb = None
     if vc and use_charge_neutral:
-        cn_data = pkl_data.load_cn_comb_data()
+        from ..util.charge_neutral import prepare_cn_data
+        cn_data = prepare_cn_data(
+            rin.ll_nat,
+            rin.ul_nat,
+            rin.charge,
+            cn_mode=rin.cn_mode,
+            max_cn_grid_points=rin.max_cn_grid_points,
+            min_comp=rin.min_comp,
+            max_comp=rin.max_comp,
+        )
         logger.info(f'Charge-neutral mode for child generation: {cn_data["mode"]}')
 
         # -- enumerate mode: use precomputed charge-neutral nat combinations
@@ -226,18 +235,6 @@ def child_gen(
         feasible_comp = get_feasible_composition(rin.min_comp, rin.max_comp)
         feasible_N = precompute_feasible_N(rin.ll_nat, rin.ul_nat, feasible_comp)
         logger.info(f'Feasible total atom counts for composition constraints: {len(feasible_N)}')
-
-        # ------ enumerate mode: filter charge-neutral combinations by composition window
-        if use_charge_neutral and cn_data['mode'] == 'enumerate':
-            from ..util.charge_neutral import filter_cn_comb_comp
-            cn_comb_for_crossover = filter_cn_comb_comp(
-                cn_comb,
-                min_comp=rin.min_comp,
-                max_comp=rin.max_comp,
-            )
-            if len(cn_comb_for_crossover) == 0:
-                logger.error('No charge-neutral compositions satisfy min/max_comp.')
-                raise SystemExit(1)
 
     # ---------- Crossover
     if rin.n_crsov > 0:

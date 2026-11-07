@@ -47,6 +47,7 @@ from ...EA.gen_struc_EA.substitution import (
     apply_subs_to_nat,
 )
 from ...EA.natural_selection import natural_selection
+from ...util.charge_neutral import prepare_cn_data
 from ...util.struc_util import (
     set_mindist,
     is_comp_in_range,
@@ -524,6 +525,7 @@ def prepare_crossover_context(
     rin,
     mindist,
     feasible_N: list | None = None,
+    cn_data: dict | None = None,
 ) -> CrossoverContext:
     """Prepare crossover context."""
 
@@ -538,10 +540,10 @@ def prepare_crossover_context(
         vc=rin.algo == 'EA-vc',
         ll_nat=rin.ll_nat,
         ul_nat=rin.ul_nat,
-        cn_comb=None,
+        cn_comb=cn_data['cn_comb'] if cn_data is not None else None,
         feasible_N=feasible_N,
-        charge=None,
-        cn_data=None,
+        charge=rin.charge if rin.algo == 'EA-vc' else None,
+        cn_data=cn_data,
         min_comp=rin.min_comp if rin.algo == 'EA-vc' else None,
         max_comp=rin.max_comp if rin.algo == 'EA-vc' else None,
     )
@@ -604,6 +606,7 @@ def prepare_addition_context(
     mindist,
     ranking: list[int],
     nat_data: dict[int, tuple[int, ...]],
+    cn_data: dict | None = None,
 ) -> AdditionContext:
     """Prepare addition context under atom-count and composition bounds."""
 
@@ -615,6 +618,8 @@ def prepare_addition_context(
             rin.ul_nat,
             rin.add_max,
             parent_nat,
+            cn_comb=cn_data['cn_comb'] if cn_data is not None else None,
+            charge=rin.charge,
         )
         # ------ composition constraints
         dnat_ok = []
@@ -648,6 +653,7 @@ def prepare_elimination_context(
     rin,
     ranking: list[int],
     nat_data: dict[int, tuple[int, ...]],
+    cn_data: dict | None = None,
 ) -> EliminationContext:
     """Prepare elimination context under atom-count and composition bounds."""
 
@@ -659,6 +665,8 @@ def prepare_elimination_context(
             rin.ll_nat,
             rin.elim_max,
             parent_nat,
+            cn_comb=cn_data['cn_comb'] if cn_data is not None else None,
+            charge=rin.charge,
         )
         # ------ composition constraints
         dnat_ok = []
@@ -693,11 +701,14 @@ def prepare_substitution_context(
     mindist,
     ranking: list[int],
     nat_data: dict[int, tuple[int, ...]],
+    cn_data: dict | None = None,
 ) -> SubstitutionContext:
     """Prepare substitution context under atom-count and composition bounds."""
 
     # ---------- substitution candidates
     subs_comb_map = {}
+    cn_comb = cn_data['cn_comb'] if cn_data is not None else None
+    cn_set = {tuple(row) for row in cn_comb} if cn_comb is not None else None
     for pid in ranking:
         parent_nat = nat_data[pid]
         subs_comb = get_subs_comb(
@@ -706,6 +717,8 @@ def prepare_substitution_context(
             rin.ul_nat,
             rin.subs_max,
             parent_nat,
+            cn_set=cn_set,
+            charge=rin.charge,
         )
         # ------ composition constraints
         subs_ok = []
@@ -1549,6 +1562,19 @@ def generate_next_generation_ea(
             )
             rng = np.random.default_rng(seed_sequence)
 
+        # ---------- charge neutrality
+        cn_data = None
+        if rin.algo == 'EA-vc' and rin.charge is not None:
+            cn_data = prepare_cn_data(
+                rin.ll_nat,
+                rin.ul_nat,
+                rin.charge,
+                cn_mode=rin.cn_mode,
+                max_cn_grid_points=rin.max_cn_grid_points,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
+            )
+
         # ---------- parent pool
         # selected_nat_data is used only for EA-vc; None for EA.
         ranking, fitness, selected_struc_data, selected_nat_data = prepare_parent_pool(
@@ -1595,6 +1621,7 @@ def generate_next_generation_ea(
             rin,
             mindist,
             feasible_N=feasible_N,
+            cn_data=cn_data,
         )
         permutation_context = prepare_permutation_context(
             rin,
@@ -1632,6 +1659,7 @@ def generate_next_generation_ea(
                 mindist,
                 ranking,
                 selected_nat_data,
+                cn_data=cn_data,
             )
             add_parent_ids = list(addition_context.add_dnat_map)
             logger.info(
@@ -1651,6 +1679,7 @@ def generate_next_generation_ea(
                 rin,
                 ranking,
                 selected_nat_data,
+                cn_data=cn_data,
             )
             elim_parent_ids = list(elimination_context.elim_dnat_map)
             logger.info(
@@ -1671,6 +1700,7 @@ def generate_next_generation_ea(
                 mindist,
                 ranking,
                 selected_nat_data,
+                cn_data=cn_data,
             )
             subs_parent_ids = list(substitution_context.subs_comb_map)
             logger.info(
@@ -1759,6 +1789,7 @@ def generate_next_generation_ea(
             rin,
             generate_ids,
             feasible_N=feasible_N,
+            cn_data=cn_data,
         )
 
         try:

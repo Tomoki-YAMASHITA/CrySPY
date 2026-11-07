@@ -20,11 +20,14 @@ def prepare_cn_data(
         cn_mode='auto',
         max_cn_grid_points=MAX_CN_GRID_POINTS,
         use_pkl=True,
+        min_comp=None,
+        max_comp=None,
     ):
     if cn_mode not in ['auto', 'enumerate', 'sample']:
         raise ValueError('cn_mode must be auto, enumerate, or sample')
 
     # ---------- use pkl data if it exists and matches the current parameters
+    cn_data = None
     if use_pkl:
         from ..IO.pkl_data import load_cn_comb_data
         try:
@@ -40,53 +43,19 @@ def prepare_cn_data(
                     'Please use a consistent CrySPY version.'
                 )
 
-            if (
+            if not (
                     cn_data.get('ll_nat') == ll_nat
                     and cn_data.get('ul_nat') == ul_nat
                     and cn_data.get('charge') == charge
                     and cn_data.get('cn_mode') == cn_mode
                     and cn_data.get('max_cn_grid_points') == max_cn_grid_points
                 ):
+                cn_data = None
 
-                return cn_data
-
-    if cn_mode == 'sample':
-        logger.info('# ---------- Prepare charge-neutral data')
-        logger.info('Charge-neutral mode: sample')
-        cn_data = {
-            'mode': 'sample',
-            'cn_mode': cn_mode,
-            'll_nat': ll_nat,
-            'ul_nat': ul_nat,
-            'charge': charge,
-            'max_cn_grid_points': max_cn_grid_points,
-            'cn_comb': None,
-        }
-    else:
-        try:
+    # ---------- calculate data if no matching cache exists
+    if cn_data is None:
+        if cn_mode == 'sample':
             logger.info('# ---------- Prepare charge-neutral data')
-            logger.info('Charge-neutral mode: enumerate')
-            cn_comb = calc_cn_comb(
-                ll_nat,
-                ul_nat,
-                charge,
-                max_cn_grid_points=max_cn_grid_points,
-            )
-            cn_data = {
-                'mode': 'enumerate',
-                'cn_mode': cn_mode,
-                'll_nat': ll_nat,
-                'ul_nat': ul_nat,
-                'charge': charge,
-                'max_cn_grid_points': max_cn_grid_points,
-                'cn_comb': cn_comb,
-            }
-        except ValueError as e:
-            if 'Too many charge-neutral enumeration grid points' not in str(e):
-                raise
-            if cn_mode == 'enumerate':
-                raise
-            logger.info(str(e))
             logger.info('Charge-neutral mode: sample')
             cn_data = {
                 'mode': 'sample',
@@ -97,18 +66,65 @@ def prepare_cn_data(
                 'max_cn_grid_points': max_cn_grid_points,
                 'cn_comb': None,
             }
-
-    # ---------- save data to pkl
-    if use_pkl:
-        from ..IO.pkl_data import save_cn_comb_data
-        save_cn_comb_data(cn_data)
-        if cn_data['mode'] == 'enumerate':
-            logger.info(f'Charge neutral combinations saved: {len(cn_data["cn_comb"])}')
         else:
-            logger.info('Charge neutral sampler data saved')
+            try:
+                logger.info('# ---------- Prepare charge-neutral data')
+                logger.info('Charge-neutral mode: enumerate')
+                cn_comb = calc_cn_comb(
+                    ll_nat,
+                    ul_nat,
+                    charge,
+                    max_cn_grid_points=max_cn_grid_points,
+                )
+                cn_data = {
+                    'mode': 'enumerate',
+                    'cn_mode': cn_mode,
+                    'll_nat': ll_nat,
+                    'ul_nat': ul_nat,
+                    'charge': charge,
+                    'max_cn_grid_points': max_cn_grid_points,
+                    'cn_comb': cn_comb,
+                }
+            except ValueError as e:
+                if 'Too many charge-neutral enumeration grid points' not in str(e):
+                    raise
+                if cn_mode == 'enumerate':
+                    raise
+                logger.info(str(e))
+                logger.info('Charge-neutral mode: sample')
+                cn_data = {
+                    'mode': 'sample',
+                    'cn_mode': cn_mode,
+                    'll_nat': ll_nat,
+                    'ul_nat': ul_nat,
+                    'charge': charge,
+                    'max_cn_grid_points': max_cn_grid_points,
+                    'cn_comb': None,
+                }
+
+        # ---------- save data to pkl
+        if use_pkl:
+            from ..IO.pkl_data import save_cn_comb_data
+            save_cn_comb_data(cn_data)
+            if cn_data['mode'] == 'enumerate':
+                logger.info(f'Charge neutral combinations saved: {len(cn_data["cn_comb"])}')
+            else:
+                logger.info('Charge neutral sampler data saved')
+
+    # ---------- prepare runtime data without changing cached data
+    runtime_data = cn_data.copy()
+    if runtime_data['mode'] == 'enumerate':
+        if min_comp is not None or max_comp is not None:
+            runtime_data['cn_comb'] = filter_cn_comb_comp(
+                runtime_data['cn_comb'],
+                min_comp=min_comp,
+                max_comp=max_comp,
+            )
+        if len(runtime_data['cn_comb']) == 0:
+            raise ValueError('No charge-neutral nat is available.')
 
     # ---------- return
-    return cn_data
+    return runtime_data
 
 
 def calc_cn_comb(ll_nat, ul_nat, charge, max_cn_grid_points=MAX_CN_GRID_POINTS):

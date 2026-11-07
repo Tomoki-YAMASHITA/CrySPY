@@ -138,9 +138,9 @@ def restart():
                 rin.charge,
                 cn_mode=rin.cn_mode,
                 max_cn_grid_points=rin.max_cn_grid_points,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
             )
-            if cn_data['mode'] == 'enumerate' and len(cn_data['cn_comb']) == 0:
-                raise ValueError('No charge neutral combinations found.')
         except Exception as e:
             logger.error(e)
             raise SystemExit(1)

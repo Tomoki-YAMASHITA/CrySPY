@@ -2,7 +2,7 @@ from logging import getLogger
 
 import numpy as np
 
-from ..IO.pkl_data import load_cn_comb_data
+from ..util.charge_neutral import prepare_cn_data
 from ..util.utility import check_fwpath
 from ..util.struc_util import (
     get_atype_dummy,
@@ -78,7 +78,15 @@ class RandomStructureGenerator:
         # ------ charge neutrality
         if vc and use_charge_neutral:
             if cn_data is None:
-                cn_data = load_cn_comb_data()
+                cn_data = prepare_cn_data(
+                    rin.ll_nat,
+                    rin.ul_nat,
+                    rin.charge,
+                    cn_mode=rin.cn_mode,
+                    max_cn_grid_points=rin.max_cn_grid_points,
+                    min_comp=rin.min_comp,
+                    max_comp=rin.max_comp,
+                )
             if show_initialization_log:
                 logger.info(
                     f'Charge-neutral mode for structure generation: '

@@ -11,7 +11,7 @@ from pyxtal.database.collection import Collection
 from pyxtal.tolerance import Tol_matrix
 
 # ---------- import later
-#from .charge_neutral import filter_cn_comb_comp, sample_cn_nat, sample_cn_nat_comp
+#from .charge_neutral import sample_cn_nat, sample_cn_nat_comp
 
 
 logger = getLogger('cryspy')
@@ -439,20 +439,13 @@ def choose_vc_nat(
 
     # ---------- charge neutrality
     if use_charge_neutral:
-        from .charge_neutral import filter_cn_comb_comp, sample_cn_nat, sample_cn_nat_comp
+        from .charge_neutral import sample_cn_nat, sample_cn_nat_comp
         if cn_data is None:
             raise ValueError('cn_data is required when charge is given.')
 
         # ------ enumerate mode
         if cn_data['mode'] == 'enumerate':
             cn_comb = cn_data['cn_comb']
-            # -- filter by composition window if needed
-            if use_comp_window:
-                cn_comb = filter_cn_comb_comp(
-                    cn_comb,
-                    min_comp=min_comp,
-                    max_comp=max_comp,
-                )
             if len(cn_comb) == 0:
                 raise ValueError('No charge-neutral nat is available.')
             # -- choose one at random

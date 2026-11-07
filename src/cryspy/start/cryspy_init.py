@@ -59,6 +59,7 @@ def initialize():
         logger.info(f'RNG seed: {rin.seed}')
 
     # ---------- vc: prepare charge-neutral data
+    cn_data = None
     if rin.algo == 'EA-vc' and rin.charge is not None:
         try:
             from ..util.charge_neutral import prepare_cn_data
@@ -68,9 +69,9 @@ def initialize():
                 rin.charge,
                 cn_mode=rin.cn_mode,
                 max_cn_grid_points=rin.max_cn_grid_points,
+                min_comp=rin.min_comp,
+                max_comp=rin.max_comp,
             )
-            if cn_data['mode'] == 'enumerate' and len(cn_data['cn_comb']) == 0:
-                raise ValueError('No charge neutral combinations found.')
         except Exception as e:
             logger.error(e)
             raise SystemExit(1)
@@ -134,7 +135,7 @@ def initialize():
             rin=rin,
             nstruc=nstruc,
             id_offset=n_loaded + 1,
-            cn_data=None,
+            cn_data=cn_data,
             feasible_N=None,
             rng=rng
         )

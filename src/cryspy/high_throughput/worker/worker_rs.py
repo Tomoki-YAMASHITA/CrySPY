@@ -19,6 +19,7 @@ def run_worker_rs(
     log_queue=None,
     log_level=None,
     feasible_N: list | None = None,
+    cn_data: dict | None = None,
 ) -> None:
     """Generate random structures without database access."""
 
@@ -39,9 +40,14 @@ def run_worker_rs(
     )
 
     try:
+        # ---------- check charge-neutral data
+        if rin.algo == 'EA-vc' and rin.charge is not None and cn_data is None:
+            raise ValueError('cn_data is required when charge is given.')
+
         # ---------- initialize structure generator
         generator = RandomStructureGenerator(
             rin=rin,
+            cn_data=cn_data,
             feasible_N=feasible_N,
             log_initialization=log_initialization,
         )
